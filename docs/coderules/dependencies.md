@@ -18,7 +18,12 @@ Already decided, no justification needed — these are the stack:
 | Drizzle | Typed SQL, migrations |
 | **Motion** (`motion`, import `motion/react`) | Motion, driven by the art-direction vocabulary. **Not `framer-motion`** — renamed in 2025, now maintained independently at motion.dev; the old package still installs but is no longer actively developed |
 | Tailwind | App chrome only — never the art direction (that is CSS variables) |
-| Supabase client | Auth, Postgres, storage (v3) |
+| Better Auth | Accounts, sessions, OAuth, MFA (v3). Users live in your own Postgres |
+| Zustand | Editor state — one mutable document, undo/redo |
+| pg-boss | Background jobs, in the database you already have (v3) |
+| AWS SDK (S3, KMS, Secrets Manager) | Storage and secrets (v3) |
+
+Full rationale for each, and the rejected alternatives, in [../techstack/decisions.md](../techstack/decisions.md).
 
 ## Adding one
 

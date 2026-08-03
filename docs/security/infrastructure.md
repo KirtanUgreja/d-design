@@ -24,6 +24,8 @@ This matters because application-level blocking is a game you keep losing: DNS r
 
 The same worker holds decrypted integration credentials — see [tenancy-and-data.md](tenancy-and-data.md). One isolated process for all outbound network access, and it is the only thing holding secrets.
 
+**There are two workers, and this is the quarantined one.** The fetch worker touches hostile input — URLs, screenshots, PDFs, uploaded images — and has no database access, no VPC route, and no secret beyond the integration token it is actively using. A separate **job worker** runs pg-boss with full database access and never parses attacker-controlled bytes. Splitting them means the process holding database credentials is never the process rendering an attacker's webpage. Topology in [../techstack/infrastructure.md](../techstack/infrastructure.md); the isolation is a subnet and a security group, so the socket-level test below asserts the network rather than the code.
+
 ### Application-level checks anyway
 
 Cheap, and they turn a network-isolated failure into an early, loggable rejection:
@@ -98,7 +100,8 @@ Live data refreshes on a schedule rather than per view, which decouples cost fro
 | | |
 |---|---|
 | Model API keys | Server-only, never in a client bundle. Asserted in the build |
-| Supabase service role key | Server-only. Grep the build output for its prefix |
+| Database credentials | Server-only, from Secrets Manager by task role. Never in a client bundle |
+| Integration KMS key | Granted to the fetch worker's task role and nothing else |
 | Integration OAuth tokens | Envelope-encrypted, decrypted only in the fetch worker |
 | Signing keys | Rotatable. Recipient tokens are stored-random, so rotation does not invalidate campaigns |
 

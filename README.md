@@ -75,6 +75,16 @@ Docs are versioned by release. `docs/v1/` is the current design.
 | [security/testing.md](docs/security/testing.md) | Automated suite and manual checklist |
 | [security/operations.md](docs/security/operations.md) | Disclosure, incident response, dependencies, release gate |
 
+**Tech stack.** Where every piece runs, and why. The language half was settled in v1; this settles the operational half.
+
+| Doc | What's in it |
+|---|---|
+| [techstack/README.md](docs/techstack/README.md) | The shape — three origins, three runtimes — and what to build when |
+| [techstack/frontend.md](docs/techstack/frontend.md) | The editor, the published artifact, and what JS reaches a viewer |
+| [techstack/backend.md](docs/techstack/backend.md) | App server, the two workers, data, auth, jobs, model access |
+| [techstack/infrastructure.md](docs/techstack/infrastructure.md) | AWS topology, delivery, secrets, CI/CD, local dev, the repos |
+| [techstack/decisions.md](docs/techstack/decisions.md) | Every choice, its rejected alternative, and what it superseded |
+
 **Code rules.** How the codebase stays consistent, clean, and cheap to change — solo, with an AI writing much of it.
 
 | Doc | What's in it |

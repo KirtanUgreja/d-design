@@ -70,7 +70,7 @@ That combination means no storage, no cookies, no parent DOM access, no credenti
 |---|---|
 | **Next.js 16 (App Router) + React 19.2** | Turbopack and the React Compiler are both stable as of 16; Cache Components give explicit control over what's cached on the publish route. React 19.2's View Transitions are the natural mechanism for v2's reskin — worth knowing it's there, not worth using yet |
 | **TypeScript** | Strict. See [../coderules/typescript.md](../coderules/typescript.md) |
-| **Postgres in Docker → Supabase** | Supabase *is* Postgres, so the migration is a connection string |
+| **Postgres in Docker → ~~Supabase~~ RDS/Aurora** | Still Postgres either way, so the migration is a connection string. **Superseded:** the operational stack moved to AWS — see [../techstack/decisions.md](../techstack/decisions.md) |
 | **Drizzle** | Typed SQL, migrations |
 | **Zod** | Schema, validation, and inferred types — one source |
 | **Motion** (`motion`, import `motion/react`) | **Not `framer-motion`.** Renamed in 2025 and now maintained independently at motion.dev; the old package still installs but is no longer actively developed |
@@ -79,8 +79,8 @@ That combination means no storage, no cookies, no parent DOM access, no credenti
 
 Two consequences of the Postgres-first choice:
 
-- **No auth in local v1.** Single user. Auth arrives with Supabase — which the v3 audit pinned to v3, the first version an outside person opens.
-- **One thin `storage.ts`** for uploads (local disk → Supabase Storage). This is the only abstraction with a planned second implementation. Nothing else gets one.
+- **No auth in local v1.** Single user. Auth arrives in v3 — the first version an outside person opens. (Provider is now **Better Auth**, not Supabase Auth; see [../techstack/backend.md](../techstack/backend.md).)
+- **One thin `storage.ts`** for uploads (local disk → **S3**, with MinIO locally). This is the only abstraction with a planned second implementation. Nothing else gets one — and pointing it at the S3 API from day one means it ends up with one implementation after all.
 
 **The React Compiler being stable matters for the coderules.** `performance.md` says clarity first, measure before optimizing — the compiler handles memoization automatically, so hand-written `useMemo`/`useCallback` is now usually noise rather than optimization.
 

@@ -76,7 +76,7 @@ The RTL entry is the one to act on earliest: it is a **v1 authoring decision wit
 
 v1 was explicitly single-user and local. v2 never revisited it. v3 is the first version an outside person opens, so three things that were legitimately deferred now have to exist — and the pricing model above already sells two of them.
 
-**Accounts and auth.** v1 said *"auth arrives with Supabase"* without naming a version. This is that version. Supabase Auth, email + Google. No teams, no roles, no sharing — one owner per experience. Teams land in v4 alongside the marketplace, since both need users who exist.
+**Accounts and auth.** v1 said *"auth arrives with Supabase"* without naming a version. This is that version. **Better Auth** ([../techstack/backend.md](../techstack/backend.md)), email + Google. No teams, no roles, no sharing — one owner per experience. Teams land in v4 alongside the marketplace, since both need users who exist.
 
 **Custom domains.** Sold on the paid tier, listed in v1 as *not in v1*, and never picked up since. `CNAME` to your host, automated certificate issuance, one domain per experience. Without this the paid tier has no headline benefit.
 
@@ -113,7 +113,7 @@ Every v3 feature lands on the paid side. That is not a coincidence — it is why
 ## Persistence delta
 
 ```
-users          id, email, created_at                    -- Supabase Auth
+users          id, email, created_at                    -- Better Auth
 locales        experience_id, locale, direction, scenes (jsonb), published_at, status
 recipients     id, experience_id, token, company, logo_asset_id, industry,
                contact_name, custom, created_at

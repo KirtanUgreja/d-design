@@ -5,12 +5,14 @@ Defending the viewer. Everything here protects someone who opens a published exp
 ## Three origins
 
 ```
-app.<domain>       the editor, sessions, auth
-pages.<domain>     published experiences, custom domains
-assets.<domain>    uploaded and generated files
+app.<domain>       the editor, sessions, auth        → Vercel
+pages.<domain>     published experiences, domains    → CloudFront ← S3
+assets.<domain>    uploaded and generated files      → CloudFront ← S3
 ```
 
 The single highest-leverage decision in this directory. An XSS in published content cannot reach an app session, because it is not the same origin — no shared cookies, no shared storage, no reachable DOM.
+
+**The separation is now physical, not merely configured.** Published experiences are static objects in S3 with no origin server behind them ([../techstack/infrastructure.md](../techstack/infrastructure.md)) — there is no route to attack, no database to reach, and no router that could disagree with the CDN about what a URL means. That last property is what removes most of the web-cache-deception surface described in [platform-and-packages.md](platform-and-packages.md); it still applies to the `/r/` fields endpoint, which is a real route.
 
 **Custom domains are where this silently breaks.** A customer domain must be served from the published-content origin and must never be same-origin with the app. If a custom domain ever resolves to the app origin, the isolation is gone and nothing else in this document compensates.
 
@@ -24,13 +26,17 @@ script-src  'self';
 style-src   'self' 'unsafe-inline';
 img-src     'self' https://assets.<domain> data:;
 font-src    https://assets.<domain>;
-connect-src 'none';
+connect-src https://api.<domain>/r/fields https://api.<domain>/v/beacon;
 frame-ancestors *;
 base-uri    'none';
 form-action 'none';
 ```
 
-`connect-src 'none'` is load-bearing: it is the enforcement of the claim in [../v3/live-data.md](../v3/live-data.md) that a published page makes zero outbound requests. Data is baked in server-side, so the page has no reason to talk to anything — and now it cannot.
+`connect-src` is load-bearing and it is **two exact paths — not `'self'`, not a host**. Live data is still baked in server-side ([../v3/live-data.md](../v3/live-data.md)), so nothing about the content requires network. Two product features do: per-recipient field substitution on `/r/` pages and the analytics beacon.
+
+This is weaker than the original `connect-src 'none'`, and the weakening is recorded deliberately in [../techstack/decisions.md](../techstack/decisions.md) rather than absorbed quietly. The guarantee is now *"this page talks to two endpoints you own and nothing else"*, and the browser test in [testing.md](testing.md) asserts exactly that — two requests, no more. It comes back to `'none'` if analytics ever moves to CDN access logs and personalization to per-recipient pre-rendering.
+
+The consequence to hold onto: **a recipient token now travels in a client-side request**, which raises rather than lowers the importance of the referrer and cache headers below.
 
 `frame-ancestors *` is deliberate. Embedding published experiences is a feature.
 
