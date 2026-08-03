@@ -15,7 +15,7 @@ d-design-fetch     the network-isolated fetch worker
 
 The `Scene` schema is published as **`@d-design/schema`**, a private npm package, for the small amount the fetch worker needs. The version pin makes drift explicit rather than silent — the failure mode of a git submodule is a worker quietly sitting on an old commit, which is precisely the drift the one-source-of-truth rule exists to prevent ([../coderules/typescript.md](../coderules/typescript.md)).
 
-The renderer is **not** shared. Publishing runs in the app, which already has it ([backend.md](backend.md)).
+The renderer is **not** shared with the fetch worker, and never should be — that container handles hostile input, and page-making capability does not belong inside the quarantine. The job worker has it by virtue of shipping from the app repo, which is what lets publishing and the visual verification loop run there without a function-timeout ceiling ([backend.md](backend.md), [pipeline-tools.md](pipeline-tools.md)).
 
 ## AWS topology
 

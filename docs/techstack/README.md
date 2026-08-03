@@ -50,7 +50,11 @@ Three origins, three runtimes, and the split between them is a trust boundary ra
 | **Auth** | **Better Auth** on your own Postgres | [backend.md](backend.md) |
 | **Isolation** | RLS driven by a session variable | [backend.md](backend.md) |
 | **Jobs** | pg-boss on the same Postgres | [backend.md](backend.md) |
-| **Model access** | **OpenRouter** behind a thin provider seam | [backend.md](backend.md) |
+| **Model access** | **OpenRouter** behind a thin provider seam — no preferred vendor | [ai-stack.md](ai-stack.md) |
+| **Evals** | Promptfoo in CI, self-hosted Langfuse for tracing | [ai-stack.md](ai-stack.md) |
+| **Agent framework** | **None.** This is a pipeline, not an agent | [ai-stack.md](ai-stack.md) |
+| **Pipeline language** | TypeScript, same as everything else | [ai-stack.md](ai-stack.md) |
+| **Pipeline tools** | Read-only only; visual verification loop from v2 | [pipeline-tools.md](pipeline-tools.md) |
 | **Email** | Resend | [backend.md](backend.md) |
 | **App hosting** | Vercel | [infrastructure.md](infrastructure.md) |
 | **Workers** | AWS ECS Fargate, two services | [infrastructure.md](infrastructure.md) |
@@ -67,7 +71,9 @@ Three origins, three runtimes, and the split between them is a trust boundary ra
 | | |
 |---|---|
 | [frontend.md](frontend.md) | The editor, the published artifact, and what JS ships to a viewer |
-| [backend.md](backend.md) | App server, the two workers, data, auth, jobs, model access |
+| [backend.md](backend.md) | App server, the two workers, data, auth, jobs |
+| [ai-stack.md](ai-stack.md) | Model neutrality, evals, why there is no agent framework, why not Python |
+| [pipeline-tools.md](pipeline-tools.md) | What the model may call, and the loop that lets it look at what it made |
 | [infrastructure.md](infrastructure.md) | AWS topology, delivery, secrets, CI/CD, local dev, the repos |
 | [decisions.md](decisions.md) | The full log — every choice, its rejected alternative, and what it changed elsewhere |
 

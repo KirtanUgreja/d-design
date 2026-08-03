@@ -80,7 +80,20 @@ Work it runs: transcreation per locale, 3D poster generation, scheduled live-dat
 
 It will not scale past one Postgres. That is fine for years, and when it stops being fine the problem is a good one to have.
 
-**Publishing is the exception.** The job worker cannot render — the renderer components live in the app repo. So the worker *orchestrates* publishing and the app *performs* it: the worker calls a publish endpoint, the app renders the artifact and writes it to S3. This keeps one renderer in one place ([../coderules/patterns.md](../coderules/patterns.md)) at the cost of a function-timeout ceiling, which means a 12-locale publish chunks into one call per locale. Chunk it from the start; discovering the ceiling during a 12-locale reskin is unpleasant.
+### Publishing — where the render happens
+
+The original framing here was that the job worker cannot render, because the renderer lives in the app repo. **That premise is wrong given the repo split that was actually chosen**: only the fetch worker got its own repo, and the job worker ships from the app repo ([infrastructure.md](infrastructure.md)). It has the renderer.
+
+So there is one renderer in one codebase ([../coderules/patterns.md](../coderules/patterns.md)) running in two places, and each does the job it fits:
+
+| | |
+|---|---|
+| **Job worker** | Publishing, especially multi-locale. No function-timeout ceiling, so a 12-locale publish is one job rather than twelve chunked calls. Also where the visual verification loop runs ([pipeline-tools.md](pipeline-tools.md)), since that needs the renderer and Playwright together |
+| **App (Vercel)** | Single-scene preview renders during generation, where latency matters and the work is small |
+
+A Vercel publish route still works and was the earlier decision; it is now the fallback rather than the design, because the timeout chunking it required exists only to work around a constraint that turned out not to apply.
+
+**The fetch worker never gets the renderer.** It is the container that handles hostile input, and giving it the component that produces pages would put page-making capability inside the quarantine. The trust split is the point.
 
 ## Rate limits and quotas
 
@@ -101,6 +114,8 @@ Volumetric abuse is a different problem from per-account quota, and the cheapest
 ## Model access: OpenRouter behind a seam
 
 One provider interface, one call site, OpenRouter behind it. This buys cheap experimentation across models — a fast, cheap model for Director and Edit, a strong one for Build — without a second vendor relationship.
+
+Model selection, evals, and what the pipeline may call are their own subject: **[ai-stack.md](ai-stack.md)** and **[pipeline-tools.md](pipeline-tools.md)**. The short version is that this product has no preferred vendor, only a preferred interface, and the eval harness is what makes that a strategy rather than a slogan.
 
 **It costs a guarantee, and the trade should be understood rather than discovered.**
 

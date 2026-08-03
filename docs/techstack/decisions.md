@@ -37,6 +37,14 @@ Every operational choice, what it beat, and what it cost. The rejected option ma
 | Local dev | **Docker Compose + MinIO + LocalStack** | Real AWS dev, Supabase CLI | `storage.ts` and the KMS path get one implementation, not two |
 | Tests | **Vitest + Playwright** | node:test, Cypress | Three origins and a sandboxed iframe cannot be tested in jsdom |
 | Migrations | **drizzle-kit, one dev DB** | Branch-per-preview | Simplest thing that works solo; revisit if it hurts |
+| Model vendor | **None — evaluate per phase** | Standardising on one provider | Any model named today is wrong in two quarters. Build the switching apparatus, not the conviction |
+| Evals | **Promptfoo (CI) + self-hosted Langfuse** | Braintrust, LangSmith, hosted anything | Model-neutrality without evals is not a strategy. Self-hosted because a prompt here is embargoed customer messaging |
+| Agent framework | **None** | LangGraph, CrewAI, Mastra, Agents SDK | Four deterministic phases with a human gate is not an agent. Your code makes every next-step decision |
+| Pipeline language | **TypeScript** | A Python AI service | No ML work; a Pydantic mirror of the Zod schema would be a second source of truth |
+| Model client | **Plain `fetch`, OpenAI-compatible** | Vercel AI SDK, Mastra | Start with a function. Take the SDK when it deletes your code rather than adding to it |
+| Pipeline tools | **Read-only, tiered** | No tools; tools with side effects | Defense 5 forbids side effects, not tools. Tier 2 stays closed |
+| Visual verification | **Render → screenshot → vision critic, one revision** | Zod validation alone; unbounded critic loop | Zod proves valid, not good. Doubles cost to ~$0.40/experience, which is not a cost decision |
+| Publish render location | **Job worker** (app fallback) | Vercel route only | Corrects a wrong premise — the job worker ships from the app repo, so it has the renderer and no timeout ceiling |
 | v1 infrastructure | **None — Docker Compose only** | Full stack from day one | The long pole is the renderer, and a perfect VPC does not move that risk |
 
 ## The two decisions that cost something
@@ -77,7 +85,10 @@ Earlier documents locked decisions this directory reverses. Recorded here rather
 | One isolated worker | **Two workers**, split on trust | [../security/infrastructure.md](../security/infrastructure.md) |
 | Published pages served from an origin | **Static S3 artifacts**, no origin | [../security/content-and-web.md](../security/content-and-web.md) |
 | `connect-src 'none'` | Two exact endpoints | [../security/content-and-web.md](../security/content-and-web.md) |
-| Anthropic API called directly | **OpenRouter** behind a seam | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
+| Anthropic API called directly | **OpenRouter** behind a seam, no preferred vendor | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
+| Generation has **no tools** | No tools **with side effects**; read-only tools tiered | [../security/prompt-injection.md](../security/prompt-injection.md) |
+| ~$0.20 per experience | ~$0.40 once the visual loop is on | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
+| Publishing renders on Vercel | Renders in the **job worker** — no timeout ceiling | [backend.md](backend.md) |
 
 The security-relevant rows have been patched at the source. The rest stand as the record of what was believed at the time, which is the convention the version directories already use.
 

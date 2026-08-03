@@ -81,7 +81,9 @@ Docs are versioned by release. `docs/v1/` is the current design.
 |---|---|
 | [techstack/README.md](docs/techstack/README.md) | The shape — three origins, three runtimes — and what to build when |
 | [techstack/frontend.md](docs/techstack/frontend.md) | The editor, the published artifact, and what JS reaches a viewer |
-| [techstack/backend.md](docs/techstack/backend.md) | App server, the two workers, data, auth, jobs, model access |
+| [techstack/backend.md](docs/techstack/backend.md) | App server, the two workers, data, auth, jobs |
+| [techstack/ai-stack.md](docs/techstack/ai-stack.md) | Model neutrality, evals, why no agent framework, why not Python |
+| [techstack/pipeline-tools.md](docs/techstack/pipeline-tools.md) | What the model may call, and the loop that lets it see its own output |
 | [techstack/infrastructure.md](docs/techstack/infrastructure.md) | AWS topology, delivery, secrets, CI/CD, local dev, the repos |
 | [techstack/decisions.md](docs/techstack/decisions.md) | Every choice, its rejected alternative, and what it superseded |
 
