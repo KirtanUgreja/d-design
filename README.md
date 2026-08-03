@@ -81,8 +81,9 @@ Docs are versioned by release. `docs/v1/` is the current design.
 | [coderules/typescript.md](docs/coderules/typescript.md) | Strict TS, Zod boundaries, Results vs throws |
 | [coderules/dependencies.md](docs/coderules/dependencies.md) | Stdlib-first, and the dependency ledger |
 | [coderules/patterns.md](docs/coderules/patterns.md) | No-styling invariant, pure renderer core, data access |
-| [coderules/performance.md](docs/coderules/performance.md) | Clarity first, and the three real hot paths |
-| [coderules/tooling.md](docs/coderules/tooling.md) | Pre-commit gate and the CLAUDE.md that carries the rules |
+| [coderules/performance.md](docs/coderules/performance.md) | Clarity first, the three real hot paths, React Compiler and `use cache` |
+| [coderules/ai-authorship.md](docs/coderules/ai-authorship.md) | What measurably goes wrong when an AI writes most of the code |
+| [coderules/tooling.md](docs/coderules/tooling.md) | Pre-commit gate, linter choice, and the instruction file that carries the rules |
 
 Read `v1/scene-schema.md` first. Everything else depends on that shape.
 

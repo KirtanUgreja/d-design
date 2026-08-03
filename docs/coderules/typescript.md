@@ -2,12 +2,36 @@
 
 ## Strict, and then stricter
 
-`tsconfig` runs `strict: true` plus `noUncheckedIndexedAccess`. ESLint bans two things the compiler allows:
+`tsconfig` runs `strict: true` plus `noUncheckedIndexedAccess` and `erasableSyntaxOnly`. ESLint bans two things the compiler allows:
 
 - **`any`** — use `unknown` and narrow, or type it properly. `any` deletes the compiler.
 - **the non-null `!` operator** — it is a lie to the type system. If a value can be null, handle it; if it truly cannot, restructure so the type reflects that.
 
 The compiler is the first and cheapest test. Most bugs that matter are the ones it already catches for free — the rules above stop you from switching it off one expression at a time.
+
+`erasableSyntaxOnly` is worth calling out: it makes TS `enum`, `namespace`, and class parameter properties **compile errors**, which retires the `no-restricted-syntax` lint rule this project would otherwise need for the enum ban below. A compiler flag beats a lint rule — it is one line, it cannot be disabled per-file without it being obvious, and it runs first. It also keeps every `.ts` file valid input for Node's native type stripping, which costs nothing to preserve and occasionally saves a build step.
+
+## Which TypeScript — and the one thing that breaks
+
+**TypeScript 7.0** shipped 8 July 2026: the compiler rewritten in Go, generally 8–12× faster on full builds with roughly 18% less memory. Microsoft's own VS Code build went from 125.7s to 10.6s. It also flips `strict` and `esnext` on by default and turns TypeScript 6.0's deprecations into hard errors — which for this project means the defaults finally match what the rules already demanded.
+
+A 10× typecheck is not a vanity number here. `tsc --noEmit` sits in the pre-commit gate ([tooling.md](tooling.md)), and a gate that returns in under a second is a gate you never route around.
+
+**The catch, and it is a real one: TypeScript 7.0 ships without a public compiler API.** Anything that reads the type graph programmatically — `typescript-eslint` above all — cannot run on it. A stable API is planned for 7.1.
+
+The documented interim pattern, and the one to use:
+
+```jsonc
+// package.json — TS 7 for the project, TS 6 pinned for the linter only
+"devDependencies": {
+  "typescript": "^7.0",
+  "@typescript/typescript6": "npm:typescript@^6.0"   // typescript-eslint reads this
+}
+```
+
+Typecheck runs on 7; type-aware lint runs on the pinned 6. It is two compilers on disk and one line of config, and it is temporary. Revisit when 7.1 lands the API — that is a ledger entry to delete, and deletion is a feature ([dependencies.md](dependencies.md)).
+
+This is also the reason to be unhurried about it. Nothing in this project needs 7 on day one; the gate is fast enough on 6 for a codebase this size. Take it when the ecosystem has caught up, not because the number is large.
 
 ## Types come from schemas, never written twice
 
@@ -20,6 +44,26 @@ export type Block = z.infer<typeof Block>;   // derived, never hand-written
 ```
 
 A hand-written type that duplicates a schema is a second source of truth that will drift. If you have a type and a validator for the same shape, the type is wrong — infer it.
+
+### The JSON Schema is derived too
+
+This project has a second, less obvious place the same shape would be written twice. Structured outputs needs a **JSON Schema** to constrain generation ([../v1/ai-pipeline.md](../v1/ai-pipeline.md)); validation needs a **Zod schema** to parse the response. Two documents describing one shape, in different syntaxes, in different files, kept in sync by hand — the exact drift this rule exists to prevent, and the worst possible place for it. A JSON Schema that has quietly fallen behind the Zod schema means the model is constrained to generate the wrong thing, and you find out through a repair-rate creep rather than an error.
+
+Zod 4 removes the problem: **`z.toJSONSchema()` is built in.** The Zod schema stays the single source of truth, the JSON Schema is generated from it at build time, and drift is not something to police.
+
+```ts
+// schema/scene.ts — the one definition
+export const Scene = z.object({ /* ... */ });
+export type Scene = z.infer<typeof Scene>;              // types derived
+export const SCENE_JSON_SCHEMA = z.toJSONSchema(Scene); // model constraint derived
+```
+
+Zod 4 is the version to build on regardless: ~14× faster string parsing and a 57% smaller core bundle than v3, with `z.discriminatedUnion` validating in O(1) off the discriminator — which is exactly the shape `Block` is.
+
+Two caveats to know before relying on it:
+
+- **Keep a discriminated union off the schema root.** `toJSONSchema` output for a root-level `discriminatedUnion` has known rough edges with strict structured-output validators. Not a problem here — the root is an object (`Scene`/`Experience`) and `Block` is nested — but it is a constraint on how the schema is shaped, so it is written down rather than rediscovered.
+- **Character caps still do not survive the trip.** Structured outputs does not support `minLength`/`maxLength`; the generated JSON Schema carries the *shape*, and Zod enforces the *lengths* after the response. That two-layer split is described in [../v1/scene-schema.md](../v1/scene-schema.md) and is unchanged by generating the schema — it just means one file now produces both layers.
 
 ## Trust boundaries: one parse, at entry
 
@@ -70,4 +114,4 @@ Truly impossible states as Results means every call site handles a branch that c
 
 ## No enums, no classes for data
 
-Use `const` objects and union types over TS `enum` (which emits runtime code and has surprising semantics). Use plain typed objects and functions over classes for data — a `Scene` is data, not an object with methods. Classes are fine where identity and lifecycle genuinely matter (rare here); for everything else, functions transforming typed data.
+Use `const` objects and union types over TS `enum` (which emits runtime code and has surprising semantics). `erasableSyntaxOnly` above enforces this at the compiler, so it is not a rule anyone has to remember. Use plain typed objects and functions over classes for data — a `Scene` is data, not an object with methods. Classes are fine where identity and lifecycle genuinely matter (rare here); for everything else, functions transforming typed data.

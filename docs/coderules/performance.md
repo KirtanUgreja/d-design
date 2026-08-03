@@ -35,6 +35,28 @@ Direct manipulation must feel instant, or the editing model that justifies the w
 - The reskin transition is the one place to spend real animation effort ([../v2/transformations.md](../v2/transformations.md)); animate only visible scenes, swap off-screen ones instantly.
 - Debounce AI-assisted edits; do not fire a model call per keystroke.
 
+## Two platform features that do this work for you
+
+The stack moved in a direction that suits this project unusually well. Both of these are opt-in, and both replace code you would otherwise write.
+
+### React Compiler — stop writing memoization
+
+The React Compiler reached 1.0 and is **stable in Next.js 16**, though still opt-in (`reactCompiler: true`) while build-performance data accumulates. It analyses the component tree at build time and inserts the equivalent of `useMemo`, `useCallback`, and `React.memo` automatically.
+
+For the editor canvas — hot path #3, where re-render cost is the whole problem — this is the single highest-leverage setting in the project. It is also pure subtraction: memoization is boilerplate that clutters components, drifts out of date, and is exactly the kind of code that gets added speculatively by someone optimizing without measuring.
+
+**The rule that comes with it:** the compiler only transforms components that follow the Rules of React. Break them — side effects in render, direct state mutation — and it *silently skips that component* with a warning rather than transforming it wrongly. So the failure mode is not a bug; it is a component that quietly stopped being optimized. That is why the `react-hooks` lint rules are in the gate ([tooling.md](tooling.md)) rather than treated as advisory: they are now load-bearing for performance, not just correctness.
+
+Do not hand-write `useMemo` unless the compiler demonstrably skipped something and a profiler says it matters.
+
+### `use cache` — the caching model matches the product
+
+Next.js 16's Cache Components replace route-segment revalidation config with an explicit `"use cache"` directive plus `cacheLife()`. Under `cacheComponents`, the old route-segment config is deprecated, so this is the model to author against from the start rather than migrate to later.
+
+It is a good fit here because the product's caching story is genuinely mixed and was always going to need this granularity: a published experience is static and should be cached hard, its live-data bindings have a real TTL ([../v3/live-data.md](../v3/live-data.md)), and the editor is fully dynamic. One directive at the component that owns each of those beats a per-route setting that has to describe all three.
+
+Turbopack is the default builder in 16 (2–5× faster builds). Nothing to decide — just do not fight it.
+
 ## Rules that keep the hot paths fast without micro-optimizing
 
 - **Static and cacheable by default.** A published page that never touches the DB scales to a viral launch for free and cannot exhaust a connection pool.

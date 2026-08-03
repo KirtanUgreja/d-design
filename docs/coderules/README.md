@@ -10,6 +10,8 @@ Zod schemas define the shapes; TypeScript types come from `z.infer`, never writt
 
 Every rule in this directory is an application of that idea: make the wrong thing unrepresentable, and you never have to police it.
 
+It also happens to be the right defense against how this code gets written. Most of it will be Claude's, and the measured failure mode of AI-written code is not incorrectness — it is **duplication**: a second copy of something that already exists, correct in isolation, corrosive in aggregate. A rule that leaves only one place for a thing to live is a rule that failure mode cannot get past. See [ai-authorship.md](ai-authorship.md).
+
 ## The rules
 
 | Doc | |
@@ -19,7 +21,8 @@ Every rule in this directory is an application of that idea: make the wrong thin
 | [dependencies.md](dependencies.md) | Stdlib and platform first; how a new dependency earns its place |
 | [patterns.md](patterns.md) | The renderer core, data access, the no-styling invariant |
 | [performance.md](performance.md) | Clarity first, measure before optimizing, the real hot paths |
-| [tooling.md](tooling.md) | The pre-commit gate, and the CLAUDE.md that carries these rules into every AI session |
+| [ai-authorship.md](ai-authorship.md) | What goes wrong when Claude writes most of it, and what to do about it |
+| [tooling.md](tooling.md) | The pre-commit gate, the linter choice, and the instruction file that carries these rules into every AI session |
 
 ## Non-negotiables
 

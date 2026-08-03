@@ -57,4 +57,8 @@ A file growing past a few hundred lines usually means it is doing more than one 
 
 ## Test
 
-`import/no-internal-modules` and `import/no-cycle` in the lint config make cross-feature reach-through and import cycles fail the gate. That is the whole enforcement — the structure defends itself.
+Cross-feature reach-through and import cycles fail the gate. `eslint-plugin-import-boundaries` encodes exactly this model — a boundary's `index.ts` is its public surface, everything else in the folder is private — so check whether it fits before writing a custom rule ([tooling.md](tooling.md)). That is the whole enforcement; the structure defends itself.
+
+## One cost worth naming
+
+A feature folder is a context boundary for the reader, which is the point. It is also a context boundary for whatever is writing the code, and that has a price: code being written inside `editor/` has no particular reason to notice that `renderer/` already solved the same problem. This is the mechanism behind the duplication numbers in [ai-authorship.md](ai-authorship.md), and the reason a feature's `index.ts` should stay short enough to read in one screen — it is the catalog of what already exists, and a catalog nobody reads is not one.
