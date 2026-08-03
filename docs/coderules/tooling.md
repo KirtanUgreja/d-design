@@ -1,6 +1,6 @@
 # Tooling
 
-The rules above only hold if something enforces them. Two things do: a pre-commit gate, and a `CLAUDE.md` that carries the rules into every AI session.
+The rules above only hold if something enforces them. Two things do: a pre-commit gate, and an instruction file that carries the rules into every AI session.
 
 ## The pre-commit gate
 
@@ -26,18 +26,45 @@ The lint config carries the rules that are mechanical:
 | `import/no-cycle` | No import cycles |
 | custom: no `mode` prop in `renderer/` | Renderer core stays pure ([patterns.md](patterns.md)) |
 | custom: no Drizzle import outside `*.data.ts` | Data access stays in feature modules |
+| custom: no `db.` call outside the `asUser` wrapper | Tenant isolation ([patterns.md](patterns.md) rule 4) — the highest-value custom rule in the list |
+| custom: no `process.env` / `typeof window` in `renderer/` | The renderer runs in three processes and must behave identically in all of them |
 | `react-hooks` (incl. the compiler rules) | Rules of React — a violation silently costs you React Compiler memoization ([performance.md](performance.md)) |
 | ~~`no-restricted-syntax` on TS `enum`~~ | Retired — `erasableSyntaxOnly` makes it a compiler error ([typescript.md](typescript.md)) |
 
-The three custom rules are worth the small effort to write — they are exactly the project-specific invariants prose cannot enforce, and each maps to a decision that quietly unravels the product if it drifts.
+The custom rules are worth the small effort to write — they are exactly the project-specific invariants prose cannot enforce, and each maps to a decision that quietly unravels the product if it drifts. The `asUser` rule is the one to write first: it is the only one on the list whose violation is a cross-tenant read rather than a design regression.
 
 CI runs the same gate plus the test suites and the dependency-advisory check, so a bypass of the local hook is caught on push.
 
-### One of the three may already exist
+## What CI runs, across two repos
+
+The gate above is per-commit and fast. CI adds the things that are too slow or need a browser, and it now spans two repos and three deploy targets ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
+
+| | |
+|---|---|
+| **Both repos** | The gate · Vitest · dependency advisories · duplication report ([ai-authorship.md](ai-authorship.md)) |
+| **App repo** | Playwright — sandbox escape, the two-requests `connect-src` assertion, cross-origin behavior · build-output grep for key-shaped strings · Promptfoo structural evals |
+| **Fetch worker repo** | SSRF suite including socket-level unreachability — a test of the network, not the code |
+| **Terraform** | `plan` on PR, `apply` on merge. A security-group change should be at least as visible as an auth-check change, since nothing type-checks it |
+| **Deploy** | Vercel on push; worker images to ECR via OIDC — no long-lived AWS keys in GitHub |
+
+## Evals are two things, and only one of them gates
+
+The pipeline's quality has no type system behind it, so it needs its own gate — but treating all of it the same way is how the gate stops being trusted.
+
+| | Runs | Gates? |
+|---|---|---|
+| **Structural evals** — valid `Scene` JSON, no presentational values, every `CTA.href` from the Brief, budgets respected, the injection corpus | Every PR | **Yes. Hard fail** |
+| **Quality scoring** — layout variety, copy fidelity, motion appropriateness | Nightly | **No. Tracked as a trend** |
+
+**A probabilistic judge must never block a merge.** It will fail on a good change eventually, and the first time someone overrides it to ship, the gate is decoration. Watch the trend and investigate a drop instead. This is the same split the injection suite already uses — structural assertions absolute, model-dependent ones measured as a rate ([../security/testing.md](../security/testing.md)).
+
+**Prompts are code.** They live in the repo, move through the same review, and a prompt change is a behavior change with eval results attached ([../techstack/ai-stack.md](../techstack/ai-stack.md)). A prompt edited in a database is a production change with no diff.
+
+## Some of the custom rules may already exist
 
 `eslint-plugin-import-boundaries` implements exactly the model in [structure.md](structure.md): a boundary's `index.ts` *is* its public surface, and everything else in the folder is private to it. If it fits, the feature-boundary rule stops being custom code and becomes a config block. `eslint-plugin-boundaries` and `dependency-cruiser` cover the same ground with more configuration and more power than this project needs.
 
-Check before writing the custom rule. A rule you did not write is a rule you do not maintain, and the two genuinely project-specific ones — the `mode`-prop ban and the Drizzle-location ban — are worth your attention precisely because nothing off the shelf knows about them.
+Check before writing the custom rule. A rule you did not write is a rule you do not maintain — and the genuinely project-specific ones, above all the `asUser` ban, are worth your attention precisely because nothing off the shelf knows this codebase's invariants.
 
 ## Which linter and formatter
 
@@ -49,7 +76,7 @@ The Rust-based tools are now genuinely competitive, and for a greenfield project
 | **Oxlint** | Lint only, fastest of the three (8.6s vs ESLint's 54s on one real codebase), type-aware via `tsgo`, covers 59 of 61 `@typescript-eslint` type-aware rules. Its March 2026 JS-plugin alpha runs most ESLint plugins unmodified |
 | **ESLint + Prettier** | Slowest, unmatched plugin ecosystem, and the only one where every Next.js and React rule is guaranteed to exist today |
 
-**Stay on ESLint + Prettier for now.** Not because it is better — it is slower and it is two tools where Biome is one — but because this project's gate leans on three custom rules and on the React and Next.js plugin sets, and "the plugin exists" is worth more than "the linter is fast" on a codebase that will not be large enough for the speed to be felt.
+**Stay on ESLint + Prettier for now.** Not because it is better — it is slower and it is two tools where Biome is one — but because this project's gate leans on several custom rules and on the React and Next.js plugin sets, and "the plugin exists" is worth more than "the linter is fast" on a codebase that will not be large enough for the speed to be felt.
 
 The condition for revisiting is concrete: **when the custom rules can be expressed in Biome, switch.** That trades two tools for one and deletes the Prettier config, which is the kind of subtraction this project favours. Speed is not the reason; one binary instead of two is.
 
@@ -71,7 +98,7 @@ Most of this codebase is written by Claude. The cheapest consistency win availab
 
 **`AGENTS.md` holds the rules; `CLAUDE.md` imports it.** `AGENTS.md` is the cross-tool standard — stewarded by the Agentic AI Foundation under the Linux Foundation, read natively by Codex, Cursor, Copilot, Gemini CLI, Aider, Windsurf, and Zed. Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and Anthropic's own guidance for a repo with both is to have `CLAUDE.md` import `AGENTS.md`. That gives one source of truth and keeps the project portable if the tool changes — the same rule as everywhere else here, applied to the rules themselves.
 
-The file is derived from this directory, which stays the source. When a rule changes here, it changes there. It stays short: the nine non-negotiables from the [README](README.md), plus pointers.
+The file is derived from this directory, which stays the source. When a rule changes here, it changes there. It stays short: the eleven non-negotiables from the [README](README.md), plus pointers.
 
 ```markdown
 # AGENTS.md
@@ -79,14 +106,22 @@ The file is derived from this directory, which stays the source. When a rule cha
 Read docs/coderules/ before writing code. Non-negotiable:
 
 1. Strict TS. No `any`, no `!`.
-2. One Zod parse per external input, at entry. AI output is untrusted input.
+2. One Zod parse per external input, at entry. Model output, tool-call
+   arguments, and Server Action inputs are all external input.
 3. Expected failures return Result; only bugs throw.
 4. Import across features only through their index.ts.
 5. No new dependency without a ledger line in docs/coderules/dependencies.md.
-6. renderer/ core is pure — no mode prop, no mode branches.
+   Anything parsing untrusted bytes goes in the fetch worker.
+6. renderer/ core is pure — no mode prop, no mode branches, no process.env,
+   no typeof window. It runs in three processes and must behave identically.
 7. AI output carries no presentational values (hex/px/font/duration).
-8. Drizzle only in *.data.ts inside a feature.
-9. Pre-commit gate (typecheck, lint, format) must be green.
+8. Drizzle only in *.data.ts inside a feature, and those files are
+   `import 'server-only'`.
+9. Every tenant-scoped query goes through the asUser() transaction wrapper.
+   A db call outside it is a cross-tenant read waiting to happen.
+10. Anything that grants, fails closed. A catch returning a permissive
+    default is a vulnerability, not error handling.
+11. Pre-commit gate (typecheck, lint, format) must be green.
 
 Before writing a helper, grep for it. This codebase's most likely defect is a
 second copy of something that already exists, not a bug.
@@ -108,4 +143,4 @@ The gate catches mechanics; the instruction file carries the architecture and na
 
 ## Setup cost
 
-All of this is a few hours, once: `tsconfig`, an ESLint config with two or three custom rules, Prettier, a husky hook, `pnpm` with its defaults left alone, and an `AGENTS.md`. It is the cheapest insurance in the project — it makes the consistent thing the *easy* thing, which is the only way consistency survives a solo build with an AI pair.
+All of this is a few hours, once: `tsconfig`, an ESLint config with a handful of custom rules, Prettier, a husky hook, `pnpm` with its defaults left alone, and an `AGENTS.md`. It is the cheapest insurance in the project — it makes the consistent thing the *easy* thing, which is the only way consistency survives a solo build with an AI pair.

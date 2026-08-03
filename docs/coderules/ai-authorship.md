@@ -44,6 +44,11 @@ The rules in this directory were written for clarity. They happen to be exactly 
 | Feature public APIs (`index.ts`) | Gives the model a short, readable catalog of what already exists. A good index is a duplication defense |
 | The dependency ledger ([dependencies.md](dependencies.md)) | Stops the other direction — a package added for something already in the tree |
 | `Result` as the one error type | No parallel error-handling convention per feature |
+| The `asUser` wrapper and the model seam ([patterns.md](patterns.md)) | The two newest "exactly one place" rules, and the two where a helpfully-written second copy is worst |
+
+**The last row is the one to watch, because it is where this failure mode stops being a maintenance cost and becomes a vulnerability.** A model asked to add a query has every reason to write `db.select(...)` directly — it is shorter, it works in testing, and it reads fine. It also skips the transaction that scopes `app.user_id`, which is a cross-tenant read. Same for a second model call written inline: it works, and it silently has no repair loop, no metadata log, and no tool-call cap.
+
+Both are now lint rules for exactly this reason ([tooling.md](tooling.md)). When the plausible-looking duplicate is a security bug, prose is not enough — the machine has to say no.
 
 The pattern: **make the canonical thing easy to find and the duplicate hard to write.** That is cheaper than review, and it is the only defense that works while you sleep.
 
@@ -59,6 +64,7 @@ The pattern: **make the canonical thing easy to find and the duplicate hard to w
 
 - **the scene schema** — every downstream guarantee is a consequence of this shape
 - **`*.data.ts` files** — the service-role filter and the RLS assumption are security-critical, and a missing `where` clause is textbook almost-correct ([../security/tenancy-and-data.md](../security/tenancy-and-data.md))
+- **every `catch`** — a permissive default is the single most reviewable-looking vulnerability there is ([patterns.md](patterns.md), rule 5). Grep for `catch` in a diff and ask what each one grants
 - **the no-styling backstop and the AD linter** — a check that is subtly too permissive still passes its own tests
 - **anything touching the sandbox, the sanitizer, or a signed URL**
 - **character-budget arithmetic** — an off-by-one here breaks localization in twelve languages at once

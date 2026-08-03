@@ -20,10 +20,18 @@ Already decided, no justification needed — these are the stack:
 | Tailwind | App chrome only — never the art direction (that is CSS variables) |
 | Better Auth | Accounts, sessions, OAuth, MFA (v3). Users live in your own Postgres |
 | Zustand | Editor state — one mutable document, undo/redo |
-| pg-boss | Background jobs, in the database you already have (v3) |
+| pg-boss (**≥ 12.17.0**) | Background jobs in the database you already have (v3). The version floor is the first-party Drizzle adapter — see below |
 | AWS SDK (S3, KMS, Secrets Manager) | Storage and secrets (v3) |
+| Playwright | E2E, the security assertions that need a real browser, and screenshots in the fetch worker |
+| Resend + React Email | Transactional mail (v3) |
+| Sentry | Errors — **configure scrubbing before the first event**, see [../security/operations.md](../security/operations.md) |
+| Promptfoo · Langfuse (self-hosted) | Evals and tracing ([../techstack/ai-stack.md](../techstack/ai-stack.md)) |
+
+shadcn/ui is deliberately absent: it is copy-in source, not a dependency. That is the point of it.
 
 Full rationale for each, and the rejected alternatives, in [../techstack/decisions.md](../techstack/decisions.md).
+
+**The `pg-boss` floor is worth the note.** Version 12.17.0 (April 2026) added first-party ORM adapters, so `fromDrizzle` lets a job be enqueued *inside* the transaction that caused it. That makes the transactional-outbox property a supported feature rather than something to hand-roll — a publish that rolls back cannot leave an orphaned poster job behind. Below that version you would be writing the outbox yourself, which is a real amount of code for a guarantee that is now free.
 
 ## Adding one
 
@@ -90,6 +98,24 @@ Do **not** solve this by turning scripts back on globally. Allowlist the specifi
 A short, explicit, reviewable list. Every name on it is a package you have decided may execute code on your machine — which is a decision worth making on purpose, once, in a file, rather than implicitly for all 800 packages in the tree.
 
 `--ignore-scripts` as a blanket flag is the wrong tool: it disables the legitimate along with the hostile, and the breakage it causes is what pushes people to disable the protection entirely.
+
+## You are now a publisher, not only a consumer
+
+Everything above treats dependencies as things you take. `@d-design/schema` makes this repo a link in someone's supply chain — even if that someone is only your own fetch worker.
+
+**Publish with npm trusted publishing (OIDC).** No long-lived npm token exists in CI, so there is no token to steal, and short-lived credentials are exactly the mitigation the registry compromises above call for. Details and the private-repo provenance caveat in [typescript.md](typescript.md).
+
+The asymmetry to keep in mind: a compromise of your publishing pipeline is a compromise of every consumer of that package. The consumer list is short today. The discipline should not depend on it staying short.
+
+## Where a dependency runs is part of the decision
+
+New with the three-runtime split ([../techstack/backend.md](../techstack/backend.md)), and it changes what "risky dependency" means.
+
+The ledger's dangerous entries — `sharp`, the PDF parser, the GLB decoders, the SVG sanitizer, headless Chromium — all live in the **fetch worker**, the container with no database access, no VPC route, and one narrowly-scoped secret. That placement is the mitigation.
+
+> **A parser CVE is a different severity depending on which container it is in.** Adding one of these to the app or the job worker should feel wrong, because it moves a known-hostile decoder next to the credentials.
+
+So the ladder in the previous section gains a fifth rung: *if it must be a dependency and it touches untrusted bytes, it goes in the fetch worker.* If a feature seems to need one somewhere else, that is a signal the work is in the wrong process, not that the rule needs an exception.
 
 ## Removing one
 

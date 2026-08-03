@@ -81,6 +81,10 @@ This mirrors the security model's trust boundaries exactly ([../security/README.
 
 The AI pipeline is the boundary most easily forgotten — model output is internal plumbing but fully untrusted. It is parsed like any other external input.
 
+**Tool-call arguments are the newest one, and the most deceptive.** A model calling `read_document({ id })` looks like a function call in your own code. It is not: the argument was produced by a model that may be reading an attacker's PDF ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)). Every tool parses its arguments with Zod at the tool boundary, and — because ownership is an authorization decision — a document id belonging to another account is a refusal that **fails closed** ([patterns.md](patterns.md)).
+
+Server Actions have the same shape of trap for the same reason: they read as local calls and are public HTTP endpoints ([structure.md](structure.md)). **The rule generalizes to: if a value crossed a process boundary to get here, it is external, regardless of how local the call site looks.**
+
 ## Errors: typed Results for the expected, throw for the impossible
 
 Two categories, two mechanisms.
@@ -111,6 +115,18 @@ Exceptions are invisible in a function signature. A function returning `Result<S
 ### Why not Result everything
 
 Truly impossible states as Results means every call site handles a branch that can never run. That is verbose enough that, solo, you would start ignoring it — and an ignored Result is worse than a thrown bug. Throwing keeps the impossible path out of the code you read every day.
+
+## The schema is a published package
+
+`src/schema/` ships as **`@d-design/schema`** so the fetch worker can use it ([structure.md](structure.md)). That makes the most important shape in the system a versioned artifact, and versioned artifacts have their own discipline.
+
+- **The app repo consumes the workspace source, not the published package.** Publishing exists for the *other* repo. If the app ever consumed the tarball, every schema change — which is most of v1 — would need a publish before it could be used.
+- **Version bumps go through Changesets**, so a bump is a reviewed file in the PR that caused it rather than a decision made at publish time.
+- **A breaking schema change is a major bump and the fetch worker is updated in the same session.** A pinned version drifting behind is the exact silent divergence a package was chosen to prevent ([../techstack/decisions.md](../techstack/decisions.md)); the pin only helps if someone reads it.
+
+**Publish with npm trusted publishing (OIDC from GitHub Actions).** Short-lived credentials, no long-lived npm token in CI — one fewer permanent secret, and it removes the credential class that the registry compromises in [dependencies.md](dependencies.md) were built on.
+
+One caveat worth knowing before relying on it: **provenance attestations are not generated for packages built from private repositories**, and this repo is private. Trusted publishing still works and still removes the token; the Sigstore attestation does not appear. That is acceptable for a package only you consume — it is worth knowing so nobody later assumes a verification step exists that does not.
 
 ## No enums, no classes for data
 

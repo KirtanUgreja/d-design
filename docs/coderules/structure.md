@@ -1,5 +1,41 @@
 # Structure
 
+## Three deployables, two repos, one shared package
+
+Before the folders, the topology — because it determines what "cross-feature import" even means ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
+
+```
+d-design/                    (repo 1)
+  src/app/                   Next.js routes
+  src/features/              the feature folders below
+  src/schema/                the Zod source of truth  ─┐
+  src/lib/                                             │ published as
+  worker/                    job worker entry point    │ @d-design/schema
+                                                       │
+d-design-fetch/              (repo 2) ◀────────────────┘
+  hostile input only: URL fetch, screenshots, document parsing
+```
+
+**The app and the job worker are one codebase with two entry points.** The worker is not a separate project — it imports the same features, the same data modules, and the same renderer. That is what lets publishing and the visual verification loop run there ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)) without duplicating anything.
+
+**Only the fetch worker is separate**, because its isolation is a security property rather than an organizational one. It gets `@d-design/schema` and nothing else. **It never gets the renderer** — page-making capability does not belong in the container that handles attackers' input.
+
+The consequence for this document: everything below describes repo 1. Repo 2 is small enough that it needs no structure beyond a handful of files.
+
+## The server/client boundary
+
+A second boundary, orthogonal to features and just as load-bearing. Next.js's own security guidance names the Data Access Layer as the primary defense against accidental data exposure — which is the `*.data.ts` rule this project already had, arrived at independently.
+
+Three mechanisms, in order of how much they are worth:
+
+| | |
+|---|---|
+| **`import 'server-only'`** at the top of every `*.data.ts`, the model seam, and anything holding a secret | A build-time error if a client component ever imports it. Cheap, absolute, and it makes the boundary a compiler concern instead of a discipline concern |
+| **The data module returns exactly what the caller needs** | A `recipients` row has fields that must never reach a browser. Shaping happens in the data module, not in the component that forgot |
+| **React's taint APIs** (`experimental_taintObjectReference`, `experimental_taintUniqueValue`) | Runtime enforcement for the objects and values that would be most damaging to leak. A backstop under the two above, not a replacement |
+
+**Server Actions and Server Functions are public HTTP endpoints.** They look like local function calls, which is the entire problem — a reader sees a function, an attacker sees a URL. Every one authenticates and authorizes on its own, and does it at the data layer ([../security/platform-and-packages.md](../security/platform-and-packages.md)). The manual checklist in [../security/testing.md](../security/testing.md) already says to call every route with no session and with another tenant's session; Server Actions are routes for that purpose.
+
 ## Feature folders
 
 The codebase is organized by feature, not by layer. Each feature is a folder that owns everything it needs and exposes one public surface.

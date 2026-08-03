@@ -91,7 +91,7 @@ Docs are versioned by release. `docs/v1/` is the current design.
 
 | Doc | What's in it |
 |---|---|
-| [coderules/README.md](docs/coderules/README.md) | The nine non-negotiables and the one idea behind them |
+| [coderules/README.md](docs/coderules/README.md) | The eleven non-negotiables and the one idea behind them |
 | [coderules/structure.md](docs/coderules/structure.md) | Feature folders, public APIs, naming |
 | [coderules/typescript.md](docs/coderules/typescript.md) | Strict TS, Zod boundaries, Results vs throws |
 | [coderules/dependencies.md](docs/coderules/dependencies.md) | Stdlib-first, and the dependency ledger |
