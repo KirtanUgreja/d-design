@@ -1,4 +1,8 @@
 .DS_Store
-.claude/
-skills-lock.json
 notes.txt
+skills-lock.json
+
+# .claude/ is personal except settings.json, which is the shared project config
+# (hooks that enforce the rules in AGENTS.md). Keep that one tracked.
+.claude/*
+!.claude/settings.json

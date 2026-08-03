@@ -46,9 +46,9 @@ The gate above is per-commit and fast. CI adds the things that are too slow or n
 | **Fetch worker repo** | SSRF suite including socket-level unreachability — a test of the network, not the code |
 | **Terraform** | `plan` on PR, `apply` on merge. A security-group change should be at least as visible as an auth-check change, since nothing type-checks it |
 | **Docs** | `scripts/check-docs.sh` — every relative link resolves, every `.md` is listed in its directory's README, every directory has one |
-
-That last row is small and it is the only thing that keeps the navigation in [../README.md](../README.md) true. An index that silently stops listing a file is worse than no index, because it teaches a reader — or an agent — that the directory contains less than it does. The check takes a second and fails on both the dead link and the unlisted file.
 | **Deploy** | Vercel on push; worker images to ECR via OIDC — no long-lived AWS keys in GitHub |
+
+The docs row is small and it is the only thing keeping the navigation in [../README.md](../README.md) true. An index that silently stops listing a file is worse than no index, because it teaches a reader — or an agent — that the directory contains less than it does.
 
 ## Evals are two things, and only one of them gates
 
@@ -101,46 +101,42 @@ Most of this codebase is written by Claude. The cheapest consistency win availab
 
 **`AGENTS.md` holds the rules; `CLAUDE.md` imports it.** `AGENTS.md` is the cross-tool standard — stewarded by the Agentic AI Foundation under the Linux Foundation, read natively by Codex, Cursor, Copilot, Gemini CLI, Aider, Windsurf, and Zed. Claude Code reads `CLAUDE.md` and not `AGENTS.md`, and Anthropic's own guidance for a repo with both is to have `CLAUDE.md` import `AGENTS.md`. That gives one source of truth and keeps the project portable if the tool changes — the same rule as everywhere else here, applied to the rules themselves.
 
-The file is derived from this directory, which stays the source. When a rule changes here, it changes there. It stays short: the eleven non-negotiables from the [README](README.md), plus pointers.
+The file is derived from this directory, which stays the source. When a rule changes here, it changes there.
 
-```markdown
-# AGENTS.md
+**Both files exist at the repo root — read them rather than a copy.** `AGENTS.md` carries the eleven non-negotiables from the [README](README.md), a task-to-document routing table, and the short list of things never to do. `CLAUDE.md` is one line: `@AGENTS.md`. Reproducing either here would create a second source of truth for the rules whose entire point is that there is one.
 
-Read docs/coderules/ before writing code. Non-negotiable:
+### Three mechanics that decide whether this works
 
-1. Strict TS. No `any`, no `!`.
-2. One Zod parse per external input, at entry. Model output, tool-call
-   arguments, and Server Action inputs are all external input.
-3. Expected failures return Result; only bugs throw.
-4. Import across features only through their index.ts.
-5. No new dependency without a ledger line in docs/coderules/dependencies.md.
-   Anything parsing untrusted bytes goes in the fetch worker.
-6. renderer/ core is pure — no mode prop, no mode branches, no process.env,
-   no typeof window. It runs in three processes and must behave identically.
-7. AI output carries no presentational values (hex/px/font/duration).
-8. Drizzle only in *.data.ts inside a feature, and those files are
-   `import 'server-only'`.
-9. Every tenant-scoped query goes through the asUser() transaction wrapper.
-   A db call outside it is a cross-tenant read waiting to happen.
-10. Anything that grants, fails closed. A catch returning a permissive
-    default is a vulnerability, not error handling.
-11. Pre-commit gate (typecheck, lint, format) must be green.
+**`@` imports are eager, not lazy.** Claude Code expands `@path` inline at session start, so imported content costs tokens on every turn of every session. It does **not** reduce context — it exists for portability. The consequence is the one thing most likely to be "improved" wrongly:
 
-Before writing a helper, grep for it. This codebase's most likely defect is a
-second copy of something that already exists, not a bug.
+> **Never `@`-import this directory into `AGENTS.md`.** That would inline ~900 lines into every session, including the ones that never touch code. The docs are referenced by **plain path**, so they are read only when the task actually needs them.
 
-Build in ponytail mode: laziest solution that works. Prefer platform over
-dependency, one line over fifty, deletion over addition. Mark cut corners
-with a `ponytail:` comment naming the ceiling.
+**Keep the instruction file short and stable.** It loads before Claude sees any code, so it is a constant tax. The working guidance is an index under ~50 lines: non-negotiables plus pointers, not documentation. And every edit invalidates the prompt cache and forces a full re-process — so batch changes rather than tweaking between sessions.
+
+**Rules in an instruction file are advisory; hooks are enforcement.** This is the important one, and it is why the section below exists. A rule in `AGENTS.md` asks the model to remember. Remembering is not enforcement, and it degrades across long sessions and context compaction. A hook runs every time, regardless of how the request was phrased.
+
+## Hooks — project level, never global
+
+`.claude/settings.json` is committed; `.claude/settings.local.json` is personal and stays ignored. Everything is scoped to this repo — nothing belongs in `~/.claude/`, because a rule that lives on one machine is not a project rule.
+
+```jsonc
+// .claude/settings.json
+"hooks": { "PostToolUse": [{ "matcher": "Edit|Write",
+  "hooks": [{ "type": "command",
+              "command": "\"$CLAUDE_PROJECT_DIR/scripts/hooks/post-edit.sh\"" }] }] }
 ```
 
-```markdown
-# CLAUDE.md
+`scripts/hooks/post-edit.sh` reads the tool payload, looks at what was written, and runs the checks that apply to it. Exit 2 sends the output back to the agent, so it fixes the file it just wrote rather than discovering the problem at commit time.
 
-@AGENTS.md
-```
+Today it enforces one thing — `.md` edits must keep `scripts/check-docs.sh` passing. **Add a line per rule as the code that needs it appears**, and prefer the rules whose violation is silent:
 
-The tenth line is not one of the nine, and it is there because of what the data in [ai-authorship.md](ai-authorship.md) says: duplication, not incorrectness, is what degrades an AI-written codebase, and it is the one failure the gate cannot catch. Rules 1–9 are things a linter could theoretically enforce. That line is the one that has to be said, because nothing else will say it.
+| Add when | Enforces |
+|---|---|
+| `*.ts` exists | `tsc --noEmit` and `eslint` on the written file — rule 11, at write time instead of commit time |
+| `*.data.ts` exists | Rules 8 and 9 — the `server-only` marker and the `asUser` wrapper |
+| The renderer exists | Rule 6 — no `process.env` or `typeof window` under `renderer/` |
+
+The pre-commit gate still runs all of it; the hook just moves the feedback earlier, to the moment the agent can still remember why it wrote the line.
 
 The gate catches mechanics; the instruction file carries the architecture and naming intent a linter cannot express. Together they cover both — objective rules by the machine, judgment rules by the primed author.
 
