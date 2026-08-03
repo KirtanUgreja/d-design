@@ -1,0 +1,144 @@
+# v1 Spec
+
+## Problem
+
+Presentation tooling splits into two useless halves.
+
+**Template tools** (Gamma, Beautiful.ai, Tome) generate content *into* fixed layouts. They make presentations faster, not better. Every deck shares a skeleton, and the skeleton is visible.
+
+**Coding agents** (Artifacts, v0, Lovable) generate working HTML with no narrative sense, no visual hierarchy, and no answer to the second prompt. Once 2,000 lines exist, "make that headline smaller" means a regeneration that destroys the parts the user liked.
+
+Nothing turns an idea into an immersive presentation experience that stays editable.
+
+## The bet
+
+The AI never writes styling. It emits content and intent. An art-direction layer resolves intent into concrete values.
+
+**The rule, stated as a test:** if a value the AI emitted could have been supplied by the art direction instead, it does not belong in AI output. No hex codes, no pixel values, no durations, no font names, no easing curves. Ever.
+
+This is not a style preference. It is the load-bearing constraint — editing, design consistency, the product boundary, and cheap art-direction variety all rest on it. Every design decision below follows from it.
+
+## Locked decisions
+
+| Axis | Decision | Why |
+|---|---|---|
+| First user | Marketers / product launches | High design standards, real budget, values wow |
+| Positioning | Presentation framing, web-experience reality | Bigger market; see Risk 3 |
+| Delivery | Live URL, embed, fullscreen + keyboard | Fullscreen is ~50 lines and keeps "presentation" honest |
+| Runtime | Typed primitives + sandboxed custom slots | 90% structure, 10% surprise |
+| Unit | Scroll sections first | Matches wedge and delivery; slides is a playback mode later |
+| Editing | Select → property panel → element-scoped prompt | ~1/5 the cost of a design canvas, covers ~90% of edits |
+| Brand | Brand kit is a v1 primitive | Marketers cannot ship off-brand. Table stakes, not a feature |
+| Intake | Import / prompt / AI-led Q&A → Brief | Meets users wherever their content already lives |
+| Generation | Two-phase: outline approval, then build | Kills bad directions before the expensive call |
+| Variety | Art-direction layer above components | Avoids the exact failure we accuse Gamma of |
+| Motion | Named vocabulary per art direction | LLMs pick bad easing and timing, reliably |
+| Visuals | Uploads + code-generated abstracts + AI imagery | Uploads make output shippable; abstracts make it look designed |
+| Charts | Animated `Stat` only | Real charting is a product inside the product |
+| Art direction | `cinematic-dark` | Forgiving of sparse content — negative space reads as intentional |
+| Pricing | Deferred | Decide when token cost is measurable, not before |
+
+## Architecture
+
+Four pieces. Each is independently understandable and testable.
+
+```
+Brief ──▶ Outline ──▶ Scene tree ──▶ SceneRenderer ──▶ URL / embed / fullscreen
+         (director)    (build)         (art direction
+                                        resolves intent)
+```
+
+**Scene tree** — the IR. A typed, validated JSON document. The single contract between the AI, the editor, and the renderer. See [scene-schema.md](scene-schema.md).
+
+**Art direction** — five token groups that turn intent into values. See [art-direction.md](art-direction.md).
+
+**AI pipeline** — four calls, not one. See [ai-pipeline.md](ai-pipeline.md).
+
+**Renderer** — one React tree, used four ways: editor canvas, published page, embed, fullscreen. One implementation means no drift between what you edit and what ships.
+
+### The product boundary
+
+Custom slots let the AI write free HTML/CSS/JS for one signature moment per experience. Each runs in a `srcdoc` iframe with `sandbox="allow-scripts"` and **no** `allow-same-origin`.
+
+That combination means no storage, no cookies, no parent DOM access, no credentialed requests. The not-an-app-generator boundary is enforced by the browser, not by prompt instructions a user can talk their way around.
+
+## Stack
+
+Next.js (App Router) + TypeScript · Postgres in Docker locally, Supabase later · Drizzle · Zod · Framer Motion · Tailwind for app chrome only, CSS variables for art direction.
+
+Supabase *is* Postgres, so the migration is a connection string — provided nothing touches Supabase-specific APIs early. Two consequences:
+
+- **No auth in local v1.** Single user. Auth arrives with Supabase.
+- **One thin `storage.ts`** for uploads (local disk → Supabase Storage). This is the only abstraction with a planned second implementation. Nothing else gets one.
+
+## Build order
+
+1. Scene schema + Zod types — everything depends on this shape
+2. `cinematic-dark` tokens + motion vocabulary
+3. `SceneRenderer` + the 11 primitives — **the long pole; this is design work, not typing**
+4. Publish route, embed, fullscreen
+5. Build phase: Scene JSON generation + validate/repair loop
+6. Director phase: Brief → editable outline
+7. Intake: AI-led Q&A → Brief
+8. Editor: select → property panel → element-scoped prompt
+9. Brand kit + uploads
+10. AbstractVisual generators → AI imagery → Slot
+
+**Steps 1–4 ship without any AI involved.** Hand-write a scene tree, render it, and look at it. That is the cheapest possible test of the riskiest assumption. Do not build step 5 until step 3 looks genuinely good.
+
+## Persistence
+
+Five tables. No more until something demands one.
+
+```
+experiences  id, title, mode, brand_id, art_direction, scenes (jsonb),
+             published_at, created_at, updated_at
+brands       id, display_font, text_font, primary, secondary, neutral,
+             logo_asset_id
+assets       id, kind, storage_key, mime, width, height, alt, source,
+             created_at
+briefs       id, experience_id, payload (jsonb)
+generations  id, experience_id, phase, tokens_in, tokens_out,
+             repaired (bool), error, created_at
+```
+
+The scene tree lives as a single `jsonb` column, not normalized into scene and
+block tables. It is always read and written whole, it is validated by Zod rather
+than by SQL, and normalizing it would buy queries nobody runs.
+
+`generations` exists only to answer two questions later: what does an experience
+actually cost, and which validation rules fail most. Both decide real things —
+pricing, and where the schema and prompt disagree.
+
+## Verification
+
+Six checks. Each maps to a build-order step and fails loudly if that step regresses.
+
+| What | How |
+|---|---|
+| **Schema** | Round-trip a hand-written `Experience` through Zod, render it, assert no invalid state survives. One `test_scene_schema.ts` with asserts. |
+| **No styling in AI output** | Walk every block prop in a generated tree, fail on `/#[0-9a-f]{3,8}\|[\d.]+(px\|rem\|em\|ms\|s)\b/i`. This is the invariant test — see scene-schema. |
+| **Renderer** | One page rendering all 11 primitives under `cinematic-dark`. Visual judgment, not snapshots — quality here is human. |
+| **Pipeline** | 5 golden briefs → Director + Build → assert 100% Zod-valid after at most one repair. The one automated check that matters. |
+| **Edit** | Patch a block, assert the tree stays valid and only the target block changed. |
+| **Slot sandbox** | Put `fetch()` and `localStorage` in a slot, confirm both throw. |
+
+**End to end:** brief → outline → build → edit a headline → publish → open the URL
+in a private window → fullscreen with arrow keys → embed in a blank HTML page.
+
+Also check `prefers-reduced-motion: reduce` collapses all motion, and that every
+`Image` has non-empty `alt`. Generated experiences are public web pages.
+
+## Not in v1
+
+Charts · PDF/PPTX export · speaker notes / presenter view · collaboration · analytics · custom domains · stock images · multiple art directions · freeform canvas · version history · slides mode.
+
+## Risks
+
+**1. Art direction #1 must be genuinely beautiful.** If it isn't, the runtime, the pipeline, and the canvas are all worthless. This is a design problem, solo, and the one place AI assistance helps least. Collect reference work before writing tokens.
+
+**2. AI-invented marketing claims.** Marketers cannot ship copy the AI made up. Intake captures *approved* messaging; the build phase arranges it and must not embellish. Enforced in the build prompt and reviewable at the outline gate.
+
+**3. "Presentation" framing sets expectations v1 won't meet.** PPTX, PDF, speaker notes will all be asked for in week one. Fullscreen + keyboard nav is the minimum that keeps the word honest; messaging carries the rest. Have a real answer ready, not "coming soon."
+
+**4. The art-direction layer is unproven until there are two.** v1 ships one, so the central claim — that variety is cheap — is asserted, not demonstrated. First priority after v1 is art direction #2, and if it requires renderer changes, the abstraction is wrong.
