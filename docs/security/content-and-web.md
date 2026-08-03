@@ -68,6 +68,52 @@ Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 
 **And `Cache-Control: private, no-store`.** The referrer and robots headers stop a token leaking *outward*; this one stops the page leaking *sideways*, to someone who never received the link. A CDN that caches a personalized response under a token-free key serves one recipient's page to the next visitor — and Next.js shipped two cache-confusion CVEs with exactly this effect in July 2026. The full treatment, including web cache deception via `/r/<token>/x.css`, is in [platform-and-packages.md](platform-and-packages.md). It belongs to this document's threat model too: **the cache is a third party that gets a vote on who sees what.**
 
+## The two public endpoints
+
+Static publishing removed the origin server behind `pages.<domain>` — and moved the entire dynamic surface of a published experience into two endpoints on `api.<domain>`. They are small, unauthenticated, and reachable by anyone. They deserve the scrutiny the origin server used to get.
+
+### `/r/fields` — the one that returns PII
+
+Takes a recipient token, returns five personalization fields: a name and a company at minimum ([../v3/personalization.md](../v3/personalization.md)). **The token is the entire authentication**, and the response is personal data.
+
+| | |
+|---|---|
+| **Rate limit per token and per IP** | Guessing a 128-bit token is infeasible; scanning tells you someone is trying. Alert on the pattern, not just the count |
+| **Constant-time comparison, indexed lookup** | Already specified in [tenancy-and-data.md](tenancy-and-data.md); it applies here because this is now the only path that uses it |
+| **Returns exactly five fields** | Shaped in the data module, never a row spread into JSON. A `recipients` row has columns that must never reach a browser ([../coderules/structure.md](../coderules/structure.md)) |
+| **`Cache-Control: private, no-store`** | Same reasoning as the page itself |
+| **Fails closed** | An expired, revoked, or unresolvable token returns nothing — never a partial or default response |
+
+**CORS is the part that is easy to get wrong.** The endpoint is called from `pages.<domain>` *and from every customer's custom domain*, which is a set that changes at runtime. The tempting implementation reflects the `Origin` header, and origin reflection is how a CORS policy becomes no CORS policy.
+
+**Validate the origin against the verified-domains table, then echo it — never reflect it unchecked.** The same table that already gates custom-domain serving gates this. An unrecognized origin gets no CORS header at all. `Access-Control-Allow-Origin: *` is not an option, because the response is personal data.
+
+### `/v/beacon` — the unauthenticated write
+
+Scroll depth, CTA reach, duration. No authentication is possible: the sender is an anonymous viewer.
+
+So accept what it is — **analytics from this endpoint are indicative, not authoritative** — and bound the damage:
+
+- **Rate limit hard, per IP and per experience.** It is a free write path into your database
+- **Strict payload schema, small body cap.** Zod-parsed like any external input
+- **No PII accepted, ever** — the endpoint takes an experience id, an optional token, and metrics. If a field arrives that could identify someone, the schema rejects it rather than storing it
+- **Fire-and-forget, `204`.** No response content means nothing to probe
+
+Someone can inflate a view count. That is a product annoyance, not a breach, and it is worth stating plainly so nobody later builds billing on top of these numbers.
+
+## S3 and CloudFront
+
+Publishing writes artifacts to object storage, which moves a class of misconfiguration into scope that did not exist when pages were rendered by a server.
+
+| | |
+|---|---|
+| **Block Public Access on, at bucket and account level** | The bucket is never public. This is the control that fails loudest and matters most |
+| **CloudFront Origin Access Control** | The distribution is the only reader. No public bucket, no legacy OAI |
+| **Uploads land in a quarantine prefix** | Presigned direct-to-S3 puts arbitrary bytes in your bucket. The object is not servable until the fetch worker has verified magic bytes and re-encoded it ([../techstack/infrastructure.md](../techstack/infrastructure.md)) |
+| **`Content-Type` set by the server, `nosniff`, no inline HTML from assets** | An HTML file on the assets origin is an XSS on the assets origin |
+| **Separate buckets per origin** | Published artifacts and uploaded assets do not share a bucket, a policy, or a blast radius. Terraform state shares neither ([build-pipeline.md](build-pipeline.md)) |
+| **Versioning and lifecycle rules** | Versioning is the recovery path from a bad publish or a destructive bug; lifecycle rules are how retention actually happens rather than being intended |
+
 ## CSS injection via art-direction tokens
 
 **This is the newest attack surface and the one most likely to be missed.** It arrives in v2 with user-authored art directions and is amplified in v3 when the AI derives them.

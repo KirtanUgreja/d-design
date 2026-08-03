@@ -70,6 +70,8 @@ Docs are versioned by release. `docs/v1/` is the current design.
 | [security/content-and-web.md](docs/security/content-and-web.md) | Origins, CSP, sandbox, XSS, uploads, CSS-token injection, custom domains |
 | [security/infrastructure.md](docs/security/infrastructure.md) | SSRF, failing closed, denial-of-wallet, billing entitlements |
 | [security/platform-and-packages.md](docs/security/platform-and-packages.md) | Framework CVEs, cache poisoning, hostile-input parsers, version floors |
+| [security/third-parties.md](docs/security/third-parties.md) | Where customer data actually goes — model routing, subprocessors, GDPR |
+| [security/build-pipeline.md](docs/security/build-pipeline.md) | CI/CD as an attack path — OIDC trust policies, Terraform state, publishing |
 | [security/ai-built-app-failures.md](docs/security/ai-built-app-failures.md) | How AI-built apps actually get breached, audited against this design |
 | [security/adversarial-ai.md](docs/security/adversarial-ai.md) | The machine-speed attacker, and the OWASP mapping |
 | [security/testing.md](docs/security/testing.md) | Automated suite and manual checklist |

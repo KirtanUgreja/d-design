@@ -78,7 +78,9 @@ Against the fetch worker:
 - DNS rebinding: hostname public on resolve, private on connect → blocked by IP pinning
 - Redirect to a private IP on hop 2 and hop 3 → blocked
 - `file:`, `gopher:`, `http:` schemes → blocked
-- **Network reachability: from inside the worker, the metadata IP and a VPC-internal host are unreachable at the socket level.** This is the test that proves isolation rather than filtering
+- **Network reachability: from inside the worker, the metadata IP and a VPC-internal host are unreachable at the socket level.** This is the test that proves isolation rather than filtering — and the one that still holds after a Chromium sandbox escape, which makes it the most important assertion in this document
+- **Chromium runs sandboxed**: assert the seccomp profile is applied and the process is not running with `--no-sandbox`, as non-root. A container that silently fell back to `--no-sandbox` looks identical from the outside
+- Browser context is disposed after every fetch; a page that hangs is killed on timeout
 
 ### Web and content (v1+ / v2+)
 
@@ -96,6 +98,36 @@ Against the fetch worker:
 - CSP present and correct on published, app, and srcdoc responses
 - `Referrer-Policy: no-referrer` and `X-Robots-Tag: noindex` on personalized pages (v3)
 - `connect-src 'none'`: a published page with live data makes zero network requests — asserted in a real browser, not by reading headers
+
+### The two public endpoints (v3)
+
+`/r/fields` returns personal data and `/v/beacon` is an unauthenticated write ([content-and-web.md](content-and-web.md)).
+
+- Unknown, expired, or revoked token → nothing returned, not a partial or default response
+- Response contains **exactly** the five fields — assert the shape, so a future column cannot leak by being added to a row
+- **CORS:** a request from an unverified origin gets no `Access-Control-Allow-Origin` header. Specifically assert the endpoint does **not** reflect an arbitrary `Origin` — this is the one that turns a CORS policy into no policy
+- CORS from a *verified* custom domain succeeds, so the check is not merely off
+- Token scanning trips the rate limit and raises an alert
+- Beacon: oversized body rejected; a payload carrying a PII-shaped field rejected rather than stored; flood trips the limit
+
+### Model routing and data flow (v1+)
+
+The controls in [third-parties.md](third-parties.md) are settings, and settings drift.
+
+- ZDR is enabled account-wide **and** sent per request — assert the outbound request carries it
+- Prompt logging is off. Check it on every release; it is one console click from being on
+- Self-hosted Langfuse is the only trace destination; no trace ships to a hosted endpoint
+- A synthetic brief with a canary string appears in no third-party surface you can query
+
+### Build pipeline (from the first deploy)
+
+- No OIDC trust policy omits `sub` or uses a wildcard — assert against the live IAM policy, not the Terraform intent
+- The CI role cannot read RDS credentials or the integration KMS key
+- The fetch-worker role cannot touch the app's resources
+- Terraform state bucket: public access blocked, encrypted, versioned, readable only by the Terraform roles
+- No workflow pairs `pull_request_target` with a PR-head checkout
+- Third-party actions are SHA-pinned; every workflow declares `permissions`
+- ECR scan-on-push enabled; a critical finding fails the deploy
 
 ### Caching (v1+ / v3)
 

@@ -22,9 +22,9 @@ A one-page runbook, written before it is needed. GDPR gives 72 hours to notify a
 
 **Contain → Assess → Notify → Remediate.**
 
-1. **Contain.** The kill switches: halt generation, revoke the affected credential or signing key, unbind a domain, disable a compromised account. Know which lever fits which incident before the incident.
+1. **Contain.** The kill switches: halt generation, revoke the affected credential or signing key, unbind a domain, disable a compromised account, **revoke the CI role's trust policy**. Know which lever fits which incident before the incident — and note that the last one is the only lever that stops an attacker who is deploying code, which is the incident where every other lever is being reverted as fast as you pull it.
 2. **Assess.** What data, whose, how much, still ongoing? The `generations` metadata and access logs answer scope without themselves containing PII.
-3. **Notify.** Personal data breach → affected publishers, within 72 hours, factually. They are the data controllers for their recipients and have their own obligations downstream — tell them in time to meet them.
+3. **Notify.** Personal data breach → affected publishers, within 72 hours, factually. They are the data controllers for their recipients and have their own obligations downstream — tell them in time to meet them. **A subprocessor's breach is your breach to report** ([third-parties.md](third-parties.md)): under Article 28 you remain liable for their compliance, so subscribe to the status and security notifications of every name on that list before you need them.
 4. **Remediate.** Fix, add the regression test, write the retro.
 
 Keep it to one page. A runbook nobody can read at 3am is theatre.
@@ -60,10 +60,10 @@ Each version ships only after the security tests for what it introduced pass, an
 
 | Version | Gate |
 |---|---|
-| **every release** | Framework and parsers at or above their version floors · fail-closed suite green · no key-shaped string in the build |
+| **every release** | Framework and parsers at or above their version floors · fail-closed suite green · no key-shaped string in the build · **ZDR on and prompt logging off** ([third-parties.md](third-parties.md)) · **OIDC trust policies scoped, no wildcard `sub`** ([build-pipeline.md](build-pipeline.md)) · fetch-worker image rebuilt within the patch window |
 | **v1** | Injection corpus green · sandbox-escape tests green · upload tests green · origin separation verified |
 | **v2** | CSS-token-injection tests green · AD linter rejects malformed token grammar |
-| **v3** | Auth suite green (no-session and wrong-tenant on every route) · RLS isolation green · SSRF suite green (including socket-level unreachability) · **cache-isolation suite green against the real CDN** · privacy/retention green · entitlement + webhook tests green |
+| **v3** | Auth suite green (no-session and wrong-tenant on every route) · RLS isolation green · SSRF suite green (including socket-level unreachability and Chromium sandboxing) · **cache-isolation suite green against the real CDN** · **`/r/fields` CORS does not reflect an arbitrary origin** · privacy/retention green · entitlement + webhook tests green · subprocessor list published and current |
 
 The gate is not "we wrote the tests." It is "the tests are green and the checklist is walked." A skipped gate under deadline pressure is exactly how the control that existed stops existing.
 

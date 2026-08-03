@@ -32,14 +32,16 @@ alter default privileges in schema public revoke all on tables from anon;
 
 The 70% number is the strongest available argument for this invariant, and it is why the test suite iterates the live schema rather than a fixed table list. A new table with a forgotten policy must fail the suite the day it is created.
 
-**Two Supabase-specific traps that survive correct RLS**, both worth knowing before writing the first policy:
+**Two Postgres traps that survive correct RLS** — they are not Supabase-specific and apply just as much on RDS. Both are worth knowing before writing the first policy:
 
 - **`security definer` views and functions bypass RLS entirely.** A view created this way runs with its creator's privileges, so a view over a protected table hands out everything the policy denies. Prefer `security invoker`; if a definer function is genuinely needed, it carries its own filter and is reviewed as security code.
 - **`using` without `with check`** lets an owner write a row *assigning it to someone else* — already covered in [tenancy-and-data.md](tenancy-and-data.md), and it is the single most common way RLS is enabled but ineffective.
 
 ### 2. Secrets in the client bundle
 
-Also uniform, and it has a nasty wrinkle specific to this stack: **the Supabase `anon` key is *supposed* to be public.** It is designed to ship to browsers. That is only true if RLS is doing its job — so failure 2 is not really a second failure, it is failure 1 becoming exploitable. An anon key in a bundle is either harmless or catastrophic depending entirely on a database setting nobody can see from outside.
+Also uniform, and in the corpus it has a nasty wrinkle: **the Supabase `anon` key is *supposed* to be public.** It ships to browsers by design. That is only safe if RLS is doing its job — so failure 2 is not really a second failure, it is failure 1 becoming exploitable. An anon key in a bundle is either harmless or catastrophic depending entirely on a database setting nobody can see from outside.
+
+**That specific wrinkle no longer applies here**, and the reason is worth naming: with the move to RDS and Better Auth ([../techstack/backend.md](../techstack/backend.md)) there is no browser-facing database key at all, because no browser talks to the database. The general lesson survives intact, and it is the more useful one — **a credential that is "public by design" is only safe while an invisible setting stays correct.** Prefer designs with no such credential over designs where you have to keep one honest.
 
 Controls already specified in [infrastructure.md](infrastructure.md): the service-role key and model API keys are server-only, and the build output is grepped for both prefixes. Two additions the research argues for:
 

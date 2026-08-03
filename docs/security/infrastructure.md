@@ -44,6 +44,46 @@ Two beyond the fetch worker, both from the July 2026 advisory set ([platform-and
 - **`rewrites()` / `redirects()`** that build a destination hostname from request-controlled input become SSRF and open redirect respectively. Custom-domain routing resolves a **verified hostname to an experience id via a database lookup** — never by constructing a destination from the incoming `Host` header.
 - **Remote image optimization** (`/_next/image`) fetches arbitrary remote URLs by design. This product self-hosts every image on `assets.<domain>`, so the remote path is a surface with no corresponding feature. **Turn it off.**
 
+## Headless Chromium is the most exposed component in the product
+
+The fetch worker runs Playwright to screenshot user-pasted URLs ([../techstack/infrastructure.md](../techstack/infrastructure.md)). That means **the most-attacked software on the internet, pointed at pages an attacker chose.**
+
+### The trap, and it is the default
+
+**Containers do not run Chromium in its sandbox unless you provide a seccomp profile.** Chromium fails to start, the internet says add `--no-sandbox`, it works, and the renderer process — the one parsing attacker-supplied HTML, CSS, fonts, and images — is now running with no isolation from the rest of the container.
+
+`--no-sandbox` is acceptable in CI against pages you wrote. **It is exactly wrong here**, because here the pages are the threat.
+
+| Control | |
+|---|---|
+| **Seccomp profile, sandbox on** | The documented way to run headless Chrome in a container. Not `--no-sandbox` |
+| **Non-root user, and a separate user for the browser** | The recommended pattern for untrusted URLs specifically |
+| **Read-only root filesystem**, writable temp only | A renderer escape lands somewhere it cannot persist |
+| **One fresh browser context per fetch, always disposed** | No state carries from one target to the next |
+| **Hard timeouts, and kill the process on breach** | A page that hangs the browser is the cheapest denial of service available |
+| **`--disable-dev-shm-usage`, capped memory** | Chromium OOM in a container is a routine failure, not an exotic one |
+| **Current Chromium** | The patch window here is days, not weeks — [adversarial-ai.md](adversarial-ai.md), and [build-pipeline.md](build-pipeline.md) on rebuilding on a schedule rather than only on code change |
+
+### And this is what the isolation is for
+
+Assume all of the above eventually fails. Chromium sandbox escapes are real, they are valuable, and a solo operator will not out-patch them.
+
+**A full renderer escape lands on a container with no database access, no VPC route, no metadata endpoint, and one narrowly-scoped KMS grant.** That is the entire reason the fetch worker exists as a separate task with its own subnet ([../techstack/infrastructure.md](../techstack/infrastructure.md)), and it is why the socket-level unreachability test in [testing.md](testing.md) is the most important test in the suite — it is the one that still holds when everything above has been bypassed.
+
+The same reasoning explains a rule from [../coderules/dependencies.md](../coderules/dependencies.md): a hostile-input parser is a different severity depending on which container it is in. Chromium is that principle at its most extreme.
+
+## The job queue
+
+pg-boss runs in the privileged worker, so its inputs deserve the same scrutiny as an HTTP route.
+
+- **Job payloads are internal but not automatically trustworthy.** A payload is JSON in a database row; treat it as a boundary and Zod-parse it in the handler ([../coderules/typescript.md](../coderules/typescript.md)). It is cheap, and it means a bug in an enqueue path cannot become arbitrary behavior in a worker.
+- **Payloads carry ids, never data.** No brief text, no recipient fields, no credentials in a job row — the queue is a table, it is backed up, and it outlives the work.
+- **Ownership is re-checked at execution, not trusted from enqueue time.** A job enqueued before an account was deleted or downgraded must not run with the old entitlement. This is [failing closed](#failing-closed--owasp-a10) applied to time.
+- **Bounded retries and a dead-letter queue.** An unbounded retry on a job that calls a model is denial of wallet with a cron attached, and it is the version of that attack that comes from your own code rather than a user.
+- **Job creation is subject to the same quotas as the action that caused it.** Enqueuing is cheap; the work is not.
+
+Enqueue in the same transaction as the data change ([../coderules/dependencies.md](../coderules/dependencies.md)) — a publish that rolls back must not leave a job that publishes.
+
 ## Failing closed — OWASP A10
 
 New to the OWASP Top 10 in the November 2025 revision: **A10 Mishandling of Exceptional Conditions**, 24 CWEs covering uncaught exceptions, race conditions, and failing open.

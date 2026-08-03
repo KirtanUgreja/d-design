@@ -57,7 +57,9 @@ Worth stating plainly, because it is unusual and it was mostly not deliberate:
 
 **The published page is static and network-silent.** No database query per view, no LLM call, no outbound request. Most of the web application attack surface is simply not present at the point where the most people are looking.
 
-**The most valuable data is not there.** No payment data (Stripe holds it), no passwords (the auth provider holds them), no customer documents retained after generation. `recipients` is the crown jewel, and it is a name and a company.
+**The most valuable data is not there.** No payment data (Stripe holds it), no passwords (hashed by Better Auth in your own Postgres), no customer documents retained after generation. `recipients` is the crown jewel, and it is a name and a company.
+
+The caveat: **the most confidential data does not sit still — it moves.** A customer's embargoed launch messaging is in flight to a model provider on every generation, which is a different threat model from data at rest and is covered separately in [third-parties.md](third-parties.md).
 
 ## Where it is genuinely weak
 
@@ -65,6 +67,7 @@ An honest list, because a threat model that only lists strengths is marketing.
 
 1. **A solo operator is the real single point of failure.** Not the code — the response. An agent that finds something at 3am on a Sunday has hours before anyone reads the alert. The mitigations are the ones that work while you sleep: the kill switch, hard quotas, static published pages, and failing closed. [operations.md](operations.md) names this.
 2. **Dependencies are the largest attack surface and you do not control them.** Nine Next.js advisories in July 2026 alone. See [platform-and-packages.md](platform-and-packages.md).
+2b. **The build pipeline skips every control in this directory.** Prompt-injection defenses, RLS, the sandbox, the fetch worker's isolation — all of them assume the running code is the code you wrote, and CI is where that assumption is made. It is also the surface an automated attacker reaches most cheaply, because misconfigured OIDC trust policies are enumerable from outside. See [build-pipeline.md](build-pipeline.md).
 3. **Business-logic flaws have no scanner and no pattern.** An agent that reasons about *your* system finds the quota that resets on a boundary, the entitlement checked in one path and not another, the state machine that allows publish-before-payment. Nothing in the automated suite looks for these. This is the class most likely to actually get you, and the only defense is that the logic be simple enough to be obviously correct — which is an argument for [../coderules/README.md](../coderules/README.md), not for a security tool.
 4. **Prompt injection is unsolved and will stay unsolved.** The posture here is containment, not prevention, and that is a deliberate bet that containment is achievable where prevention is not.
 

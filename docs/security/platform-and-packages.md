@@ -72,6 +72,7 @@ Ordinary application dependencies are a low-grade risk. These are different: the
 | **PDF text extraction** | Intake imports | Historically the richest source of parser CVEs in this list. Run it isolated |
 | **GLB / Draco / meshopt decoders** | 3D upload (v3) | Compression codecs. Same bomb shape as images, caps enforced before full decode |
 | **Font parsing** | Per-script fonts (v3) | Serve from a curated registry; never parse a user-uploaded font |
+| **Headless Chromium** (Playwright) | URL screenshots (v3) | The most-attacked software on the internet, pointed at pages an attacker chose. Its own section in [infrastructure.md](infrastructure.md) — and the container default is *unsandboxed*, which is the trap |
 
 ### DOMPurify is the case study for why layering is the real control
 

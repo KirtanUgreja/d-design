@@ -23,7 +23,7 @@ Five distinct paths carry untrusted content into generation:
 1. **Attacker via injected content** — plants instructions in a PDF, a page, or a spreadsheet cell that the AI obeys. Product-specific, and nothing off the shelf helps. → [prompt-injection.md](prompt-injection.md)
 2. **Malicious platform user** — reaches another tenant's data, or burns your model budget. → [tenancy-and-data.md](tenancy-and-data.md), [infrastructure.md](infrastructure.md)
 3. **Attacker targeting viewers** — poisons an experience so the published page attacks the audience. Worst reputationally: your customer's prospects get hit on your customer's launch page. → [content-and-web.md](content-and-web.md)
-4. **Attacker targeting your infrastructure** — SSRF into cloud metadata, credential theft, denial-of-wallet. → [infrastructure.md](infrastructure.md)
+4. **Attacker targeting your infrastructure** — SSRF into cloud metadata, credential theft, denial-of-wallet, and the build pipeline that holds production credentials. → [infrastructure.md](infrastructure.md), [build-pipeline.md](build-pipeline.md)
 5. **Nobody in particular** — an automated agent sweeping the internet, which in 2026 will probe this product thoroughly whether or not anyone is interested in it. It costs nothing to point at a small target now. → [adversarial-ai.md](adversarial-ai.md)
 
 Adversary 5 does not introduce new controls; it changes which existing ones you can rely on. Anything that works by *recognizing* an attack degrades against something that never gets bored. Anything that works by *having nowhere for the attack to land* holds.
@@ -48,6 +48,17 @@ Adversary 5 does not introduce new controls; it changes which existing ones you 
                      viewer's browser
 ```
 
+The runtime topology is a fourth boundary, and it is the newest ([../techstack/backend.md](../techstack/backend.md)):
+
+```
+  app (Vercel)          job worker (Fargate)      fetch worker (Fargate)
+  DB · sessions         DB · renderer · models    NO db · NO vpc route
+  no hostile input      no hostile input          hostile input only
+                                                  Chromium · parsers
+```
+
+**The privileged processes never parse hostile bytes; the process that parses hostile bytes has nothing worth stealing.** Everything the attacker can influence — URLs, screenshots, PDFs, uploaded images — is handled in the container with no database access, no route to the VPC, and one narrowly-scoped key.
+
 Three boundaries carry the weight:
 
 **The Zod schema.** A fully compromised model can still only emit valid `Scene` JSON. There is no field where "run this command" fits. This is the single strongest control in the system, and it was built for design reasons rather than security ones.
@@ -66,7 +77,9 @@ Building them in the wrong order wastes effort on threats that do not exist yet.
 | **v2** | User-authored art directions | **CSS injection via token values** — see [content-and-web.md](content-and-web.md) |
 | **v3** | Accounts, URL fetching, integrations, PII, domains, billing | Authentication · RLS and tenant isolation · SSRF · credential encryption · retention · token design · cache isolation for personalized pages · custom-domain verification and dangling-DNS handling · entitlement enforcement · quotas |
 
-Two controls are **version-independent and live from day one**: keeping the framework and the untrusted-input parsers patched ([platform-and-packages.md](platform-and-packages.md)), and failing closed on anything that grants access ([infrastructure.md](infrastructure.md)). Neither waits for a feature to arrive.
+Three controls are **version-independent and live from the first deploy**: keeping the framework and the untrusted-input parsers patched ([platform-and-packages.md](platform-and-packages.md)), failing closed on anything that grants access ([infrastructure.md](infrastructure.md)), and a build pipeline that cannot be used to skip both ([build-pipeline.md](build-pipeline.md)). None waits for a feature to arrive.
+
+One control is **live from the first model call, which is v1**: model routing and retention ([third-parties.md](third-parties.md)). A customer's embargoed launch messaging reaches a third party the first time anything is generated, and that is long before accounts, RLS, or any other v3 control exists.
 
 RLS does not exist before v3, because multi-tenancy does not exist before v3. Prompt injection is live from the first generated experience.
 
@@ -79,6 +92,8 @@ RLS does not exist before v3, because multi-tenancy does not exist before v3. Pr
 | [content-and-web.md](content-and-web.md) | Origins, CSP, sandbox, XSS, uploads, tokens, custom domains, clickjacking |
 | [infrastructure.md](infrastructure.md) | SSRF, failing closed, denial-of-wallet, billing entitlements |
 | [platform-and-packages.md](platform-and-packages.md) | Framework CVEs, cache poisoning, the parsers that touch hostile bytes, version floors |
+| [third-parties.md](third-parties.md) | Where customer data actually goes — model routing, subprocessors, the GDPR obligation |
+| [build-pipeline.md](build-pipeline.md) | CI/CD as an attack path — OIDC trust policies, Terraform state, publishing, images |
 | [ai-built-app-failures.md](ai-built-app-failures.md) | The four mistakes that account for nearly every AI-built-app breach, audited against this design |
 | [adversarial-ai.md](adversarial-ai.md) | What changes when the attacker is a machine — and the OWASP mapping |
 | [testing.md](testing.md) | The automated suite and the manual checklist |
