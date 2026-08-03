@@ -104,7 +104,26 @@ Scenes are generously tall. A cinematic experience earns its pace by giving each
 
 Slow is the point. 900ms feels wrong next to typical web UI motion and correct in a cinematic context — resist the urge to speed it up to match app conventions.
 
-**Reduced motion:** `prefers-reduced-motion: reduce` collapses every intent to opacity-only, 200ms, no transform, no parallax. Not an afterthought — wire it when motion is first implemented, because retrofitting it means touching every component.
+### How this is implemented
+
+**Motion** (the library formerly called Framer Motion — renamed in 2025, package `motion`, import path `motion/react`) drives the reveals. The old `framer-motion` package still installs but is no longer actively developed; use `motion`.
+
+**CSS scroll-driven animations are not Baseline yet** and cannot be the primary mechanism. As of mid-2026, `animation-timeline` / `scroll-timeline` / `view-timeline` sit at roughly 84% global support: Chrome 115+, Edge 115+, Safari 18+ — but Firefox stable still keeps it behind the `layout.css.scroll-driven-animations.enabled` flag, which has blocked Baseline since September 2025.
+
+So: **JS-driven reveals as the floor, CSS scroll-driven animation as progressive enhancement.** Author the finished state as the default, layer the animation on top; a browser that doesn't understand `animation-timeline` ignores the declaration entirely. Never author the *hidden* state as the default — a Firefox user must not get a blank page.
+
+### Reduced motion is a design requirement here, not a checkbox
+
+This matters more for this product than for most. Parallax scrolling — foreground and background moving at different rates — is a documented trigger for vestibular disorders: nausea, dizziness, headaches. An art direction built on cinematic scroll motion is, without care, actively hostile to those users.
+
+**WCAG 2.3.3 Animation from Interactions (Level AAA)** covers exactly this: motion triggered by user interaction must be disableable. Scroll is an interaction, so parallax falls squarely under it.
+
+Two controls, both required:
+
+1. **`prefers-reduced-motion: reduce`** collapses every intent to opacity-only, 200ms, no transform, no parallax. Wire it when motion is first implemented — retrofitting means touching every component.
+2. **An in-page motion toggle.** The OS-level setting is the standard mechanism and most people don't know it exists. Published guidance is explicit that a page-level control should accompany it, and for a product whose entire premise is heavy motion, shipping only the media query leaves affected viewers with no recourse on someone else's launch page.
+
+The toggle belongs in the runtime, so every published experience gets it for free — not something each art direction re-implements.
 
 ## Texture
 

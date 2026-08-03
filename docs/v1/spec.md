@@ -4,11 +4,13 @@
 
 Presentation tooling splits into two useless halves.
 
-**Template tools** (Gamma, Beautiful.ai, Tome) generate content *into* fixed layouts. They make presentations faster, not better. Every deck shares a skeleton, and the skeleton is visible.
+**Template tools** (Gamma, Beautiful.ai, Canva) generate content *into* fixed layouts. They make presentations faster, not better. Every deck shares a skeleton, and the skeleton is visible. Gamma's own reviews name the symptom: generic AI phrasing that needs manual refinement, and design customization "limited compared to PowerPoint or Keynote for pixel-level control."
 
 **Coding agents** (Artifacts, v0, Lovable) generate working HTML with no narrative sense, no visual hierarchy, and no answer to the second prompt. Once 2,000 lines exist, "make that headline smaller" means a regeneration that destroys the parts the user liked.
 
 Nothing turns an idea into an immersive presentation experience that stays editable.
+
+**Read [market.md](market.md) before building.** Gamma reached ~$100M ARR and profitability with ~50 people; Tome raised more, hit ~$4M ARR, and shut its presentation product down in April 2025. Its post-mortem — *"building AI for everyone at once is fundamentally flawed"* — is the single most useful document in this repo's problem space, and it is the reason the wedge below is narrow on purpose.
 
 ## The bet
 
@@ -64,12 +66,23 @@ That combination means no storage, no cookies, no parent DOM access, no credenti
 
 ## Stack
 
-Next.js (App Router) + TypeScript · Postgres in Docker locally, Supabase later · Drizzle · Zod · Framer Motion · Tailwind for app chrome only, CSS variables for art direction.
+| | |
+|---|---|
+| **Next.js 16 (App Router) + React 19.2** | Turbopack and the React Compiler are both stable as of 16; Cache Components give explicit control over what's cached on the publish route. React 19.2's View Transitions are the natural mechanism for v2's reskin — worth knowing it's there, not worth using yet |
+| **TypeScript** | Strict. See [../coderules/typescript.md](../coderules/typescript.md) |
+| **Postgres in Docker → Supabase** | Supabase *is* Postgres, so the migration is a connection string |
+| **Drizzle** | Typed SQL, migrations |
+| **Zod** | Schema, validation, and inferred types — one source |
+| **Motion** (`motion`, import `motion/react`) | **Not `framer-motion`.** Renamed in 2025 and now maintained independently at motion.dev; the old package still installs but is no longer actively developed |
+| **Tailwind** | App chrome only. Never the art direction — that's CSS variables |
+| **`claude-opus-5`** | Every pipeline phase. See [ai-pipeline.md](ai-pipeline.md) for why, and what it costs |
 
-Supabase *is* Postgres, so the migration is a connection string — provided nothing touches Supabase-specific APIs early. Two consequences:
+Two consequences of the Postgres-first choice:
 
-- **No auth in local v1.** Single user. Auth arrives with Supabase.
+- **No auth in local v1.** Single user. Auth arrives with Supabase — which the v3 audit pinned to v3, the first version an outside person opens.
 - **One thin `storage.ts`** for uploads (local disk → Supabase Storage). This is the only abstraction with a planned second implementation. Nothing else gets one.
+
+**The React Compiler being stable matters for the coderules.** `performance.md` says clarity first, measure before optimizing — the compiler handles memoization automatically, so hand-written `useMemo`/`useCallback` is now usually noise rather than optimization.
 
 ## Build order
 

@@ -33,10 +33,11 @@ Docs are versioned by release. `docs/v1/` is the current design.
 
 | Doc | What's in it |
 |---|---|
-| [v1/spec.md](docs/v1/spec.md) | Locked decisions, architecture, persistence, build order, verification, risks |
+| [v1/spec.md](docs/v1/spec.md) | Locked decisions, architecture, stack, persistence, build order, verification, risks |
+| [v1/market.md](docs/v1/market.md) | Why Gamma won and Tome died — and what that means for the wedge |
 | [v1/scene-schema.md](docs/v1/scene-schema.md) | The IR — every type, all 11 blocks, every validation rule |
-| [v1/art-direction.md](docs/v1/art-direction.md) | The token layer, and `cinematic-dark` defined concretely |
-| [v1/ai-pipeline.md](docs/v1/ai-pipeline.md) | The four generation phases and their contracts |
+| [v1/art-direction.md](docs/v1/art-direction.md) | The token layer, `cinematic-dark`, motion implementation, accessibility |
+| [v1/ai-pipeline.md](docs/v1/ai-pipeline.md) | The four phases, concrete API, caching strategy, what it costs |
 
 **v2 — creative range.** Same content, radically different experiences, one click.
 

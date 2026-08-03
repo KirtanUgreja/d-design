@@ -175,9 +175,21 @@ Zod enforces all of these. Violations fail the generation and trigger one repair
 
 ### Why the length caps matter more than they look
 
-LLMs write too much. A headline that runs to 140 characters destroys a cinematic layout no matter how good the tokens are. Capping at the schema level means the model must be concise to produce valid output at all — restraint enforced mechanically instead of requested politely in a prompt.
+LLMs write too much. A headline that runs to 140 characters destroys a cinematic layout no matter how good the tokens are. The caps make restraint mechanical rather than politely requested.
 
-Expect the repair loop to fire on these constantly at first. That is the system working.
+**But they are enforced at a different layer than the shape rules, and the difference is load-bearing.**
+
+| | Enforced by | Can the model violate it? |
+|---|---|---|
+| Shape — fields, types, enums, no styling values | Structured outputs constrains generation itself | **No.** The token has nowhere to go |
+| **Character caps** | Zod, after the response arrives | **Yes, routinely** |
+
+Structured outputs does **not** support JSON Schema's `minLength` / `maxLength` — string-length constraints are among the unsupported keywords, alongside numeric bounds. The SDKs strip them from the schema before sending and validate client-side, so keeping `maxLength` in the Zod schema is harmless; it simply doesn't constrain decoding.
+
+So a 90-character headline is a *valid generation* that fails *validation*, and the repair loop fixes it. Two practical consequences:
+
+1. **State the character budget in the prompt as a hard number.** That is the only thing that lowers repair frequency — the schema will not do it for you.
+2. **Expect the repair loop to fire on these constantly at first.** That is the system working; log the pattern, because it tells you where prompt and schema disagree.
 
 ## Editing
 
