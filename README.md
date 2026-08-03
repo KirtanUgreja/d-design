@@ -70,6 +70,18 @@ Docs are versioned by release. `docs/v1/` is the current design.
 | [security/testing.md](docs/security/testing.md) | Automated suite and manual checklist |
 | [security/operations.md](docs/security/operations.md) | Disclosure, incident response, dependencies, release gate |
 
+**Code rules.** How the codebase stays consistent, clean, and cheap to change — solo, with an AI writing much of it.
+
+| Doc | What's in it |
+|---|---|
+| [coderules/README.md](docs/coderules/README.md) | The nine non-negotiables and the one idea behind them |
+| [coderules/structure.md](docs/coderules/structure.md) | Feature folders, public APIs, naming |
+| [coderules/typescript.md](docs/coderules/typescript.md) | Strict TS, Zod boundaries, Results vs throws |
+| [coderules/dependencies.md](docs/coderules/dependencies.md) | Stdlib-first, and the dependency ledger |
+| [coderules/patterns.md](docs/coderules/patterns.md) | No-styling invariant, pure renderer core, data access |
+| [coderules/performance.md](docs/coderules/performance.md) | Clarity first, and the three real hot paths |
+| [coderules/tooling.md](docs/coderules/tooling.md) | Pre-commit gate and the CLAUDE.md that carries the rules |
+
 Read `v1/scene-schema.md` first. Everything else depends on that shape.
 
 ## Roadmap
