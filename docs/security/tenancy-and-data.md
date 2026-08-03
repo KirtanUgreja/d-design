@@ -2,6 +2,28 @@
 
 Multi-tenancy arrives in v3 with accounts. Before that there is one local user and nothing to isolate.
 
+## Authentication
+
+Everything below concerns what a session is allowed to do. This section is about how a session comes to exist — the step before isolation, and the one where an attacker prefers to work, because a legitimate session defeats every authorization control by satisfying it.
+
+**Use the provider's auth. Do not build it.** Supabase Auth handles password hashing, session tokens, refresh rotation, email verification, and OAuth. This is the same reasoning as the ledger rule in [../coderules/dependencies.md](../coderules/dependencies.md): never write your own for a crypto primitive or a credential path. Authentication is the canonical example.
+
+What still has to be decided, because the provider does not decide it for you:
+
+| | |
+|---|---|
+| **Where authorization is checked** | **At the data layer, never in middleware alone.** See CVE-2025-29927 in [platform-and-packages.md](platform-and-packages.md) — a framework bug made middleware skippable, and every app that authorized there was open. Middleware redirects are an optimization |
+| **Email verification before anything expensive** | Already required before first generation ([infrastructure.md](infrastructure.md)). It is also the account-farming control |
+| **OAuth account linking** | Linking by verified email only. Linking an unverified email from one provider to an existing account is a well-worn takeover path |
+| **Session invalidation on password change** | Existing sessions end. Otherwise a stolen session survives the user's response to the theft |
+| **Password reset tokens** | Single-use, short-lived, invalidated on use and on password change. Never logged, never in a URL that gets sent to an error tracker |
+| **MFA** | Not v3. Offer it when accounts hold something worth stealing — note that they hold integration credentials from day one, which arguably means sooner |
+| **Enumeration** | Signup, login, and reset return the same response for existing and non-existing addresses. Cheap, and `recipients` makes the address list itself interesting |
+
+**Rate-limit the auth endpoints specifically**, separately from the generation quotas. Credential stuffing targets login, not the expensive path, and the volume that constitutes an attack there is much lower.
+
+The account-deletion path is a security control too, not only a privacy one: it is the thing that revokes integration credentials. See retention below.
+
 ## The invariant
 
 **The `anon` Postgres role has zero grants on every table.**
@@ -50,6 +72,10 @@ create policy read_art_directions on art_directions
 ```
 
 **`with check` is not optional.** A policy with only `using` permits an owner to insert or update a row *assigning it to someone else*. Every write policy needs both clauses, and the test suite should attempt exactly that.
+
+**`security definer` views and functions bypass RLS entirely.** A view created that way runs with its creator's privileges, so a view over a protected table hands out exactly what the policy denies — and it does so silently, because the policy is still there and still correct. Default to `security invoker`. A definer function that is genuinely necessary carries its own filter and is reviewed as security code, not as a convenience.
+
+These two, together, are how RLS ends up enabled and ineffective — which is a worse position than RLS being off, because it looks fine. [ai-built-app-failures.md](ai-built-app-failures.md) has the measured background: in one sample of 1,645 AI-built applications, **~70% shipped with RLS disabled outright**. The zero-grants invariant above exists because that number is what "remember to configure it per table" achieves in practice.
 
 ## The service role
 

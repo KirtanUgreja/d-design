@@ -24,6 +24,9 @@ Five distinct paths carry untrusted content into generation:
 2. **Malicious platform user** — reaches another tenant's data, or burns your model budget. → [tenancy-and-data.md](tenancy-and-data.md), [infrastructure.md](infrastructure.md)
 3. **Attacker targeting viewers** — poisons an experience so the published page attacks the audience. Worst reputationally: your customer's prospects get hit on your customer's launch page. → [content-and-web.md](content-and-web.md)
 4. **Attacker targeting your infrastructure** — SSRF into cloud metadata, credential theft, denial-of-wallet. → [infrastructure.md](infrastructure.md)
+5. **Nobody in particular** — an automated agent sweeping the internet, which in 2026 will probe this product thoroughly whether or not anyone is interested in it. It costs nothing to point at a small target now. → [adversarial-ai.md](adversarial-ai.md)
+
+Adversary 5 does not introduce new controls; it changes which existing ones you can rely on. Anything that works by *recognizing* an attack degrades against something that never gets bored. Anything that works by *having nowhere for the attack to land* holds.
 
 ## Trust boundaries
 
@@ -61,7 +64,9 @@ Building them in the wrong order wastes effort on threats that do not exist yet.
 |---|---|---|
 | **v1** | Imports, AI generation, `Slot`, uploads, publishing | Prompt injection defenses · schema validation · `CTA.href` restriction · sandbox correctness · upload handling · origin separation |
 | **v2** | User-authored art directions | **CSS injection via token values** — see [content-and-web.md](content-and-web.md) |
-| **v3** | Accounts, URL fetching, integrations, PII, domains, billing | RLS and tenant isolation · SSRF · credential encryption · retention · token design · custom-domain verification · entitlement enforcement · quotas |
+| **v3** | Accounts, URL fetching, integrations, PII, domains, billing | Authentication · RLS and tenant isolation · SSRF · credential encryption · retention · token design · cache isolation for personalized pages · custom-domain verification and dangling-DNS handling · entitlement enforcement · quotas |
+
+Two controls are **version-independent and live from day one**: keeping the framework and the untrusted-input parsers patched ([platform-and-packages.md](platform-and-packages.md)), and failing closed on anything that grants access ([infrastructure.md](infrastructure.md)). Neither waits for a feature to arrive.
 
 RLS does not exist before v3, because multi-tenancy does not exist before v3. Prompt injection is live from the first generated experience.
 
@@ -70,11 +75,16 @@ RLS does not exist before v3, because multi-tenancy does not exist before v3. Pr
 | | |
 |---|---|
 | [prompt-injection.md](prompt-injection.md) | The five paths, and why the schema does most of the work |
-| [tenancy-and-data.md](tenancy-and-data.md) | RLS, server-mediated reads, credentials, PII, retention, logging |
-| [content-and-web.md](content-and-web.md) | Origins, CSP, sandbox, XSS, uploads, tokens, custom domains |
-| [infrastructure.md](infrastructure.md) | SSRF, denial-of-wallet, billing entitlements |
+| [tenancy-and-data.md](tenancy-and-data.md) | Authentication, RLS, server-mediated reads, credentials, PII, retention |
+| [content-and-web.md](content-and-web.md) | Origins, CSP, sandbox, XSS, uploads, tokens, custom domains, clickjacking |
+| [infrastructure.md](infrastructure.md) | SSRF, failing closed, denial-of-wallet, billing entitlements |
+| [platform-and-packages.md](platform-and-packages.md) | Framework CVEs, cache poisoning, the parsers that touch hostile bytes, version floors |
+| [ai-built-app-failures.md](ai-built-app-failures.md) | The four mistakes that account for nearly every AI-built-app breach, audited against this design |
+| [adversarial-ai.md](adversarial-ai.md) | What changes when the attacker is a machine — and the OWASP mapping |
 | [testing.md](testing.md) | The automated suite and the manual checklist |
 | [operations.md](operations.md) | Disclosure, incident response, dependencies, release gate |
+
+Two are worth reading even if you skip the rest. [ai-built-app-failures.md](ai-built-app-failures.md) is the measured evidence of how applications built this way actually get breached — in one sample of 1,645, **~70% shipped with row-level security disabled**. [adversarial-ai.md](adversarial-ai.md) carries the OWASP mapping (LLM Top 10 2025, Agentic Top 10 2026, Web Top 10 2025) and the honest answer to whether this can be made unhackable.
 
 ## Principles
 
@@ -83,3 +93,7 @@ RLS does not exist before v3, because multi-tenancy does not exist before v3. Pr
 **The AI may arrange, style, and translate what the user gave it. It may not invent the subject.** This began as a quality rule — never invent marketing claims, never generate the product — and it turns out to be a security rule too. Applied to URLs it means `CTA.href` comes from the Brief, which makes an injected phishing link structurally impossible rather than merely unlikely.
 
 **Assume the model is compromised.** Design so that a fully attacker-controlled model produces a page that is ugly, not a page that is dangerous.
+
+**Fail closed on anything that grants; fail open on anything that merely displays.** A quota check that cannot run refuses. A 3D model that cannot load shows a poster. This is OWASP's newest category and this product has an unusual number of fallback paths — see [infrastructure.md](infrastructure.md).
+
+**Nothing here is unhackable, and the goal is not to be.** The goal is that the attacks which succeed produce outcomes you can live with, and that the ones you cannot live with have no path at all. A threat model claiming completeness is the one that gets believed and then breached.

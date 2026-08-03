@@ -35,6 +35,39 @@ Cheap, and they turn a network-isolated failure into an early, loggable rejectio
 - 10-second timeout, 10MB response cap
 - Log every rejection. Repeated attempts are a signal worth having
 
+### Next.js-specific SSRF paths
+
+Two beyond the fetch worker, both from the July 2026 advisory set ([platform-and-packages.md](platform-and-packages.md)):
+
+- **`rewrites()` / `redirects()`** that build a destination hostname from request-controlled input become SSRF and open redirect respectively. Custom-domain routing resolves a **verified hostname to an experience id via a database lookup** — never by constructing a destination from the incoming `Host` header.
+- **Remote image optimization** (`/_next/image`) fetches arbitrary remote URLs by design. This product self-hosts every image on `assets.<domain>`, so the remote path is a surface with no corresponding feature. **Turn it off.**
+
+## Failing closed — OWASP A10
+
+New to the OWASP Top 10 in the November 2025 revision: **A10 Mishandling of Exceptional Conditions**, 24 CWEs covering uncaught exceptions, race conditions, and failing open.
+
+It gets its own section because this product is unusually exposed to it. Graceful degradation is a *feature* here — 3D falls back to a poster, live data to its last cached value, WebGPU to WebGL2, a missing locale to the source language, a failed AD derivation to an honest error. Every one of those paths is somewhere an attacker can ask: *what if I cause the failure?*
+
+The rule, and it applies to code that has not been written yet:
+
+> **Availability degrades open. Authorization degrades closed.**
+
+| Failure | Correct behavior |
+|---|---|
+| 3D asset unavailable | Poster frame — degrade open, nothing is protected here |
+| Live-data fetch fails | Last cached value, then the honest empty state |
+| Quota check throws or times out | **Refuse the generation.** Never proceed because the check was unavailable |
+| Entitlement lookup fails | **Deny the paid feature** |
+| Recipient token validation errors | **Reject the token** |
+| Domain verification lookup fails | **Stop serving that hostname** |
+| Rate limiter unreachable | **Rate-limit as if tripped** |
+
+The distinction is whether a failure could grant something. A viewer seeing a poster instead of a 3D model has been given nothing. A generation running because the quota service was slow has.
+
+**Test this by making the check throw**, not by reasoning about it. A dependency-injected failure on each row above, asserting refusal. Fail-open is invisible in code review — it reads as ordinary error handling, and the `catch` that returns a permissive default looks like defensive programming right up until it is the vulnerability.
+
+Race conditions are the other half of A10, and the one that matters here is **quota checked and then consumed as two separate operations**. Concurrent requests all read the same remaining balance and all proceed. The counter increment must be atomic in the database, not a read-modify-write in application code.
+
 ## Denial of wallet
 
 Generation is the most expensive operation in the product, and the free tier gives it away. This is the likeliest real-world attack because it needs no skill — a loop and a script.

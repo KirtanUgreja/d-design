@@ -38,7 +38,21 @@ The product is already dependency-light by design — that decision is most of t
 - A new dependency is a decision: is it maintained, how much does it pull in, does a few lines of our own beat it? The ponytail instinct and the security instinct agree here
 - CI fails on a known-critical advisory
 
-The most dangerous dependencies are those touching untrusted input: PDF parsing, image decoding, the 3D loader, HTML/SVG sanitization. Pin these deliberately, watch their advisories specifically, and run them in the isolated worker where their blast radius is smallest.
+The most dangerous dependencies are those touching untrusted input: PDF parsing, image decoding, the 3D loader, HTML/SVG sanitization. Pin these deliberately, watch their advisories specifically, and run them in the isolated worker where their blast radius is smallest. [platform-and-packages.md](platform-and-packages.md) lists them by name with current version floors — DOMPurify alone had four disclosed bypasses in eighteen months.
+
+**Watch the framework's advisories as attentively as the dependencies'.** Next.js published 13 advisories in May 2026 and 9 in July 2026, several of them auth bypasses and cache-confusion bugs that land on this product's specific features. A framework is a dependency; it is simply one nobody thinks to review.
+
+### Patch speed, and the conflict with the quarantine
+
+**28.3% of critical CVEs in CISA KEV are weaponized within 24 hours of disclosure.** A monthly patch cadence is not a cadence, it is a gap.
+
+That collides with [../coderules/dependencies.md](../coderules/dependencies.md)'s 24-hour minimum release age, which exists to keep a compromised publish out of the tree and is the right default. The two rules govern different situations and the resolution has to exist *before* it is needed:
+
+> The age gate is the default for routine updates. **A patch for an advisory affecting something in the tree is an explicit, logged exception** — install immediately, override the gate for that package only, record why.
+
+Written down because the alternative under pressure is to disable the gate globally at 2am and never re-enable it.
+
+Automated update PRs are reviewed rather than auto-merged — the update itself is the delivery mechanism for a supply-chain compromise (OWASP **A03:2025**, the highest-incidence category on the list). **Review the lockfile diff, not only `package.json`.** A transitive change is where this arrives, and it is the line nobody reads.
 
 ## Release gate
 
@@ -46,9 +60,10 @@ Each version ships only after the security tests for what it introduced pass, an
 
 | Version | Gate |
 |---|---|
+| **every release** | Framework and parsers at or above their version floors · fail-closed suite green · no key-shaped string in the build |
 | **v1** | Injection corpus green · sandbox-escape tests green · upload tests green · origin separation verified |
 | **v2** | CSS-token-injection tests green · AD linter rejects malformed token grammar |
-| **v3** | RLS isolation green · SSRF suite green (including socket-level unreachability) · privacy/retention green · entitlement + webhook tests green |
+| **v3** | Auth suite green (no-session and wrong-tenant on every route) · RLS isolation green · SSRF suite green (including socket-level unreachability) · **cache-isolation suite green against the real CDN** · privacy/retention green · entitlement + webhook tests green |
 
 The gate is not "we wrote the tests." It is "the tests are green and the checklist is walked." A skipped gate under deadline pressure is exactly how the control that existed stops existing.
 

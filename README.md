@@ -66,9 +66,12 @@ Docs are versioned by release. `docs/v1/` is the current design.
 |---|---|
 | [security/README.md](docs/security/README.md) | Threat model, trust boundaries, which control is needed when |
 | [security/prompt-injection.md](docs/security/prompt-injection.md) | The five injection paths, and why the schema does most of the work |
-| [security/tenancy-and-data.md](docs/security/tenancy-and-data.md) | RLS, server-mediated reads, credentials, PII, retention |
-| [security/content-and-web.md](docs/security/content-and-web.md) | Origins, CSP, sandbox, XSS, uploads, CSS-token injection |
-| [security/infrastructure.md](docs/security/infrastructure.md) | SSRF, denial-of-wallet, billing entitlements |
+| [security/tenancy-and-data.md](docs/security/tenancy-and-data.md) | Authentication, RLS, server-mediated reads, credentials, PII, retention |
+| [security/content-and-web.md](docs/security/content-and-web.md) | Origins, CSP, sandbox, XSS, uploads, CSS-token injection, custom domains |
+| [security/infrastructure.md](docs/security/infrastructure.md) | SSRF, failing closed, denial-of-wallet, billing entitlements |
+| [security/platform-and-packages.md](docs/security/platform-and-packages.md) | Framework CVEs, cache poisoning, hostile-input parsers, version floors |
+| [security/ai-built-app-failures.md](docs/security/ai-built-app-failures.md) | How AI-built apps actually get breached, audited against this design |
+| [security/adversarial-ai.md](docs/security/adversarial-ai.md) | The machine-speed attacker, and the OWASP mapping |
 | [security/testing.md](docs/security/testing.md) | Automated suite and manual checklist |
 | [security/operations.md](docs/security/operations.md) | Disclosure, incident response, dependencies, release gate |
 

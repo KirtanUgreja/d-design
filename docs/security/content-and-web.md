@@ -34,6 +34,16 @@ form-action 'none';
 
 `frame-ancestors *` is deliberate. Embedding published experiences is a feature.
 
+**It also means published pages can be framed by anyone, which is a residual risk worth naming rather than discovering.** An attacker can frame a customer's launch page inside a page of their own construction — overlaying it, surrounding it with their own copy, or positioning it so a `CTA` click lands somewhere the viewer did not intend. Classic clickjacking.
+
+This is accepted, not solved, and the reasoning is that the alternative is worse: an allowlist of embedding origins would break the embed feature for every customer who has not pre-registered their site, which is all of them. Three things bound the damage:
+
+- The framed page has **no session and no privileges** — there is nothing to hijack a click *into*. Clickjacking against an authenticated app is an account-takeover primitive; against a static marketing page it is a presentation problem
+- `CTA.href` comes from the Brief, so the destination of any click is a URL the customer supplied
+- **App routes are `frame-ancestors 'none'`.** The origin separation means the framing risk never reaches the surface where it would matter
+
+If a future feature puts anything interactive and consequential on a published page — a form, a purchase, an authenticated action — this trade stops being acceptable and `frame-ancestors` has to be revisited with it.
+
 `style-src 'unsafe-inline'` is required for art-direction CSS variables and is the reason the next section exists.
 
 **App routes:** `frame-ancestors 'none'`, no `unsafe-inline`.
@@ -49,6 +59,8 @@ Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
 `Referrer-Policy: no-referrer` fixes a quiet leak: without it, a viewer clicking your `CTA` sends the full personalized URL — **including the recipient token** — to the destination site in the `Referer` header. The destination now has a working link to that recipient's personalized page. Nobody notices this happening.
 
 **Personalized pages carry `X-Robots-Tag: noindex`.** A `/r/[token]` URL indexed by a search engine publishes a named prospect's personalized page to the world. Locale pages are indexable; recipient pages never are.
+
+**And `Cache-Control: private, no-store`.** The referrer and robots headers stop a token leaking *outward*; this one stops the page leaking *sideways*, to someone who never received the link. A CDN that caches a personalized response under a token-free key serves one recipient's page to the next visitor — and Next.js shipped two cache-confusion CVEs with exactly this effect in July 2026. The full treatment, including web cache deception via `/r/<token>/x.css`, is in [platform-and-packages.md](platform-and-packages.md). It belongs to this document's threat model too: **the cache is a third party that gets a vote on who sees what.**
 
 ## CSS injection via art-direction tokens
 
@@ -123,6 +135,10 @@ Every uploaded file is hostile until proven otherwise.
 
 **SVG** is accepted, sanitized, and served only via `<img>`. Sanitization removes `<script>`, `<foreignObject>`, event handler attributes, external references, and `<use href>` pointing off-document. Referenced through `<img>`, an SVG cannot execute at all even if sanitization missed something — that layering is the actual defense. Rejecting SVG outright would hurt real users, since logos are almost always SVG.
 
+> The layering is not caution, it is the control. DOMPurify — the best tool available for this and the right choice — had **four distinct XSS bypasses disclosed in 2025–2026**, and its 2.x branch was never patched for one of them. A design that trusted sanitization alone would have been exploitable four times in eighteen months. Versions and the full list are in [platform-and-packages.md](platform-and-packages.md).
+>
+> SVG also carries a **denial-of-service** shape distinct from XSS: billion-laughs entity expansion, deeply nested groups, and pathological filter chains. Next.js shipped a CVE in July 2026 for exactly this — CPU exhaustion at `/_next/image` from malicious SVG. Cap entity expansion and nesting depth at sanitization, and keep SVG out of any image-optimization path.
+
 **GLB/USDZ** (v3) parse in an isolated worker with triangle, texture, and file-size caps enforced *before* full decode. Draco and meshopt compression are decompression-bomb vectors with the same shape as image bombs. Failure produces the poster frame that [../v3/dimensional.md](../v3/dimensional.md) already requires.
 
 ## Custom domains
@@ -135,3 +151,13 @@ Every uploaded file is hostile until proven otherwise.
 | Per-account domain cap | Limits spam and SEO abuse |
 
 Certificate issuance is automated per verified hostname. Rate-limit issuance requests — an unbounded issuance path is both a cost problem and a way to hit a CA's rate limits and take down legitimate provisioning.
+
+### Dangling DNS, in both directions
+
+Custom domains create a subdomain-takeover surface that runs *both ways*, and the second direction is the one usually missed.
+
+**Customer → you.** A customer points `launch.theircompany.com` at your platform, later cancels, and leaves the CNAME in place. If your side then serves whatever any account claims for that hostname, the next person to claim it is publishing content on the customer's brand domain. This is why re-verification and auto-unbind are in the table above — but unbinding is only half of it. **A hostname that is unbound must stop being servable, not merely stop being owned.** An unclaimed-but-routable hostname is the vulnerability; claim-checking on request is what closes it.
+
+**You → the internet.** Any subdomain of your own domain pointed at a third-party service you later stop using is takeable by whoever registers that service next — and a takeover of `assets.<domain>` or `pages.<domain>` collapses the origin separation this entire document rests on. Inventory your own DNS records and remove them when a service is retired. This is unglamorous and it is how well-run companies lose an origin.
+
+**Verification is per-binding, not per-domain, and it expires.** A TXT challenge proves control at one moment. Re-verify on a schedule, and treat verification failure as unbind-and-stop-serving rather than as a warning to follow up on.

@@ -28,11 +28,36 @@ Assertions, on every payload:
 
 Injection is probabilistic, so this suite measures a rate, not a pass/fail. **Track the rate over time; a regression is the rate climbing.** Structural assertions 1–3 must be absolute — they do not depend on the model behaving.
 
+### Failing closed (v1+, expands with each version)
+
+The OWASP A10 suite ([infrastructure.md](infrastructure.md)). Every check that could grant something is made to **throw**, and the assertion is refusal:
+
+- Quota service unavailable → generation refused, no model call
+- Entitlement lookup throws → paid feature denied
+- Recipient token validation errors → token rejected
+- Domain verification lookup fails → hostname stops serving
+- Rate limiter unreachable → treated as tripped
+- Concurrent quota consumption: N parallel requests against a balance of 1 → exactly one succeeds (this is the race, and it does not show up in a sequential test)
+
+Then the mirror, so that failing closed did not become failing-always: 3D asset missing → poster renders; live-data fetch fails → last cached value; WebGPU unavailable → WebGL2.
+
+### Authentication (v3)
+
+- Every route called with **no session** → rejected. Directly, not through the UI
+- Every route called with a **valid session belonging to another tenant** → rejected. Authentication present, authorization absent — a distinct bug, and one that looks like a successful request to a scanner
+- Authorization is enforced when middleware does not run — simulate the CVE-2025-29927 condition and assert the data layer still refuses
+- Password change invalidates existing sessions
+- Reset token is single-use and expires
+- Signup/login/reset responses do not distinguish existing from non-existing addresses
+- OAuth linking to an unverified email → refused
+- Auth endpoints rate-limited independently of generation quotas
+
 ### Tenant isolation (v3)
 
 Programmatic, two seeded accounts:
 
 - Every table: `anon` has no grants. Iterate the schema so a new table with no policy fails loudly
+- No `security definer` view or function exists over a tenant-scoped table — assert against `pg_views` / `pg_proc`, because this one bypasses correct policies silently
 - User A cannot SELECT, UPDATE, or DELETE any of user B's rows across every table
 - `with check`: user A cannot INSERT or UPDATE a row assigning `owner_id` to user B
 - System ADs readable by all authenticated; user ADs only by owner
@@ -69,11 +94,23 @@ Against the fetch worker:
 - `Referrer-Policy: no-referrer` and `X-Robots-Tag: noindex` on personalized pages (v3)
 - `connect-src 'none'`: a published page with live data makes zero network requests — asserted in a real browser, not by reading headers
 
+### Caching (v1+ / v3)
+
+Run against the **real CDN**, not the origin. The whole class exists because the two disagree.
+
+- `/r/<token>` response carries `Cache-Control: private, no-store` (v3)
+- **Web cache deception:** `/r/<token>/x.css`, `/x.js`, `/x.jpg` → 404 at the origin, and nothing cached. Then re-request each path unauthenticated and assert no personalized content comes back
+- Two different recipient tokens in quick succession → two different pages, never a cached first one
+- No client-controlled header (`X-Forwarded-Host`, `X-Forwarded-Scheme`) changes a cached response
+- A published page's cache key is the path alone — no cookie, no header variation
+- Framework version is at or above the floor in [platform-and-packages.md](platform-and-packages.md); no transitive DOMPurify 2.x in the tree
+
 ### Uploads (v1+)
 
 - Extension/content-type mismatch (PHP renamed `.png`) → rejected by magic bytes
 - Decompression bomb (small file, huge decode) → rejected before full decode
 - SVG with `<script>` and with `onload` → sanitized, and served via `<img>` where it cannot run
+- SVG entity-expansion bomb and pathological nesting → rejected, no CPU spike. Distinct from the XSS case, and the one that reaches an image pipeline
 - Path-traversal filename → server UUID used, original discarded
 - Malformed GLB, oversized GLB → rejected before decode; poster served (v3)
 
@@ -105,7 +142,12 @@ Per release, for what does not automate:
 - [ ] Every new secret: server-only, out of logs, out of the build
 - [ ] Every new PII field: covered by cascade delete and retention
 - [ ] Custom-domain check: no customer hostname resolves to the app origin
+- [ ] **No authorization decision lives only in middleware** — every one is enforced at the data layer
+- [ ] **Every new fallback path classified:** does reaching it grant anything? If so it fails closed
+- [ ] **Every new response classified as cacheable or not**, and the CDN agrees
+- [ ] Own DNS records reviewed — nothing points at a retired third-party service ([content-and-web.md](content-and-web.md))
 - [ ] New dependencies reviewed (see [operations.md](operations.md))
+- [ ] Build output grepped for **key-shaped strings**, not only known prefixes — `sk-`, `eyJ`, long high-entropy values
 
 ## Not doing
 
