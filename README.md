@@ -58,6 +58,18 @@ Docs are versioned by release. `docs/v1/` is the current design.
 | [v3/live-data.md](docs/v3/live-data.md) | Server-fetched bindings that keep the page network-free |
 | [v3/dimensional.md](docs/v3/dimensional.md) | 3D scenes, the `environment` token group, performance budgets |
 
+**Security.** Cross-cutting, versioned by when each threat arrives. The core threat: untrusted input reaches an LLM whose output becomes a web page.
+
+| Doc | What's in it |
+|---|---|
+| [security/README.md](docs/security/README.md) | Threat model, trust boundaries, which control is needed when |
+| [security/prompt-injection.md](docs/security/prompt-injection.md) | The five injection paths, and why the schema does most of the work |
+| [security/tenancy-and-data.md](docs/security/tenancy-and-data.md) | RLS, server-mediated reads, credentials, PII, retention |
+| [security/content-and-web.md](docs/security/content-and-web.md) | Origins, CSP, sandbox, XSS, uploads, CSS-token injection |
+| [security/infrastructure.md](docs/security/infrastructure.md) | SSRF, denial-of-wallet, billing entitlements |
+| [security/testing.md](docs/security/testing.md) | Automated suite and manual checklist |
+| [security/operations.md](docs/security/operations.md) | Disclosure, incident response, dependencies, release gate |
+
 Read `v1/scene-schema.md` first. Everything else depends on that shape.
 
 ## Roadmap

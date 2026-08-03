@@ -54,6 +54,12 @@ Enforcement is three-layered:
 
 Layer 3 is the only one that actually catches things. Build it.
 
+### The URL rule
+
+The same principle covers links, and it is also a security control. **Every `CTA.href` the build phase emits is selected from URLs the user supplied** — the Brief `cta`, plus any explicit links in the source material. The AI never composes a new URL.
+
+A post-build check rejects any `href` not tracing to a Brief-supplied URL, and a scheme allowlist rejects `javascript:`, `data:`, `vbscript:`, and protocol-relative URLs regardless. This makes an injected phishing link structurally impossible rather than filtered — see [../security/prompt-injection.md](../security/prompt-injection.md).
+
 ---
 
 ## Phase 2 — Director
