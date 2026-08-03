@@ -1,5 +1,11 @@
 # Tech Stack
 
+> What this is built with, where each piece runs, and why. Including which model — and the answer is deliberately "no preferred vendor".
+
+**Start here:** [The shape](#the-shape) below — three origins, three runtimes, and the trust boundary between them.
+
+**Looking for one decision and its rejected alternative?** [decisions.md](decisions.md) is the full log.
+
 What this is built with, where each piece runs, and why.
 
 The *language* half of the stack was settled in [../v1/spec.md](../v1/spec.md) and [../coderules/](../coderules/README.md). This directory settles the **operational** half — hosting, workers, storage, delivery, auth, jobs — which earlier docs assumed without naming. The security docs already relied on some of it: an "isolated worker with no route to the VPC", a CDN in front of published pages. Those were requirements with no implementation. Now they have one.
@@ -77,6 +83,34 @@ Three origins, three runtimes, and the split between them is a trust boundary ra
 | [infrastructure.md](infrastructure.md) | AWS topology, delivery, secrets, CI/CD, local dev, the repos |
 | [decisions.md](decisions.md) | The full log — every choice, its rejected alternative, and what it changed elsewhere |
 
+## Find it fast
+
+| If you need… | Go to |
+|---|---|
+| What JavaScript ships to a viewer | [frontend.md](frontend.md) → "The published artifact" |
+| Why the published page can no longer claim zero network requests | [frontend.md](frontend.md) → "What talks to the network" |
+| Editor state, undo/redo | [frontend.md](frontend.md) → "The editor" |
+| How generation streams to the UI | [frontend.md](frontend.md) → "Streaming" |
+| Font licensing, and per-script coverage | [frontend.md](frontend.md) → "Fonts" |
+| Why there are two workers and what each may touch | [backend.md](backend.md) → "The three runtimes" |
+| The RLS session-variable pattern | [backend.md](backend.md) → "Isolation" |
+| Auth — what Better Auth does and what it does not | [backend.md](backend.md) → "Auth: Better Auth" |
+| Where publishing renders | [backend.md](backend.md) → "Publishing — where the render happens" |
+| Jobs, and transactional enqueue | [backend.md](backend.md) → "Jobs: pg-boss" |
+| Which model to use | [ai-stack.md](ai-stack.md) → "The stance: no favourite model", "What actually constrains the choice" |
+| The eval harness | [ai-stack.md](ai-stack.md) → "Evals — the missing apparatus" |
+| Why there is no agent framework | [ai-stack.md](ai-stack.md) → "Agent framework: none" |
+| Why not Python, and what would change that | [ai-stack.md](ai-stack.md) → "Language" |
+| What the model is allowed to call | [pipeline-tools.md](pipeline-tools.md) → "The three tiers", "The catalog, by phase" |
+| The render-and-look loop | [pipeline-tools.md](pipeline-tools.md) → "The visual verification loop" |
+| AWS topology, subnets, isolation | [infrastructure.md](infrastructure.md) → "AWS topology" |
+| How published pages are delivered | [infrastructure.md](infrastructure.md) → "Delivery" |
+| Secrets and KMS | [infrastructure.md](infrastructure.md) → "Secrets" |
+| Local development setup | [infrastructure.md](infrastructure.md) → "Local development" |
+| What v1 actually needs to run | [infrastructure.md](infrastructure.md) → "What v1 actually stands up" (Docker Compose, no AWS) |
+| Why a choice was made, or what it replaced | [decisions.md](decisions.md) → "The log", "What this supersedes" |
+| What is still undecided | [decisions.md](decisions.md) → "Still open" |
+
 ## Build it in this order
 
 Most of the above is not needed for a long time, and standing it up early is weeks spent on infrastructure before the thing that decides whether this product works — the renderer — exists at all.
@@ -102,3 +136,12 @@ Several of these decisions supersede things earlier docs locked. The reversals a
 - **Model calls go through OpenRouter**, so the schema constraint is enforced by Zod rather than by the decoder
 
 That last one is the only decision here that trades away a guarantee. It is deliberate, the reasoning is in [backend.md](backend.md), and the metric that tells you whether it was right — the repair rate — already exists in [../v1/ai-pipeline.md](../v1/ai-pipeline.md).
+
+## Connects to
+
+| | |
+|---|---|
+| [../coderules/README.md](../coderules/README.md) | The rules these choices imply, including the two new non-negotiables |
+| [../security/README.md](../security/README.md) | Every control assumes this topology — especially the two-worker split |
+| [../security/third-parties.md](../security/third-parties.md) | The data-flow consequence of routing model calls through OpenRouter |
+| [../v1/spec.md](../v1/spec.md) | The language half of the stack, settled earlier |

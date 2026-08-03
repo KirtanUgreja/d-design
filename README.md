@@ -27,80 +27,18 @@ Without it, this is Claude Artifacts — which already generates a beautiful HTM
 
 ## Docs
 
-Docs are versioned by release. `docs/v1/` is the current design.
+**[docs/README.md](docs/README.md) is the index.** It routes to every directory, and each directory's README routes to every file in it — so you can get from a question to the exact document in two hops.
 
-**v1 — generate, edit, publish.** One art direction, end to end.
+| Directory | | What it covers |
+|---|---|---|
+| [docs/v1/](docs/v1/README.md) | versioned | Generate, edit, publish. One art direction, end to end |
+| [docs/v2/](docs/v2/README.md) | versioned | Creative range — same content, radically different experiences |
+| [docs/v3/](docs/v3/README.md) | versioned | The wow release: derived, personalized, live, multilingual, dimensional |
+| [docs/techstack/](docs/techstack/README.md) | current | Where every piece runs, which model, what the AI may call |
+| [docs/security/](docs/security/README.md) | current | Threat model and every control, gated to the version that needs it |
+| [docs/coderules/](docs/coderules/README.md) | current | How the code stays consistent when an AI writes most of it |
 
-| Doc | What's in it |
-|---|---|
-| [v1/spec.md](docs/v1/spec.md) | Locked decisions, architecture, stack, persistence, build order, verification, risks |
-| [v1/market.md](docs/v1/market.md) | Why Gamma won and Tome died — and what that means for the wedge |
-| [v1/scene-schema.md](docs/v1/scene-schema.md) | The IR — every type, all 11 blocks, every validation rule |
-| [v1/art-direction.md](docs/v1/art-direction.md) | The token layer, `cinematic-dark`, motion implementation, accessibility |
-| [v1/ai-pipeline.md](docs/v1/ai-pipeline.md) | The four phases, concrete API, caching strategy, what it costs |
-
-**v2 — creative range.** Same content, radically different experiences, one click.
-
-| Doc | What's in it |
-|---|---|
-| [v2/spec.md](docs/v2/spec.md) | Theme, commitments vs bets, what changes from v1, build order |
-| [v2/art-direction-system.md](docs/v2/art-direction-system.md) | AD format, the 3 hand-authored ADs, motion axis, user controls, linter |
-| [v2/transformations.md](docs/v2/transformations.md) | Reskin, overflow handling, slides mode, version history |
-| [v2/primitives.md](docs/v2/primitives.md) | The 7 new primitives, and what was refused |
-
-**v3 — the wow release.** Derived, personalized, live, multilingual, dimensional. This is what goes in front of real users.
-
-| Doc | What's in it |
-|---|---|
-| [v3/spec.md](docs/v3/spec.md) | Theme, locked decisions, what changes from v2, build order, risks |
-| [v3/ai-art-direction.md](docs/v3/ai-art-direction.md) | Deriving an art direction from a reference — and what it refuses to copy |
-| [v3/personalization.md](docs/v3/personalization.md) | Signed per-recipient links, analytics, privacy stance |
-| [v3/localization.md](docs/v3/localization.md) | Transcreation, per-script fonts, RTL, locale delivery |
-| [v3/live-data.md](docs/v3/live-data.md) | Server-fetched bindings that keep the page network-free |
-| [v3/dimensional.md](docs/v3/dimensional.md) | 3D scenes, the `environment` token group, WebGPU stack, performance budgets |
-| [v3/compliance.md](docs/v3/compliance.md) | EU AI Act Article 50 — marking AI-generated content. In force since 2 Aug 2026 |
-
-**Security.** Cross-cutting, versioned by when each threat arrives. The core threat: untrusted input reaches an LLM whose output becomes a web page.
-
-| Doc | What's in it |
-|---|---|
-| [security/README.md](docs/security/README.md) | Threat model, trust boundaries, which control is needed when |
-| [security/prompt-injection.md](docs/security/prompt-injection.md) | The five injection paths, and why the schema does most of the work |
-| [security/tenancy-and-data.md](docs/security/tenancy-and-data.md) | Authentication, RLS, server-mediated reads, credentials, PII, retention |
-| [security/content-and-web.md](docs/security/content-and-web.md) | Origins, CSP, sandbox, XSS, uploads, CSS-token injection, custom domains |
-| [security/infrastructure.md](docs/security/infrastructure.md) | SSRF, failing closed, denial-of-wallet, billing entitlements |
-| [security/platform-and-packages.md](docs/security/platform-and-packages.md) | Framework CVEs, cache poisoning, hostile-input parsers, version floors |
-| [security/third-parties.md](docs/security/third-parties.md) | Where customer data actually goes — model routing, subprocessors, GDPR |
-| [security/build-pipeline.md](docs/security/build-pipeline.md) | CI/CD as an attack path — OIDC trust policies, Terraform state, publishing |
-| [security/ai-built-app-failures.md](docs/security/ai-built-app-failures.md) | How AI-built apps actually get breached, audited against this design |
-| [security/adversarial-ai.md](docs/security/adversarial-ai.md) | The machine-speed attacker, and the OWASP mapping |
-| [security/testing.md](docs/security/testing.md) | Automated suite and manual checklist |
-| [security/operations.md](docs/security/operations.md) | Disclosure, incident response, dependencies, release gate |
-
-**Tech stack.** Where every piece runs, and why. The language half was settled in v1; this settles the operational half.
-
-| Doc | What's in it |
-|---|---|
-| [techstack/README.md](docs/techstack/README.md) | The shape — three origins, three runtimes — and what to build when |
-| [techstack/frontend.md](docs/techstack/frontend.md) | The editor, the published artifact, and what JS reaches a viewer |
-| [techstack/backend.md](docs/techstack/backend.md) | App server, the two workers, data, auth, jobs |
-| [techstack/ai-stack.md](docs/techstack/ai-stack.md) | Model neutrality, evals, why no agent framework, why not Python |
-| [techstack/pipeline-tools.md](docs/techstack/pipeline-tools.md) | What the model may call, and the loop that lets it see its own output |
-| [techstack/infrastructure.md](docs/techstack/infrastructure.md) | AWS topology, delivery, secrets, CI/CD, local dev, the repos |
-| [techstack/decisions.md](docs/techstack/decisions.md) | Every choice, its rejected alternative, and what it superseded |
-
-**Code rules.** How the codebase stays consistent, clean, and cheap to change — solo, with an AI writing much of it.
-
-| Doc | What's in it |
-|---|---|
-| [coderules/README.md](docs/coderules/README.md) | The eleven non-negotiables and the one idea behind them |
-| [coderules/structure.md](docs/coderules/structure.md) | Feature folders, public APIs, naming |
-| [coderules/typescript.md](docs/coderules/typescript.md) | Strict TS, Zod boundaries, Results vs throws |
-| [coderules/dependencies.md](docs/coderules/dependencies.md) | Stdlib-first, and the dependency ledger |
-| [coderules/patterns.md](docs/coderules/patterns.md) | No-styling invariant, pure renderer core, data access |
-| [coderules/performance.md](docs/coderules/performance.md) | Clarity first, the three real hot paths, React Compiler and `use cache` |
-| [coderules/ai-authorship.md](docs/coderules/ai-authorship.md) | What measurably goes wrong when an AI writes most of the code |
-| [coderules/tooling.md](docs/coderules/tooling.md) | Pre-commit gate, linter choice, and the instruction file that carries the rules |
+Version directories record what was believed at the time; the cross-cutting ones are kept current. Where they disagree, the cross-cutting ones win — and [docs/techstack/decisions.md](docs/techstack/decisions.md) lists what was superseded.
 
 Read `v1/scene-schema.md` first. Everything else depends on that shape.
 

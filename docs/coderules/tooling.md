@@ -45,6 +45,9 @@ The gate above is per-commit and fast. CI adds the things that are too slow or n
 | **App repo** | Playwright — sandbox escape, the two-requests `connect-src` assertion, cross-origin behavior · build-output grep for key-shaped strings · Promptfoo structural evals |
 | **Fetch worker repo** | SSRF suite including socket-level unreachability — a test of the network, not the code |
 | **Terraform** | `plan` on PR, `apply` on merge. A security-group change should be at least as visible as an auth-check change, since nothing type-checks it |
+| **Docs** | `scripts/check-docs.sh` — every relative link resolves, every `.md` is listed in its directory's README, every directory has one |
+
+That last row is small and it is the only thing that keeps the navigation in [../README.md](../README.md) true. An index that silently stops listing a file is worse than no index, because it teaches a reader — or an agent — that the directory contains less than it does. The check takes a second and fails on both the dead link and the unlisted file.
 | **Deploy** | Vercel on push; worker images to ECR via OIDC — no long-lived AWS keys in GitHub |
 
 ## Evals are two things, and only one of them gates

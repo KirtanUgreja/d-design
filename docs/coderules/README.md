@@ -1,6 +1,10 @@
 # Code Rules
 
-How the codebase stays consistent, clean, and cheap to change — solo, with an AI writing much of it.
+> How the codebase stays consistent, clean, and cheap to change — solo, with an AI writing much of it.
+
+**Start here:** the [Non-negotiables](#non-negotiables) below. Eleven lines, and rules 9 and 10 prevent bugs that look like correct code in review.
+
+**Writing code right now?** The condensed version lives in `AGENTS.md` at the repo root — see [tooling.md](tooling.md) → "The instruction file".
 
 ## The one idea
 
@@ -42,8 +46,45 @@ Eleven lines. If a change violates one, the change is wrong, not the rule.
 
 Rules 9 and 10 are newer than the rest and came from the security and tech-stack work rather than from taste. Both describe failures that are silent, that look like ordinary code in review, and that no type system catches — which is exactly the profile of a rule worth writing down.
 
+## Find it fast
+
+| If you need… | Go to |
+|---|---|
+| Where a file goes, and the repo/package layout | [structure.md](structure.md) → "Three deployables, two repos", "Feature folders" |
+| The server/client boundary — `server-only`, taint, Server Actions | [structure.md](structure.md) → "The server/client boundary" |
+| Naming and file conventions | [structure.md](structure.md) → "Files" |
+| Which TypeScript, and the TS 7 compiler-API caveat | [typescript.md](typescript.md) → "Which TypeScript — and the one thing that breaks" |
+| How types are derived, and where the model's JSON Schema comes from | [typescript.md](typescript.md) → "Types come from schemas" |
+| What counts as external input | [typescript.md](typescript.md) → "Trust boundaries: one parse, at entry" |
+| `Result` vs throwing | [typescript.md](typescript.md) → "Errors" |
+| Publishing `@d-design/schema` | [typescript.md](typescript.md) → "The schema is a published package" |
+| Whether to add a package | [dependencies.md](dependencies.md) → "Adding one", "The ledger" |
+| Supply-chain install hardening | [dependencies.md](dependencies.md) → "Installing one safely" |
+| Which container a risky dependency belongs in | [dependencies.md](dependencies.md) → "Where a dependency runs is part of the decision" |
+| The no-styling invariant | [patterns.md](patterns.md) → rule 1 |
+| Why the renderer has no `mode` prop | [patterns.md](patterns.md) → rule 2 |
+| The tenant transaction wrapper | [patterns.md](patterns.md) → rule 4 — **the most dangerous code in the backend** |
+| The fail-closed rule, with examples | [patterns.md](patterns.md) → rule 5 |
+| The model seam | [patterns.md](patterns.md) → rule 6 |
+| What to optimize, and what not to | [performance.md](performance.md) → "The only hot paths", "What not to optimize" |
+| The pre-commit gate and lint rules | [tooling.md](tooling.md) → "The pre-commit gate" |
+| What CI runs across two repos | [tooling.md](tooling.md) → "What CI runs" |
+| Which evals gate a merge, and which never do | [tooling.md](tooling.md) → "Evals are two things" |
+| Linter choice, and when to switch to Biome | [tooling.md](tooling.md) → "Which linter and formatter" |
+| What goes wrong when an AI writes the code | [ai-authorship.md](ai-authorship.md) → "What actually goes wrong — measured" |
+| Which parts of a diff to actually read | [ai-authorship.md](ai-authorship.md) → "The four working rules" |
+
 ## How these relate to ponytail
 
 This project is built in ponytail mode: the laziest solution that actually works. These rules are not extra process — they are the shape laziness takes at scale. A feature with a clear public API is *less* to hold in your head. A typed Result is *less* debugging. One derived type is *less* to keep in sync. Every rule here removes future work; none adds ceremony.
 
 Where a rule would add ceremony, it is not here. There is no coverage target, no mandated JSDoc, no repository abstraction over an ORM that is already an abstraction. Those are complexity wearing a rulebook's clothes.
+
+## Connects to
+
+| | |
+|---|---|
+| [../techstack/README.md](../techstack/README.md) | What the code actually runs on — these rules are downstream of those choices |
+| [../security/README.md](../security/README.md) | Where rules 9 and 10 come from, and what they are defending |
+| [../v1/scene-schema.md](../v1/scene-schema.md) | The shape rule 7 protects |
+

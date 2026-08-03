@@ -1,5 +1,11 @@
 # Security
 
+> The threat model and every control, gated to the version that introduces the threat. The core problem: untrusted input reaches an LLM whose output becomes a web page.
+
+**Start here:** the *Adversaries* and *Trust boundaries* sections below — they route to everything else by threat rather than by topic.
+
+**Looking for one specific thing?** Jump to [Find it fast](#find-it-fast).
+
 Security is cross-cutting, so it lives outside the version directories. But the threats arrive on different schedules, and that matters more than it looks.
 
 ## The unusual thing about this app
@@ -101,6 +107,35 @@ RLS does not exist before v3, because multi-tenancy does not exist before v3. Pr
 
 Two are worth reading even if you skip the rest. [ai-built-app-failures.md](ai-built-app-failures.md) is the measured evidence of how applications built this way actually get breached — in one sample of 1,645, **~70% shipped with row-level security disabled**. [adversarial-ai.md](adversarial-ai.md) carries the OWASP mapping (LLM Top 10 2025, Agentic Top 10 2026, Web Top 10 2025) and the honest answer to whether this can be made unhackable.
 
+## Find it fast
+
+| If you need… | Go to |
+|---|---|
+| Whether a poisoned PDF can do real damage | [prompt-injection.md](prompt-injection.md) → "Why the schema does most of the work" |
+| What tools the AI may call, and the tier rules | [prompt-injection.md](prompt-injection.md) → "Defense 5", and [../techstack/pipeline-tools.md](../techstack/pipeline-tools.md) |
+| RLS policies, and the session-variable pattern | [tenancy-and-data.md](tenancy-and-data.md) → "RLS for authenticated users" |
+| Auth rules — sessions, OAuth linking, reset tokens, enumeration | [tenancy-and-data.md](tenancy-and-data.md) → "Authentication" |
+| What is stored about a recipient, and for how long | [tenancy-and-data.md](tenancy-and-data.md) → "PII and retention" |
+| The CSP for a published page | [content-and-web.md](content-and-web.md) → "CSP" |
+| The `/r/fields` and `/v/beacon` endpoints, and CORS | [content-and-web.md](content-and-web.md) → "The two public endpoints" |
+| Sandbox flags for `Slot` | [content-and-web.md](content-and-web.md) → "The Slot sandbox" |
+| Upload handling — magic bytes, SVG, decompression bombs | [content-and-web.md](content-and-web.md) → "Uploads" |
+| Custom domains and dangling DNS | [content-and-web.md](content-and-web.md) → "Custom domains" |
+| SSRF, and why network isolation beats URL filtering | [infrastructure.md](infrastructure.md) → "SSRF" |
+| Headless Chromium hardening | [infrastructure.md](infrastructure.md) → "Headless Chromium is the most exposed component" |
+| The fail-closed rule | [infrastructure.md](infrastructure.md) → "Failing closed — OWASP A10" |
+| Denial of wallet, quotas, the kill switch | [infrastructure.md](infrastructure.md) → "Denial of wallet" |
+| Package version floors, and known CVEs | [platform-and-packages.md](platform-and-packages.md) → "Version floors" |
+| Cache poisoning and web cache deception | [platform-and-packages.md](platform-and-packages.md) → "Cache poisoning and web cache deception" |
+| Where customer prompts actually go | [third-parties.md](third-parties.md) → "The model route is not one vendor" |
+| The GDPR subprocessor obligation | [third-parties.md](third-parties.md) → "The full subprocessor list" |
+| OIDC trust policies, Terraform state, publishing | [build-pipeline.md](build-pipeline.md) |
+| What an automated attacker changes | [adversarial-ai.md](adversarial-ai.md) → "The one thing that actually changes" |
+| The OWASP mapping | [adversarial-ai.md](adversarial-ai.md) → "OWASP mapping" |
+| A test to write | [testing.md](testing.md) — organized by threat, gated by version |
+| What to do during an incident | [operations.md](operations.md) → "Incident response" |
+| The release gate | [operations.md](operations.md) → "Release gate" |
+
 ## Principles
 
 **Prefer structural controls over filters.** A blocklist you must keep correct forever is worse than an architecture where the attack has nowhere to land. Network-level isolation beats URL parsing; an opaque-origin iframe beats scanning generated JavaScript; a schema with no dangerous field beats detecting dangerous output.
@@ -108,6 +143,15 @@ Two are worth reading even if you skip the rest. [ai-built-app-failures.md](ai-b
 **The AI may arrange, style, and translate what the user gave it. It may not invent the subject.** This began as a quality rule — never invent marketing claims, never generate the product — and it turns out to be a security rule too. Applied to URLs it means `CTA.href` comes from the Brief, which makes an injected phishing link structurally impossible rather than merely unlikely.
 
 **Assume the model is compromised.** Design so that a fully attacker-controlled model produces a page that is ugly, not a page that is dangerous.
+
+## Connects to
+
+| | |
+|---|---|
+| [../techstack/README.md](../techstack/README.md) | The runtime topology every control in this directory assumes |
+| [../coderules/patterns.md](../coderules/patterns.md) | The rules that make these controls mechanical — the tenant wrapper, failing closed, the model seam |
+| [../v3/compliance.md](../v3/compliance.md) | Legal obligations, which are adjacent to but distinct from security |
+| [../v3/personalization.md](../v3/personalization.md) | The product side of recipient tokens and identified tracking |
 
 **Fail closed on anything that grants; fail open on anything that merely displays.** A quota check that cannot run refuses. A 3D model that cannot load shows a poster. This is OWASP's newest category and this product has an unusual number of fallback paths — see [infrastructure.md](infrastructure.md).
 

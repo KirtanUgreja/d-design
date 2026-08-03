@@ -1,0 +1,47 @@
+# v2 — creative range
+
+> Same content, radically different experiences, one click. This is the release that proves the art-direction abstraction was real.
+
+**Start here:** [spec.md](spec.md) → "What v2 changes from v1".
+
+v1 ships one art direction, so the central bet is untested — a token layer with a single set of tokens is indistinguishable from hard-coded styling. v2 is the falsification test: three art directions, four motion vocabularies, and a reskin that must not break a single layout.
+
+## Files
+
+| Doc | What's in it |
+|---|---|
+| [spec.md](spec.md) | Theme, commitments vs bets, 13 locked decisions, platform reality, the deltas from v1, build order, verification, risks |
+| [art-direction-system.md](art-direction-system.md) | **The AD format.** DTCG alignment, budgets, brand mapping, the 3 hand-authored ADs, motion as an independent axis, user controls, the linter |
+| [transformations.md](transformations.md) | Reskin and its transition, overflow handling, compare view, motion swap, slides mode, version history |
+| [primitives.md](primitives.md) | The 7 new blocks — `Gallery`, `Timeline`, `Comparison`, `Marquee`, `LogoWall`, `SpecTable`, `ScrollSequence` — and what was refused |
+
+## Find it fast
+
+| If you need… | Go to |
+|---|---|
+| The full `ArtDirection` type | [art-direction-system.md](art-direction-system.md) → "The format" |
+| Per-AD character budgets, and why they exist | [art-direction-system.md](art-direction-system.md) → "The format" (cinematic-dark 60, editorial-light 80, bold-brutalist 34) |
+| How a user's brand color becomes accent, hover, and soft variants | [art-direction-system.md](art-direction-system.md) → "The format" (OKLCH + `color-mix`) |
+| The three ADs, concretely | [art-direction-system.md](art-direction-system.md) → "The three hand-authored art directions" |
+| Why motion is a separate axis from visual style | [art-direction-system.md](art-direction-system.md) → "Motion as an independent axis" (3 ADs × 4 vocabularies = 12 combinations) |
+| What the linter rejects, and the dual contrast standard | [art-direction-system.md](art-direction-system.md) → "The AD linter" (WCAG 2.2 AA floor + APCA gate) |
+| How the reskin transition works | [transformations.md](transformations.md) → "Reskin" (View Transitions, Baseline since Oct 2025) |
+| What happens when content overflows a tighter budget | [transformations.md](transformations.md) → "Reskin" |
+| Slides mode, and what degrades in it | [transformations.md](transformations.md) → "Slides mode" |
+| A new primitive's props | [primitives.md](primitives.md) — one section per block |
+| What was proposed and rejected | [primitives.md](primitives.md) → "Not added, and why" |
+
+## The thing to understand about v2
+
+The per-AD **character budget** was introduced here to make reskin safe — copy that fits `editorial-light` at 80 characters must not break `bold-brutalist` at 34.
+
+That mechanism turns out to be what makes v3's localization possible at all: transcreation translates *within* a budget rather than translating and then fixing overflow ([../v3/localization.md](../v3/localization.md)). A constraint added for one reason paying off somewhere unrelated is the strongest available signal that the abstraction is right.
+
+## Connects to
+
+| | |
+|---|---|
+| [../v1/README.md](../v1/README.md) | The schema, the renderer, and the single AD this release generalizes |
+| [../v3/ai-art-direction.md](../v3/ai-art-direction.md) | v3 derives ADs by filling in v2's four control axes — same format, same linter |
+| [../security/content-and-web.md](../security/content-and-web.md) | User-authored ADs introduce CSS token injection, the threat that arrives with this release |
+| [../techstack/frontend.md](../techstack/frontend.md) | How motion actually ships to a published page |
