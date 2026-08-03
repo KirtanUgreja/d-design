@@ -57,7 +57,8 @@ Docs are versioned by release. `docs/v1/` is the current design.
 | [v3/personalization.md](docs/v3/personalization.md) | Signed per-recipient links, analytics, privacy stance |
 | [v3/localization.md](docs/v3/localization.md) | Transcreation, per-script fonts, RTL, locale delivery |
 | [v3/live-data.md](docs/v3/live-data.md) | Server-fetched bindings that keep the page network-free |
-| [v3/dimensional.md](docs/v3/dimensional.md) | 3D scenes, the `environment` token group, performance budgets |
+| [v3/dimensional.md](docs/v3/dimensional.md) | 3D scenes, the `environment` token group, WebGPU stack, performance budgets |
+| [v3/compliance.md](docs/v3/compliance.md) | EU AI Act Article 50 — marking AI-generated content. In force since 2 Aug 2026 |
 
 **Security.** Cross-cutting, versioned by when each threat arrives. The core threat: untrusted input reaches an LLM whose output becomes a web page.
 

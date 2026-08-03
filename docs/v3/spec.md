@@ -30,6 +30,7 @@ If you ever want to shorten the loop, the natural cut point is after localizatio
 | **Live data** | Stats bound to Airtable/Notion, server-fetched and cached. [live-data.md](live-data.md) |
 | **3D scenes** | Scroll-driven WebGL, styled by the art direction. [dimensional.md](dimensional.md) |
 | **Pricing** | Free to generate, pay to publish |
+| **AI transparency compliance** | Machine-readable marking of generated content — legally required, in force since 2 Aug 2026. [compliance.md](compliance.md) |
 
 Marketplace moves to **v4**. Its gate was real users, and by this timeline there still aren't any when v3 ships. What v2 and v3 contribute is the AD format and the linter that make it possible later.
 
@@ -57,6 +58,19 @@ Marketplace moves to **v4**. Its gate was real users, and by this timeline there
 **Never generate the product.** v1 refused AI-generated product imagery. v3 refuses AI image-to-3D of real products for the same reason: a plausible-but-wrong render of the thing being sold is a credibility problem no quality bar fixes. Stock primitives, abstract forms, and real uploads only.
 
 The same instinct rules out cloning a reference site's design, and rules out regenerating scene copy per recipient. When in doubt: the system may arrange, style, and translate what the user gave it. It may not invent the subject.
+
+## Platform & regulatory reality (researched August 2026)
+
+Three capabilities matured and one legal obligation came into force. The obligation is not optional and is the only item here that adds work.
+
+| | Status | What it changes |
+|---|---|---|
+| **EU AI Act Article 50** | **In force 2 August 2026.** Penalties to €15M / 3% of global turnover | Generated text, images, **and translations** must be marked machine-readably as artificially generated. C2PA is the mechanism the Commission's draft Code of Practice names. See [compliance.md](compliance.md) |
+| **WebGPU** | **Baseline January 2026**, ~82% support. Three.js `WebGPURenderer` zero-config since r171 | 3D renderer choice is a non-decision: WebGPU primary, WebGL2 fallback, Three.js handles it |
+| **CSS logical properties** | Long stable, universally recommended for i18n | RTL is nearly free — *if the renderer was authored logically in v1*. `transform` is the one documented exception, and it's where motion lives |
+| **Opus 5 vision** | 2576px long edge, 1:1 coordinates | AD derivation should give the model crop/verify tools rather than raising effort — a more cost-effective lever on this model |
+
+The RTL entry is the one to act on earliest: it is a **v1 authoring decision with a v3 payoff**, and retrofitting it means auditing 19 primitives across 3 art directions.
 
 ## Shipping to real people: the things v1 and v2 could skip
 
@@ -128,6 +142,7 @@ Ordered by reversibility — cheapest to unwind first.
 7. Analytics + consent + privacy controls
 8. 3D: `environment` rendering, `Model3D`, stock library, abstract generators
 9. Accounts, custom domains, branding badge, billing, publish gate
+10. **AI transparency marking** — C2PA on generated imagery, machine-readable declaration on published pages, per-locale marking. Not last because it is least important; last because it needs every generating surface to exist first. **It gates launch, not v3 feature-completeness**
 
 Steps 1–4 are a shippable product on their own. If you ever decide to meet users earlier, stop here.
 
@@ -144,6 +159,9 @@ Steps 1–4 are a shippable product on their own. If you ever decide to meet use
 | **Personalization** | Tamper with a signed token → rejected. Unpersonalized link → clean defaults, no empty braces |
 | **Privacy default** | Publish without opting in → `views.recipient_id` is null for every row |
 | **3D** | Mid-range phone: interactive, under budget, degrades to a static render on failure |
+| **C2PA survives the pipeline** | Generated image → manifest present after upload, **server-side re-encode**, storage, and serving. The security re-encode strips metadata by design; this is the test most likely to fail |
+| **Content marking** | Published page and every locale page carry a machine-readable AI-content declaration, derived from per-block provenance. Human-authored copy is *not* marked synthetic |
+| **RTL exception list** | Arabic renders mirrored via `dir` alone, except `translateX` motion, `Marquee`, and horizontal `Timeline` — assert each inverts |
 | **Reskin still holds** | 3 ADs + derived ADs × 4 motion × 2 modes × 12 locales. The v2 guarantee must survive everything above |
 
 That last row matters most. Every v3 feature is a chance to break the one thing v2 promised.
@@ -157,6 +175,8 @@ That last row matters most. Every v3 feature is a chance to break the one thing 
 **3. Derived ADs will be valid and ugly.** The linter enforces contrast, scale, and motion bounds — it cannot enforce taste. Expect to hand-curate a set of derivation *priors* pulled from the 3 hand-authored ADs, and expect that to be the real work.
 
 **4. 3D is a specialty, not a feature.** Asset pipelines, draw-call budgets, mobile GPUs, memory ceilings, and a graceful fallback for every failure. It is last in the build order for that reason. Be willing to ship v3 without it.
+
+**4b. AI transparency is a launch gate, not a feature.** Article 50 has been in force since 2 August 2026, penalties reach €15M or 3% of global turnover, and the wedge is marketers — many EU-based or serving EU audiences. The architecture already tracks what it generated versus what the user supplied, which is most of the work. What remains is marking, and one collision worth knowing about now: the security re-encode that strips EXIF will also strip a C2PA manifest unless it is written to preserve it. See [compliance.md](compliance.md), and get counsel.
 
 **5. Analytics is a compliance surface.** Identified tracking means consent, retention policy, deletion requests, and a DPA. Aggregate-by-default contains it, but the moment a customer opts in, that surface is yours too.
 

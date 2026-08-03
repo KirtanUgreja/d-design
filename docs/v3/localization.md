@@ -41,6 +41,12 @@ Mitigation, non-optional:
 
 Ship the review path in the same release as the transcreation. A locale that publishes without review is the failure mode.
 
+### The review gate is also the compliance gate
+
+EU AI Act guidance names **AI-manipulated translations** explicitly among the content that must be marked machine-readably as artificially generated. Transcreation is not a mechanical translation — it is a rewrite to fit a character budget, which materially affects meaning by the guidance's own wording.
+
+So the `needs-review` workflow above is doing two jobs at once: it catches subtly wrong German, and it is the human oversight step that makes each locale's AI-generated status a reviewed fact. Each locale page carries its own marking, independent of the source. See [compliance.md](compliance.md).
+
 ## Per-script fonts
 
 Your display font almost certainly has no Japanese, Arabic, or Cyrillic. Without fallbacks, the feature looks broken outside Latin — and it looks broken in a way that reads as carelessness.
@@ -60,18 +66,33 @@ Fallbacks are chosen to preserve *character*, not to match shapes. `bold-brutali
 
 Per-script metric adjustments come with it — CJK type generally needs slightly looser line height and no negative tracking, which means `type.scripts` carries scale overrides, not only families.
 
-## RTL
+## RTL — mostly free, if the renderer was authored correctly
 
-Arabic and Hebrew mirror the entire experience.
+Arabic and Hebrew mirror the entire experience. The amount of work that takes was decided back in v1, by whether the renderer used physical or logical CSS properties.
 
-| | Mirrors |
+**Author everything in CSS logical properties from the start.** `margin-inline-start` instead of `margin-left`, `padding-block-end` instead of `padding-bottom`, `inline-size`/`block-size` instead of `width`/`height`, `border-inline-start` instead of `border-left`. Set `dir` on the root and the entire layout flips with no separate stylesheet, no mirrored token set, and no per-component branching.
+
+This is a **v1 decision with a v3 payoff**, and the asymmetry is brutal: authored logically from day one, RTL costs almost nothing. Authored physically and retrofitted, it means auditing every one of the 19 primitives across 3 art directions.
+
+### What logical properties handle automatically
+
+| | |
 |---|---|
-| Layouts | `split-left` ↔ `split-right`; `grid` cell order reverses |
-| Text | Alignment and flow direction |
-| Motion | `revealX` direction inverts; parallax unchanged |
-| `Marquee` | Direction inverts |
-| `Timeline` | Horizontal orientation reverses; vertical unchanged |
-| `Comparison` | `left`/`right` swap positions, keep their labels |
+| Layouts | `split-left` / `split-right` flip on their own — the names describe *authoring* position, and the renderer resolves reading order |
+| Spacing, borders, radii | All of it, given logical authoring |
+| Text alignment and flow | Automatic |
+| Grid and flex flow | Follows `direction` |
+
+### What does not, and must be handled explicitly
+
+**`transform` is the documented exception** — it operates on x/y axes and ignores block/inline entirely. That is precisely where this product lives:
+
+- **`revealX` / any `translateX` in the motion vocabulary** must invert manually in RTL. The reveal that slides in from the left in English must slide from the right in Arabic, and no logical property will do it for you.
+- **`Marquee` direction** inverts.
+- **`Timeline`** in horizontal orientation reverses; vertical is unaffected.
+- **Parallax** is `translateY` — unchanged.
+
+That is the whole exception list, and it is short enough to test exhaustively.
 
 `direction` is a property of the locale, not the scene tree. The renderer resolves it, so nothing in the IR changes and a single tree serves both directions.
 

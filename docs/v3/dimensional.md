@@ -58,6 +58,22 @@ The refusal is the same principle as v1's ban on AI-generated product imagery: *
 
 Abstract 3D is the one that will carry actual usage. Most users have no model of anything, and a scroll-driven abstract form under `cinematic-dark`'s dramatic lighting is beautiful without claiming to be a product.
 
+## The stack — and why this got easier
+
+**Three.js + React Three Fiber**, with **WebGPU as the primary renderer and WebGL2 as the fallback.**
+
+That recommendation would have been premature a year earlier. Three things changed:
+
+| | Status |
+|---|---|
+| **WebGPU** | Reached **Baseline in January 2026**, ~82% global support. Chrome 113+, Edge 113+, Safari 26+. Firefox is the notable holdout — still not on by default as of mid-2026 |
+| **Three.js `WebGPURenderer`** | Production-ready with **zero configuration since r171** (September 2025). Migration from `WebGLRenderer` is often a one-line swap |
+| **React Three Fiber** | Renderer is overridable via the `Canvas` `gl` prop, so the switch is a prop — and R3F is the natural fit for a React renderer that already composes scenes from a typed tree |
+
+Figma began its production WebGPU rollout in September 2025, ramping by GPU type, OS, and browser. For a B2B and prosumer audience in 2026, **WebGPU primary with a WebGL2 fallback for the ~5–10% tail** is the shipping consensus, and Three.js handles the fallback rather than you.
+
+This does not make 3D cheap — see the honest assessment at the end of this document. It makes the *renderer* choice a non-decision, which was never the hard part.
+
 ## Performance
 
 This is where the feature lives or dies. Every item is a requirement, not an optimization.
@@ -74,7 +90,7 @@ This is where the feature lives or dies. Every item is a requirement, not an opt
 
 **Mobile:** reduced texture resolution, capped device pixel ratio, shadows off. Test on a mid-range Android, not on a recent iPhone.
 
-**Failure:** no WebGL, GPU blocklist, context lost, or budget exceeded → static render, no error, no empty frame. Every 3D scene needs a poster image, generated server-side at publish. Not a fallback — a requirement.
+**Failure — three tiers, in order:** WebGPU unavailable → WebGL2 (Three.js handles this). WebGL2 unavailable, GPU blocklisted, context lost, or budget exceeded → **static poster render, no error, no empty frame.** Every 3D scene needs a poster image generated server-side at publish. Not a fallback — a requirement, and the same asset the slides-mode degradation uses.
 
 **Reduced motion:** static frame, no auto-rotation, no scroll-driven camera.
 

@@ -26,6 +26,20 @@ If derivation needs a fifth axis to express a reference, that axis was missing f
 
 Description-first is deliberate. It exercises the whole derivation → linter → render path without a vision model in the loop, so when images arrive you are debugging perception rather than plumbing.
 
+### Vision mechanics — give it tools, not more thinking
+
+Opus 5 sits in the high-resolution vision tier: **2576 pixels on the long edge**, up to ~4784 visual tokens per image, with coordinates mapping 1:1 to actual pixels (no scale-factor math). It is meaningfully stronger on document, chart, and diagram understanding and on UI/frontend visual replication than prior models.
+
+The non-obvious part, and the one that shapes this feature's architecture:
+
+> **Giving the model tools to iteratively analyze, crop, and visually verify its own work is a markedly more cost-effective lever than raising thinking effort.**
+
+For AD derivation that means the pipeline should not be *one big image plus `effort: "max"`*. It should be: hand the model a crop tool and let it inspect the reference the way a designer would — zoom the type to judge character, sample a region to read density, isolate a component to assess spatial rhythm. Each of those is a cheap targeted look rather than one expensive global stare.
+
+**Cost is not the constraint here either.** At ~4784 tokens per image and $5/MTok input, a five-image moodboard is roughly $0.12 of vision. Consistent with [../v1/ai-pipeline.md](../v1/ai-pipeline.md): the expensive thing about this product is never the tokens.
+
+One migration note: prompt-side workarounds written for older models' vision limitations are worth re-validating rather than carrying forward — several are now counterproductive on current models.
+
 ## What is extracted, and what is refused
 
 **Extracted — abstract qualities:**

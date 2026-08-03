@@ -1,0 +1,97 @@
+# AI Transparency Compliance
+
+**This is not legal advice.** It is a summary of a regulation that came into force two days before this document was written, affecting a product whose entire output is AI-generated. Get counsel before v3 ships to EU users. The purpose here is to make sure the *architecture* can satisfy the obligation, because retrofitting content marking into a publishing pipeline is far worse than designing for it.
+
+## What changed on 2 August 2026
+
+**EU AI Act Article 50 transparency obligations are now in force.**
+
+The provision most relevant to this product:
+
+> Providers of AI systems, including general-purpose AI systems, generating **synthetic audio, image, video or text content**, shall ensure that the outputs of the AI system are **marked in a machine-readable format and detectable as artificially generated or manipulated**.
+
+Three details that matter here specifically:
+
+| Detail | Why it lands on this product |
+|---|---|
+| **Text is explicitly in scope** | Not just images. Every scene's copy is generated text |
+| **Translations and summaries are named** | Guidance calls out "AI-generated or AI-manipulated translations, summaries, image alterations and other modifications that materially affect the meaning or appearance of content." **v3's transcreation is precisely an AI-manipulated translation** |
+| **Not limited to high-risk systems** | Article 50 applies to any AI system used in the covered situations. In practice it is relevant to every business using generative AI to produce content |
+
+**Penalties** run up to **€15 million or 3% of global annual turnover.**
+
+**Timing:** obligations apply from 2 August 2026. The AI Omnibus provisional agreement of May 2026 gives generative systems already on the market before that date until **2 December 2026** to meet the machine-readable marking requirement under Article 50(2). A product that has not launched does not benefit from that grace period in the same way — build it in.
+
+## The mechanism: C2PA Content Credentials
+
+The European Commission's **draft Code of Practice on Transparency names C2PA Content Credentials by example** as the technical mechanism for machine-readable marking.
+
+C2PA is where the industry has converged. Current spec is **version 2.3 (February 2026)**. OpenAI's DALL·E, Adobe Firefly, Google Gemini, and Stability AI all sign outputs with Content Credentials; TikTok has labelled over 1.3 billion videos with provenance data; Google's Pixel 10 was the first phone to earn C2PA Conformance certification.
+
+A C2PA manifest declares which AI system generated or modified the content, when it was produced, and which organisation signed the claim.
+
+## What this product has to do
+
+Three surfaces, three different answers.
+
+### 1. Generated imagery — the solved case
+
+AI-generated images get a **C2PA manifest attached at generation time**, preserved through storage and serving. This is the well-trodden path: the major image models already emit Content Credentials, and the tooling exists.
+
+The catch is the pipeline: re-encoding an image server-side to strip EXIF (a security control from [../security/content-and-web.md](../security/content-and-web.md)) will destroy a C2PA manifest unless the re-encoder preserves it. **These two requirements collide, and security wins by default unless someone notices.** Verify manifests survive the upload/re-encode path — that is the specific test to write.
+
+### 2. Generated text — the harder case
+
+C2PA is built primarily for images, video, and audio. Text provenance is less settled, and a published experience is HTML.
+
+The workable approach for v3:
+
+- **A machine-readable declaration on the published page** — structured metadata stating that the copy is AI-generated, which system produced it, and when. This is what "machine-readable and detectable" asks for, in the medium the content actually ships in.
+- **Provenance recorded per block in the scene tree**, so the page-level declaration is derived from real data rather than asserted blanketly. The schema already tracks `source: 'upload' | 'generated'` on assets ([../v1/scene-schema.md](../v1/scene-schema.md)) — extend the same idea to text.
+- **Human-authored copy is not synthetic content.** This is why the distinction is worth tracking: `keyMessages` come from the user and are only *arranged* by the model, while a transcreated German headline is genuinely AI-produced. Marking everything identically overstates the case and loses the signal.
+
+The nuance to take to counsel: the pipeline's core rule is that the AI *arranges approved copy* rather than inventing claims. Whether arrangement constitutes "generating synthetic text content" is exactly the kind of question that needs a lawyer, not a confident guess in a design doc.
+
+### 3. Transcreation — explicitly named, and the sharpest exposure
+
+Guidance names AI-manipulated translations directly. A transcreated locale is not a mechanical translation — it is a rewrite to fit a character budget, which "materially affects the meaning or appearance of content" by the guidance's own wording.
+
+Two consequences for [localization.md](localization.md):
+
+- **Each locale page carries its own marking**, independent of the source locale.
+- **The `needs-review` → human-approved workflow already in that design is doing double duty.** It was specified so a native speaker catches subtly wrong German. It is also the human oversight step that makes the AI-generated status of that copy a reviewed fact rather than an unexamined one.
+
+## Who is the provider, and who is the deployer
+
+Article 50 splits obligations between providers and deployers, and this product sits awkwardly across the line:
+
+- **Anthropic** provides the model.
+- **This product** puts an AI system on the market under its own name — likely a provider obligation of its own.
+- **The marketer publishing an experience** is a deployer with obligations toward their audience.
+
+Getting this split right is a legal question with real money attached. What the *architecture* must do regardless: record provenance accurately, mark it machine-readably, and give the publishing customer the controls and information they need to meet their own obligations. Every one of those is a product decision that has to be made before launch, not after.
+
+## The design principle this reinforces
+
+The product already refuses to invent claims, refuses to generate the product being sold, and marks generated assets `source: 'generated'` in the editor.
+
+Those were quality and credibility decisions. **They turn out to be the compliance posture too** — a system that already knows exactly what it generated versus what the user supplied is a system that can mark its output honestly. A system that blurred the two would now be facing a rebuild.
+
+That is the second time this repo's quality instincts have landed on the legally-correct answer by accident. Worth noticing, and worth not undoing for convenience.
+
+## Verification
+
+- Generated image → C2PA manifest present after upload, re-encode, storage, and serving. **This is the test most likely to fail**, because the security re-encode strips metadata by design
+- Published page → machine-readable AI-content declaration present, derived from per-block provenance rather than hardcoded
+- Every locale page → carries its own marking
+- Human-authored copy → not marked as synthetic (the signal has to mean something)
+- A locale cannot publish without a human review step
+
+## Sources
+
+- [Article 50: Transparency Obligations](https://artificialintelligenceact.eu/article/50/) · [Practical guide](https://artificialintelligenceact.eu/transparency-rules-article-50/)
+- [European Commission FAQ on Article 50](https://digital-strategy.ec.europa.eu/en/faqs/transparency-obligations-under-article-50-ai-act)
+- [Preparing for compliance by 2 August 2026 — Sidley](https://datamatters.sidley.com/2026/06/24/eu-ai-act-transparency-obligations-preparing-for-compliance-by-2-august-2026/)
+- [Transparency obligations for AI-generated content — HSF Kramer](https://www.hsfkramer.com/notes/ip/2026-03/transparency-obligations-for-ai-generated-content-under-the-eu-ai-act-from-principle-to-practice)
+- [EU AI Act and C2PA: what Article 50 requires](https://c2paviewer.com/articles/eu-ai-act-content-credentials)
+- [C2PA adoption status 2026](https://www.eyesift.com/faq/c2pa-content-credentials-2026-cryptographic-provenance-adoption/)
