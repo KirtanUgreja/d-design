@@ -16,6 +16,8 @@ Five token groups. One JSON file plus one CSS-variable bundle per art direction.
 
 The renderer reads *only* these. It contains no hardcoded visual values. If a component needs a number the tokens don't provide, the token set has a gap — fill the gap, don't hardcode.
 
+In v1 every token value is hand-authored by you, so its shape is not a security question. **It becomes one in v2**, when users author art directions, and more so in v3 when the AI derives them from an attacker-supplyable reference — a token value becomes a CSS custom property, and art directions require `style-src 'unsafe-inline'`. From v2 every value is parsed and re-serialized by type before it becomes CSS ([../security/content-and-web.md](../security/content-and-web.md), [../v2/art-direction-system.md](../v2/art-direction-system.md)). Worth knowing while designing the token groups: **a token whose type is "any string" is a token that will have to be redesigned.**
+
 ## The claim this layer makes
 
 Same 11 primitives, same scene tree, unrecognizably different output — because everything that makes a design feel a certain way lives here, not in the components.
@@ -86,6 +88,8 @@ Tight negative tracking on large type is most of what separates cinematic from g
 
 Scenes are generously tall. A cinematic experience earns its pace by giving each beat room; cramming beats is the fastest way to make it feel like a slide deck again.
 
+**Spacing tokens are applied through logical properties**, always — `padding-inline`, `margin-block-start`, `border-inline-start`. Never `padding-left`. The tokens themselves are direction-agnostic numbers; what matters is that the renderer never spends one on a physical axis. This costs nothing in v1 and is what makes v3's RTL a `dir` attribute instead of an audit of every primitive ([../v3/localization.md](../v3/localization.md)).
+
 ## Motion
 
 ```
@@ -103,6 +107,16 @@ Scenes are generously tall. A cinematic experience earns its pace by giving each
 | `none` | visible immediately |
 
 Slow is the point. 900ms feels wrong next to typical web UI motion and correct in a cinematic context — resist the urge to speed it up to match app conventions.
+
+**Motion is the one place logical properties do not save you.** `transform` operates on x/y and ignores block/inline entirely, so any horizontal translate has to invert manually under RTL. The exception list is short enough to test exhaustively, and it is worth writing down now rather than rediscovering it in v3:
+
+| | RTL |
+|---|---|
+| `reveal` — `translateY` | unchanged |
+| `parallax` — `translateY` | unchanged |
+| any `translateX` | **inverts** |
+
+v1 has no RTL, so nothing here is v1 work. Knowing which axis is a liability is what keeps a horizontal reveal from being added carelessly ([../v3/localization.md](../v3/localization.md)).
 
 ### How this is implemented
 

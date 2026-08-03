@@ -56,6 +56,12 @@ Three sources. AI image-to-3D is deliberately absent.
 
 The refusal is the same principle as v1's ban on AI-generated product imagery: **a plausible-but-wrong render of the thing being sold is a credibility problem no quality bar fixes.** Image-to-3D on real products produces exactly that — a mesh that is 90% right, which is worse than no mesh.
 
+### An uploaded model is hostile bytes
+
+The upload row adds GLB, Draco, and meshopt decoders to the project. These are compression codecs parsing attacker-supplyable binary, and they sit in the same class as PDF and image decoders in [../security/platform-and-packages.md](../security/platform-and-packages.md) — historically a source of memory-corruption bugs, with decompression bombs as the obvious shape.
+
+So they run where every other hostile parser runs: **the fetch worker**, with no database, no VPC route, and nothing worth stealing ([../techstack/backend.md](../techstack/backend.md)). The performance budgets below double as security caps, and **they are enforced before the decode, not after** — a file claiming 150k triangles must be rejected on its declared and actual size before a decoder allocates against it. A budget checked after parsing is a budget that has already run the attacker's input.
+
 Abstract 3D is the one that will carry actual usage. Most users have no model of anything, and a scroll-driven abstract form under `cinematic-dark`'s dramatic lighting is beautiful without claiming to be a product.
 
 ## The stack — and why this got easier
@@ -90,7 +96,9 @@ This is where the feature lives or dies. Every item is a requirement, not an opt
 
 **Mobile:** reduced texture resolution, capped device pixel ratio, shadows off. Test on a mid-range Android, not on a recent iPhone.
 
-**Failure — three tiers, in order:** WebGPU unavailable → WebGL2 (Three.js handles this). WebGL2 unavailable, GPU blocklisted, context lost, or budget exceeded → **static poster render, no error, no empty frame.** Every 3D scene needs a poster image generated server-side at publish. Not a fallback — a requirement, and the same asset the slides-mode degradation uses.
+**Failure — three tiers, in order:** WebGPU unavailable → WebGL2 (Three.js handles this). WebGL2 unavailable, GPU blocklisted, context lost, or budget exceeded → **static poster render, no error, no empty frame.** Every 3D scene needs a poster image generated at publish. Not a fallback — a requirement, and the same asset the slides-mode degradation uses.
+
+**Posters are generated in the job worker** ([../techstack/backend.md](../techstack/backend.md)): rendering a scene to an image needs the renderer and a browser together, it is slow enough to sit past a function timeout, and its input is a validated scene tree from your own database rather than hostile bytes. It enqueues in the same transaction as the publish, so a rolled-back publish leaves no orphaned poster job. Note the split from the paragraph above — the fetch worker *parses* an uploaded model, the job worker *renders* an approved scene, and they are different containers for exactly that reason.
 
 **Reduced motion:** static frame, no auto-rotation, no scroll-driven camera.
 
@@ -112,6 +120,8 @@ This is where the feature lives or dies. Every item is a requirement, not an opt
 - Slides mode → scroll cameras degrade to static, warning shown
 - Reduced motion → static frame, no camera movement
 - Every published 3D scene has a generated poster
+- A model declaring modest geometry and decompressing to gigabytes is rejected **before** the decoder allocates
+- A malformed GLB fails inside the fetch worker and reaches no database
 
 ## Honest assessment
 

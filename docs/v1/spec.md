@@ -75,7 +75,9 @@ That combination means no storage, no cookies, no parent DOM access, no credenti
 | **Zod** | Schema, validation, and inferred types — one source |
 | **Motion** (`motion`, import `motion/react`) | **Not `framer-motion`.** Renamed in 2025 and now maintained independently at motion.dev; the old package still installs but is no longer actively developed |
 | **Tailwind** | App chrome only. Never the art direction — that's CSS variables |
-| **`claude-opus-5`** | Every pipeline phase. See [ai-pipeline.md](ai-pipeline.md) for why, and what it costs |
+| **No preferred model vendor** | Every phase goes through one provider seam. **Superseded:** an earlier draft named a single model for every phase; model choice is now an empirical question answered by repair rate — see [../techstack/ai-stack.md](../techstack/ai-stack.md) and [ai-pipeline.md](ai-pipeline.md) |
+
+**Where this runs in v1: Docker Compose and a dev server. That is all** — no AWS account, no workers, no CDN, no auth ([../techstack/infrastructure.md](../techstack/infrastructure.md)). The operational stack lands with v3, the release that has real users. Building it earlier feels productive and does not move Risk 1 at all.
 
 Two consequences of the Postgres-first choice:
 
@@ -98,6 +100,18 @@ Two consequences of the Postgres-first choice:
 10. AbstractVisual generators → AI imagery → Slot
 
 **Steps 1–4 ship without any AI involved.** Hand-write a scene tree, render it, and look at it. That is the cheapest possible test of the riskiest assumption. Do not build step 5 until step 3 looks genuinely good.
+
+### Two things in step 3 that only pay off two versions later
+
+Both are nearly free while writing the renderer and brutally expensive to retrofit across 19 primitives and 3 art directions. Neither has any v1 benefit, which is exactly why they get named here rather than discovered in v3.
+
+**Author every layout in CSS logical properties.** `margin-inline-start`, not `margin-left`. `padding-block-end`, not `padding-bottom`. `inline-size`/`block-size`, not `width`/`height`. `border-inline-start`, not `border-left`.
+
+v3 ships RTL for Arabic and Hebrew, and if the renderer was authored logically, RTL costs setting `dir` on the root — no mirrored stylesheet, no per-component branching. Authored physically, it means auditing every primitive under every art direction. **This is a v1 decision with a v3 payoff and no v1 upside** ([../v3/localization.md](../v3/localization.md)). `transform` is the one documented exception, and it is where motion lives — noted in [art-direction.md](art-direction.md).
+
+**Keep the renderer pure.** No `mode` prop, no `process.env`, no `typeof window` ([../coderules/patterns.md](../coderules/patterns.md), rule 6). It looks like an ordinary component-hygiene rule in v1, where the renderer runs in one process. It is load-bearing from v3, where the same components run in the app, in the job worker that publishes, and in the visual verification loop — and must behave identically in all three.
+
+Step 5 also brings the pipeline's first tools: `get_brand_kit`, `list_assets`, `get_constraints` — pure reads, no side effects ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)). `list_assets` is how the Build phase selects imagery, which earlier drafts required without ever specifying.
 
 ## Persistence
 
@@ -123,6 +137,10 @@ than by SQL, and normalizing it would buy queries nobody runs.
 actually cost, and which validation rules fail most. Both decide real things —
 pricing, and where the schema and prompt disagree.
 
+Two columns to add now rather than backfill: **model id and provider route.** Under a router those are different questions, and the repair rate — the number that decides model selection for every later version ([../techstack/ai-stack.md](../techstack/ai-stack.md)) — is meaningless without both. Record token counts *and* call counts, since not every provider bills per token.
+
+**What never goes in this table: prompts, outputs, or brief content.** A brief here is a customer's unreleased launch messaging under embargo ([../security/tenancy-and-data.md](../security/tenancy-and-data.md)). Phase, counts, a repair flag, an error class, and a duration answer both questions without storing any of it.
+
 ## Verification
 
 Six checks. Each maps to a build-order step and fails loudly if that step regresses.
@@ -134,13 +152,16 @@ Six checks. Each maps to a build-order step and fails loudly if that step regres
 | **Renderer** | One page rendering all 11 primitives under `cinematic-dark`. Visual judgment, not snapshots — quality here is human. |
 | **Pipeline** | 5 golden briefs → Director + Build → assert 100% Zod-valid after at most one repair. The one automated check that matters. |
 | **Edit** | Patch a block, assert the tree stays valid and only the target block changed. |
-| **Slot sandbox** | Put `fetch()` and `localStorage` in a slot, confirm both throw. |
+| **Slot sandbox** | Put `fetch()` and `localStorage` in a slot, confirm both throw. Executed inside a real frame, not jsdom — [../security/testing.md](../security/testing.md) |
+| **Logical properties** | Set `dir="rtl"` on the root and confirm the layout mirrors with no stylesheet change. Costs nothing now; it is the only cheap moment to find out the renderer was authored physically |
 
 **End to end:** brief → outline → build → edit a headline → publish → open the URL
 in a private window → fullscreen with arrow keys → embed in a blank HTML page.
 
 Also check `prefers-reduced-motion: reduce` collapses all motion, and that every
 `Image` has non-empty `alt`. Generated experiences are public web pages.
+
+The golden-brief run is not only a test. **It is the seed of the eval set** that decides model selection from v2 onward ([../techstack/ai-stack.md](../techstack/ai-stack.md)) — structural assertions gate every PR, quality scoring is tracked as a trend and never gates. Growing five briefs into a real dataset is the highest-leverage AI work in the project after the renderer.
 
 ## Not in v1
 

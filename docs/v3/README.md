@@ -34,7 +34,10 @@ v3 is also where the product stops being a private tool and becomes a thing with
 | Why translation is done inside a character budget | [localization.md](localization.md) → "Transcreation, not translation" |
 | What RTL costs, and the `transform` exception | [localization.md](localization.md) → "RTL — mostly free, if the renderer was authored correctly" |
 | Which script needs which font, and why fallbacks matter | [localization.md](localization.md) → "Per-script fonts" |
-| How live data stays compatible with a network-silent page | [live-data.md](live-data.md) → "The boundary problem, solved by fetching elsewhere" |
+| How live data stays compatible with a near-silent page | [live-data.md](live-data.md) → "The boundary problem, solved by fetching elsewhere" |
+| What a published page is actually allowed to request | [personalization.md](personalization.md) → "One static artifact, fields fetched at view" (exactly two endpoints) |
+| Why URL input is the most dangerous feature in the product | [ai-art-direction.md](ai-art-direction.md) → "URL input is the product pointing a browser at an address a stranger chose" |
+| Which runtime a given piece of v3 work runs in | [../techstack/backend.md](../techstack/backend.md) → "The three runtimes" |
 | 3D performance budgets and the fallback chain | [dimensional.md](dimensional.md) → "Performance" (WebGPU → WebGL2 → poster) |
 | Why image-to-3D of real products is refused | [dimensional.md](dimensional.md) → "Assets — never generate the product" |
 | Accounts, custom domains, the branding badge | [spec.md](spec.md) → "Shipping to real people" |
@@ -56,6 +59,8 @@ It began as a quality rule — a plausible-but-wrong render of the thing being s
 3D is last, deliberately. The build order is arranged so that stopping before it still leaves a coherent release — derived art directions, twelve languages, personalized links, analytics, and live data is a complete product.
 
 **The natural early exit is after step 4.** Derived ADs plus twelve languages is already worth showing someone, and given the top risk above, showing someone early is worth more than finishing the list.
+
+**Step 0 comes first and is not a feature.** v1 and v2 run on Docker Compose; v3 is where the entire operational stack stands up — AWS, both workers, RDS, S3/CloudFront, Terraform, CI/CD ([../techstack/infrastructure.md](../techstack/infrastructure.md)). Nearly every feature below it depends on infrastructure that does not exist yet, so it cannot be deferred the way the reversibility ordering would otherwise suggest. See [spec.md](spec.md) → Build order.
 
 ## Connects to
 

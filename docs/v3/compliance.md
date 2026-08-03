@@ -38,7 +38,11 @@ Three surfaces, three different answers.
 
 AI-generated images get a **C2PA manifest attached at generation time**, preserved through storage and serving. This is the well-trodden path: the major image models already emit Content Credentials, and the tooling exists.
 
-The catch is the pipeline: re-encoding an image server-side to strip EXIF (a security control from [../security/content-and-web.md](../security/content-and-web.md)) will destroy a C2PA manifest unless the re-encoder preserves it. **These two requirements collide, and security wins by default unless someone notices.** Verify manifests survive the upload/re-encode path — that is the specific test to write.
+The catch is the pipeline: re-encoding an image to strip EXIF (a security control from [../security/content-and-web.md](../security/content-and-web.md)) will destroy a C2PA manifest unless the re-encoder preserves it. **These two requirements collide, and security wins by default unless someone notices.**
+
+Concretely, the collision has an address: the re-encode runs in the **fetch worker**, via `sharp`, on every upload before the object becomes servable ([../techstack/infrastructure.md](../techstack/infrastructure.md)). That is one function in one container, which is the good news — the fix is local, and preserving a signed manifest while stripping location EXIF is a configuration of that one step rather than a pipeline redesign.
+
+Verify manifests survive upload, re-encode, storage, and serving. **That is the specific test to write, and the one most likely to fail**, because nothing about a stripped manifest is visible in the rendered image.
 
 ### 2. Generated text — the harder case
 
@@ -65,11 +69,16 @@ Two consequences for [localization.md](localization.md):
 
 Article 50 splits obligations between providers and deployers, and this product sits awkwardly across the line:
 
-- **Anthropic** provides the model.
+- **The model provider** — whichever one served the call. This product routes through a seam with no preferred vendor ([../techstack/ai-stack.md](../techstack/ai-stack.md)), so the answer is per-request rather than fixed, and the router is itself a party in the chain ([../security/third-parties.md](../security/third-parties.md)).
 - **This product** puts an AI system on the market under its own name — likely a provider obligation of its own.
 - **The marketer publishing an experience** is a deployer with obligations toward their audience.
 
-Getting this split right is a legal question with real money attached. What the *architecture* must do regardless: record provenance accurately, mark it machine-readably, and give the publishing customer the controls and information they need to meet their own obligations. Every one of those is a product decision that has to be made before launch, not after.
+**Model neutrality has a compliance consequence that is easy to miss.** Retention and training terms are the union of the router's policy and the downstream provider's, they differ per route, and a route can change without the product changing. Two things follow, and both are cheap now and expensive later:
+
+- **Record which model and which provider served every generation.** `generations` already carries model id and provider route ([../v1/spec.md](../v1/spec.md)) — that column is the audit trail for "which system produced this content", which is exactly what a machine-readable declaration has to assert.
+- **Pin the acceptable routes deliberately** rather than letting a router pick freely. A provider whose terms permit training on prompts is a provider that cannot be in the path for a customer's embargoed launch messaging, regardless of how well it scores.
+
+Getting the provider/deployer split right is a legal question with real money attached. What the *architecture* must do regardless: record provenance accurately, mark it machine-readably, and give the publishing customer the controls and information they need to meet their own obligations. Every one of those is a product decision that has to be made before launch, not after.
 
 ## The design principle this reinforces
 

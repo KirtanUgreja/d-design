@@ -18,7 +18,7 @@ So this doc separates two kinds of statement.
 |---|---|
 | AD format v2: budgets, versioning, brand mapping | v1's format cannot express a second art direction. This is a defect, not a preference |
 | Motion as an independent axis | 3 ADs × 4 motion vocabularies = 12 combinations for a fraction of the work |
-| AD linter with hard failures | User-authored ADs can produce unreadable pages carrying your name |
+| AD linter with hard failures | User-authored ADs can produce unreadable pages carrying your name — and, once token values are user-controlled, CSS injection on them |
 | 3 hand-authored art directions | The only way to discover what the token schema is missing |
 | Version history | One-click reskin without undo is a feature that eats people's work |
 | One-click reskin | The architecture already implies it; not shipping it wastes v1 entirely |
@@ -62,6 +62,8 @@ Per the versioning convention, v1 docs stay as the record of what was believed. 
 | 11 primitives | 18 primitives | Structural range to match stylistic range |
 | No version history | Auto-snapshots + named saves | Reskin makes it a hard dependency |
 | `mode: 'scroll' \| 'slides'`, scroll rendered only | Both render | Makes the presentation framing finally honest |
+| Zod validation is the whole quality gate | Zod **plus a visual critic** | Zod proves valid, never good. Layout breakage across ADs is invisible to a validator |
+| AD token values are hand-authored by you | Partly **user-controlled**, and validated by grammar before becoming CSS | The first release where a token value is untrusted input |
 
 **Migration:** existing v1 experiences get `artDirection: { id: 'cinematic-dark', version: 1 }` and the v1 caps become that AD's budgets. No content changes. The `scenes` jsonb shape is otherwise unchanged.
 
@@ -104,6 +106,28 @@ The four phases from [v1/ai-pipeline.md](../v1/ai-pipeline.md) are unchanged in 
 
 Edit-phase patches are re-validated against the current AD's budgets. Editing a headline into overflow flags it exactly as reskin does — one mechanism, three entry points.
 
+### The visual verification loop arrives here
+
+**v2 is the release where the pipeline starts looking at what it made** ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)). It lands in v2 and not v1 for a reason that is specific rather than schedule-driven: the defect it catches is *layout breaking across art directions*, and that defect does not exist until there is more than one art direction.
+
+```
+Build ──▶ Scene JSON ──▶ Zod ──▶ render offscreen ──▶ screenshot ──▶ vision critic
+                          │                                              │
+                    (invalid: repair)                          accept · revise once
+```
+
+Zod proves a tree is **valid**. Nothing in v1 proves it is **good** — that headlines are not colliding, that a `split-left` with 200 characters of body is not overflowing its region, that a stat is legible against what sits behind it, that scene 4 does not look identical to scene 3. Those are visual properties and they are invisible to a validator by definition.
+
+Three things about it that shape v2 specifically:
+
+**Render under the real art direction, at full fidelity.** The instinct is to check layout on a cheap wireframe. That instinct is documented to be wrong — improving render fidelity *without* fixing layout intent makes the critic's evaluation worse, because better rendering exposes defects flat rendering concealed. A flat render hides the overlap `bold-brutalist`'s 12vw hero creates. You are not checking an abstract layout; you are checking the page a viewer sees.
+
+**Which makes it per art direction — and therefore the natural gate for reskin.** The moment content moves to a different AD with different budgets is exactly when layout breaks, and it is the moment a character-count check cannot see the breakage. This is the loop's highest-value application in v2 and the reason it belongs to this release.
+
+**The critic is asked narrow questions.** "Is any text clipped or overlapping?" "Is every text element legible against what is behind it?" "Does this scene look meaningfully different from the previous one?" Not "is this good" — a vision model asked that returns flattery. **Beauty is not among the questions**; the critic catches broken, not boring, exactly as the AD linter enforces readability and has no opinion on taste.
+
+One revision, then accept. An unbounded critic loop is a token furnace that converges on nothing, and it is the precise autonomy that would turn this pipeline into an agent ([../techstack/ai-stack.md](../techstack/ai-stack.md)). Cost roughly doubles, from ~$0.20 to ~$0.40 per experience — which at these numbers is not a cost decision.
+
 ## Editor delta
 
 What v2 adds to the v1 editor, consolidated:
@@ -138,18 +162,23 @@ experiences         + motion_vocabulary, + art_direction is now {id, version}
 
 1. AD format v2 — budgets, versioning, brand mapping. Migrate `cinematic-dark` into it
 2. Extract motion into a separate `cinematic-slow` vocabulary; renderer reads two sources
-3. AD linter (contrast, scale monotonicity, motion bounds)
+3. AD linter — contrast, scale monotonicity, motion bounds, **and token grammar validation** ([art-direction-system.md](art-direction-system.md))
 4. **Hand-author `editorial-light`**
 5. **Hand-author `bold-brutalist`** — this is where missing tokens surface
 6. Version history / snapshots
 7. Reskin + overflow report + shorten-with-AI
 8. Reskin transition — wrap the state update in `<ViewTransition>`, scope `view-transition-name` to the viewport. *Much cheaper than planned; see Platform reality*
-9. Compare view
-10. Remaining motion vocabularies: `editorial-restrained`, `mechanical-snap`, `physics-playful`
-11. Slides mode — reuses the overflow mechanism from step 7
-12. The 7 primitives, in order of real demand
+9. **Visual verification loop** — render, screenshot, critic, one revision. Wire it to reskin first, where it earns its cost immediately
+10. Compare view
+11. Remaining motion vocabularies: `editorial-restrained`, `mechanical-snap`, `physics-playful`
+12. Slides mode — reuses the overflow mechanism from step 7
+13. The 7 primitives, in order of real demand
 
 Do not build reskin (7) before both new ADs exist (4–5). Reskin against one AD is untestable, and the second and third ADs are what tell you the format is wrong while it's still cheap to change.
+
+Step 9 sits after reskin deliberately. The loop needs something to look at and a reason to look — before three ADs exist, it is an expensive way to confirm that a page you already stared at is fine.
+
+**Infrastructure in v2: unchanged from v1.** Docker Compose and a dev server ([../techstack/infrastructure.md](../techstack/infrastructure.md)). Three art directions, reskin, and the visual loop are pure application work — the loop needs a headless browser locally, not a deployed one. AWS lands with v3, which is the release that has users.
 
 ## Verification
 
@@ -157,6 +186,8 @@ Do not build reskin (7) before both new ADs exist (4–5). Reskin against one AD
 |---|---|
 | **AD format completeness** | All 3 ADs express fully in the format with zero renderer changes. **If any AD needs a renderer change, the abstraction is wrong — stop and fix it.** |
 | **Linter** | Feed it a deliberately broken AD (2:1 contrast, non-monotonic scale, 4s durations). Every rule must fail it. |
+| **Token grammar** | Feed it an AD whose color token is `red; } body { background: url(//evil` and whose font family is a free string. Both **rejected as hard failures**, not sanitized — [../security/content-and-web.md](../security/content-and-web.md) |
+| **Visual critic catches what Zod cannot** | Hand-build a scene that is Zod-valid and visually broken — a 78-character headline under `bold-brutalist`, text over a busy image with no veil. The critic must flag both. A critic that passes them is miscalibrated and worse than none |
 | **Dual contrast** | An AD that passes WCAG 2.2 AA at 4.6:1 but scores `Lc 55` on dark must be **rejected**. If it passes, the APCA gate isn't wired — and that combination is exactly what muddy dark themes look like |
 | **View-transition names** | Reskin a 12-scene experience: assert no duplicate `view-transition-name` in the document, and that off-screen blocks carry none |
 | **Reskin matrix** | 3 ADs × 4 motion vocabularies × 2 modes = 24 combinations against 5 golden experiences. All must render valid, no crashes, overflow correctly reported. |

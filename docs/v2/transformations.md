@@ -40,6 +40,10 @@ OverflowReport {
 }
 ```
 
+**A character count is not the whole check.** `OverflowReport` catches copy that exceeds a budget, which is the countable half of the problem. The other half is not countable: a headline that fits 34 characters and still collides with a stat block, text that lands on the busy part of an image, a scene that reflows into something nobody would ship. Those are visual properties, and the **visual verification loop** is what sees them ([spec.md](spec.md) → "The visual verification loop arrives here").
+
+Reskin is the loop's first and best application. It runs per art direction — which is precisely what reskin changes — and it renders under the *real* target AD rather than a wireframe, because a flat render conceals exactly the collisions a 12vw hero creates. Overflow entries and critic findings surface in the same banner; the user does not need to know which system found what.
+
 **Nothing is rewritten automatically.** The reskin completes, overflowing blocks render with a visible flag, and the user gets a banner:
 
 > *3 blocks are too long for Bold Brutalist.* → `Review` · `Shorten all with AI`

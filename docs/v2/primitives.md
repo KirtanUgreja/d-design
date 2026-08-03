@@ -10,6 +10,10 @@ Seven, taking the library from 11 to 18. Chosen for the product-launch wedge spe
 
 Every text-bearing primitive inherits `text-wrap: balance` on headings and `pretty` on body copy from the renderer — see the typography section in [art-direction-system.md](art-direction-system.md). `Timeline`, `Comparison`, and `SpecTable` benefit most, since they set many short strings where a two-word orphan is most visible.
 
+**Every asset-bearing primitive selects by id from `list_assets()`.** `Gallery`, `LogoWall`, `Comparison`, and `ScrollSequence` all reference uploads the user actually made — the AI never composes a URL or invents an asset ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)). An `assetId` that resolves to nothing is a validation failure, not a broken image on a launch page.
+
+**And every one of them is authored in logical properties.** `Gallery`'s `stagger`, horizontal `Timeline`, `Comparison`'s two columns, and `Marquee`'s direction are the four places a physical `left`/`right` will feel natural to write and will cost an audit in v3 ([../v3/localization.md](../v3/localization.md)). `Marquee` and horizontal `Timeline` are on the short list of things that must invert explicitly under RTL, because they move on the x-axis and `transform` ignores logical direction.
+
 ---
 
 ## Gallery
@@ -105,6 +109,10 @@ It also carries real costs, and they must be handled rather than discovered:
 - **Slides mode.** No scroll means no sequence. Degrades to a single representative frame; the editor warns on mode switch. See [transformations.md](transformations.md).
 - **Reduced motion.** Renders as one static frame, not a sequence.
 - **Authoring.** Users rarely have a frame sequence lying around. v2 accepts an uploaded video and extracts frames server-side; without that, this primitive goes unused.
+
+**That last bullet adds a video decoder to the project, which is a security decision as much as a feature one.** Video containers and codecs are the same hostile-bytes class as PDFs and image decoders, and the rule already exists: anything parsing untrusted bytes runs in the fetch worker — no database, no VPC route, nothing worth stealing ([../coderules/README.md](../coderules/README.md) rule 5, [../techstack/backend.md](../techstack/backend.md)).
+
+Caps go **before** the decode, not after: byte size, duration, resolution, and frame count. A decoder that has already allocated against a crafted file is a decoder you have already lost. The extracted frames then take the ordinary upload path — magic-byte verification, re-encode, quarantine prefix until clean ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
 
 Ship this one last. It is the most impressive and the most likely to be half-built.
 

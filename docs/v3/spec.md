@@ -43,7 +43,7 @@ Marketplace moves to **v4**. Its gate was real users, and by this timeline there
 | Personalization | Signed per-recipient links | No tracking scripts, no URL tampering, matches how ABM already works |
 | Personalized fields | Named fields, AI-suggested at build | Bounded and reviewable; never regenerate scenes per viewer |
 | Analytics | Aggregate by default, identified opt-in | Keeps the wow, puts the compliance burden on the publisher |
-| Live data | Server-side, cached, read-only | The published page still makes zero network calls |
+| Live data | Server-side, cached, read-only | Values are baked in at publish, so live data adds **zero** requests to the page |
 | Data sources | Airtable / Notion | Where marketing teams actually track work |
 | Localization | Transcreate to fit the budget | Only possible because budgets exist. The design never breaks |
 | Locale delivery | Locale-prefixed URLs, auto-detect on top | Auto-detect needs somewhere to redirect *to* |
@@ -68,7 +68,7 @@ Three capabilities matured and one legal obligation came into force. The obligat
 | **EU AI Act Article 50** | **In force 2 August 2026.** Penalties to €15M / 3% of global turnover | Generated text, images, **and translations** must be marked machine-readably as artificially generated. C2PA is the mechanism the Commission's draft Code of Practice names. See [compliance.md](compliance.md) |
 | **WebGPU** | **Baseline January 2026**, ~82% support. Three.js `WebGPURenderer` zero-config since r171 | 3D renderer choice is a non-decision: WebGPU primary, WebGL2 fallback, Three.js handles it |
 | **CSS logical properties** | Long stable, universally recommended for i18n | RTL is nearly free — *if the renderer was authored logically in v1*. `transform` is the one documented exception, and it's where motion lives |
-| **Opus 5 vision** | 2576px long edge, 1:1 coordinates | AD derivation should give the model crop/verify tools rather than raising effort — a more cost-effective lever on this model |
+| **Vision is no longer scarce** | ~67 models have it, **28 of them open-weight and self-hostable** | AD derivation is not gated on one vendor. Give the model crop-and-verify tools rather than raising effort — a more cost-effective lever than a bigger single look ([../techstack/ai-stack.md](../techstack/ai-stack.md)) |
 
 The RTL entry is the one to act on earliest: it is a **v1 authoring decision with a v3 payoff**, and retrofitting it means auditing 19 primitives across 3 art directions.
 
@@ -99,16 +99,21 @@ Every v3 feature lands on the paid side. That is not a coincidence — it is why
 | One scene tree per experience | One per locale | Transcreation produces real per-locale trees |
 | Layout direction is LTR | LTR or RTL | Mirrors layouts, motion, and marquees |
 | Pricing deferred | Free to generate, pay to publish | Third deferral would be permanent |
+| Docker Compose and a dev server | **The whole AWS stack** — two workers, RDS, S3/CloudFront, Terraform, CI/CD | v3 is the first release with users, other people's data, and hostile input from strangers |
+| One runtime | **Three**, split on trust | The process holding database credentials must not be the one rendering an attacker's webpage |
+| A published page makes zero requests | **Exactly two**, by exact path | The cost of client-side personalization and the analytics beacon |
 
 **Migration:** existing experiences get `locale: 'en'`, `direction: 'ltr'`, and an `environment` group defaulted per AD. No content changes.
 
 ## Pipeline delta
 
-**Transcreation** is a fifth phase, running at publish: source tree + target locale + target AD budgets → per-locale tree. Not a translation call — a rewrite-to-fit call.
+**Transcreation** is a fifth phase, running at publish: source tree + target locale + target AD budgets → per-locale tree. Not a translation call — a rewrite-to-fit call. It runs **in the job worker** as a pg-boss job, because twelve locales is minutes of work and it must enqueue in the same transaction as the publish that triggered it ([../techstack/backend.md](../techstack/backend.md)).
 
-**Derivation** is its own phase: reference input → the four control-axis values → `ArtDirection` → linter. If the linter rejects it, the derivation retries once with the failures as context, exactly like scene repair.
+**Derivation** is its own phase: reference input → the four control-axis values → `ArtDirection` → linter. If the linter rejects it, the derivation retries once with the failures as context, exactly like scene repair. When the input is a URL, the capture runs **in the fetch worker** — the quarantined container — because it is the product pointing a browser at an address a stranger chose ([ai-art-direction.md](ai-art-direction.md)).
 
 **Personalization** is not a generation phase. Fields are substituted at render, never generated per viewer.
+
+**The visual verification loop from v2 runs against everything above.** Derived ADs get rendered and inspected rather than only linted, and twelve locales multiply the ways a layout breaks — a budget-fitting German headline can still collide with a stat block ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)). This is the release where the loop stops being a nicety: reviewing 12 locales × 3 ADs by eye is not a thing one person does.
 
 ## Persistence delta
 
@@ -131,8 +136,9 @@ experiences    + owner_id
 
 ## Build order
 
-Ordered by reversibility — cheapest to unwind first.
+Ordered by reversibility — cheapest to unwind first, with one unavoidable exception at the front.
 
+0. **Infrastructure.** v1 and v2 ran on Docker Compose and a dev server. **v3 is where the entire operational stack stands up** ([../techstack/infrastructure.md](../techstack/infrastructure.md)): AWS account, VPC with the quarantine subnet, both ECS workers, RDS/Aurora, S3 + CloudFront + ACM, Secrets Manager and KMS, Terraform, GitHub Actions with OIDC, and the second repo for the fetch worker
 1. AD format v3: `environment` group, per-script fonts. Migrate the 3 ADs
 2. **AI-derived AD** — the biggest wow, and it rides entirely on v2's control axes
 3. Localization: transcreation + locale URLs + per-script fonts
@@ -144,6 +150,12 @@ Ordered by reversibility — cheapest to unwind first.
 9. Accounts, custom domains, branding badge, billing, publish gate
 10. **AI transparency marking** — C2PA on generated imagery, machine-readable declaration on published pages, per-locale marking. Not last because it is least important; last because it needs every generating surface to exist first. **It gates launch, not v3 feature-completeness**
 
+**Step 0 is not optional and it is not reversible-ordered, which is why it breaks the rule the rest of the list follows.** Almost everything after it depends on infrastructure that does not exist yet: derivation fetches attacker-supplied URLs (fetch worker), transcreation is long-running work per locale (job worker), live data holds integration credentials (fetch worker), 3D posters are generated at publish (job worker), and every one of those writes to S3. Attempting step 2 first means building it twice.
+
+The cost is real and it belongs in the estimate rather than in a surprise: this is the release where a solo build acquires an AWS topology, an IaC codebase, and a second repository, none of which move Risk 1.
+
+**The one thing v1 should already have done is `storage.ts`** — pointed at the S3 API from day one with MinIO locally, so this step is a credential change rather than a rewrite.
+
 Steps 1–4 are a shippable product on their own. If you ever decide to meet users earlier, stop here.
 
 ## Verification
@@ -154,7 +166,7 @@ Steps 1–4 are a shippable product on their own. If you ever decide to meet use
 | **Derivation is not cloning** | Feed a well-known site. Assert output shares none of its fonts and no color within ΔE 10 |
 | **Transcreation fits** | 5 experiences × 12 locales × 3 ADs. Zero budget overflows. Native-speaker review on at least 3 locales |
 | **RTL** | Arabic renders mirrored: splits swapped, motion reversed, marquees reversed |
-| **Live data boundary** | Published page makes **zero** outbound requests. Verify in devtools, not by reading code |
+| **Live data boundary** | A published page makes **exactly two** outbound requests and no others — the personalization fields endpoint and the analytics beacon, both by exact path. **Live data adds none.** Asserted in a real browser, not by reading code ([../techstack/frontend.md](../techstack/frontend.md)) |
 | **Data failure** | Kill the source. Page shows last good value, then fallback. Never blank, never an error |
 | **Personalization** | Tamper with a signed token → rejected. Unpersonalized link → clean defaults, no empty braces |
 | **Privacy default** | Publish without opting in → `views.recipient_id` is null for every row |
@@ -181,3 +193,5 @@ That last row matters most. Every v3 feature is a chance to break the one thing 
 **5. Analytics is a compliance surface.** Identified tracking means consent, retention policy, deletion requests, and a DPA. Aggregate-by-default contains it, but the moment a customer opts in, that surface is yours too.
 
 **6. This is the largest version by far, built solo.** v2 was 54 design surfaces. v3 is five subsystems, three of which (3D, analytics, billing) are new competencies. The build order exists so that stopping early still leaves a coherent product.
+
+**6b. And it is also the release that acquires an infrastructure estate.** Step 0 is an AWS topology, a Terraform codebase, two container services, a CDN, a secrets story, and a second repo — none of it visible to a user, all of it prerequisite. It is genuinely satisfying work, which is the danger: it feels like progress and does not move Risk 1 or Risk 3 at all. Time-box it, keep it in Terraform so it is reviewable rather than remembered ([../techstack/infrastructure.md](../techstack/infrastructure.md)), and get back to the features.

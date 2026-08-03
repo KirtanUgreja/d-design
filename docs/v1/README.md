@@ -30,6 +30,10 @@ v1 is deliberately small: a single user, a local Postgres, no accounts, no deplo
 | Why AI-generated product imagery is refused | [ai-pipeline.md](ai-pipeline.md) → "Imagery" |
 | The database tables | [spec.md](spec.md) → "Persistence" |
 | What is explicitly *not* in v1 | [spec.md](spec.md) → "Not in v1" |
+| What the AI is allowed to call | [ai-pipeline.md](ai-pipeline.md) → "What the Build phase may call" |
+| Why the decoder no longer guarantees the schema | [scene-schema.md](scene-schema.md) → "Why the length caps matter more than they look" |
+| What v1 has to run on | [spec.md](spec.md) → "Stack" — Docker Compose and a dev server, no AWS |
+| The two things authored in v1 purely for v3 | [spec.md](spec.md) → "Two things in step 3 that only pay off two versions later" |
 
 ## Superseded by later decisions
 
@@ -40,8 +44,14 @@ v1 stands as the record of what was believed at the time. These parts have since
 | Postgres in Docker → Supabase | Docker → RDS/Aurora | [../techstack/decisions.md](../techstack/decisions.md) |
 | `storage.ts`: local disk → Supabase Storage | local disk → S3, MinIO locally | [../techstack/infrastructure.md](../techstack/infrastructure.md) |
 | Auth arrives with Supabase | Better Auth, in v3 | [../techstack/backend.md](../techstack/backend.md) |
-| Model called directly | OpenRouter behind a seam, no preferred vendor | [../techstack/ai-stack.md](../techstack/ai-stack.md) |
-| Generation has no tools | No tools *with side effects*; read-only tools are tiered | [../techstack/pipeline-tools.md](../techstack/pipeline-tools.md) |
+| A single named model for every phase | One seam, **no preferred vendor**; per-phase choice decided by repair rate | [../techstack/ai-stack.md](../techstack/ai-stack.md) |
+| Shape violations are *unrepresentable* — the decoder prevents them | **Zod is the only gate.** Enforcement varies by provider; the decoder shifts the odds | [scene-schema.md](scene-schema.md), [ai-pipeline.md](ai-pipeline.md) |
+| PDFs go to the model as a document block | Extracted in the **fetch worker** first; model-native reading is the documented fallback | [../techstack/infrastructure.md](../techstack/infrastructure.md) |
+| Prompt caching is one mechanism with one discount | Activation, discount, and minimum prefix all vary by route | [ai-pipeline.md](ai-pipeline.md) |
+| Generation has no tools | No tools *with side effects*; read-only tools are tiered, and v1 ships three | [../techstack/pipeline-tools.md](../techstack/pipeline-tools.md) |
+| ~$0.20 per experience | ~$0.40 once v2's visual verification loop is on | [ai-pipeline.md](ai-pipeline.md) |
+
+**Two things were added to v1 that v1 does not benefit from**, because both are cheap now and brutal to retrofit: CSS logical properties throughout the renderer (v3 RTL), and a pure renderer with no environment branching (v3 runs it in three processes). Both are in [spec.md](spec.md) → Build order.
 
 The stack table in [spec.md](spec.md) has been patched where a stale line would actively mislead someone building from it. Everything else stands.
 

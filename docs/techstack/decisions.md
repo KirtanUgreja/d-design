@@ -86,6 +86,9 @@ Earlier documents locked decisions this directory reverses. Recorded here rather
 | Published pages served from an origin | **Static S3 artifacts**, no origin | [../security/content-and-web.md](../security/content-and-web.md) |
 | `connect-src 'none'` | Two exact endpoints | [../security/content-and-web.md](../security/content-and-web.md) |
 | Anthropic API called directly | **OpenRouter** behind a seam, no preferred vendor | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
+| Shape violations are **unrepresentable** — the decoder prevents a hex code | **Zod is the only gate.** The decoder shifts the odds where the route enforces natively | [../v1/scene-schema.md](../v1/scene-schema.md) |
+| PDFs go to the model as a document block | Extracted in the **fetch worker** first; model-native reading is the documented fallback | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
+| Prompt caching is one mechanism with one discount | Activation, discount rate, and minimum prefix all **vary by route** | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
 | Generation has **no tools** | No tools **with side effects**; read-only tools tiered | [../security/prompt-injection.md](../security/prompt-injection.md) |
 | ~$0.20 per experience | ~$0.40 once the visual loop is on | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
 | Publishing renders on Vercel | Renders in the **job worker** — no timeout ceiling | [backend.md](backend.md) |

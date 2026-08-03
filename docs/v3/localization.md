@@ -24,6 +24,10 @@ locales  experience_id, locale, direction, scenes (jsonb), published_at, status
 
 Each locale gets its own scene tree, transcreated at publish. Not a string table applied at render — the copy genuinely differs, because fitting a budget in Japanese means different phrasing, not a translated string.
 
+**Transcreation runs in the job worker**, not in a request ([../techstack/backend.md](../techstack/backend.md)). Twelve locales is twelve model calls plus twelve validations, which is minutes of work — well past any serverless function's ceiling. As a pg-boss job it is one unit of work with retries, and it enqueues in the same transaction as the publish that triggered it, so a rolled-back publish cannot leave orphaned transcreation running against a tree that no longer exists.
+
+Each locale's output faces the full validation path: Zod, the AD's budgets, and the presentational-value check. A translation is a model output like any other and gets no more trust for being one.
+
 Structure is identical across locales: same scenes, same blocks, same ids. Only text props change. This keeps reskin, personalization, and editing working uniformly, and it means a structural edit propagates while a copy edit does not.
 
 ## Quality — the honest problem
@@ -63,6 +67,10 @@ type.scripts: {
 ```
 
 Fallbacks are chosen to preserve *character*, not to match shapes. `bold-brutalist` needs a CJK face with comparable weight and density; `editorial-light` needs one with comparable restraint. A neutral system font in every non-Latin script silently flattens all three ADs into the same design.
+
+**Faces are ids into the font registry, never family strings** — the same registry the AD linter validates against ([../v2/art-direction-system.md](../v2/art-direction-system.md)). Two reasons that happen to coincide: a family name is the most natural-looking free-text token in the system and the easiest place to smuggle a payload, and self-hosting under an open licence is a *product* constraint here rather than a preference, because these fonts are redistributed to your customers' audiences on domains you do not control ([../techstack/frontend.md](../techstack/frontend.md)). Noto covers all four scripts; a per-domain commercial webfont licence is unusable by a product whose feature is publishing to arbitrary domains.
+
+**Never parse a user-uploaded font.** Font parsing is a hostile-bytes class like any other ([../security/platform-and-packages.md](../security/platform-and-packages.md)), and "bring your own typeface" is a feature worth refusing rather than containing.
 
 Per-script metric adjustments come with it — CJK type generally needs slightly looser line height and no negative tracking, which means `type.scripts` carries scale overrides, not only families.
 
@@ -107,6 +115,10 @@ Logos, product photography, and 3D scenes do **not** mirror. Only layout and rea
 ```
 
 Locale-prefixed URLs are the foundation. Each is a real, shareable, indexable page with `hreflang` tags and its own OG metadata.
+
+**Each locale is its own static object on the CDN** ([../techstack/infrastructure.md](../techstack/infrastructure.md)) — a 12-locale experience publishes 12 artifacts, and there is no origin server deciding which one you get. That is what makes locale URLs shareable and indexable rather than a redirect trick, and it is why auto-detect has to sit on top rather than underneath.
+
+Auto-detect is a **redirect from the canonical URL**, never content negotiation on one URL. Serving different content at the same address breaks caching, breaks sharing, and breaks indexing — and on a CDN it is a cache-key problem that ends with the wrong language served to the wrong viewer.
 
 Auto-detect sits **on top**: a first-time visitor with `Accept-Language: de` is redirected to `/de`, and an explicit choice is remembered and always wins. Auto-detect alone cannot work — it has to redirect somewhere, and without locale URLs there is nothing to redirect to, nothing to share, and nothing to index.
 

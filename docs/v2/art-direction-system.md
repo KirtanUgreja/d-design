@@ -40,6 +40,8 @@ DTCG has no concept of `budgets`, `brandMapping`, `defaultMotion`, or scene sema
 
 Do not over-invest here in v2. The win is choosing a shape that doesn't have to be migrated later; a full round-trip with Figma is a v4 concern.
 
+**An imported token file is external input**, and the import path is the one most likely to be treated as trusted because it came from a designer's tool rather than a text field. It gets the same Zod parse and the same grammar validation as anything typed into the control panel — see the linter below.
+
 ### `budgets` — content limits are per-AD
 
 ```ts
@@ -235,6 +237,29 @@ Any AD from a control panel — and later from AI derivation — can produce unr
 | Motion duration | between 120ms and 1400ms | — |
 | Reduced motion | present, opacity-only, ≤ 300ms | — |
 | Budgets | headline between 20 and 120 characters | — |
+| **Token grammar** | every value parses as its declared type and re-serializes | [../security/content-and-web.md](../security/content-and-web.md) |
+
+### The linter is also the injection boundary
+
+The rules above are design rules. **One more class is a security rule, and it enters with this release**, because v2 is the first version where a token value is not written by you.
+
+A token value becomes a CSS custom property, and art directions require `style-src 'unsafe-inline'`. An unvalidated token is therefore a script-adjacent injection point on a page carrying a customer's brand.
+
+**Every value is parsed by type and re-serialized. Nothing is passed through as a string.**
+
+| Token kind | Validation |
+|---|---|
+| Colors | Parsed into a color object, re-serialized. Never the original string |
+| Numbers | Numeric, range-checked against the bounds above |
+| Enums | Matched against known values, rejected otherwise |
+| **Font families** | **Selected from a curated registry by id. Never a user-supplied string** |
+| Easing curves | `cubic-bezier(a,b,c,d)` with numeric components, or a known keyword |
+
+Rejected outright: `url(`, `expression(`, `@import`, `</style`, `javascript:`, backslash escapes, and any character outside the expected grammar.
+
+Font families deserve the emphasis. A family name is the most natural-looking free-text token in the system and the one most likely to be waved through — which is why they are ids into a registry that maps to a vetted family and file. It also happens to be what v3's per-script font stacks need anyway ([../v3/localization.md](../v3/localization.md)), so the registry is not overhead bought for security alone.
+
+**These are hard failures, exactly like a contrast violation. One validator, two purposes** — and building it as one is what stops the security half from being skipped as separate work. An uploaded DTCG file is external input and gets one Zod parse at the boundary ([../coderules/README.md](../coderules/README.md), rule 2); the linter runs on the parsed result.
 
 **Why two contrast standards and not one.** They answer different questions. WCAG 2.2 AA is what an enterprise accessibility audit will run and what a procurement checklist will cite — it is the floor you cannot ship below, regardless of whether it measures the right thing. APCA is what tells you a dark art direction is *actually readable*, which WCAG 2 structurally cannot. Passing only WCAG 2 yields muddy dark themes that clear the audit; passing only APCA yields a beautiful page that fails a customer's compliance review.
 

@@ -25,6 +25,8 @@ v1 ships one art direction, so the central bet is untested — a token layer wit
 | The three ADs, concretely | [art-direction-system.md](art-direction-system.md) → "The three hand-authored art directions" |
 | Why motion is a separate axis from visual style | [art-direction-system.md](art-direction-system.md) → "Motion as an independent axis" (3 ADs × 4 vocabularies = 12 combinations) |
 | What the linter rejects, and the dual contrast standard | [art-direction-system.md](art-direction-system.md) → "The AD linter" (WCAG 2.2 AA floor + APCA gate) |
+| Why the linter is also a security control | [art-direction-system.md](art-direction-system.md) → "The linter is also the injection boundary" |
+| The render → screenshot → critic loop, and why it lands in v2 | [spec.md](spec.md) → "The visual verification loop arrives here" |
 | How the reskin transition works | [transformations.md](transformations.md) → "Reskin" (View Transitions, Baseline since Oct 2025) |
 | What happens when content overflows a tighter budget | [transformations.md](transformations.md) → "Reskin" |
 | Slides mode, and what degrades in it | [transformations.md](transformations.md) → "Slides mode" |
@@ -45,3 +47,6 @@ That mechanism turns out to be what makes v3's localization possible at all: tra
 | [../v3/ai-art-direction.md](../v3/ai-art-direction.md) | v3 derives ADs by filling in v2's four control axes — same format, same linter |
 | [../security/content-and-web.md](../security/content-and-web.md) | User-authored ADs introduce CSS token injection, the threat that arrives with this release |
 | [../techstack/frontend.md](../techstack/frontend.md) | How motion actually ships to a published page |
+| [../techstack/pipeline-tools.md](../techstack/pipeline-tools.md) | The visual verification loop in full — tiers, cost, and where it runs |
+
+**Infrastructure in v2 is unchanged from v1:** Docker Compose and a dev server ([../techstack/infrastructure.md](../techstack/infrastructure.md)). Everything in this release is application work.
