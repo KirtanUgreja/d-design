@@ -50,26 +50,32 @@ Auto-rewriting would be seamless and would silently alter marketing copy someone
 
 ### The transition — where the delight budget goes
 
-This is the screenshot people share. It is also genuinely hard, because text reflow does not interpolate.
+This is the screenshot people share. **The platform now does the hard part.**
 
-**Approach: FLIP across the token swap.**
+An earlier draft of this design specified a hand-rolled FLIP loop — measure every rect, swap tokens, force layout, measure again, apply inverse transforms, release. That is no longer the right answer. **Same-document View Transitions reached Baseline Newly Available in October 2025** (Chrome 111+, Edge 111+, Firefox 133+, Safari 18+), and React 19.2 ships a `<ViewTransition>` component that Next.js 16 supports natively.
 
-```
-1. measure every visible block's rect          (First)
-2. swap tokens; force layout                   (Last)
-3. measure again; apply inverse transforms     (Invert)
-4. release, animating to identity              (Play)
-5. cross-fade type: old text ghost fades out over new, 240ms
-6. background and texture cross-fade on their own curve, 600ms
+A reskin is a same-document DOM state change. That is precisely what the API is for: the browser snapshots the old state, snapshots the new one, and animates between them — including the layout shift that FLIP existed to compute.
+
+```tsx
+// The whole mechanism
+startTransition(() => setArtDirection(next))
 ```
 
-Total ~800ms. Blocks slide and scale to their new positions while type cross-fades in place — the layout appears to *rearrange itself* rather than being replaced.
+React's `<ViewTransition>` handles the orchestration, which is the part that was genuinely awkward when calling `document.startViewTransition()` by hand — coordinating the browser's snapshot with React's render cycle.
 
-Only visible blocks are animated. Off-screen scenes swap instantly, since nobody is watching them and animating 12 scenes at once will drop frames.
+**Delete the FLIP implementation.** Less code, better behavior, and the browser's compositor handles frames we would have dropped.
 
-**Ship it as a 200ms cross-fade first.** Get the whole matrix correct and boring, then spend real time making one transition beautiful. Do not let the animation block the feature.
+Three real constraints remain:
 
-`prefers-reduced-motion: reduce` → instant swap, no transition.
+**`view-transition-name` collisions are the known failure mode.** Every named element must be unique in the document at transition time. With 12 scenes × up to 8 blocks, naive naming breaks immediately. Derive names from block id (`vt-${block.id}`), and **only assign names to blocks currently in the viewport** — an off-screen scene has no visual continuity to preserve, and naming everything makes the browser snapshot dozens of elements it will never show.
+
+**Text reflow still does not interpolate.** The browser cross-fades the snapshots rather than animating glyphs, which is visually correct and the reason not to fight it. Where a headline reflows from two lines to three, a cross-fade is what you want anyway.
+
+**Unsupported browsers degrade to an instant swap** with no polyfill and no code path of your own — `document.startViewTransition` is simply absent, the state updates, the page repaints. That is an acceptable fallback for a visual flourish, and it is why this is safe to ship without a compatibility matrix.
+
+Background and texture can still take their own longer curve via a separate `::view-transition-group` rule, so the atmospheric layer resolves after the content settles.
+
+`prefers-reduced-motion: reduce` → skip the transition and set state directly. View Transitions do **not** respect the media query on their own; you have to branch.
 
 ### Guarantee
 

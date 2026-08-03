@@ -24,6 +24,22 @@ ArtDirection {
 
 Four token groups instead of v1's five — **motion has left** and become an independent axis. Two new fields carry the weight of everything v2 adds.
 
+### Speak DTCG for the parts that map
+
+The **W3C Design Tokens Community Group format reached its first stable version (2025.10) in October 2025** — media type `application/design-tokens+json`, file extensions `.tokens` / `.tokens.json`. It is supported or being implemented by Figma, Sketch, Framer, Penpot, Style Dictionary, Tokens Studio, Supernova, and zeroheight, with editors from Adobe, Google, Microsoft, Salesforce, Shopify, and others.
+
+**Store the primitive layer in DTCG format.** Colors, dimensions, durations, cubic-béziers, font families, and shadows all have standard DTCG types. Doing this costs nothing now and buys three things:
+
+| | Why it matters |
+|---|---|
+| **Designers can author an AD in Figma or Tokens Studio** and export it | The `author: 'user'` path stops being "move four sliders" and becomes "bring your real design system" |
+| **v4's marketplace gets an interchange format for free** | An AD becomes a portable file rather than a row in your database |
+| **Style Dictionary and Terrazzo can transform it** | You don't write the CSS-variable emitter |
+
+DTCG has no concept of `budgets`, `brandMapping`, `defaultMotion`, or scene semantics — and shouldn't. Those live in the spec's `$extensions` field, which exists for exactly this. The AD record is therefore **a DTCG token file plus a semantic wrapper**, not a proprietary format that happens to hold tokens.
+
+Do not over-invest here in v2. The win is choosing a shape that doesn't have to be migrated later; a full round-trip with Figma is a v4 concern.
+
 ### `budgets` — content limits are per-AD
 
 ```ts
@@ -52,7 +68,37 @@ BrandMapping {
 
 Each AD declares how it consumes a brand rather than the brand overriding the AD. `cinematic-dark` maps the brand to accents and stays dark; `bold-brutalist` may make the brand color a full-bleed background. A marketer choosing an art direction is choosing that art direction.
 
-**Contrast correction is not optional.** If a mapped color fails 4.5:1 against its background, the resolver corrects it in the AD's declared direction and uses the original only on non-text surfaces. Shipping unreadable text is worse than deviating from a brand hex, and the user is told it happened.
+### Derive the palette in CSS, not in JavaScript
+
+One brand color has to become a family: accent, accent-soft, hover, focus, disabled, glow. Historically that meant a build step or a JS color library. It no longer does.
+
+`color-mix()` is **Baseline Widely Available** (~89% global support), OKLCH is at ~87%, and relative color syntax — `oklch(from var(--accent) l c h)` — has shipped in every major browser. The current best practice for design systems is exactly this shape: **one source-of-truth brand color, functional tokens derived from it at runtime.**
+
+```css
+--accent:       var(--brand-primary);
+--accent-soft:  color-mix(in oklch, var(--accent) 12%, transparent);
+--accent-hover: oklch(from var(--accent) calc(l + 0.08) c h);
+```
+
+Two reasons this matters more here than in a normal design system:
+
+**OKLCH is perceptually uniform, so lightening actually lightens.** Nudging `l` in OKLCH moves perceived lightness predictably; the same operation in HSL shifts saturation and hue in ways that wreck a brand color. Contrast correction below depends on this being well-behaved.
+
+**Reskin becomes cheaper.** Swap `--brand-primary` and every derived token follows automatically — there is no per-AD palette to recompute, and no JS pass to run inside the View Transition.
+
+### Contrast correction, and why WCAG 2 is the wrong tool for the flagship AD
+
+**Contrast correction is not optional.** If a mapped color fails against its background, the resolver corrects it in the AD's declared direction and uses the original only on non-text surfaces. Shipping unreadable text is worse than deviating from a brand hex, and the user is told it happened.
+
+But *fails against* needs a definition, and the obvious one is wrong for this product:
+
+> **WCAG 2.x contrast cannot be used for guidance designing dark mode.**
+
+WCAG 2's ratio is polarity-blind — it scores light-on-dark and dark-on-light identically, when the eye does not perceive them the same way. That is why dark themes routinely pass 4.5:1 on paper and read muddy in practice. `cinematic-dark` is the flagship art direction and is dark by definition, so the standard everyone reaches for first is the one least able to evaluate it.
+
+**APCA** (Accessible Perceptual Contrast Algorithm) is polarity-aware, reports a lightness contrast `Lc` value on a roughly ±106 scale, and is the algorithm **WCAG 3.0 will adopt**. WCAG 3.0 remains a draft; WCAG 2.2 remains the standard that legal and procurement teams check against.
+
+So the linter runs **both**, for different jobs — see the rules table below.
 
 ### `version` — published pages don't move
 
@@ -100,6 +146,22 @@ texture        none, but hard-edged color blocking at the layout level
 ```
 
 This one breaks things. `allowBrandBackground` exists because of it. The 34-character budget exists because of it. Expect more discoveries — that is why it is AD #3 and not a v3 idea.
+
+---
+
+## Typography mechanics every AD inherits
+
+These are renderer-level, not per-AD — but they are what makes a hard character budget read as *deliberate* rather than *cramped*, so they belong next to the budgets that depend on them.
+
+**`text-wrap: balance` on every headline.** Baseline since 2024 (Chrome 114+, Edge 114+, Firefox 121+, Safari 17.5+). It distributes a heading evenly across its lines and eliminates the "staircase" — one long line followed by a two-word orphan. Paired with `clamp()` fluid sizing it keeps a heading visually centered and weighted at any viewport.
+
+This is the mechanical partner to the character budget. The budget guarantees a headline is short enough to set well; `balance` guarantees it actually does. Together they're why a 34-character brutalist headline looks composed instead of truncated.
+
+Note the implementation limit: browsers cap `balance` at a small number of lines (Chrome around four) for performance. That's fine here — anything longer has already blown its budget.
+
+**`text-wrap: pretty` on body copy.** A more expensive algorithm aimed at the last lines of a paragraph, preventing single-word orphans. Support is narrower — Chrome 117+, Edge 117+, Safari 26+, **not Firefox as of early 2026** — so treat it as progressive enhancement. Nothing breaks without it.
+
+**Optical sizing where the typeface offers it.** Variable fonts with an optical-size axis (Fraunces, Recursive, and most modern serif families) adjust letterform contrast and spacing as size changes — tighter apertures and finer strokes at display sizes, sturdier ones at body sizes. This is a meaningful part of why editorial typography looks professionally set, and it costs one declaration. Where an AD's display face has custom axes, they belong in that AD's type tokens.
 
 ---
 
@@ -160,20 +222,25 @@ Any AD from a control panel — and later from AI derivation — can produce unr
 
 **Hard failures. An AD that fails cannot be saved.**
 
-| Rule | Bound |
-|---|---|
-| Text contrast | `ink`/`bg` and `ink-muted`/`bg` ≥ 4.5:1; large display ≥ 3:1 |
-| Accent contrast | ≥ 4.5:1 wherever accent carries text |
-| Type scale monotonic | `hero > section > lead > normal ≥ muted > eyebrow` |
-| Scale range | `hero / normal` between 2.5 and 8 |
-| Line height | display ≥ 0.85; body between 1.4 and 1.8 |
-| Measure | between 45ch and 80ch |
-| Spacing scale | strictly increasing, adjacent ratios between 1.2 and 2.0 |
-| Motion duration | between 120ms and 1400ms |
-| Reduced motion | present, opacity-only, ≤ 300ms |
-| Budgets | headline between 20 and 120 characters |
+| Rule | Bound | Standard |
+|---|---|---|
+| **Text contrast — compliance floor** | `ink`/`bg` and `ink-muted`/`bg` ≥ 4.5:1; large display ≥ 3:1 | WCAG 2.2 AA |
+| **Text contrast — perceptual gate** | body `Lc ≥ 75`; large display `Lc ≥ 60`; incidental/disabled `Lc ≥ 45` | APCA |
+| Accent contrast | both of the above, wherever accent carries text | both |
+| Type scale monotonic | `hero > section > lead > normal ≥ muted > eyebrow` | — |
+| Scale range | `hero / normal` between 2.5 and 8 | — |
+| Line height | display ≥ 0.85; body between 1.4 and 1.8 | — |
+| Measure | between 45ch and 80ch | — |
+| Spacing scale | strictly increasing, adjacent ratios between 1.2 and 2.0 | — |
+| Motion duration | between 120ms and 1400ms | — |
+| Reduced motion | present, opacity-only, ≤ 300ms | — |
+| Budgets | headline between 20 and 120 characters | — |
 
-Every bound has a reason. `hero/normal < 2.5` produces a design with no hierarchy; `> 8` produces a headline with orphaned body text. Line height below 1.4 on body text fails readability; above 1.8 the paragraph stops cohering. These aren't taste — they're the range outside which the renderer produces something nobody would defend.
+**Why two contrast standards and not one.** They answer different questions. WCAG 2.2 AA is what an enterprise accessibility audit will run and what a procurement checklist will cite — it is the floor you cannot ship below, regardless of whether it measures the right thing. APCA is what tells you a dark art direction is *actually readable*, which WCAG 2 structurally cannot. Passing only WCAG 2 yields muddy dark themes that clear the audit; passing only APCA yields a beautiful page that fails a customer's compliance review.
+
+Run WCAG 2 as the hard legal floor and APCA as the quality gate. When they disagree, APCA is almost always the one telling you something true about `cinematic-dark`.
+
+Every other bound has a reason too. `hero/normal < 2.5` produces a design with no hierarchy; `> 8` produces a headline with orphaned body text. Line height below 1.4 on body text fails readability; above 1.8 the paragraph stops cohering. These aren't taste — they're the range outside which the renderer produces something nobody would defend.
 
 **Test the linter with a deliberately broken AD** — 2:1 contrast, non-monotonic scale, 4-second durations — and require every rule to fire.
 

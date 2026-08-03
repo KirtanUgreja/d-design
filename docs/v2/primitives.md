@@ -6,6 +6,10 @@ Seven, taking the library from 11 to 18. Chosen for the product-launch wedge spe
 
 **Cost warning:** 18 primitives × 3 art directions = **54 design surfaces**. This is the single largest expense in v2, larger than the art direction system itself. Build these last, in order of real demand, and be willing to ship v2 with 14.
 
+**Two platform notes that apply across several of these.** `Marquee` and `ScrollSequence` are both scroll-linked, and CSS scroll-driven animations (`animation-timeline`, `scroll-timeline`, `view-timeline`) are ~84% supported but **not Baseline** — Firefox stable still gates them behind a flag. Use them as progressive enhancement over the Motion-driven path, and always author the finished state as the default so an unsupported browser shows a complete page rather than a blank one. See [../v1/art-direction.md](../v1/art-direction.md).
+
+Every text-bearing primitive inherits `text-wrap: balance` on headings and `pretty` on body copy from the renderer — see the typography section in [art-direction-system.md](art-direction-system.md). `Timeline`, `Comparison`, and `SpecTable` benefit most, since they set many short strings where a two-word orphan is most visible.
+
 ---
 
 ## Gallery

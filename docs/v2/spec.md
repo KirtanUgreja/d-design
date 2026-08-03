@@ -65,6 +65,19 @@ Per the versioning convention, v1 docs stay as the record of what was believed. 
 
 **Migration:** existing v1 experiences get `artDirection: { id: 'cinematic-dark', version: 1 }` and the v1 caps become that AD's budgets. No content changes. The `scenes` jsonb shape is otherwise unchanged.
 
+## Platform reality (researched August 2026)
+
+Four capabilities matured between this design being sketched and being built. Each removes work rather than adding it.
+
+| Capability | Status | What it changes |
+|---|---|---|
+| **View Transitions (same-document)** | **Baseline** since Oct 2025 · React 19.2 `<ViewTransition>` · Next.js 16 | The reskin transition is a state update, not a FLIP implementation. **Delete that code before writing it** |
+| **`color-mix()` / OKLCH / relative color** | `color-mix()` Baseline Widely Available (~89%) · OKLCH ~87% · relative syntax shipped everywhere | `brandMapping` derives the accent family in CSS at runtime. No build step, no JS color pass, and reskin gets cheaper |
+| **DTCG token format** | First stable version **2025.10** (Oct 2025) · Figma, Sketch, Framer, Style Dictionary, Tokens Studio | The AD primitive layer should be a `.tokens.json` file with semantics in `$extensions` — free interchange for v4's marketplace |
+| **APCA** | WCAG 3.0 draft algorithm; in Chrome DevTools | The linter needs it. **WCAG 2.x cannot evaluate dark mode**, and the flagship AD is dark |
+
+The APCA one is the only entry on this list that *adds* a requirement rather than removing work. It also happens to be the one most likely to change what `cinematic-dark` actually looks like.
+
 ## Architecture delta
 
 ```
@@ -130,7 +143,7 @@ experiences         + motion_vocabulary, + art_direction is now {id, version}
 5. **Hand-author `bold-brutalist`** — this is where missing tokens surface
 6. Version history / snapshots
 7. Reskin + overflow report + shorten-with-AI
-8. Reskin transition animation — *the delight budget*
+8. Reskin transition — wrap the state update in `<ViewTransition>`, scope `view-transition-name` to the viewport. *Much cheaper than planned; see Platform reality*
 9. Compare view
 10. Remaining motion vocabularies: `editorial-restrained`, `mechanical-snap`, `physics-playful`
 11. Slides mode — reuses the overflow mechanism from step 7
@@ -144,6 +157,8 @@ Do not build reskin (7) before both new ADs exist (4–5). Reskin against one AD
 |---|---|
 | **AD format completeness** | All 3 ADs express fully in the format with zero renderer changes. **If any AD needs a renderer change, the abstraction is wrong — stop and fix it.** |
 | **Linter** | Feed it a deliberately broken AD (2:1 contrast, non-monotonic scale, 4s durations). Every rule must fail it. |
+| **Dual contrast** | An AD that passes WCAG 2.2 AA at 4.6:1 but scores `Lc 55` on dark must be **rejected**. If it passes, the APCA gate isn't wired — and that combination is exactly what muddy dark themes look like |
+| **View-transition names** | Reskin a 12-scene experience: assert no duplicate `view-transition-name` in the document, and that off-screen blocks carry none |
 | **Reskin matrix** | 3 ADs × 4 motion vocabularies × 2 modes = 24 combinations against 5 golden experiences. All must render valid, no crashes, overflow correctly reported. |
 | **Version pinning** | Publish under AD v1, bump AD to v2, confirm the published page is byte-identical. |
 | **History** | Reskin, restore, assert the tree is identical to the pre-reskin snapshot. |
@@ -154,7 +169,9 @@ Do not build reskin (7) before both new ADs exist (4–5). Reskin against one AD
 
 **1. Three ADs may prove the token schema wrong.** That is the *purpose* of steps 4–5, not a failure of them. Budget for a format refactor between AD #2 and AD #3, and treat needing one as the process working.
 
-**2. The reskin transition is genuinely hard.** Animating a whole page between two token sets means FLIP-style measurement, and text reflow does not interpolate. See [transformations.md](transformations.md). It is also where the delight budget goes, so it cannot be skipped — but it can ship as a fast cross-fade first and get beautiful later.
+**2. ~~The reskin transition is genuinely hard.~~ Retired — the platform absorbed it.** This risk assumed a hand-rolled FLIP loop. Same-document View Transitions went Baseline in October 2025 and React 19.2 ships `<ViewTransition>`, so the browser does the measurement and interpolation. What remains is a naming-collision problem, not an animation problem. See [transformations.md](transformations.md).
+
+The residual risk is smaller and worth naming: `view-transition-name` must be unique per document at transition time, and naming every block in a 12-scene experience will both collide and tank performance. Name only what's in the viewport.
 
 **3. 18 primitives × 3 ADs = 54 design surfaces.** The single largest cost in v2, larger than the AD system itself. Build primitives last, in demand order, and be willing to ship v2 with 14.
 
