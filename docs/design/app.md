@@ -89,7 +89,9 @@ The live URL, large and copyable, with the real page behind it. One click to ope
 
 **Republishing is explicit.** A live launch page must never change because someone typed in the editor. Unpublish is instant and real.
 
-OG images come from an auto-screenshot; Playwright is already in the stack ([../techstack/frontend.md](../techstack/frontend.md)). Treat Slack and LinkedIn unfurl quality as a launch requirement — a bad unfurl on the buyer's own share is a product failure with an audience.
+OG images come from an auto-screenshot; Playwright is already in the stack ([../techstack/frontend.md](../techstack/frontend.md)). Treat Slack and LinkedIn unfurl quality as a launch requirement — a bad unfurl on the buyer's own share is a product failure with an audience. Both land in [../v1/plan/05-publish-present-embed.md](../v1/plan/05-publish-present-embed.md), alongside the designed 404 that a taken-down artifact needs.
+
+**From v3 the published page carries a provenance line** — the "made with" badge and the legally required AI-content disclosure, designed as one mark rather than two ([website.md](website.md), [../v3/compliance.md](../v3/compliance.md)). Worth knowing here because it is the one piece of our design that appears inside someone else's artifact, and it is the only place our chrome and the art direction are allowed to meet.
 
 ---
 

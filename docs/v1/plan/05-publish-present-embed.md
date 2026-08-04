@@ -101,6 +101,16 @@ The **motion toggle** ships here, in the runtime, so every published experience 
 
 Publish with a different CSP header. Same artifact, same renderer, no second code path. If embed needs anything else, that is a signal the renderer grew a mode.
 
+### The publish reveal, and the two things around it
+
+The moment a URL exists is the one that gets screenshotted into Slack, and it is one of the four screens with a real design budget ([../../design/app.md](../../design/app.md)). The URL is large and copyable with the real page behind it, and open / embed / present are one click each.
+
+Two adjacent things that are cheap here and awkward later:
+
+**Republishing is explicit, and unpublish is real.** A live launch page must never change because someone typed in the editor. The `published_at` filter already gives unpublish for free; what it does not give is the 404 that follows, and **a customer's audience will hit that page.** Design it — an artifact that has been taken down is a different message from one that never existed.
+
+**Social unfurls are a launch requirement, not a polish item.** The buyer's first act after publishing is pasting the link into Slack or LinkedIn in front of colleagues. A broken unfurl there is a product failure with an audience. OG images come from an auto-screenshot and Playwright is already in the stack ([../../techstack/frontend.md](../../techstack/frontend.md)), so this is a screenshot and four meta tags — as long as it happens at publish, alongside the render, rather than being bolted on once someone complains.
+
 ---
 
 ## Verify
@@ -113,6 +123,8 @@ Publish with a different CSP header. Same artifact, same renderer, no second cod
 - [ ] Fullscreen, navigate with arrow keys, exit cleanly
 - [ ] Embed `/e/[id]` in a blank HTML file on a different port, and it renders
 - [ ] Republish after an edit and the served artifact changes
+- [ ] Unpublish, then open the URL: a designed page, not a framework 404
+- [ ] Paste a published URL into Slack and into LinkedIn. Both unfurl with the right image and title
 
 **Security — the rows that go live here** ([../../security/testing.md](../../security/testing.md))
 

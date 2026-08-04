@@ -84,6 +84,21 @@ A marketer cannot ship a page asserting something untrue about their product, an
 
 The Intake UI's job here is narrow and important: make it obvious that what the user types into `keyMessages` is what will appear on the page. If the interview paraphrases the user's messaging into something smoother, it has already broken the rule the whole pipeline rests on.
 
+### The interview is not a chat
+
+The first screen a user touches, and one of the four that gets real design attention ([../../design/app.md](../../design/app.md)). Four decisions, each of which is cheaper to take now than to unwind:
+
+| | |
+|---|---|
+| **Prompt box first, then a short structured interview** | Chat bubbles promise conversational memory, open-ended back-and-forth, and off-task requests — three things this pipeline will not do. A chat log is also not a `Brief`; a structured interview produces one directly |
+| **Skipping to generate is always available** | The interview improves the output. It must never gate it |
+| **The Brief stays visible and editable, permanently** | It is the approved-claims record. Burying it behind a step contradicts the rule above, which says the user's exact words are what ships |
+| **No upload affordance at all** | Import is deferred, and a disabled button that explains why it is disabled is worse than no button. The `Brief` shape is unchanged when the fetch worker lands, so nothing has to move |
+
+**No templates, no starting-point gallery.** "No templates" is the positioning ([../market.md](../market.md)); a template picker on the first screen argues against the product on the product's own front page. The equivalent affordance is example *briefs* — real launches — and every one of them should be commercial work, because generic examples recruit the cohort that killed Tome ([../../design/principles.md](../../design/principles.md), principle 2).
+
+**The first run has a 90-second budget**, which is what makes the brand kit a second-session concern rather than a setup step. Six brand fields before anything has happened is where a first session is lost.
+
 ### The URL rule
 
 `cta.href` comes from the user, always. The AI never composes a URL. Validate it here with the same scheme allowlist phase 06 uses — `javascript:`, `data:`, `vbscript:`, and protocol-relative all rejected — and store the full set of user-supplied URLs on the Brief, because that set is what phase 06's provenance check compares against.

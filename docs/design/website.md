@@ -120,10 +120,12 @@ Every piece is commercial launch work. No travel decks, no thesis defences ([pri
 
 Let people generate and see the quality; charge when they need the URL. This inverts the usual AI-product paywall on purpose: quality is our entire argument, and putting our argument behind a credit card is backwards. It also matches where the value actually lands — a marketer's deliverable is a link they can send, not a file they made.
 
+**The plan shape is not this document's to decide.** [../v3/spec.md](../v3/spec.md) locks it: free is generate, edit, preview, and **one** published experience on a subdomain carrying the badge; paid is custom domain, no badge, embed, unlimited published, and every v3 feature. This document owns how that is *presented* and the four decisions below, which the plan shape does not determine.
+
 | Decision | |
 |---|---|
 | Generating | Free within a quota, which fails closed and says so ([../../AGENTS.md](../../AGENTS.md), rule 10) |
-| Publishing | Paid |
+| Publishing beyond the free one | Paid |
 | Card | At publish, not at signup |
 | Structure | Seats with a generous generation allowance. Marketers cannot forecast usage and hate metering |
 | Credits | Avoided entirely if possible. Opaque balances are the most-complained-about pattern in AI pricing |
@@ -134,6 +136,8 @@ Let people generate and see the quality; charge when they need the URL. This inv
 The *numbers* stay deferred until token cost is measurable ([../v1/spec.md](../v1/spec.md)). The page shape does not depend on them.
 
 **Cost exposure, named:** free generation with a paid publish means we pay for output that never converts. That is the deliberate trade, and it is bounded by three things already in the plan — per-user quota, the atomic quota check, and the kill switch ([../v1/plan/06-model-seam-and-build.md](../v1/plan/06-model-seam-and-build.md)). Watch generations-per-publish as the health metric; if it climbs, the quota moves, not the paywall.
+
+**And a security consequence, because this pricing shape names its own weak spot.** A free tier that generates and a paid gate on publishing is *exactly* the state machine [../security/adversarial-ai.md](../security/adversarial-ai.md) lists as the class most likely to actually get you — "the state machine that allows publish-before-payment." It has no scanner and no pattern. The defense is that the entitlement check is boring, in one place, at the data layer, and fails closed. A pricing page is a specification for an attacker as much as for a buyer.
 
 ---
 
@@ -146,7 +150,17 @@ The *numbers* stay deferred until token cost is measurable ([../v1/spec.md](../v
 | Numbers | Only what the analytics beacon actually measures ([../techstack/frontend.md](../techstack/frontend.md)) |
 | Versus Gamma | Same brief, both tools, two live URLs, both linked. Not a doctored screenshot |
 | Limits | Published. No PPTX, no charts, one signature moment per experience. Naming limits early is how we survive Risk 3 ([../v1/spec.md](../v1/spec.md)) |
-| The badge | Small, on published artifacts, removable on a paid tier. It is the only free acquisition loop this product has |
+| The badge | Small, on published artifacts, removable on a paid tier. It is the only free acquisition loop this product has — **and it is not the only mark that page has to carry.** See below |
+
+### The badge and the AI disclosure are one design problem
+
+[../v3/compliance.md](../v3/compliance.md) requires a **machine-readable** marking of AI-generated content. Article 50 also expects a **human-visible** disclosure, given clearly at first exposure — two layers, not one.
+
+So a free-tier published page is due a "made with ⟨product⟩" badge *and* an AI-content disclosure, and designing them separately produces two small pieces of legal-looking furniture in the corner of somebody's launch page. Design them as **one mark**: provenance is what both are actually saying.
+
+That is a better product too. "Designed by ⟨product⟩ from your brief" is a disclosure, an attribution, and an advertisement in one line, and it is the only version of a compliance obligation that a customer would ever willingly leave switched on. It is styled per art direction so it does not read as bolted on ([../v3/spec.md](../v3/spec.md)).
+
+The trap to avoid: the badge is **removable on the paid tier and the disclosure is not.** Whoever builds the paid-tier toggle must not be able to remove the disclosure with it. That is a single boolean in the render path away from being a compliance defect, and it is the kind of thing found in an audit rather than in review.
 
 ---
 
@@ -155,10 +169,12 @@ The *numbers* stay deferred until token cost is measurable ([../v1/spec.md](../v
 Stricter budget than the artifact's — we are selling craft, on a page whose whole job is to look like we have it.
 
 - **No third-party scripts** ([../security/third-parties.md](../security/third-parties.md)). No chat widget, no tag manager
-- **One cookieless, self-hosted analytics tool** on the marketing site — and **never on published artifacts**. That guarantee is a product feature and it is enforced by CSP ([../techstack/frontend.md](../techstack/frontend.md))
+- **One cookieless, self-hosted analytics tool** on the marketing site. Self-hosted is the load-bearing word: a hosted analytics vendor is a **subprocessor decision**, in the same category as adding a model gateway, and it would land on the list customers' legal teams read ([../security/third-parties.md](../security/third-parties.md)). Umami is the light end of that choice — Node and Postgres next to the app, no cookies, IPs hashed in memory and discarded daily
 - **No cookie banner**, achieved by not setting cookies. A consent dialog on a design product's homepage is a self-inflicted wound
 - Fonts subset, display face preloaded
 - Measure what the embedded hero artifact costs the page. It is React plus Motion, and it is the one heavy thing we accept on purpose
+
+**Our analytics never runs on a published artifact — and that is not the same as "artifacts carry no analytics."** They carry exactly one first-party beacon from v3, `/v/beacon`, which measures *the customer's* audience for *the customer* and is a paid feature they switched on ([../techstack/frontend.md](../techstack/frontend.md), [../v3/personalization.md](../v3/personalization.md)). The distinction is the whole promise: a published page reports to its owner, never to us, and the CSP names two exact paths so a browser test can prove it. Putting our marketing tag on a customer's launch page would be surveillance of their audience through their own asset. It is worth stating on the trust page in those words.
 
 The metric that matters is not signups. It is **a published artifact within 24 hours of signup** ([questions.md](questions.md), §24).
 

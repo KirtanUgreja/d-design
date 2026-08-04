@@ -47,7 +47,7 @@ So this doc separates two kinds of statement.
 | AD versioning | Pinned at publish, opt-in upgrade | A live launch page must not restyle itself overnight |
 | History | Auto-snapshot at milestones + named saves | Scene trees are small JSON; storing 50 costs nothing |
 | Slides mode | One scene = one slide, motion retimed | No content changes, no second authoring pass |
-| Delight budget | The reskin transition | It's the screenshot people share |
+| Delight budget | The reskin transition | It's the screenshot people share — and from v3 it is the marketing hero's one interactive control, where it demonstrates the abstraction instead of asserting it ([../design/website.md](../design/website.md)) |
 | Pricing | Still deferred — v3 | v2 is about being loved, not monetized |
 
 ## What v2 changes from v1
@@ -134,7 +134,7 @@ What v2 adds to the v1 editor, consolidated:
 
 | Surface | Behavior |
 |---|---|
-| AD picker | In the outline gate and in the editor toolbar. Switching in the editor runs the full reskin flow |
+| AD picker | In the outline gate and in the editor toolbar. Switching in the editor runs the full reskin flow. **Its toolbar space is reserved in v1** ([../design/app.md](../design/app.md)) — retrofitting it into a menu is how it becomes a setting instead of the feature it is |
 | Motion picker | Separate control. AD's `defaultMotion` preselected, other 3 available |
 | Mode toggle | Scroll ↔ slides. Runs the same overflow check |
 | Overflow banner | Appears after any transformation. Per-block review + shorten-with-AI |
@@ -163,7 +163,7 @@ experiences         + motion_vocabulary, + art_direction is now {id, version}
 1. AD format v2 — budgets, versioning, brand mapping. Migrate `cinematic-dark` into it
 2. Extract motion into a separate `cinematic-slow` vocabulary; renderer reads two sources
 3. AD linter — contrast, scale monotonicity, motion bounds, **and token grammar validation** ([art-direction-system.md](art-direction-system.md))
-4. **Hand-author `editorial-light`**
+4. **Hand-author `editorial-light`** — and see the constraint below, which is free here and expensive later
 5. **Hand-author `bold-brutalist`** — this is where missing tokens surface
 6. Version history / snapshots
 7. Reskin + overflow report + shorten-with-AI
@@ -175,6 +175,14 @@ experiences         + motion_vocabulary, + art_direction is now {id, version}
 13. The 7 primitives, in order of real demand
 
 Do not build reskin (7) before both new ADs exist (4–5). Reskin against one AD is untestable, and the second and third ADs are what tell you the format is wrong while it's still cheap to change.
+
+### `editorial-light` must not become our own brand
+
+Our product surfaces — the marketing site and the app chrome — are a **light, warm-neutral, editorial gallery wall** ([../design/brand.md](../design/brand.md)). That decision was made in v1 for reasons that have nothing to do with this build order, and step 4 walks straight into it.
+
+If `editorial-light` and our chrome converge, the site stops looking like a neutral wall and starts looking like it is wearing art direction #2 — which is the "this product makes exactly one thing" accusation returning in a form that is harder to see and harder to undo. **Different display face, different ground temperature, different accent behaviour**, and the check is concrete: put `editorial-light` on the canvas with the chrome around it, and a stranger must be able to tell which pixels are the product and which are the artifact.
+
+The constraint binds the art direction, not the chrome. Changing a hand-authored AD at step 4 costs a day; changing an identity that has leaked into every route and string costs an audit ([../design/principles.md](../design/principles.md), principle 11).
 
 Step 9 sits after reskin deliberately. The loop needs something to look at and a reason to look — before three ADs exist, it is an expensive way to confirm that a page you already stared at is fine.
 

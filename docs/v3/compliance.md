@@ -65,6 +65,21 @@ Two consequences for [localization.md](localization.md):
 - **Each locale page carries its own marking**, independent of the source locale.
 - **The `needs-review` → human-approved workflow already in that design is doing double duty.** It was specified so a native speaker catches subtly wrong German. It is also the human oversight step that makes the AI-generated status of that copy a reviewed fact rather than an unexamined one.
 
+## The second layer: a disclosure a human can see
+
+Everything above is about machine-readable marking, which is Article 50(2). There is a second layer, and this document originally treated it as the same requirement.
+
+**Article 50(4) is about people.** Deployers generating or manipulating published text must disclose that it was artificially generated, and the information has to reach a natural person **in a clear and distinguishable manner, at the latest at the time of first exposure**. A C2PA manifest satisfies neither adverb — it is invisible by design. So the obligation splits: a manifest in the file, and a mark on the page.
+
+Two consequences, and both are design decisions rather than pipeline ones:
+
+- **The visible mark and the "made with" badge are the same object.** A free-tier page would otherwise carry two small pieces of furniture in its corner saying adjacent things. One provenance line does both jobs, styled per art direction, and it is the only version of this obligation a customer would willingly leave switched on ([../design/website.md](../design/website.md)). **The badge is removable on the paid tier; the disclosure is not** — which is one boolean apart in the render path, and is the shape of defect an audit finds rather than a review
+- **"At first exposure" is a placement requirement.** A mark in the footer of a twelve-scene scroll experience is not disclosure at first exposure, and this is the point where the compliance answer and the design instinct pull in opposite directions
+
+**One exemption is worth taking to counsel rather than assuming**, because it may apply to most of what this product makes: AI-generated text that has undergone human review and editorial responsibility is outside the deployer's labelling obligation. This pipeline has a human approval gate before anything is built ([../v1/plan/07-director.md](../v1/plan/07-director.md)) and a marketer who reviews and publishes deliberately. Whether that constitutes editorial responsibility is exactly the question a lawyer answers and a design doc should not.
+
+Note also that 50(4)'s text limb is scoped to text *published to inform the public on matters of public interest*. A product launch page is probably not that. The safe posture is to build the mark anyway and let counsel narrow it, because adding a disclosure later is a render change and retrofitting provenance data is not.
+
 ## Who is the provider, and who is the deployer
 
 Article 50 splits obligations between providers and deployers, and this product sits awkwardly across the line:
@@ -95,6 +110,8 @@ That is the second time this repo's quality instincts have landed on the legally
 - Every locale page → carries its own marking
 - Human-authored copy → not marked as synthetic (the signal has to mean something)
 - A locale cannot publish without a human review step
+- Published page → carries a **human-visible** provenance mark as well as the machine-readable one, and it is reachable at first exposure rather than only in the footer
+- **Removing the badge on a paid plan does not remove the disclosure.** Assert it: flip the paid-tier flag on a published page and confirm the disclosure survives
 
 ## Sources
 
@@ -104,3 +121,4 @@ That is the second time this repo's quality instincts have landed on the legally
 - [Transparency obligations for AI-generated content — HSF Kramer](https://www.hsfkramer.com/notes/ip/2026-03/transparency-obligations-for-ai-generated-content-under-the-eu-ai-act-from-principle-to-practice)
 - [EU AI Act and C2PA: what Article 50 requires](https://c2paviewer.com/articles/eu-ai-act-content-credentials)
 - [C2PA adoption status 2026](https://www.eyesift.com/faq/c2pa-content-credentials-2026-cryptographic-provenance-adoption/)
+- [Draft Code of Practice on AI labelling — Jones Day](https://www.jonesday.com/en/insights/2026/01/european-commission-publishes-draft-code-of-practice-on-ai-labelling-and-transparency) · [The two labelling layers, and the human-review exemption](https://blog.pebblous.ai/blog/eu-ai-content-labeling-article-50-provenance/en/)

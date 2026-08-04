@@ -46,6 +46,10 @@ Every operational choice, what it beat, and what it cost. The rejected option ma
 | Visual verification | **Render → screenshot → vision critic, one revision** | Zod validation alone; unbounded critic loop | Zod proves valid, not good. Doubles cost to ~$0.40/experience, which is not a cost decision |
 | Publish render location | **Job worker** (app fallback) | Vercel route only | Corrects a wrong premise — the job worker ships from the app repo, so it has the renderer and no timeout ceiling |
 | v1 infrastructure | **None — Docker Compose only** | Full stack from day one | The long pole is the renderer, and a perfect VPC does not move that risk |
+| Our own brand | **Light editorial "gallery wall"** | Wearing `cinematic-dark`; a dark atmospheric site | A site wearing its own art direction proves the product makes one thing. Also the shortest path away from the slop aesthetic ([../design/brand.md](../design/brand.md)) |
+| Marketing hero | **A real embedded published artifact + a recorded generation** | Live anonymous generation; a video; a canned prompt box | Published pages are static, so real work costs nothing per visitor. A recorded SSE log is one model call ever and cannot fail on stage |
+| Marketing analytics | **Self-hosted, cookieless, marketing site only** | Plausible Cloud, GA4, Fathom | A hosted vendor is a subprocessor decision ([../security/third-parties.md](../security/third-parties.md)). No cookies also means no consent banner |
+| Chrome typography | **Commercially licensed, not shared with any AD** | Reusing the output's open faces; Inter/Geist | Our chrome is not redistributed, so the output's licence constraint does not bind it — and a shared face merges the two design systems |
 
 ## The two decisions that cost something
 
@@ -107,3 +111,5 @@ Deliberately unresolved, with the condition that would resolve each:
 | **Cloudflare for SaaS** | Custom domains pass roughly fifty and ACM's SAN limits bite |
 | **Pricing and plan limits** | [../v3/spec.md](../v3/spec.md) — quota *enforcement* is built; the numbers are not chosen |
 | **MFA rollout** | Better Auth ships it. Accounts hold integration credentials from day one, which argues for sooner than v3 |
+| **The product's name** | Before phase 09. `d-design` describes the repository; the editor is where user-facing strings start accumulating and renaming after that is an audit ([../design/brand.md](../design/brand.md)) |
+| **The chrome accent hue** | With the first real screen. The constraint is decided — one accent, roughly two uses, never violet or a gradient — and the hue is not |

@@ -48,6 +48,27 @@ Product design follows the same discipline as [../security/README.md](../securit
 | Signup, auth, account | v3 | v3 ([../techstack/backend.md](../techstack/backend.md)) |
 | Gallery, showcase, "made with" badge | v2 | v3 — it needs published work to show |
 
+## What this directory obligates elsewhere
+
+Design decisions that turned into requirements in other documents. Listed here so the trail is walkable in both directions — each row is owned by the document on the right, not by this one.
+
+| Obligation | Landed in |
+|---|---|
+| Keep the SSE event logs of good runs — the marketing demo is built from one | [../v1/plan/06-model-seam-and-build.md](../v1/plan/06-model-seam-and-build.md) |
+| The generation watch renders real scenes; `repair` stays silent | [../v1/plan/06-model-seam-and-build.md](../v1/plan/06-model-seam-and-build.md) |
+| The outline gate shows claim provenance and is not a list with a button | [../v1/plan/07-director.md](../v1/plan/07-director.md) |
+| Intake is an interview, not a chat; no upload affordance, no templates | [../v1/plan/08-intake.md](../v1/plan/08-intake.md) |
+| The refusal of "make the headline smaller" is a written deliverable | [../v1/plan/09-editor.md](../v1/plan/09-editor.md) |
+| Designed 404 for an unpublished artifact; unfurls are a launch requirement | [../v1/plan/05-publish-present-embed.md](../v1/plan/05-publish-present-embed.md) |
+| Six upload controls means six messages; brand kit is asked second | [../v1/plan/10-brand-and-uploads.md](../v1/plan/10-brand-and-uploads.md) |
+| Settle the name before phase 09 | [../v1/plan/README.md](../v1/plan/README.md) |
+| **`editorial-light` must not converge on our own chrome** | [../v2/spec.md](../v2/spec.md) |
+| Badge + AI disclosure are one mark, and only one of them is removable | [../v3/compliance.md](../v3/compliance.md), [../v3/spec.md](../v3/spec.md) |
+| Showcase requires written per-artifact release after the customer's launch | [../security/tenancy-and-data.md](../security/tenancy-and-data.md) |
+| Marketing analytics is self-hosted, so it adds no subprocessor | [../security/third-parties.md](../security/third-parties.md) |
+| Publish-before-payment is this product's real business-logic exposure | [../security/adversarial-ai.md](../security/adversarial-ai.md) |
+| The marketing site is a route group; recordings are fixtures | [../coderules/structure.md](../coderules/structure.md) |
+
 ## Find it fast
 
 | If you need… | Go to |

@@ -60,6 +60,10 @@ Three obligations follow, and all three are cheap now and expensive to retrofit:
 - **Verify the training claim per provider**, do not assume it. "Enterprise API tiers do not train on your data" is usually true and is exactly the kind of usually that a DPA negotiation exists to pin down.
 - **A new subprocessor is a decision, not a config change.** Adding a hosted eval tool, an analytics vendor, or a second model gateway is the same category of act as adding a dependency ([../coderules/dependencies.md](../coderules/dependencies.md)) — and the blast radius is larger, because it is your customers' data rather than your build.
 
+**The marketing site is where that last rule gets tested first**, because measuring a homepage is the most ordinary thing a company does and the tools for it are all hosted. It resolves the same way Langfuse did: **self-hosted, cookieless, on our own site only** ([../design/website.md](../design/website.md)). A hosted analytics vendor would add a row to the table above and a name to the page customers' legal teams read, in exchange for a dashboard. Not worth it — and the discipline is worth more than the tool, because the second exception is always easier to make than the first.
+
+Two properties follow, and both are worth stating on the trust page rather than only here: **no cookies means no consent banner** — the requirement attaches to setting them, not to counting visits — and our analytics never runs on a customer's published artifact. Those pages carry one first-party beacon that reports to *their* owner ([../techstack/frontend.md](../techstack/frontend.md)), and the CSP names it by exact path so a browser test can prove nothing else is there.
+
 **AI inference providers are now among the most-questioned items in DPA negotiations.** Being able to answer precisely — which providers, under what retention, with ZDR enforced how — is a sales asset well before it is a compliance one.
 
 ## Sentry is the one that will actually leak

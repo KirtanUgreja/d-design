@@ -86,6 +86,21 @@ These are not restated per phase. They are the eleven non-negotiables from [../.
 
 Rules 9 and 10 guard threats that do not exist in single-user v1. They are built anyway, in phase 00, because their entire value is that the habit is greppable from the first commit — retrofitting rule 9 across forty call sites in v3 is the documented failure, not building it in v1.
 
+## Where the design budget goes
+
+v1 builds the only UI that exists, and [../../design/app.md](../../design/app.md) rations the attention it gets. **Four screens are hot; the rest is furniture**, and furniture that is quiet is good furniture. This is the cold-90% rule from [../../coderules/performance.md](../../coderules/performance.md) applied to design time rather than to CPU time.
+
+| Hot — craft it | Phase |
+|---|---|
+| The generation watch — 40 seconds, and the highest-leverage motion design in the product | [06](06-model-seam-and-build.md) |
+| The outline gate — hot for *trust* rather than for delight | [07](07-director.md) |
+| Intake, the first prompt | [08](08-intake.md) |
+| The publish reveal, and the editor's answer to the missing colour picker | [05](05-publish-present-embed.md), [09](09-editor.md) |
+
+Everything else — settings, the asset list, the brand-kit form, the property panel's chrome — is assembled from shadcn/ui and left alone. A week spent on a settings page while the generation watch is a spinner is the budget spent backwards.
+
+**Settle the product's name before phase 09.** Nothing in the build blocks on it, which is exactly why it slips; the editor is the first place user-facing strings accumulate, and renaming across a UI afterwards is an audit rather than an edit ([../../design/brand.md](../../design/brand.md)).
+
 ## What v1 does not build, and why the plan says so
 
 The spec's *Not in v1* list stands unchanged. Two things this plan removes that a reader might expect from the docs:

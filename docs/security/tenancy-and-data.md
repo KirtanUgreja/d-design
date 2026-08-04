@@ -127,6 +127,8 @@ Prompts contain the customer's unreleased launch messaging — plausibly the mos
 
 The same rule applies to application logs and error reporting: scrub scene content, brief content, and recipient fields before anything leaves the process. Error trackers are a common accidental PII sink.
 
+**And the same fact governs marketing, which is the leak this section did not anticipate.** A showcase, a case study, and a screenshot in a pitch deck are all publication of the customer's embargoed launch messaging by a route that never touches a log. The rule that follows is stricter than a checkbox at signup and is not negotiable at the moment someone wants a launch asset ([../design/website.md](../design/website.md)): **explicit written release, per artifact, after that customer's launch is already public.** Never opt-out, never "it is on the public internet anyway," and the *brief* requires a separate release from the *output*, because it is the more sensitive of the two — it is the messaging, unshipped, with the arguments still visible.
+
 ## PII and retention
 
 | Data | Retention |

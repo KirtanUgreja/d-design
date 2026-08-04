@@ -20,6 +20,18 @@ Three reasons, in order of how much they matter:
 
 **What this is not:** it is not minimalism as a default, and it is not "clean". A gallery wall has proportion, rhythm, and an obvious point of view about scale. Blank is not the same as quiet.
 
+### The collision this decision walks into
+
+**v2's second hand-authored art direction is called `editorial-light`** ([../v2/spec.md](../v2/spec.md), build order step 4). Our wall is light and editorial. If those two converge, principle 9 fails in a subtler and more damaging way than the one it was written to prevent: the site is no longer wearing `cinematic-dark`, it is wearing art direction #2, and "this product makes exactly one thing" comes back as "this product has a house style."
+
+It is cheap to prevent at authoring time and expensive to discover afterwards, so it is a constraint on **`editorial-light`**, not on the wall:
+
+- **Different display face.** Ours is already required to differ from every art direction's ([Type](#type)); this is the one where that rule will be under real pressure, because the obvious right answer for both is the same kind of face
+- **Different ground.** If ours is warm paper, `editorial-light` is cool or bright white, or the reverse. Not both warm
+- **Different accent behaviour.** Ours appears twice on a screen. An art direction is allowed to be much louder, and here it should be
+
+**The test, at v2 step 4:** put `editorial-light` in the editor canvas with our chrome around it. If a stranger cannot tell which pixels are the product and which are the artifact, one of the two has to move — and it is the wall that moves, because the art direction is the thing we sell.
+
 ---
 
 ## Naming

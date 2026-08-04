@@ -151,7 +151,20 @@ event: repair  data: { "index": 3 }
 event: done    data: { "count": 8 }
 ```
 
-**Keep the event logs of runs whose output you liked.** Serialize the stream to a file alongside the fixtures, versioned. Replayed client-side it drives the same renderer and is indistinguishable from a live generation, which is what the marketing site's demo is built from ([../../design/website.md](../../design/website.md)) — and it costs bytes now versus a model call and an unreproducible result later.
+**Keep the event logs of runs whose output you liked.** Serialize the stream to `evals/recordings/`, versioned next to the golden briefs below. Replayed client-side it drives the same renderer and is indistinguishable from a live generation, which is what the marketing site's demo is built from ([../../design/website.md](../../design/website.md)) — and it costs bytes now versus a model call and an unreproducible result later. It is a fixture, not code: nothing imports it, and it is also the fastest way to develop the client below without spending a call per reload.
+
+### 7b. What the client does with those events
+
+The generation watch is roughly forty seconds long, it is what someone describes to a colleague afterwards, and it is the highest-leverage motion design in the product ([../../design/app.md](../../design/app.md)). Since whole validated scenes arrive, there is nothing partial to hide behind a progress bar — **render the real scenes, full size, in place, in the artifact's own motion vocabulary.** The reveal the user watches is the reveal their audience gets.
+
+| | |
+|---|---|
+| **The outline is visible ahead, ghosted** | Watching known slots fill beats watching an unknown list grow. Phase [07](07-director.md) already produced the outline this needs |
+| **`repair` is silent** | It is instrumentation. Showing a user a self-correction is honesty nobody asked for, spent in the one moment the product cannot afford it |
+| **Abort is prominent** | Killing a bad direction early is the stated reason streaming exists at all ([../../coderules/performance.md](../../coderules/performance.md), hot path 2) |
+| **Failure at scene 6 of 8 keeps the five** | Never discard completed work. Offer to continue |
+| **No invented steps** | "Writing headline…" progress theatre is the most common slop pattern in AI UI, and the events are real phase labels already |
+| **Reduced motion respected here too** | The hardest place to get it right, and the place it is most often skipped |
 
 ### 8. The five golden briefs
 

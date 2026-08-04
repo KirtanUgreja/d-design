@@ -165,7 +165,7 @@ Principle 7. The constraint that makes this section interesting: a real generati
 | 86 | Testimonials? | Real, named, with role and company. Zero generated avatars |
 | 87 | Case study format? | Brief in, artifact out, one number if there is one. Not a narrative |
 | 88 | Which metrics can we claim? | Only what the analytics beacon actually measures from v3 — scroll depth, CTA reach, duration ([../techstack/frontend.md](../techstack/frontend.md)) |
-| 89 | A "made with" badge on published artifacts? | Yes, small, removable on a paid tier. It is the only free acquisition loop this product has |
+| 89 | A "made with" badge on published artifacts? | Yes, small, removable on a paid tier. It is the only free acquisition loop this product has — and it shares its space with a legally required disclosure, so design them as one mark ([website.md](website.md)) |
 | 90 | Side-by-side against Gamma? | Yes, but as two live URLs, not a doctored screenshot. Same brief, both tools, both linked |
 | 91 | Do we publish what the product cannot do? | Yes. No PPTX, no charts, one signature moment. Naming limits early is how we survive Risk 3 |
 | 92 | A security page? | Yes at v3. We have unusually good material for one |
@@ -189,7 +189,7 @@ The sharpest constraint in this section is not design: **a brief is a customer's
 | 101 | Do we seed it with our own work? | Yes, marked as ours. Honesty costs nothing and the work is real |
 | 102 | Can a visitor fork a showcase piece? | v3, and only into their own account with their own copy |
 | 103 | Do published pages link back to us? | Only via the badge. No injected backlinks |
-| 104 | Is the badge removable? | On a paid tier, yes. Trapping a marketer's client work behind our logo loses the account |
+| 104 | Is the badge removable? | On a paid tier, yes. Trapping a marketer's client work behind our logo loses the account. **The AI-content disclosure in the same mark is not removable** ([../v3/compliance.md](../v3/compliance.md)) — one boolean, two very different meanings |
 | 105 | Are showcase pieces the live customer URL or a copy? | A copy we host. Their URL can change or go down and take our showcase with it |
 | 106 | Do we ever showcase without asking because it is public anyway? | No. Public does not mean endorsed, and this buyer talks to other buyers |
 
@@ -205,7 +205,7 @@ The sharpest constraint in this section is not design: **a brief is a customer's
 | 108 | Seats or usage? | Seats, with a generous generation allowance. Marketers cannot forecast usage and hate metering |
 | 109 | Credits UI? | Avoid credits entirely if possible. Opaque credit balances are the most-complained-about pattern in AI pricing |
 | 110 | Do we show the AI cost honestly? | Not on the pricing page. Internally it decides the tiers ([../v1/ai-pipeline.md](../v1/ai-pipeline.md)) |
-| 111 | Free tier? | No. A reverse trial instead — full features for 14 days, then a restricted plan that keeps published pages alive |
+| 111 | Free tier? | **Narrower than it sounds, and already locked in [../v3/spec.md](../v3/spec.md):** free is generate, edit, preview, and one published experience on a subdomain with the badge. Not free-forever unlimited. The reverse trial sits on top — full features for 14 days, then that restricted plan, which keeps published pages alive |
 | 112 | Why a reverse trial? | It converts comparably to a free trial with freemium's signup volume, and AI-native products convert notably better on this shape than general SaaS |
 | 113 | Card up front? | No. Card at publish. Consistent with 107 |
 | 114 | Annual discount? | Two months. Standard, not a differentiator |

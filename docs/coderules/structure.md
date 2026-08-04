@@ -79,6 +79,17 @@ src/
 
 Routes in `app/` are thin. A route parses its input, calls a feature's public function, and returns the result. No business logic, no Drizzle, no branching beyond request shape.
 
+### The marketing site is a route group, not a third repo
+
+It arrives in v3 ([../design/website.md](../design/website.md)) and it belongs in `app/(marketing)/` — statically generated, no data layer, no feature imports beyond `renderer`'s index for the one thing that makes it worth having: a real published artifact embedded live in the page.
+
+Two boundaries it must not cross, both of which look like conveniences at the time:
+
+- **Marketing pages do not import feature internals.** They are the thinnest routes in the codebase. If one needs a database read, it is asking for a product surface and belongs in the app
+- **Our chrome's design tokens are not the art direction's.** Tailwind for one, CSS custom properties for the other, and no file imports both ([../techstack/frontend.md](../techstack/frontend.md)). The lint rule already scoped to `renderer/` is what keeps the boundary from eroding in the easy direction; nothing yet stops the hard direction, which is a marketing page reaching for an art-direction variable because it looked right
+
+The recorded SSE event logs the marketing demo replays are **fixtures, not code** — `evals/recordings/`, next to the golden briefs, imported by nothing.
+
 ## Files
 
 - **One primary export per file, named for the file.** `scene-renderer.tsx` exports `SceneRenderer`. `pipeline.ts` exports `runPipeline`. Grep finds it, imports are predictable, no grab-bag files.

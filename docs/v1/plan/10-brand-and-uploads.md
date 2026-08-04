@@ -78,6 +78,10 @@ Six controls, in this order, and the order matters:
 
 > **The layering is the control, not caution.** Referenced through `<img>`, an SVG cannot execute even if sanitization missed something. A design that trusted the sanitizer alone would have been exploitable four times in eighteen months. Rejecting SVG outright would hurt real users, because logos are almost always SVG.
 
+**Each of the six gets its own sentence.** A rejected upload is a user holding their own logo, being told no by a product that has just claimed it will keep them on brand — the highest-frustration moment in the phase, and *"Invalid file"* is not an answer to any of the six questions above. Six controls means six reasons and six messages: too large, wrong contents, unreadable, unsupported format, and so on ([../../design/app.md](../../design/app.md)). None of them may expose the internal error class, which is logged and never displayed ([../../security/operations.md](../../security/operations.md)).
+
+**The brand kit is asked for second, never first.** It arrives after the first artifact exists, framed as *make this yours* — six brand fields standing between a new user and their first generation is where a first session is lost, and the whole first run has a ninety-second budget ([08](08-intake.md)). That is a sequencing decision this phase can quietly break by building a setup wizard.
+
 ### The deliberate deviation, named
 
 [../../techstack/backend.md](../../techstack/backend.md) puts all of this in the **fetch worker** — the container with no database, no VPC route, and nothing worth stealing. That container is v3.

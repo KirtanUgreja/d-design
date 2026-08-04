@@ -171,6 +171,8 @@ Charts · PDF/PPTX export · speaker notes / presenter view · collaboration · 
 
 **1. Art direction #1 must be genuinely beautiful.** If it isn't, the runtime, the pipeline, and the canvas are all worthless. This is a design problem, solo, and the one place AI assistance helps least. Collect reference work before writing tokens.
 
+*The same risk has a second instance nobody schedules:* the product's own surfaces are the first sample of the claim that AI-generated experiences can be beautiful, and a stock SaaS front door disproves the thesis before anyone reads the headline. That is a v3 build on a v1 decision — the name, voice, and chrome palette leak into every route and string, so they are settled now and the site is built later ([../design/README.md](../design/README.md)). **Nothing in this directory is styled by `cinematic-dark`**; conflating the two design systems is how the art-direction layer stops being a product boundary and becomes a global stylesheet ([../design/principles.md](../design/principles.md), principle 9).
+
 **2. AI-invented marketing claims.** Marketers cannot ship copy the AI made up. Intake captures *approved* messaging; the build phase arranges it and must not embellish. Enforced in the build prompt and reviewable at the outline gate.
 
 **3. "Presentation" framing sets expectations v1 won't meet.** PPTX, PDF, speaker notes will all be asked for in week one. Fullscreen + keyboard nav is the minimum that keeps the word honest; messaging carries the rest. Have a real answer ready, not "coming soon."

@@ -82,10 +82,18 @@ v1 was explicitly single-user and local. v2 never revisited it. v3 is the first 
 
 **The branding badge.** The free tier's constraint is a "made with" mark on published pages, and no document has ever mentioned it. It needs to be a real render decision — styled per art direction so it does not look bolted on, and removable on the paid tier.
 
+**And it is not the only mark that page owes its viewer.** Article 50 expects a human-visible AI-content disclosure alongside the machine-readable marking ([compliance.md](compliance.md)). Two separate small marks in the corner of a customer's launch page is a bad outcome twice over, so **badge and disclosure are designed as one provenance line** ([../design/website.md](../design/website.md)). The trap is in the toggle: the badge is removable on the paid tier and **the disclosure is not**, and those two facts are one boolean apart in the render path.
+
+**A front door.** v3 is the first release with a URL worth giving someone, which makes it the first release that needs a marketing site, a pricing page, and a signup flow. All three are already designed ([../design/website.md](../design/website.md), [../design/app.md](../design/app.md)); this is where they get built. It is not a large build — eight pages, no third-party scripts, and its most convincing asset is an embedded real published artifact, which costs approximately nothing because published artifacts are static.
+
 Free: generate, edit, preview, publish one experience on a subdomain with branding.
 Paid: custom domain, no branding, embed, unlimited published, personalization, analytics, localization, live data.
 
 Every v3 feature lands on the paid side. That is not a coincidence — it is why this pricing shape was chosen.
+
+Four presentation decisions ride on top of that shape without changing it, and they are argued in [../design/website.md](../design/website.md): the **card is taken at publish rather than at signup**, the trial is a **reverse trial** (full product, no card, then the restricted plan), plans are **seats with a generous allowance rather than credits**, and **a published page never dies when a plan lapses** — it reverts to carrying the badge. That last one is not generosity. Killing a customer's live launch page is a lawsuit and a thread.
+
+**The business-logic exposure this creates is named rather than discovered:** free-to-generate with a paid publish gate is precisely the "publish-before-payment state machine" that [../security/adversarial-ai.md](../security/adversarial-ai.md) lists as the attack class with no scanner and no pattern. The entitlement check belongs in one place, at the data layer, failing closed.
 
 ## What v3 changes from v2
 
@@ -147,7 +155,7 @@ Ordered by reversibility — cheapest to unwind first, with one unavoidable exce
 6. Personalization: recipients, signed links, field substitution
 7. Analytics + consent + privacy controls
 8. 3D: `environment` rendering, `Model3D`, stock library, abstract generators
-9. Accounts, custom domains, branding badge, billing, publish gate
+9. Accounts, custom domains, branding badge, billing, publish gate — **and the marketing site, pricing page, and signup**, which are the same release's work and are already designed ([../design/website.md](../design/website.md))
 10. **AI transparency marking** — C2PA on generated imagery, machine-readable declaration on published pages, per-locale marking. Not last because it is least important; last because it needs every generating surface to exist first. **It gates launch, not v3 feature-completeness**
 
 **Step 0 is not optional and it is not reversible-ordered, which is why it breaks the rule the rest of the list follows.** Almost everything after it depends on infrastructure that does not exist yet: derivation fetches attacker-supplied URLs (fetch worker), transcreation is long-running work per locale (job worker), live data holds integration credentials (fetch worker), 3D posters are generated at publish (job worker), and every one of those writes to S3. Attempting step 2 first means building it twice.

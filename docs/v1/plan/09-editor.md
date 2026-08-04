@@ -61,6 +61,33 @@ The consequence is the good one: because no prop is presentational, **the panel 
 
 `Slot` exposes `description` only. The code is not hand-editable in v1, and an AI edit operates on the description.
 
+### Design the absence, because the absence is the product
+
+The panel being structurally incapable of a colour picker is the good news for the architecture and an open interaction-design problem for the user, who **will** look for one. It is not hidden, it is unrepresentable — and that distinction is invisible to a person who just wants the headline smaller. This is the moment a first-time user decides whether the product is a tool or a toy, and it is the single most likely first-session churn cause in v1 ([../../design/app.md](../../design/app.md)).
+
+Undesigned, it is a bug report. Designed, it is the pitch: *you cannot make this ugly.*
+
+Four things this phase has to build, none of them large:
+
+| | |
+|---|---|
+| **An answer at the point of reaching** | Inline, once, positive, in the place the control was expected. Not a docs page and not an onboarding tour — by the time someone opens documentation to ask why they cannot change a colour, the session is already lost |
+| **The refusal is a designed artifact with an owner** | Someone types *"make the headline smaller"* into the element prompt. The Edit call has no field for it, so the model refuses — and that copy has to be written deliberately, offering **emphasis** instead. It is not an error string written at 2am, and it is the most-read sentence the product will ship |
+| **Resolved tokens visible, read-only** | Seeing the system is disarming. Editing it is the product's collapse |
+| **Instrument the reach** | Count every hunt for a styling control. Cheapest high-signal metric in the product, and it is the number that decides whether the answer above is working |
+
+The replacement affordances must look **more** powerful than what they replace, because they are: the art direction instead of a colour picker, emphasis instead of a font size, the brand kit instead of a hex field ([10](10-brand-and-uploads.md)), reroll instead of nudging a gradient.
+
+**Reserve the art-direction switcher's toolbar space now.** v2 fills it ([../../v2/spec.md](../../v2/spec.md)). Retrofitting it into an overflow menu is how the headline feature of the next release arrives looking like a setting.
+
+**No CSS or HTML export**, in any version. It is the fastest available route to becoming a worse Webflow.
+
+### The canvas is true scale, always
+
+Fit-width and 100%, nothing else. What you edit is byte-for-byte what you publish, and any scaling weakens the guarantee the whole product rests on. Two consequences for this phase: selection is **a hairline and a label**, not a saturated box over a designed page, and the element-scoped prompt lives **inline under the selection, always in the same place** — it appears only with a selection, because an always-present prompt box invites page-level requests the patch shape cannot serve.
+
+Mobile is view-and-present only. Editing a design surface on a phone is a different product.
+
 ### Undo/redo earns the store
 
 A stack of past trees with structural sharing. It is the feature that makes AI-assisted editing safe to *try* — a user who can undo instantly will experiment, and experimentation is where this product is fun. **Build it with the editor, not after**, because retrofitting undo into a store that mutates in place is a rewrite.
@@ -109,6 +136,8 @@ Re-validate the tree after every patch, **against the current art direction's bu
 - [ ] The generated control set for every block type contains **no** colour, size, font, duration, or easing control. Assert it programmatically by walking the generated controls; this is the no-styling invariant seen from the UI side
 - [ ] Adding a prop to a block schema makes the control appear without touching panel code
 - [ ] Reroll seed is a button
+- [ ] **"Make the headline smaller" produces a written refusal that offers emphasis** — not a silent no-op, not a stack trace, not a generic "I can't help with that"
+- [ ] The styling-control reach is counted. Confirm the event fires by looking for a colour picker yourself
 
 **Purity**
 
@@ -144,5 +173,6 @@ Re-validate the tree after every patch, **against the current art direction's bu
 - [ ] Only-the-target-block-changed test passing
 - [ ] Undo/redo across both edit kinds
 - [ ] The property panel is generated and provably cannot offer a presentational control
+- [ ] A user hunting for a colour picker gets an answer where they looked, not a docs link
 - [ ] The renderer is still pure
 - [ ] Editing feels instant

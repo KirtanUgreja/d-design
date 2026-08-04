@@ -68,6 +68,21 @@ It earns its place three times over:
 
 It does **not** catch a subtly rewritten proof point. That is what claim provenance in phase 06 is for, and the two are not substitutes.
 
+### What the gate looks like, and why that is not a detail
+
+Nobody else in this category has an approval step, so there is no convention to copy and the default — a bulleted list with a Continue button — reads as a form standing between the user and the thing they want. It is one of the four screens [../../design/app.md](../../design/app.md) budgets real design attention for, and it is hot for **trust** rather than for delight.
+
+| | |
+|---|---|
+| **Scene cards, not a list** | The next screen is spatial. This one should already feel spatial |
+| **Regenerate the outline is cheap and prominent** | It is the entire reason the gate sits before the expensive call. Hiding it wastes the gate |
+| **Approve is the only high-emphasis control on the screen** | |
+| **Claim provenance is shown here** | Which lines came from the user's `keyMessages` and which the director produced. This is the correct place for it — the editor is too late and too busy — and it is the trust feature competitors do not have ([../spec.md](../spec.md), Risk 2) |
+| **Time as a range, never a percentage** | A percentage on a non-deterministic process is a number you will have to defend |
+| **No skip, in v1** | If approval rates sit near 100%, that is a finding about the director, not a reason to remove the gate |
+
+None of this changes the function boundary that actually enforces the gate. The UI is not the control — that is asserted below — but a control users route around resentfully is a control with a short life.
+
 ### Cost note
 
 The Director prefix is small and the call runs once. **Caching it is probably a loss** — a cache write typically costs 1.25×–2× a normal input token, and a prefix used once never earns that back. Verify against the route's minimum cacheable prefix before enabling it here; this is the phase where the caching discipline that helps Build actively hurts.

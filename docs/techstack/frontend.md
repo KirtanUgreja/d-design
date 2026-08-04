@@ -75,6 +75,8 @@ event: done    data: { "count": 8 }
 
 You write the reconnect logic. That is a few lines, and it is the only thing the platform does not give you.
 
+**Serialize the good streams to a file.** Because the events are whole validated scenes rather than tokens, an event log replayed client-side drives the same renderer and is indistinguishable from a live run. That makes it three things at once for the price of writing a file: the marketing site's demo ([../design/website.md](../design/website.md)), a way to develop the generation-watch UI without spending a model call per reload, and a regression fixture for the renderer. Keep them versioned alongside the golden briefs ([../v1/plan/06-model-seam-and-build.md](../v1/plan/06-model-seam-and-build.md)).
+
 ## Fonts
 
 Fontsource, open-license families, self-hosted on `assets.<domain>` — which the CSP already required (`font-src https://assets.<domain>`).
@@ -86,6 +88,8 @@ Noto covers all four scripts v3 needs — Latin, CJK, Arabic, Cyrillic — which
 Subset per script, `font-display: swap`, preload the display face.
 
 **Buying type is the highest-leverage money in the product**, and it is deferred rather than refused. Type is most of why `cinematic-dark` will or will not look expensive. Revisit when the three-AD system in v2 makes the difference visible; open faces are good enough to prove the runtime first.
+
+**None of the above binds our own chrome, and that distinction is worth not losing.** The redistribution argument applies to fonts served to *customers' audiences* through published artifacts. Our marketing site and app chrome serve fonts to visitors of our own site, which is what an ordinary webfont licence is for — so the identity face can be a commercially licensed editorial one for the price of a licence rather than waiting on the output's constraint ([../design/brand.md](../design/brand.md)). It **must not** be shared with any art direction's stack: if the chrome and an art direction wear the same face, the chrome starts reading as an art direction and the two design systems have quietly merged.
 
 ## Testing
 

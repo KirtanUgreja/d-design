@@ -37,6 +37,7 @@ v1 is deliberately small: a single user, a local Postgres, no accounts, no deplo
 | Why the decoder no longer guarantees the schema | [scene-schema.md](scene-schema.md) → "Why the length caps matter more than they look" |
 | What v1 has to run on | [spec.md](spec.md) → "Stack" — Docker Compose and a dev server, no AWS |
 | The two things authored in v1 purely for v3 | [spec.md](spec.md) → "Two things in step 3 that only pay off two versions later" |
+| What the app's four screens should *feel* like | [../design/app.md](../design/app.md) — the product's own design, which is not the art direction |
 
 ## Superseded by later decisions
 
@@ -66,3 +67,4 @@ The stack table in [spec.md](spec.md) has been patched where a stale line would 
 | [../techstack/README.md](../techstack/README.md) | Where all of this actually runs |
 | [../security/prompt-injection.md](../security/prompt-injection.md) | The threat that arrives with the first generated experience |
 | [../coderules/patterns.md](../coderules/patterns.md) | The no-styling invariant and the pure renderer, as enforced rules |
+| [../design/README.md](../design/README.md) | How **our own** app looks — the second design system, and the one that must never merge with `cinematic-dark` |

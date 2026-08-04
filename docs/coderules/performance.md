@@ -71,3 +71,5 @@ Turbopack is the default builder in 16 (2–5× faster builds). Nothing to decid
 ## What not to optimize
 
 The cold 90%: intake forms, the outline editor, settings, the brand-kit UI, admin. Write these for clarity. A clever optimization in code that runs once per session is pure cost — harder to read, no measurable gain. If a profiler ever flags one, revisit it then, and not before.
+
+**Cold for optimization is not cold for design.** [../design/app.md](../design/app.md) borrows this rule to ration *design attention*, and it lands on a different list: intake and the outline gate are hot there and cold here, because they run once per session — which is exactly what makes them the screens a user forms an opinion on. Assemble them from shadcn/ui and never profile them; still spend real time on what they say and how they feel. Two budgets, two lists, one rule.
