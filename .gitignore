@@ -6,3 +6,20 @@ skills-lock.json
 # (hooks that enforce the rules in AGENTS.md). Keep that one tracked.
 .claude/*
 !.claude/settings.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Node
+node_modules/
+web/.next/
+web/out/
+
+# Local env
+.env
+.env.local

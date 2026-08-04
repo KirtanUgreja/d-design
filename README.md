@@ -10,8 +10,8 @@
 
 <br/>
 
-<img src="https://img.shields.io/badge/status-design%20complete-F4B740?style=for-the-badge&labelColor=08090B" alt="Status: design complete">
-<img src="https://img.shields.io/badge/code-not%20started-64748B?style=for-the-badge&labelColor=08090B" alt="Code: not started">
+<img src="https://img.shields.io/badge/status-building%20v1-F4B740?style=for-the-badge&labelColor=08090B" alt="Status: building v1">
+<img src="https://img.shields.io/badge/phase-00%20foundations%20done-64748B?style=for-the-badge&labelColor=08090B" alt="Phase: 00 foundations done">
 <img src="https://img.shields.io/badge/spec-47%20documents-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Spec: 47 documents">
 <img src="https://img.shields.io/badge/builder-solo%20%2B%20AI-A78BFA?style=for-the-badge&labelColor=08090B" alt="Builder: solo + AI">
 

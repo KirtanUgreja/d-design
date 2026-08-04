@@ -1,0 +1,3 @@
+/* App chrome only. The art direction is CSS custom properties on the renderer
+   side and no file imports both — docs/techstack/frontend.md. */
+@import 'tailwindcss';
