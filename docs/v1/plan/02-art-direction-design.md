@@ -85,11 +85,22 @@ If the hero comp is not there yet, **iterate here rather than proceeding.** Ever
 
 ---
 
+## Built — and the two findings that changed the tokens
+
+Built 4 Aug 2026, mechanically, in [comps/](../comps/README.md). Full detail — the reference board, the contrast numbers, the RTL and reduced-motion verification, the "three beautiful, one over-designed" exercise — lives in `comps/README.md`, next to the files it describes rather than duplicated here.
+
+**This phase is explicitly the one AI assistance helps least, and the exit gate says so in four of its six items.** What got built: three real, working comps (`full-bleed` hero, `split-left` proof, `centered` statement), authored in logical properties against d-design's own real launch copy, with a live RTL toggle and a live motion toggle rather than a claim that either works. What did not get built, on purpose: the judgment itself. "You would show the hero to someone" is not a checkbox an agent can tick honestly, and pretending otherwise would defeat the reason this phase exists as a separate step before phase 03 writes anything down as final.
+
+Two corrections came out of actually building the comps rather than trusting the draft, both verified rather than asserted:
+
+1. **`--ink-faint`'s alpha was wrong.** Measured with the WCAG relative-luminance formula (not eyeballed): 0.38 gives 3.28:1 against `--bg` — the eyebrow it colors is 13px, which is small text and needs 4.5:1, not the 3:1 large-text floor. Corrected to 0.50 (4.94:1). `--ink-muted` at 0.62 was fine as drafted.
+2. **The documented display face doesn't have the weights the tokens ask for.** `Instrument Serif` — the stated fallback — ships only weight 400 on Fontsource/Google Fonts; the table calls for 500 (hero, section) and 600 (stat). This is exactly the "a face missing a weight silently substitutes and the whole scale shifts" failure the phase's own "Verify externally" step warns about, caught by actually checking rather than assuming the documented default was tested. Swapped to **Fraunces** (SIL OFL, confirmed 400/500/600) — same serif register, real weights.
+
 ## Exit gate
 
-- [ ] Three comps exist as static HTML/CSS, authored in logical properties, against real copy
-- [ ] A reference board exists and is saved in the repo or alongside it — phase 04 is judged against it, and a reference you cannot re-open is a reference you will drift from
-- [ ] Type pairing chosen, open-licensed, and confirmed to ship the weights specified
-- [ ] Extracted token list complete, with no one-off numbers and no unused entries
-- [ ] Every contrast pair measured and passing
-- [ ] You would show the hero to someone
+- [x] Three comps exist as static HTML/CSS, authored in logical properties, against real copy
+- [x] A reference board exists, saved in `comps/README.md` — as a written list of specific pages with notes, not saved images (no scraping/downloading third-party assets into the repo)
+- [x] Type pairing chosen, open-licensed, and confirmed to ship the weights specified — Fraunces + Inter, not the untested original pairing
+- [x] Extracted token list complete, with no one-off numbers and no unused entries — `comps/tokens.css`
+- [x] Every contrast pair measured and passing — including the one that was found failing and corrected
+- [ ] **You would show the hero to someone.** Open `comps/hero.html` and decide — this line is not checked by the session that built the comps

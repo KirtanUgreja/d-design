@@ -1,0 +1,183 @@
+/*
+  cinematic-dark — extracted tokens, phase 02.
+
+  This is the phase 02 "Make" deliverable: hand-authored comps, read back,
+  every distinct value pulled out. Nothing here is a one-off — every number
+  belongs to a named scale. This file is the direct input to phase 03, which
+  turns it into the TypeScript token object the renderer reads.
+
+  Two corrections from art-direction.md's starting values, both found by
+  actually building the comps rather than trusting the draft:
+
+  1. --ink-faint: 0.38 -> 0.50 alpha. Measured (WCAG relative-luminance
+     formula, not eyeballed): 0.38 gives 3.28:1 against --bg and 3.36:1
+     against --bg-elevated — both fail 4.5:1. The eyebrow it colors is 13px,
+     which is small text under WCAG (needs 4.5:1, not the 3:1 large-text
+     floor). 0.50 clears both surfaces with margin (4.94 / 4.94).
+     --ink-muted at 0.62 was fine as drafted (7.14:1 / 6.73:1).
+
+  2. Display font: Fraunces, not Instrument Serif. art-direction.md's stated
+     weights are 500 (hero, section) and 600 (stat). Checked against Google
+     Fonts' actual served weights (the "verify externally" step this phase
+     requires): Instrument Serif ships ONLY weight 400 — no 500, no 600. That
+     is exactly the silent-substitution failure the phase warns about: a
+     browser asked for 500 on a 400-only face doesn't error, it fakes a bold
+     and the whole scale shifts. Fraunces (SIL OFL, Fontsource) has a real
+     400/500/600 range and the same "confident serif" character the doc wants
+     — audition it as the default rather than the untested original.
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  /* Color */
+  --bg: #08090b; /* near-black, not pure black — pure black flattens depth and makes glow look like an artifact */
+  --bg-elevated: #101215; /* cards, framed media */
+  --ink: #f4f4f5; /* primary text */
+  --ink-muted: rgb(244 244 245 / 62%);
+  --ink-faint: rgb(244 244 245 / 50%); /* corrected from 38% — see header */
+  --accent: #f4b740; /* warm amber. Contrast-checked: 11.09:1 on --bg */
+  --accent-soft: rgb(244 183 64 / 12%); /* glows, fills */
+  --veil: rgb(8 9 11 / 72%); /* overlay for text on media */
+  --hairline: rgb(244 244 245 / 10%); /* borders, dividers */
+
+  /* Type */
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-text: 'Inter', ui-sans-serif, system-ui, sans-serif;
+
+  --hero-size: clamp(3.5rem, 8vw, 8rem);
+  --hero-leading: 0.95;
+  --hero-tracking: -0.03em;
+  --hero-weight: 500;
+
+  --section-size: clamp(2rem, 4.5vw, 3.5rem);
+  --section-leading: 1.05;
+  --section-tracking: -0.02em;
+  --section-weight: 500;
+
+  --lead-size: clamp(1.25rem, 2vw, 1.5rem);
+  --lead-leading: 1.5;
+  --lead-tracking: -0.01em;
+  --lead-weight: 400;
+
+  --normal-size: 1.0625rem;
+  --normal-leading: 1.65;
+  --normal-tracking: 0em;
+  --normal-weight: 400;
+
+  --eyebrow-size: 0.8125rem;
+  --eyebrow-leading: 1.2;
+  --eyebrow-tracking: 0.14em;
+  --eyebrow-weight: 500;
+
+  --stat-size: clamp(3rem, 7vw, 6rem);
+  --stat-leading: 1;
+  --stat-tracking: -0.04em;
+  --stat-weight: 600;
+
+  /* Rhythm — logical, not physical. Applied only through -inline/-block. */
+  --space-1: 8px;
+  --space-2: 16px;
+  --space-3: 24px;
+  --space-4: 40px;
+  --space-5: 64px;
+  --space-6: 96px;
+  --space-7: 160px;
+
+  --scene-padding-y: clamp(6rem, 14vh, 12rem);
+  --scene-padding-x: clamp(1.5rem, 6vw, 8rem);
+  --measure: 62ch;
+  --content-max: 1280px;
+
+  /* Motion */
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-emphasis: cubic-bezier(0.22, 1, 0.36, 1);
+  --stagger: 120ms;
+  --reveal-duration: 900ms;
+  --emphasize-duration: 1100ms;
+  --reveal-distance: 32px;
+
+  /* Texture */
+  --glow-size: 60vw;
+  --grain-opacity: 0.04;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    /* Every intent collapses to opacity-only, 200ms, no transform, no
+       parallax. Wired at the token layer so nothing downstream has to
+       remember to check the media query itself. */
+    --reveal-duration: 200ms;
+    --emphasize-duration: 200ms;
+    --reveal-distance: 0px;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-text);
+}
+
+body {
+  position: relative;
+}
+
+/* Grain — one fixed overlay for the whole page. Applied at the scene level,
+   never per block, so it doesn't scroll and doesn't multiply. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 50;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------------------------------------------------------------------- */
+/* Motion vocabulary. Four intents, matching the table in art-direction.md. */
+/* ---------------------------------------------------------------------- */
+
+[data-motion] {
+  opacity: 0;
+}
+
+[data-motion='reveal'] {
+  transform: translateY(var(--reveal-distance));
+  transition:
+    opacity var(--reveal-duration) var(--ease),
+    transform var(--reveal-duration) var(--ease);
+}
+
+[data-motion='emphasize'] {
+  transform: scale(0.96);
+  transition:
+    opacity var(--emphasize-duration) var(--ease-emphasis),
+    transform var(--emphasize-duration) var(--ease-emphasis);
+}
+
+/* parallax's transform is driven by controls.js (scroll-linked, not a fixed
+   transition) — it only needs to start visible. */
+[data-motion='parallax'] {
+  opacity: 1;
+}
+
+[data-motion='none'],
+[data-motion].is-revealed {
+  opacity: 1;
+  transform: none;
+}
+
+/* Reveal stagger — 120ms per sibling index, capped at 5. Set via inline
+   style="--i:N" on each block; the token owns the multiplier. */
+[data-motion] {
+  transition-delay: calc(var(--stagger) * min(var(--i, 0), 5));
+}
+

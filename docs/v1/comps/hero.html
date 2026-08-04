@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>cinematic-dark — Hero comp</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="harness.css" />
+    <style>
+      /*
+        full-bleed: bg + content regions. Visual fills the viewport,
+        content floats over it — docs/v1/scene-schema.md, "Layouts and
+        regions".
+      */
+      .scene {
+        min-block-size: 100dvh;
+        display: grid;
+        place-items: center;
+        position: relative;
+        overflow: clip;
+        padding-block: var(--scene-padding-y);
+        padding-inline: var(--scene-padding-x);
+      }
+
+      /* bg region: an AbstractVisual (gradient-mesh) behind the content —
+         zero asset cost, always on-brand. */
+      .bg {
+        position: absolute;
+        inset: 0;
+        z-index: 0;
+        background:
+          radial-gradient(
+            var(--glow-size) var(--glow-size) at 50% 30%,
+            var(--accent-soft),
+            transparent 70%
+          ),
+          radial-gradient(120% 80% at 50% 100%, var(--bg-elevated), var(--bg) 60%);
+      }
+
+      /* vignette — subtle radial darkening at viewport edges */
+      .bg::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(120% 100% at 50% 50%, transparent 60%, var(--bg) 100%);
+      }
+
+      .content {
+        position: relative;
+        z-index: 1;
+        max-inline-size: var(--content-max);
+        text-align: center;
+        display: grid;
+        justify-items: center;
+        gap: var(--space-4);
+      }
+
+      .eyebrow {
+        font-family: var(--font-text);
+        font-size: var(--eyebrow-size);
+        line-height: var(--eyebrow-leading);
+        letter-spacing: var(--eyebrow-tracking);
+        font-weight: var(--eyebrow-weight);
+        text-transform: uppercase;
+        color: var(--ink-faint);
+        margin: 0;
+      }
+
+      .headline {
+        font-family: var(--font-display);
+        font-optical-sizing: auto;
+        font-size: var(--hero-size);
+        line-height: var(--hero-leading);
+        letter-spacing: var(--hero-tracking);
+        font-weight: var(--hero-weight);
+        margin: 0;
+        max-inline-size: 18ch;
+      }
+
+      .cta {
+        appearance: none;
+        border: none;
+        border-radius: 999px;
+        background: var(--accent);
+        color: var(--bg);
+        font-family: var(--font-text);
+        font-weight: 600;
+        font-size: 1rem;
+        padding-block: var(--space-2);
+        padding-inline: var(--space-4);
+        text-decoration: none;
+        display: inline-block;
+        transition: transform 200ms var(--ease);
+      }
+
+      .cta:hover {
+        transform: translateY(-2px);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="harness-nav">
+      <a href="hero.html" aria-current="page">Hero</a>
+      <a href="proof.html">Proof</a>
+      <a href="statement.html">Statement</a>
+    </nav>
+    <div class="harness-bar">
+      <button data-rtl-toggle aria-pressed="false">Direction: LTR</button>
+      <button data-motion-toggle aria-pressed="false">Motion: on</button>
+    </div>
+
+    <section class="scene">
+      <div class="bg" data-motion="none"></div>
+      <div class="content">
+        <p class="eyebrow" data-motion="reveal" style="--i: 0">AI PRESENTATION ENGINE</p>
+        <h1 class="headline" data-motion="reveal" style="--i: 1">
+          The AI writes the words. Never the pixels.
+        </h1>
+        <a class="cta" data-motion="reveal" style="--i: 2" href="#">See the architecture</a>
+      </div>
+    </section>
+
+    <script src="controls.js"></script>
+  </body>
+</html>

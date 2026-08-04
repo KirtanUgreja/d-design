@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>cinematic-dark — Statement comp</title>
+    <link rel="stylesheet" href="tokens.css" />
+    <link rel="stylesheet" href="harness.css" />
+    <style>
+      /*
+        centered: content region only. Maximum restraint — the phase file's
+        own bar: "if this reads as empty rather than confident, the whole
+        art direction is wrong."
+      */
+      .scene {
+        min-block-size: 100dvh;
+        display: grid;
+        place-items: center;
+        padding-block: var(--scene-padding-y);
+        padding-inline: var(--scene-padding-x);
+      }
+
+      .quote {
+        max-inline-size: 42ch;
+        text-align: center;
+        font-family: var(--font-display);
+        font-optical-sizing: auto;
+        font-size: var(--section-size);
+        line-height: var(--section-leading);
+        letter-spacing: var(--section-tracking);
+        font-weight: var(--section-weight);
+        font-style: italic;
+        margin: 0;
+        position: relative;
+      }
+
+      /* A single hairline rule rather than quotation marks — restraint over
+         decoration, and it reads correctly under RTL with no change since
+         it's centered and has no inline-direction dependency. */
+      .quote::before {
+        content: '';
+        display: block;
+        inline-size: 48px;
+        block-size: 1px;
+        background: var(--hairline);
+        margin-inline: auto;
+        margin-block-end: var(--space-4);
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="harness-nav">
+      <a href="hero.html">Hero</a>
+      <a href="proof.html">Proof</a>
+      <a href="statement.html" aria-current="page">Statement</a>
+    </nav>
+    <div class="harness-bar">
+      <button data-rtl-toggle aria-pressed="false">Direction: LTR</button>
+      <button data-motion-toggle aria-pressed="false">Motion: on</button>
+    </div>
+
+    <section class="scene">
+      <blockquote class="quote" data-motion="emphasize" style="--i: 0">
+        Every generated page is exactly what you can still edit by hand. That is the
+        entire bet.
+      </blockquote>
+    </section>
+
+    <script src="controls.js"></script>
+  </body>
+</html>
