@@ -10,16 +10,24 @@ import { expect, test } from '@playwright/test';
 
 test('split-left column order visually reverses under dir=rtl', async ({ page }) => {
   await page.goto('/dev/primitives');
-  const eyebrow = page.getByText('THE PROBLEM');
-  await eyebrow.scrollIntoViewIfNeeded();
+  // Confirms the harness actually hydrated before measuring anything — the
+  // same guard e2e/slot-sandbox.spec.ts uses, and the one this test was
+  // missing when it flaked in CI on a slow first Turbopack compile.
+  await expect(page.getByRole('button', { name: 'full', exact: true })).toBeDisabled();
 
+  const eyebrow = page.getByText('THE PROBLEM');
+  // A cold Turbopack dev-server compile (first request after boot, which is
+  // exactly what CI does) keeps the page layout shifting — fonts and content
+  // still arriving — for longer than `scrollIntoViewIfNeeded`'s stability
+  // check tolerates. Waiting for visible first, with the framework's own
+  // retrying assertion, is what actually waits for that to settle.
+  await expect(eyebrow).toBeVisible();
+  await eyebrow.scrollIntoViewIfNeeded();
   const ltrBox = await eyebrow.boundingBox();
-  expect(ltrBox).toBeTruthy();
 
   await page.getByRole('button', { name: /^dir:/ }).click();
   await eyebrow.scrollIntoViewIfNeeded();
   const rtlBox = await eyebrow.boundingBox();
-  expect(rtlBox).toBeTruthy();
 
   const viewport = page.viewportSize();
   expect(viewport).toBeTruthy();
