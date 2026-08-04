@@ -181,14 +181,14 @@ sequenceDiagram
 
 ## 🏛 Architecture
 
-Every AI output is Zod-validated. Invalid → one repair retry → then it fails visibly. **A compromised model can only cause a rejected generation.**
+Every AI output is Pydantic-validated. Invalid → one repair retry → then it fails visibly. **A compromised model can only cause a rejected generation.**
 
 ```mermaid
 flowchart TB
     B["📥 Brief"] --> D["🎬 Director"]
     D --> O["📋 Outline"]
     O --> BU["🏗️ Build"]
-    BU --> Z{"Zod<br/>validate"}
+    BU --> Z{"Pydantic<br/>validate"}
     Z -->|invalid| RP["🔧 Repair once"]
     RP --> Z
     Z -->|still invalid| F["⚠️ Fail visibly"]
@@ -218,11 +218,13 @@ flowchart TB
 
 ### The scene tree
 
-```ts
-Experience  { id, title, mode, brand, artDirection, scenes: Scene[] }   // 3–12 scenes
-Scene       { id, intent, layout, blocks: Block[] }                     // 1–8 blocks
-Block       { id, type, region?, props, motion? }
+```python
+class Experience(BaseModel):  # id, title, mode, brand, art_direction, scenes  — 3–12 scenes
+class Scene(BaseModel):       # id, intent, layout, blocks                     — 1–8 blocks
+class Block(BaseModel):       # id, type, region?, props, motion?
 ```
+
+Pydantic is the source of truth. TypeScript types and a Zod validator are **generated** from it, so the renderer and the pipeline cannot disagree about the shape.
 
 <div align="center">
 
@@ -253,22 +255,26 @@ Same scene tree, unrecognizably different output. **The proof is that AD #2 requ
 
 ## 🌐 Cloud architecture
 
-**Three origins, three runtimes** — and the split between them is a *trust boundary*, not a convenience.
+**Three origins, five runtimes, two languages.** Most splits are *trust boundaries*; one is a *language boundary*, and it is labelled so it is never mistaken for a security control.
 
 ```mermaid
 flowchart TB
     subgraph vercel["▲ Vercel · app.domain"]
-        APP["<b>Next.js 16 · React 19.2</b><br/>editor · pipeline · API<br/><i>sessions · DB · model access</i>"]
+        APP["<b>web</b> · Next.js 16 · React 19.2 · TS<br/>editor · renderer · Better Auth<br/><i>sessions · AUTH TABLES ONLY</i>"]
     end
 
     subgraph aws["☁️ AWS"]
         direction TB
         subgraph priv["🔐 Private subnet — PRIVILEGED"]
-            JOB["<b>Job worker</b> · Fargate<br/>pg-boss · transcreation · posters<br/><i>DB yes · hostile input never</i>"]
+            API["<b>api</b> · FastAPI · Fargate · PY<br/>the four phases · the model seam<br/><i>all app tables · model access</i>"]
+            JOB["<b>jobs</b> · PGQueuer · Fargate · PY<br/>transcreation · posters<br/><i>DB yes · hostile input never</i>"]
             DB[("Aurora Postgres<br/>RLS per transaction")]
         end
+        subgraph rend["🖼️ Render — NO CREDENTIALS"]
+            REN2["<b>render</b> · Fargate · TS<br/>scene tree → HTML · Playwright<br/><i>no db · no model key</i>"]
+        end
         subgraph quar["☣️ Isolated subnet — QUARANTINE"]
-            FET["<b>Fetch worker</b> · Fargate<br/>URL screenshots · PDF · uploads<br/><i>no db · no vpc route · no metadata</i>"]
+            FET["<b>Fetch worker</b> · Fargate · TS<br/>URL screenshots · PDF · uploads<br/><i>no db · no vpc route · no metadata</i>"]
         end
     end
 
@@ -276,11 +282,13 @@ flowchart TB
         PAGES["<b>pages.domain</b> — published experiences<br/><b>assets.domain</b> — uploads<br/><i>static objects · no origin server</i>"]
     end
 
-    APP <--> DB
+    APP -- "session cookie" --> API
+    API <--> DB
     JOB <--> DB
-    APP -- "enqueue in the same transaction" --> JOB
-    JOB -- "writes rendered HTML" --> PAGES
-    APP -. "hands off hostile bytes" .-> FET
+    API -- "enqueue in the same transaction" --> JOB
+    JOB -- "scene tree in, HTML out" --> REN2
+    REN2 -- "writes rendered HTML" --> PAGES
+    API -. "hands off hostile bytes" .-> FET
     FET -. "verified, re-encoded" .-> PAGES
 
     classDef app fill:#131A24,stroke:#38BDF8,stroke-width:1.5px,color:#E8EAED
@@ -288,7 +296,9 @@ flowchart TB
     classDef danger fill:#2A1215,stroke:#F87171,stroke-width:2px,color:#E8EAED
     classDef store fill:#1C1917,stroke:#F4B740,stroke-width:1.5px,color:#E8EAED
     class APP app
+    class API app
     class JOB safe
+    class REN2 safe
     class DB store
     class FET danger
     class PAGES store
@@ -318,36 +328,42 @@ Publishing renders the scene tree to HTML and writes it to S3. There is no route
 
 <div align="center">
 
-![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white&labelColor=08090B)
+![Python](https://img.shields.io/badge/Python-backend-3776AB?style=flat-square&logo=python&logoColor=white&labelColor=08090B)
+![FastAPI](https://img.shields.io/badge/FastAPI-api-009688?style=flat-square&logo=fastapi&logoColor=white&labelColor=08090B)
+![TypeScript](https://img.shields.io/badge/TypeScript-renderer-3178C6?style=flat-square&logo=typescript&logoColor=white&labelColor=08090B)
 ![Next.js](https://img.shields.io/badge/Next.js-16-white?style=flat-square&logo=nextdotjs&logoColor=white&labelColor=08090B)
 ![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square&logo=react&logoColor=white&labelColor=08090B)
-![Zod](https://img.shields.io/badge/Zod-4-3E67B1?style=flat-square&logo=zod&logoColor=white&labelColor=08090B)
-![Drizzle](https://img.shields.io/badge/Drizzle-ORM-C5F74F?style=flat-square&logo=drizzle&logoColor=black&labelColor=08090B)
+![Pydantic](https://img.shields.io/badge/Pydantic-source%20of%20truth-E92063?style=flat-square&logo=pydantic&logoColor=white&labelColor=08090B)
+![Zod](https://img.shields.io/badge/Zod-generated-3E67B1?style=flat-square&logo=zod&logoColor=white&labelColor=08090B)
+![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-ORM-D71F00?style=flat-square&logo=sqlalchemy&logoColor=white&labelColor=08090B)
 ![PostgreSQL](https://img.shields.io/badge/Postgres-RLS-4169E1?style=flat-square&logo=postgresql&logoColor=white&labelColor=08090B)
 ![AWS](https://img.shields.io/badge/AWS-Fargate%20%2B%20S3%20%2B%20CloudFront-FF9900?style=flat-square&labelColor=08090B)
 ![Vercel](https://img.shields.io/badge/Vercel-app-white?style=flat-square&logo=vercel&logoColor=white&labelColor=08090B)
 ![Terraform](https://img.shields.io/badge/Terraform-IaC-7B42BC?style=flat-square&logo=terraform&logoColor=white&labelColor=08090B)
 ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-chrome-white?style=flat-square&logo=shadcnui&logoColor=white&labelColor=08090B)
 ![Tailwind](https://img.shields.io/badge/Tailwind-chrome%20only-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white&labelColor=08090B)
-![Vitest](https://img.shields.io/badge/Vitest-unit-6E9F18?style=flat-square&logo=vitest&logoColor=white&labelColor=08090B)
-![pnpm](https://img.shields.io/badge/pnpm-package%20manager-F69220?style=flat-square&logo=pnpm&logoColor=white&labelColor=08090B)
+![pytest](https://img.shields.io/badge/pytest-api-0A9EDC?style=flat-square&logo=pytest&logoColor=white&labelColor=08090B)
+![Vitest](https://img.shields.io/badge/Vitest-web-6E9F18?style=flat-square&logo=vitest&logoColor=white&labelColor=08090B)
+![uv](https://img.shields.io/badge/uv-python%20packages-DE5FE9?style=flat-square&logo=uv&logoColor=white&labelColor=08090B)
+![pnpm](https://img.shields.io/badge/pnpm-node%20packages-F69220?style=flat-square&logo=pnpm&logoColor=white&labelColor=08090B)
 
 </div>
 
 | Layer | Choice | Note |
 |---|---|---|
 | 🧠 **Model access** | **No preferred vendor** — one seam, OpenRouter behind it | Any model named today is wrong in two quarters. Build the switching apparatus, not the conviction |
-| 🤖 **Agent framework** | **None** | Four deterministic phases with a human gate is not an agent. Your code makes every next-step decision |
+| 🤖 **Agent framework** | **None** | Four deterministic phases with a human gate is not an agent — your code makes every next-step decision. And it would be a privileged dependency in a class under active exploitation in 2026 |
+| 🐍 **Backend** | **Python** · FastAPI · SQLAlchemy + Alembic | Pydantic owns the `Scene` schema; TypeScript types and a Zod validator are generated from it |
 | ⚛️ **App** | Next.js 16 App Router · React 19.2 · Zustand · shadcn/ui | Tailwind on app chrome only — never the art direction |
 | 🎞️ **Motion** | Motion (`motion/react`) | Not `framer-motion` — renamed in 2025 |
-| 🗄️ **Data** | Postgres · Drizzle · RLS via a session variable | Every tenant query goes through one `asUser()` wrapper |
-| 🔑 **Auth** | Better Auth, users in your own Postgres | Ships MFA, passkeys, orgs, verification |
-| ⚙️ **Jobs** | pg-boss on the same Postgres | Jobs enqueue in the same transaction as the data change |
-| 🚀 **Hosting** | Vercel · ECS Fargate ×2 · S3 + CloudFront | Split on trust, not on job type |
-| 🧪 **Quality** | Vitest · Playwright · Promptfoo evals | Structural evals gate; a probabilistic judge never does |
+| 🗄️ **Data** | Postgres · SQLAlchemy · RLS via a session variable | Every tenant query goes through a tenant wrapper — there are exactly two, one per language |
+| 🔑 **Auth** | Better Auth, kept in Node, users in your own Postgres | Ships MFA, passkeys, orgs, verification — Python has no equivalent |
+| ⚙️ **Jobs** | PGQueuer on the same Postgres | Jobs enqueue in the same transaction as the data change |
+| 🚀 **Hosting** | Vercel · ECS Fargate ×4 · S3 + CloudFront | Split on trust — except `render`, which is split on language |
+| 🧪 **Quality** | pytest · Vitest · Playwright · Promptfoo evals | Structural evals gate; a probabilistic judge never does |
 
 > [!TIP]
-> **v1 needs none of this.** Docker Compose and a dev server — no AWS account, no auth, no workers, no CDN. The whole operational stack lands in v3, the release that has real users.
+> **v1 needs none of this.** Docker Compose and two dev servers — no AWS account, no auth, no workers, no CDN. The whole operational stack lands in v3, the release that has real users.
 
 ---
 
@@ -412,13 +428,13 @@ Full text in [`AGENTS.md`](AGENTS.md). The project-level hook is live today; the
 
 ```
  1  Strict TS. No `any`, no `!`
- 2  One Zod parse per external input, at entry
+ 2  One schema parse per external input, at entry
  3  Expected failures return Result; only bugs throw
  4  Import across features only through their index.ts
  5  No new dependency without a ledger line
  6  renderer/ core is pure — it runs in three processes
  7  AI output carries no presentational values
- 8  Drizzle only in *.data.ts, marked server-only
+ 8  The ORM only in a feature data module
  9  Every tenant query goes through asUser()
 10  Anything that grants, fails closed
 11  The gate is green, or the commit does not land

@@ -38,12 +38,12 @@ The brand kit is a **v1 primitive**, not a feature ([../spec.md](../spec.md)). U
 src/features/brand/
   index.ts
   brand-kit.tsx          fonts by registry id, colours, logo
-  brand.data.ts          'server-only'
+  brand_data.py
 src/features/assets/
   index.ts
   upload.ts              the pipeline below
   sanitize-svg.ts        the one place SVG is touched
-  assets.data.ts         'server-only'
+  assets_data.py
   assets.test.ts
 ```
 
@@ -136,7 +136,7 @@ Assets reach the pipeline only after verification, which is why phase 06 can tre
 **Isolation**
 
 - [ ] `assets` and `brands` both have RLS policies and isolation tests
-- [ ] Every read goes through `asUser`
+- [ ] Every read goes through `as_user`
 
 **Integration**
 

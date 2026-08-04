@@ -73,14 +73,14 @@ Then an **Exit gate** checklist. That checklist is the phase's definition of don
 These are not restated per phase. They are the eleven non-negotiables from [../../coderules/README.md](../../coderules/README.md), and a violation is a defect regardless of which phase produced it:
 
 1. Strict TS, no `any`, no `!`
-2. One Zod parse per external input, at entry — model output and tool arguments included
+2. One schema parse per external input, at entry — model output and tool arguments included
 3. Expected failures return `Result`; only bugs throw
 4. Cross-feature imports go through `index.ts`
 5. No dependency without a ledger line in [../../coderules/dependencies.md](../../coderules/dependencies.md)
 6. `renderer/` is pure — no `mode`, no `process.env`, no `typeof window`
 7. AI output carries no presentational values
-8. Drizzle only in `*.data.ts`, and those start with `import 'server-only'`
-9. Every tenant-scoped query goes through `asUser()`
+8. The ORM only in a feature data module — SQLAlchemy in `*_data.py`, Drizzle in `*.data.ts` with `import 'server-only'`
+9. Every tenant-scoped query goes through the tenant wrapper — `as_user()` in Python, `asUser()` in TypeScript, and there are exactly those two
 10. Anything that grants, fails closed
 11. The gate is green or the commit does not land
 
@@ -117,7 +117,7 @@ The end-to-end run from [../spec.md](../spec.md) → Verification passes in one 
 
 - [ ] Prompt or Q&A produces a `Brief`
 - [ ] Director produces an `Outline`, and it is editable before anything is built
-- [ ] Build streams 8 scenes, every one Zod-valid after at most one repair
+- [ ] Build streams 8 scenes, every one schema-valid after at most one repair
 - [ ] Edit a headline through the property panel, and again through an element-scoped prompt — both produce the same patch shape
 - [ ] Publish, open the URL in a private window
 - [ ] Fullscreen, navigate with arrow keys

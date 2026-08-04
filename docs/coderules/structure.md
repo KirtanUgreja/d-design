@@ -1,26 +1,35 @@
 # Structure
 
-## Three deployables, two repos, one shared package
+## Five runtimes, five repos, one generated package
 
-Before the folders, the topology — because it determines what "cross-feature import" even means ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
+Before the folders, the topology — because it determines what "cross-feature import" even means ([../techstack/infrastructure.md](../techstack/infrastructure.md), [../techstack/backend.md](../techstack/backend.md)).
 
 ```
-d-design/                    (repo 1)
-  src/app/                   Next.js routes
-  src/features/              the feature folders below
-  src/schema/                the Zod source of truth  ─┐
-  src/lib/                                             │ published as
-  worker/                    job worker entry point    │ @d-design/schema
-                                                       │
-d-design-fetch/              (repo 2) ◀────────────────┘
-  hostile input only: URL fetch, screenshots, document parsing
+d-design-api/           PYTHON      api + jobs — two entry points, one codebase
+  schema/                           the Pydantic source of truth  ──┐
+  features/                         the feature folders below       │ CI generates
+  ai/complete.py                    the one model seam              │      ▼
+  db/tenant.py                      as_user — one of two            │  @d-design/schema
+                                                                    │  (types + Zod)
+d-design-web/           TYPESCRIPT  editor, renderer, Better Auth ◀──┤
+d-design-render/        TYPESCRIPT  scene tree → HTML, Playwright ◀──┤
+d-design-fetch/         TYPESCRIPT  hostile input only            ◀──┘
+d-design-schema/        GENERATED   published artifact — never hand-edited
 ```
 
-**The app and the job worker are one codebase with two entry points.** The worker is not a separate project — it imports the same features, the same data modules, and the same renderer. That is what lets publishing and the visual verification loop run there ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)) without duplicating anything.
+**`api` and `jobs` are one codebase with two entry points.** The worker is not a separate project — it imports the same features, the same data modules, and the same seam. Same relationship the app and job worker used to have, moved to the other language.
 
-**Only the fetch worker is separate**, because its isolation is a security property rather than an organizational one. It gets `@d-design/schema` and nothing else. **It never gets the renderer** — page-making capability does not belong in the container that handles attackers' input.
+**Everything else is separate, and the separations are not all the same kind:**
 
-The consequence for this document: everything below describes repo 1. Repo 2 is small enough that it needs no structure beyond a handful of files.
+| | Separate because | Kind |
+|---|---|---|
+| **fetch worker** | Its isolation is a security property. No DB, no VPC route, and **never the renderer** | Trust |
+| **render** | Python cannot SSR React, and the renderer must have exactly one implementation ([patterns.md](patterns.md) rule 2) | Language |
+| **web** | It is the browser half, and it holds auth | Deployment |
+
+**Only the first is a security boundary.** The other two are consequences of the Python move, and labelling them honestly is what stops someone reasoning "these are isolated services, therefore this is safe" about a split that was never a control.
+
+The consequence for this document: everything below describes `api` and `web`, whose conventions are deliberately parallel. `render` and `fetch` are each small enough to need no structure beyond a handful of files.
 
 ## The server/client boundary
 
@@ -41,43 +50,41 @@ Three mechanisms, in order of how much they are worth:
 The codebase is organized by feature, not by layer. Each feature is a folder that owns everything it needs and exposes one public surface.
 
 ```
-src/features/
-  generation/
-    index.ts            ← the ONLY thing other features import
-    pipeline.ts
-    prompts.ts
-    repair.ts
-    generation.data.ts  ← Drizzle queries for this feature
-    generation.test.ts
-  editor/
-    index.ts
-    ...
-  renderer/
-    index.ts
-    scene-renderer.tsx  ← the pure core
-    blocks/
-    ...
-  publish/
-  brand/
+api/features/                        web/src/features/
+  generation/                          editor/
+    __init__.py    ← the public API      index.ts     ← the public API
+    build.py                             ...
+    prompts/build.py                   renderer/
+    tools.py                             index.ts
+    checks.py                            scene-renderer.tsx  ← the pure core
+    generation_data.py  ← SQLAlchemy     blocks/
+    test_generation.py                 auth/
+  intake/  director/  publish/           auth.data.ts        ← Drizzle, auth tables
+  brand/                                 ...
 ```
 
-**Imports cross only through `index.ts`.** `editor` may import from `renderer`'s index; it may not reach into `renderer/blocks/headline.tsx`. This is enforced by a lint rule (`import/no-internal-modules` scoped to feature dirs), not by discipline.
+**The two trees are deliberately the same shape**, because the rule should not change when the language does. A feature owns everything it needs and exposes one public surface; the data module is the only place the ORM appears; tests sit next to what they test.
+
+**Imports cross only through the public surface** — `index.ts` on one side, `__init__.py` on the other. `editor` may import from `renderer`'s index; it may not reach into `renderer/blocks/headline.tsx`. Enforced by a lint rule (`import/no-internal-modules` scoped to feature dirs; Ruff's `TID252` plus an import-linter contract on the Python side), not by discipline.
 
 Why: a feature you can only touch through its public API is a feature you can change the insides of without breaking anything. It is also less to understand — the index is the whole contract.
 
 ### Shared code
 
 ```
-src/
-  schema/     Zod schemas + inferred types. The source of truth
-  lib/        genuinely cross-cutting helpers (result, storage, ids)
-  db/         Drizzle client, migrations
-  app/        Next.js routes — thin, delegate to features
+api/                                 web/src/
+  schema/    Pydantic. THE source      lib/    cross-cutting helpers
+  lib/       result, storage, ids      db/     Drizzle client — auth tables only
+  db/        SQLAlchemy, tenant.py     app/    Next.js routes — thin
+  ai/        complete.py — the seam
+  routes/    FastAPI routers — thin
 ```
 
-`lib/` is for things every feature uses and no feature owns — the `Result` type, `storage.ts`, id generation. If something in `lib/` is used by one feature, it belongs in that feature.
+`lib/` is for things every feature uses and no feature owns — the `Result` type, storage, id generation. If something in `lib/` is used by one feature, it belongs in that feature.
 
-Routes in `app/` are thin. A route parses its input, calls a feature's public function, and returns the result. No business logic, no Drizzle, no branching beyond request shape.
+Routes are thin on both sides. A route parses its input, calls a feature's public function, and returns the result. No business logic, no ORM, no branching beyond request shape.
+
+**`api/schema/` is the source of truth for the whole system and has no TypeScript counterpart** — `web` consumes `@d-design/schema`, which is generated. There is no `web/src/schema/`, and creating one is the drift ([python.md](python.md)).
 
 ### The marketing site is a route group, not a third repo
 
@@ -92,11 +99,13 @@ The recorded SSE event logs the marketing demo replays are **fixtures, not code*
 
 ## Files
 
-- **One primary export per file, named for the file.** `scene-renderer.tsx` exports `SceneRenderer`. `pipeline.ts` exports `runPipeline`. Grep finds it, imports are predictable, no grab-bag files.
-- **kebab-case filenames.** `scene-renderer.tsx`, `art-direction.ts`.
-- **PascalCase** for components and types, **camelCase** for functions and variables. One rule, no per-file debate.
-- **Colocate.** `scene-renderer.tsx`, `scene-renderer.test.ts`, and the types it owns live side by side. No distant `__tests__/` or `types/` tree.
-- **No index barrels except the feature public API.** The only `index.ts` files are the ones that *are* a feature's surface. No re-export chains that hide where a thing actually lives.
+- **One primary export per file, named for the file.** `scene-renderer.tsx` exports `SceneRenderer`. `build.py` exports `run_build`. Grep finds it, imports are predictable, no grab-bag files.
+- **kebab-case TypeScript filenames** (`scene-renderer.tsx`), **snake_case Python filenames** (`generation_data.py`). Each language's own convention — fighting either buys nothing.
+- **PascalCase** for components, types, and Pydantic models. **camelCase** in TypeScript, **snake_case** in Python, for functions and variables. One rule per language, no per-file debate.
+- **Colocate.** A module, its test, and the types it owns live side by side. No distant `__tests__/` or `types/` tree.
+- **No barrels except the feature public API.** The only `index.ts` / re-exporting `__init__.py` files are the ones that *are* a feature's surface. No re-export chains that hide where a thing actually lives.
+
+**Do not transliterate one language's conventions into the other.** `snake_case` filenames in `web` and `kebab-case` modules in `api` are both the same mistake — a codebase that reads as though it were translated rather than written. The *rules* are parallel; the *spellings* are native.
 
 ## File size is a signal
 

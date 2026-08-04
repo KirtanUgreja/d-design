@@ -101,7 +101,7 @@ It costs nothing to close. Slot code renders a visual moment; it has no legitima
 **Slot — the security surface**
 
 - [ ] **Slot generation receives the outline and scene intent, and nothing else.** Assert it at the function boundary: pass raw source text in and confirm it is not in the prompt
-- [ ] Exactly one `Slot` per `Experience`, enforced by Zod (phase 01) and re-checked here
+- [ ] Exactly one `Slot` per `Experience`, enforced by Pydantic (phase 01) and re-checked here
 - [ ] The full sandbox suite from phase 04 re-run against a **generated** slot rather than a fixture: `localStorage` throws · `document.cookie` unavailable · `parent.document` throws · `fetch` fails · top navigation does not occur
 - [ ] `allow-same-origin` appears nowhere. Grep the codebase, not just the component
 - [ ] The srcdoc CSP is present and correct

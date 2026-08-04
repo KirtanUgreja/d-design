@@ -4,49 +4,63 @@ The rules above only hold if something enforces them. Two things do: a pre-commi
 
 ## The pre-commit gate
 
-`husky` + `lint-staged` run on staged files before a commit lands. A commit that fails any step does not land.
+Run on staged files before a commit lands. A commit that fails any step does not land. **The steps differ per repo because the languages do; the discipline does not.**
 
 ```
-1. format   — Prettier, fixes in place
-2. lint     — ESLint, no warnings allowed on changed files
-3. typecheck — tsc --noEmit
+TypeScript repos  (husky + lint-staged)   Python repo  (pre-commit)
+1. format    — Prettier                   1. format    — Ruff format
+2. lint      — ESLint, no warnings        2. lint      — Ruff, no warnings
+3. typecheck — tsc --noEmit               3. typecheck — mypy --strict
+                                          4. schema    — regenerate; FAIL ON DIFF
 ```
 
-Formatting stops being a decision — Prettier owns it, there is nothing to discuss and nothing to be inconsistent about. The whole point is to move consistency out of your head and into a hook that cannot be forgotten under deadline pressure.
+**Step 4 is the one that did not exist before and is the most important thing on this page.** The `Scene` schema lives in Pydantic and TypeScript consumes a generated copy ([python.md](python.md)). If the generated output can drift from its source, the single-source rule is a comment rather than a fact. The gate regenerates and fails if the result differs from what is committed — which makes "one source of truth" true by construction across a language boundary, the same way `z.infer` used to make it true within one.
+
+Formatting stops being a decision — Prettier and Ruff own it, there is nothing to discuss and nothing to be inconsistent about. The whole point is to move consistency out of your head and into a hook that cannot be forgotten under deadline pressure.
 
 **Keep the gate under a couple of seconds, and treat that as a requirement rather than a nicety.** A gate that is fast is a gate you never `--no-verify` past, and every rule in this directory is only as real as the hook that runs it. Step 3 is the one that grows: `tsc --noEmit` is the slowest step and the one that scales with the codebase. If it ever becomes the reason you skip the hook, that is the signal to move to the Go-native compiler ([typescript.md](typescript.md)) — 8–12× is enough headroom to never think about this again.
 
 The lint config carries the rules that are mechanical:
 
-| Rule | Enforces |
-|---|---|
-| `@typescript-eslint/no-explicit-any` | No `any` ([typescript.md](typescript.md)) |
-| `no-non-null-assertion` | No `!` |
-| `import/no-internal-modules` (feature-scoped) | Feature public-API boundary ([structure.md](structure.md)) |
-| `import/no-cycle` | No import cycles |
-| custom: no `mode` prop in `renderer/` | Renderer core stays pure ([patterns.md](patterns.md)) |
-| custom: no Drizzle import outside `*.data.ts` | Data access stays in feature modules |
-| custom: no `db.` call outside the `asUser` wrapper | Tenant isolation ([patterns.md](patterns.md) rule 4) — the highest-value custom rule in the list |
-| custom: no `process.env` / `typeof window` in `renderer/` | The renderer runs in three processes and must behave identically in all of them |
-| `react-hooks` (incl. the compiler rules) | Rules of React — a violation silently costs you React Compiler memoization ([performance.md](performance.md)) |
-| ~~`no-restricted-syntax` on TS `enum`~~ | Retired — `erasableSyntaxOnly` makes it a compiler error ([typescript.md](typescript.md)) |
+| Rule | Where | Enforces |
+|---|---|---|
+| `@typescript-eslint/no-explicit-any` · `no-non-null-assertion` | TS | No `any`, no `!` ([typescript.md](typescript.md)) |
+| Ruff `ANN` · mypy `disallow_any_explicit` | PY | Full annotations, no bare `Any` ([python.md](python.md)) |
+| `import/no-internal-modules` · Ruff `TID252` + import-linter | both | Feature public-API boundary ([structure.md](structure.md)) |
+| `import/no-cycle` | both | No import cycles |
+| custom: no `mode` prop in `renderer/` | TS | Renderer core stays pure ([patterns.md](patterns.md)) |
+| custom: no `process.env` / `typeof window` in `renderer/` | TS | The renderer runs in three processes and must behave identically in all of them |
+| custom: no ORM import outside a data module | both | Data access stays in feature modules ([patterns.md](patterns.md) rule 3) |
+| **custom: `set_config('app.user_id'` appears in exactly *N* files** | both | Tenant isolation ([patterns.md](patterns.md) rule 4). **The highest-value rule in the list** — it is what turns "exactly two wrappers" from a claim into a fact. `N` is a literal: **1 through v2, 2 from v3** when Better Auth arrives. Raising it is a deliberate edit to a rule, never a silent widening |
+| **custom: no edit to generated `@d-design/schema` sources** | TS | The codegen boundary. A hand-edit is the only remaining door for schema drift |
+| **custom: no `langchain`/`langgraph`/`crewai`/`pydantic_ai`/`autogen` in `pyproject.toml`** | PY | The agent-framework rule ([dependencies.md](dependencies.md)) — a privileged dependency does not arrive by accident |
+| **custom: Alembic `include_object` excludes the auth tables** | PY | Two migration tools, one database. Without it, autogenerate proposes dropping seven tables it does not know about |
+| `react-hooks` (incl. the compiler rules) | TS | Rules of React — a violation silently costs you React Compiler memoization ([performance.md](performance.md)) |
+| ~~`no-restricted-syntax` on TS `enum`~~ | | Retired — `erasableSyntaxOnly` makes it a compiler error ([typescript.md](typescript.md)) |
 
-The custom rules are worth the small effort to write — they are exactly the project-specific invariants prose cannot enforce, and each maps to a decision that quietly unravels the product if it drifts. The `asUser` rule is the one to write first: it is the only one on the list whose violation is a cross-tenant read rather than a design regression.
+The custom rules are worth the small effort to write — they are exactly the project-specific invariants prose cannot enforce, and each maps to a decision that quietly unravels the product if it drifts.
+
+**Four of them are new, and all four exist because the Python move replaced a structural guarantee with a procedural one.** There used to be one language, so there was one tenant wrapper, one schema, and no way to install LangGraph without also installing Python. None of that is true now, and each bolded rule above is the gate standing in for a barrier that used to be free ([../techstack/decisions.md](../techstack/decisions.md) → "The Python backend move"). Write the `set_config` rule first: it is the only one whose violation is a cross-tenant read rather than a design regression.
 
 CI runs the same gate plus the test suites and the dependency-advisory check, so a bypass of the local hook is caught on push.
 
-## What CI runs, across two repos
+## What CI runs, across five repos
 
-The gate above is per-commit and fast. CI adds the things that are too slow or need a browser, and it now spans two repos and three deploy targets ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
+The gate above is per-commit and fast. CI adds the things that are too slow or need a browser, and it now spans five repos ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
 
 | | |
 |---|---|
-| **Both repos** | The gate · Vitest · dependency advisories · duplication report ([ai-authorship.md](ai-authorship.md)) |
-| **App repo** | Playwright — sandbox escape, the two-requests `connect-src` assertion, cross-origin behavior · build-output grep for key-shaped strings · Promptfoo structural evals |
-| **Fetch worker repo** | SSRF suite including socket-level unreachability — a test of the network, not the code |
+| **Every repo** | The gate · tests · dependency advisories · duplication report ([ai-authorship.md](ai-authorship.md)) |
+| **`api`** | pytest · **schema regenerates with no diff** · **the cross-language fixture round-trip** ([python.md](python.md)) · Promptfoo structural evals · injection corpus · the fail-closed suite (make each check raise, assert refusal) |
+| **`web`** | Playwright — sandbox escape, the two-requests `connect-src` assertion, cross-origin behaviour · build-output grep for key-shaped strings |
+| **`render`** | Renders every primitive under every art direction and diffs nothing — it is a visual check with a human, not a snapshot suite |
+| **fetch worker** | SSRF suite including socket-level unreachability — a test of the network, not the code |
+| **Schema publish** | On merge to `api`: generate, version-bump, publish `@d-design/schema` via OIDC. **Consumers are bumped in the same session** ([typescript.md](typescript.md)) |
 | **Terraform** | `plan` on PR, `apply` on merge. A security-group change should be at least as visible as an auth-check change, since nothing type-checks it |
 | **Docs** | `scripts/check-docs.sh` — every relative link resolves, every `.md` is listed in its directory's README, every directory has one |
-| **Deploy** | Vercel on push; worker images to ECR via OIDC — no long-lived AWS keys in GitHub |
+| **Deploy** | Vercel on push for `web`; container images to ECR via OIDC for the rest — no long-lived AWS keys in GitHub |
+
+**Five repos is the largest ongoing cost of the split**, and it is felt here rather than in the architecture diagram: a schema change is now a generate, a publish, and up to three bumps. During v1 there is one TypeScript consumer and a local file link is the right shortcut — marked `ponytail:`, with `render`'s arrival in v2 as the trigger to do it properly.
 
 The docs row is small and it is the only thing keeping the navigation in [../README.md](../README.md) true. An index that silently stops listing a file is worse than no index, because it teaches a reader — or an agent — that the directory contains less than it does.
 
@@ -67,7 +81,7 @@ The pipeline's quality has no type system behind it, so it needs its own gate �
 
 `eslint-plugin-import-boundaries` implements exactly the model in [structure.md](structure.md): a boundary's `index.ts` *is* its public surface, and everything else in the folder is private to it. If it fits, the feature-boundary rule stops being custom code and becomes a config block. `eslint-plugin-boundaries` and `dependency-cruiser` cover the same ground with more configuration and more power than this project needs.
 
-Check before writing the custom rule. A rule you did not write is a rule you do not maintain — and the genuinely project-specific ones, above all the `asUser` ban, are worth your attention precisely because nothing off the shelf knows this codebase's invariants.
+Check before writing the custom rule. A rule you did not write is a rule you do not maintain — and the genuinely project-specific ones, above all the tenant-wrapper rule, are worth your attention precisely because nothing off the shelf knows this codebase's invariants.
 
 ## Which linter and formatter
 
@@ -87,9 +101,9 @@ There is a genuine middle option if the gate ever feels slow: run Oxlint as a fa
 
 ## Tests
 
-**Vitest.** `node:test` is stdlib and faster on raw unit throughput, which normally settles it — but it has no watch mode, no snapshots, and no real React Testing Library story, and this project's tests are mostly renderer and component tests. Rung 3 of the ladder says use the stdlib; rung 3 also says use it when it *does the job*, and here it does not.
+**pytest** in `api`; **Vitest** in the TypeScript repos. `node:test` is stdlib and faster on raw unit throughput, which normally settles it — but it has no watch mode, no snapshots, and no real React Testing Library story, and the TypeScript tests are mostly renderer and component tests. Rung 3 of the ladder says use the stdlib; rung 3 also says use it when it *does the job*, and here it does not.
 
-What gets tested is unchanged and deliberately narrow ([ai-authorship.md](ai-authorship.md), [../v1/spec.md](../v1/spec.md)): the schema round-trip, the golden-brief pipeline run, the block patch, the no-styling backstop, the AD linter. Renderer quality is a human judgment and gets a visual check, not a snapshot — a snapshot test on a design surface fails on every intentional improvement and teaches you to update it without looking.
+What gets tested is unchanged and deliberately narrow ([ai-authorship.md](ai-authorship.md), [../v1/spec.md](../v1/spec.md)): the schema round-trip, the golden-brief pipeline run, the block patch, the no-styling backstop, the AD linter — **plus the two the language split added**, the codegen no-diff check and the cross-language fixture round-trip ([python.md](python.md)). Renderer quality is a human judgment and gets a visual check, not a snapshot — a snapshot test on a design surface fails on every intentional improvement and teaches you to update it without looking.
 
 ## What is NOT gated
 
@@ -133,7 +147,9 @@ Today it enforces one thing — `.md` edits must keep `scripts/check-docs.sh` pa
 | Add when | Enforces |
 |---|---|
 | `*.ts` exists | `tsc --noEmit` and `eslint` on the written file — rule 11, at write time instead of commit time |
-| `*.data.ts` exists | Rules 8 and 9 — the `server-only` marker and the `asUser` wrapper |
+| `*.py` exists | `mypy` and `ruff` on the written file — the same rule, the other language |
+| **`api/schema/` exists** | Regenerate and fail on diff. **Add this the day the schema does**, not later — it is the rule most likely to be violated invisibly by an agent editing generated TypeScript because it looked wrong |
+| A data module exists | Rules 8 and 9 — the ORM placement and the tenant wrapper |
 | The renderer exists | Rule 6 — no `process.env` or `typeof window` under `renderer/` |
 
 The pre-commit gate still runs all of it; the hook just moves the feedback earlier, to the moment the agent can still remember why it wrote the line.

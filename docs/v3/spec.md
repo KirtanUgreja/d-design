@@ -115,13 +115,13 @@ Four presentation decisions ride on top of that shape without changing it, and t
 
 ## Pipeline delta
 
-**Transcreation** is a fifth phase, running at publish: source tree + target locale + target AD budgets → per-locale tree. Not a translation call — a rewrite-to-fit call. It runs **in the job worker** as a pg-boss job, because twelve locales is minutes of work and it must enqueue in the same transaction as the publish that triggered it ([../techstack/backend.md](../techstack/backend.md)).
+**Transcreation** is a fifth phase, running at publish: source tree + target locale + target AD budgets → per-locale tree. Not a translation call — a rewrite-to-fit call. It runs **in the `jobs` worker** as a PGQueuer job, because twelve locales is minutes of work and it must enqueue in the same transaction as the publish that triggered it ([../techstack/backend.md](../techstack/backend.md)).
 
 **Derivation** is its own phase: reference input → the four control-axis values → `ArtDirection` → linter. If the linter rejects it, the derivation retries once with the failures as context, exactly like scene repair. When the input is a URL, the capture runs **in the fetch worker** — the quarantined container — because it is the product pointing a browser at an address a stranger chose ([ai-art-direction.md](ai-art-direction.md)).
 
 **Personalization** is not a generation phase. Fields are substituted at render, never generated per viewer.
 
-**The visual verification loop from v2 runs against everything above.** Derived ADs get rendered and inspected rather than only linted, and twelve locales multiply the ways a layout breaks — a budget-fitting German headline can still collide with a stat block ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)). This is the release where the loop stops being a nicety: reviewing 12 locales × 3 ADs by eye is not a thing one person does.
+**The visual verification loop from v2 runs against everything above**, still bounded at one revision and still a plain loop in the seam rather than an agent ([../techstack/ai-stack.md](../techstack/ai-stack.md)) — twelve locales × three ADs multiplies the work, not the autonomy. Derived ADs get rendered and inspected rather than only linted, and twelve locales multiply the ways a layout breaks — a budget-fitting German headline can still collide with a stat block ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)). This is the release where the loop stops being a nicety: reviewing 12 locales × 3 ADs by eye is not a thing one person does.
 
 ## Persistence delta
 

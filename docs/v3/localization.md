@@ -24,7 +24,7 @@ locales  experience_id, locale, direction, scenes (jsonb), published_at, status
 
 Each locale gets its own scene tree, transcreated at publish. Not a string table applied at render — the copy genuinely differs, because fitting a budget in Japanese means different phrasing, not a translated string.
 
-**Transcreation runs in the job worker**, not in a request ([../techstack/backend.md](../techstack/backend.md)). Twelve locales is twelve model calls plus twelve validations, which is minutes of work — well past any serverless function's ceiling. As a pg-boss job it is one unit of work with retries, and it enqueues in the same transaction as the publish that triggered it, so a rolled-back publish cannot leave orphaned transcreation running against a tree that no longer exists.
+**Transcreation runs in the `jobs` worker**, not in a request ([../techstack/backend.md](../techstack/backend.md)). Twelve locales is twelve model calls plus twelve validations, which is minutes of work — well past any serverless function's ceiling. As a PGQueuer job it is one unit of work with retries, and it enqueues in the same transaction as the publish that triggered it, so a rolled-back publish cannot leave orphaned transcreation running against a tree that no longer exists.
 
 Each locale's output faces the full validation path: Zod, the AD's budgets, and the presentational-value check. A translation is a model output like any other and gets no more trust for being one.
 

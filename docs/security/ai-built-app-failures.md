@@ -52,7 +52,7 @@ Controls already specified in [infrastructure.md](infrastructure.md): the servic
 
 Base44's exact failure: endpoints reachable without authentication because the front end never called them that way, so nobody checked what happened if someone did.
 
-The structural defense in this codebase is [../coderules/patterns.md](../coderules/patterns.md)'s rule that **data access lives in feature `*.data.ts` modules** — the service-role filter has one home per feature rather than being reimplemented at each call site. That converts "did every endpoint check?" into "did this one module check?", which is a question you can actually answer.
+The structural defense in this codebase is [../coderules/patterns.md](../coderules/patterns.md)'s rule that **data access lives in feature data modules** (`*_data.py` / `*.data.ts`) — the service-role filter has one home per feature rather than being reimplemented at each call site. That converts "did every endpoint check?" into "did this one module check?", which is a question you can actually answer.
 
 Two things to add to the manual checklist in [testing.md](testing.md):
 

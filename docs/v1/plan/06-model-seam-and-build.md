@@ -21,9 +21,9 @@
 
 **Grep for**
 
-- `src/schema/index.ts` — `SCENE_JSON_SCHEMA`, `assertNoPresentationalValues`, `assertAssetsResolve`. All three already exist. The seam calls them; it does not reimplement them
-- `src/lib/result.ts` — every model call returns `Result`. A refusal is a `Result` failure, not a throw and not a silent empty string
-- `src/db/tenant.ts` — `generations` writes go through `asUser` like everything else
+- `api/schema/__init__.py` — `SCENE_JSON_SCHEMA`, `assert_no_presentational_values`, `assert_assets_resolve`. All three already exist. The seam calls them; it does not reimplement them
+- `api/lib/result.py` — every model call returns `Result`. A refusal is a `Result` failure, not a raise and not a silent empty string
+- `api/db/tenant.py` — `generations` writes go through `as_user` like everything else
 - **Before writing a retry:** there is one repair retry and it lives in the seam. Not per phase, not per call site
 
 **Verify externally**
@@ -36,29 +36,34 @@
 
 ## Make
 
-### 1. The seam — `src/lib/ai/complete.ts`
+### 1. The seam — `api/ai/complete.py`
 
-```ts
-import 'server-only';
-
-export async function complete<T>(req: {
-  phase: 'intake' | 'director' | 'build' | 'edit';
-  schema: z.ZodType<T>;
-  system: string;              // the stable, cacheable prefix
-  user: string;                // the only part that varies
-  tools?: Tool[];              // tier 0 only
-}): Promise<Result<T>>
+```python
+async def complete[T](
+    phase: Literal["intake", "director", "build", "edit"],
+    schema: type[T],              # a Pydantic model
+    system: str,                  # the stable, cacheable prefix
+    user: str,                    # the only part that varies
+    tools: list[Tool] | None = None,   # tier 0 only
+) -> Result[T]: ...
 ```
 
-Plain `fetch` against an OpenAI-compatible endpoint. **Not the AI SDK, not an agent framework.** The pipeline is four sequential calls your code decides between, with a human gate in the middle — that is not an agent, and a framework would express four function calls as a graph and buy nothing ([../../techstack/ai-stack.md](../../techstack/ai-stack.md)). Take `generateObject` later only if the seam starts growing retry, streaming, and schema-marshalling code of its own, at which point the SDK deletes your code rather than adding to it.
+Plain `httpx` against an OpenAI-compatible endpoint. **Not Instructor, not an agent framework.** The pipeline is four sequential calls your code decides between, with a human gate in the middle — that is not an agent, and a framework would express four function calls as a graph, add a state model and a debugging surface, and buy nothing ([../../techstack/ai-stack.md](../../techstack/ai-stack.md)).
+
+**Two reasons to hold that line here specifically**, because this is the phase where it is most tempting to cross:
+
+- **It would be privileged.** `api` holds the database credentials, the model key, and later the integration tokens. The agentic-framework CVE class is under active exploitation ([../../security/platform-and-packages.md](../../security/platform-and-packages.md)) and this is the process it would land in.
+- **The friction is gone.** In a TypeScript codebase, adding LangGraph meant adding a language. Now it is one line in `pyproject.toml` — which is why phase 00 put a CI grep on exactly those package names.
+
+Take **Instructor** later only if the seam starts growing retry, streaming, and schema-marshalling code of its own, at which point it deletes your code rather than adding to it. If you do: **cap its retry at one**, or it multiplies with the repair below into a denial-of-wallet surface.
 
 The seam owns six things, and each is a rule from elsewhere that a second call path would drop:
 
 | | |
 |---|---|
-| **Zod parse of the response** | The real gate. The decoder only shifts the odds |
+| **Pydantic parse of the response** | The real gate. The decoder only shifts the odds |
 | **One repair retry** | The scene, the specific errors, and nothing else. Still invalid → surface honestly. Never retry forever, never silently drop |
-| **Refusal normalization** | A declined request arrives as a **successful** HTTP response with empty or partial content, and the field that says so differs by provider. `if (isRefusal(raw)) return err({ kind: 'refused', … })`. Code that reads the first content block unconditionally crashes on the first refusal |
+| **Refusal normalization** | A declined request arrives as a **successful** HTTP response with empty or partial content, and the field that says so differs by provider. `if refusal := detect_refusal(raw): return err(Refused(...))`. Code that reads the first content block unconditionally crashes on the first refusal |
 | **The metadata log** | Model id **and** provider route — different questions under a router. Tokens **and** calls. Repair flag, error class, latency split into time-to-first-scene and total |
 | **Tool-call caps** | Total calls per generation, hard. Denial of wallet, same class as unbounded repair |
 | **Quota and kill switch** | Checked **before** the call, atomically, failing closed |
@@ -89,17 +94,17 @@ generations  id, experience_id, phase, model_id, provider_route,
 
 `cached_tokens` is in the list because it is how you find out caching silently never activated. Zero across a whole build means either an invalidator in the prefix or a route where caching was never on, and the two look identical on the invoice.
 
-### 4. The Build phase — `src/features/generation/`
+### 4. The Build phase — `api/features/generation/`
 
 ```
-src/features/generation/
-  index.ts
-  build.ts                one call per scene, streamed
-  prompts/build.ts        prompts are code, in the repo, reviewed in the diff
-  tools.ts                get_brand_kit · list_assets · get_constraints
-  checks.ts               post-build: no-styling, href provenance, claim provenance
-  generation.data.ts      'server-only' — generations, quotas
-  generation.test.ts
+api/features/generation/
+  __init__.py
+  build.py                one call per scene, streamed
+  prompts/build.py        prompts are code, in the repo, reviewed in the diff
+  tools.py                get_brand_kit · list_assets · get_constraints
+  checks.py               post-build: no-styling, href provenance, claim provenance
+  generation_data.py      generations, quotas
+  test_generation.py
 ```
 
 **One call per scene**, each receiving the full outline as context so scenes know their neighbours, each returning exactly one `Scene`. Streaming per scene is a perceived-speed decision: the user watches the experience assemble and can abort a bad direction on scene 2 rather than paying for 12.
@@ -125,7 +130,7 @@ Point 3 is enforced **by omission first and by rejection always** — the schema
 
 `get_brand_kit()` · `list_assets()` · `get_constraints(ad)`. Pure reads of the user's own approved data. No state, no network, no consequence.
 
-**Tool arguments are external input.** One Zod parse at the tool boundary, and ownership checked there — and because ownership is an authorization decision, it **fails closed**. An injected "read document 7" must die on ownership, not on the model politely declining ([../../coderules/typescript.md](../../coderules/typescript.md)).
+**Tool arguments are external input.** One Pydantic parse at the tool boundary, and ownership checked there — and because ownership is an authorization decision, it **fails closed**. An injected "read document 7" must die on ownership, not on the model politely declining ([../../coderules/python.md](../../coderules/python.md)).
 
 `list_assets` is how the Build phase selects imagery: **by id, from what the user actually uploaded.** Same "arrange, never invent" rule as `CTA.href`. An `assetId` resolving to nothing is a validation failure, not a broken image on someone's launch page.
 
@@ -133,17 +138,19 @@ The line that does not move: **no tool with side effects.** If a future feature 
 
 ### 6. Post-build checks — the layer that actually catches things
 
-Three, all in `checks.ts`, all running on every generated tree before it is stored:
+Three, all in `checks.py`, all running on every generated tree before it is stored:
 
 | Check | |
 |---|---|
-| **No presentational values** | `assertNoPresentationalValues`. This is the control that catches what the decoder was previously assumed to prevent, and it matters *more* now, not less |
+| **No presentational values** | `assert_no_presentational_values`. This is the control that catches what the decoder was previously assumed to prevent, and it matters *more* now, not less |
 | **`CTA.href` provenance** | Every href traces to a URL the Brief supplied, plus a scheme allowlist. Makes an injected phishing link structurally impossible rather than filtered |
 | **Claim provenance** | Any `Stat.value` not traceable to a `proofPoint` is flagged. [../ai-pipeline.md](../ai-pipeline.md) says this is the only one of the three claim-rule layers that actually catches things. Build it |
 
 ### 7. Streaming to the client
 
-SSE over a Route Handler — `ReadableStream` out, `EventSource` in. No dependency. The unit is a **whole validated scene**, not a token, so partial-object streaming and mid-stream JSON repair solve problems this pipeline does not have. Anything that failed validation never reaches the client at all.
+SSE from FastAPI — an async generator out, `EventSource` in. No dependency on either side. The unit is a **whole validated scene**, not a token, so partial-object streaming and mid-stream JSON repair solve problems this pipeline does not have. Anything that failed validation never reaches the client at all.
+
+**The stream crosses the language boundary, which is the one new thing here.** `web` holds the `EventSource`; `api` produces the events. Keep the event payloads plain JSON matching the generated schema — no framing that only one side understands, or the boundary becomes a place where two representations of a scene exist.
 
 ```
 event: scene   data: { "index": 2, "scene": { … } }
@@ -180,7 +187,7 @@ Promptfoo, structural assertions only, running in CI as a hard gate. Quality sco
 
 **Pipeline** ([../spec.md](../spec.md) → Verification, row 4 — *"the one automated check that matters"*)
 
-- [ ] 5 golden briefs → Build → **100% Zod-valid after at most one repair**
+- [ ] 5 golden briefs → Build → **100% schema-valid after at most one repair**
 - [ ] Every generated tree passes all three post-build checks
 - [ ] A deliberately malformed model response triggers exactly one repair, and a second failure surfaces honestly rather than dropping the scene
 - [ ] A simulated refusal becomes a `Result` failure the caller cannot ignore — not an empty scene
@@ -216,14 +223,17 @@ Promptfoo, structural assertions only, running in CI as a hard gate. Quality sco
 | Per-phase model selection | Decided by measured repair rate against real briefs, not by a name in a document. The instrumentation above is what makes the decision possible |
 | Quality scoring evals | v2, nightly, tracked as a trend, never gating |
 | Langfuse tracing | v3, self-hosted only. Do not adopt a trace-ingesting tool before deciding what it stores — tracing captures prompts by design ([../../techstack/ai-stack.md](../../techstack/ai-stack.md)) |
-| A Python service / DSPy | 50+ scored briefs exist and you are hand-tuning the Build prompt against them. Anything short of that is a second language for a problem you do not have |
+| DSPy / GEPA prompt optimization | 50+ scored briefs with quality scores exist and you are hand-tuning the Build prompt against them. It is native now rather than a second language — which is exactly why the constraint has to be explicit: **offline only, and its output is a prompt artifact committed to the repo**, never a runtime import ([../../techstack/ai-stack.md](../../techstack/ai-stack.md)) |
+| Instructor | The seam grows its own retry, streaming, and schema-marshalling code. Then it deletes code rather than adding it — and its retry gets capped at one |
+| An agent framework | Genuine autonomy (the model choosing which phase runs next) or real multi-agent generation. A bounded loop is not either ([../../techstack/ai-stack.md](../../techstack/ai-stack.md)) |
 | Parallel builds beyond the cache-warming pattern | Layout repetition is prevented upstream by the director assigning layouts. Mark it `ponytail:` if it ships without that |
 
 ---
 
 ## Exit gate
 
-- [ ] Exactly one model call site exists in the codebase, and the lint/grep proves it
+- [ ] Exactly one model call site exists in the system, and the lint/grep proves it. `web` holds no model credential, so this is architectural as well as enforced
+- [ ] No agent framework is in `pyproject.toml`, asserted by CI
 - [ ] 5 golden briefs, 100% valid after ≤ 1 repair, in CI as a hard gate
 - [ ] All three post-build checks run on every tree
 - [ ] Quota is atomic, the kill switch halts, and both fail closed under injected failure

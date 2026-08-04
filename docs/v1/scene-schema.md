@@ -160,7 +160,7 @@ Runs in `<iframe srcdoc sandbox="allow-scripts">` with no `allow-same-origin`. N
 
 ## Validation rules
 
-Zod enforces all of these. Violations fail the generation and trigger one repair retry.
+Pydantic enforces all of these. Violations fail the generation and trigger one repair retry.
 
 **Structural**
 - 3 ≤ scenes ≤ 12
@@ -181,14 +181,14 @@ Zod enforces all of these. Violations fail the generation and trigger one repair
 
 LLMs write too much. A headline that runs to 140 characters destroys a cinematic layout no matter how good the tokens are. The caps make restraint mechanical rather than politely requested.
 
-**And every one of them is enforced after the fact, by Zod.**
+**And every one of them is enforced after the fact, by Pydantic.**
 
 An earlier draft of this document claimed the shape rules were *unrepresentable* — that constrained decoding meant a hex code had nowhere to go. **That is no longer accurate, and the correction matters more here than anywhere else in the repo**, because this is the file that defines the invariant.
 
 | | Enforced by | Can the model violate it? |
 |---|---|---|
-| Shape — fields, types, enums, no styling values | **Zod**, after the response. Constrained decoding helps *if* the route enforces schemas natively | **Rarely, and yes.** Enforcement varies by provider and endpoint ([../techstack/backend.md](../techstack/backend.md)) |
-| **Character caps** | **Zod**, after the response. String-length keywords are widely unsupported by structured-output implementations regardless of route | **Yes, routinely** |
+| Shape — fields, types, enums, no styling values | **Pydantic**, after the response. Constrained decoding helps *if* the route enforces schemas natively | **Rarely, and yes.** Enforcement varies by provider and endpoint ([../techstack/backend.md](../techstack/backend.md)) |
+| **Character caps** | **Pydantic**, after the response. String-length keywords are widely unsupported by structured-output implementations regardless of route | **Yes, routinely** |
 
 So a 90-character headline, and in principle a hex code, are *generations that fail validation*. The repair loop fixes both, and neither ever reaches a page.
 
@@ -198,7 +198,7 @@ Three practical consequences:
 2. **State the character budget in the prompt as a hard number.** Prompting is the only portable lever on output length, and it is what lowers repair frequency — the schema will not do it for you.
 3. **Expect the repair loop to fire constantly at first.** That is the system working; log the pattern, because it tells you where prompt and schema disagree. The repair rate is also the metric that decides which model runs which phase ([../techstack/ai-stack.md](../techstack/ai-stack.md)).
 
-Keep `maxLength` in the Zod schema regardless. It costs nothing, and it is what does the rejecting.
+Keep the length constraint on the Pydantic field regardless. It costs nothing, and it is what does the rejecting.
 
 ## Editing
 

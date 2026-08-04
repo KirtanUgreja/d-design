@@ -9,7 +9,7 @@ v1's product boundary is browser-enforced: sandboxed iframes, no network, no sto
 **It happens on your infrastructure, never in the page.**
 
 ```
-Airtable / Notion ──▶ fetch worker ──▶ job worker ──▶ data_sources.last_value
+Airtable / Notion ──▶ fetch worker ──▶ jobs ──▶ data_sources.last_value
                       (credentials,     (schedules,              │
                        egress only)      writes DB)   baked in at publish ▼
                                                             published page
@@ -18,7 +18,7 @@ Airtable / Notion ──▶ fetch worker ──▶ job worker ──▶ data_sou
 Two workers rather than one, and the split is the same trust boundary the whole backend uses ([../techstack/backend.md](../techstack/backend.md)):
 
 - **The fetch worker makes the call.** It holds the integration credentials, has egress-only networking, no route to the VPC, and no database access. A third-party API returning something hostile — or a compromised integration — lands on a box with nothing to steal.
-- **The job worker schedules it and writes the result**, via pg-boss on the database it already has. It never touches the remote response directly.
+- **The `jobs` worker schedules it and writes the result**, via PGQueuer on the database it already has. It never touches the remote response directly.
 
 **A cell value from Airtable is untrusted input**, not internal data. It is user-controlled by definition — anyone who can edit the sheet can write anything into it — so it gets one Zod parse at the boundary, is rendered as text and never as markup, and is length-capped against the art direction's budget like any other copy ([../security/README.md](../security/README.md)).
 

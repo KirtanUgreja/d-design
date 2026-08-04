@@ -50,7 +50,7 @@ Outline {
 
 **No tools, deliberately.** A pure transform on human-approved content with a human gate immediately after. There is nothing to look up and nothing to verify; adding a tool here would be tools for their own sake ([../../techstack/pipeline-tools.md](../../techstack/pipeline-tools.md)).
 
-Rules, enforced by Zod on the `Outline` schema: 3–12 scenes · exactly one `hook`, first · at least one `cta` · **no repeated adjacent intents**.
+Rules, enforced by Pydantic on the `Outline` schema: 3–12 scenes · exactly one `hook`, first · at least one `cta` · **no repeated adjacent intents**.
 
 **Assign `layoutHint` here, not in Build.** The open question in [../ai-pipeline.md](../ai-pipeline.md) — parallel versus sequential builds — resolves in favour of parallel *because* layout assignment happens upstream. A director that hands each scene a layout prevents the repetition a sequential build would have prevented by letting each scene see the last one, and it does it for one call instead of eleven round trips.
 
@@ -95,7 +95,7 @@ The Director prefix is small and the call runs once. **Caching it is probably a 
 
 **Outline rules**
 
-- [ ] Zod rejects: fewer than 3 scenes · more than 12 · zero `hook` · two `hook`s · a `hook` that is not first · zero `cta` · two adjacent scenes with the same intent
+- [ ] Pydantic rejects: fewer than 3 scenes · more than 12 · zero `hook` · two `hook`s · a `hook` that is not first · zero `cta` · two adjacent scenes with the same intent
 - [ ] The 5 golden briefs each produce a valid `Outline` on the first call
 - [ ] Every scene has a `layoutHint`, and adjacent scenes do not repeat one
 

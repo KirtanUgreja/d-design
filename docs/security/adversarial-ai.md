@@ -44,8 +44,22 @@ Read down the controls in this directory and sort them:
 | `CTA.href` must exist in the Brief | Scheme allowlisting on hrefs |
 | SVG is served via `<img>`, where script cannot run | The SVG sanitizer |
 | `connect-src 'none'` — the page cannot call out | Reviewing generated code for network calls |
+| **The pipeline has no agent framework, so there is no checkpoint to deserialize** | Patching the framework quickly |
+| **`render` holds no credential, so a renderer bug steals nothing** | Trusting the scene tree that reaches it |
 
 **Every row's left column already exists in this design.** The right column is the second layer, and this is what it is for: it catches the ordinary and the accidental cheaply, and when it eventually fails, the left column is still there.
+
+### The Python move traded some of the left column for the right, and that is worth watching
+
+An honest amendment ([../techstack/decisions.md](../techstack/decisions.md) → "The Python backend move"). Several guarantees that used to hold *structurally* now hold *procedurally*:
+
+| Was structural | Is now |
+|---|---|
+| One tenant wrapper, because one language | **Two wrappers**, kept in step by a lint rule |
+| One schema, because `z.infer` made a second impossible | **Two representations**, kept in step by a codegen gate |
+| No agent framework, because it would have meant adding a language | **No agent framework**, because a rule and a CI grep say so |
+
+Each replacement is a build-time gate rather than a runtime hope, which is why this is acceptable rather than alarming. **But the direction is backwards from everything else in this document**, and the mitigation is the same one the table above teaches: when one of these fails, ask what structural control was missing — not which check to add. The first sign of trouble is any of the three surviving only in prose.
 
 The reason to write this down is that the two columns feel equally like security when you are building, and they are not. Under pressure the temptation is always to add a pattern to the right column. **The correct response to a bypass is to ask what structural control was missing, not which pattern to add** — the same rule [../coderules/patterns.md](../coderules/patterns.md) already states for the no-styling backstop.
 
@@ -66,7 +80,7 @@ The caveat: **the most confidential data does not sit still — it moves.** A cu
 An honest list, because a threat model that only lists strengths is marketing.
 
 1. **A solo operator is the real single point of failure.** Not the code — the response. An agent that finds something at 3am on a Sunday has hours before anyone reads the alert. The mitigations are the ones that work while you sleep: the kill switch, hard quotas, static published pages, and failing closed. [operations.md](operations.md) names this.
-2. **Dependencies are the largest attack surface and you do not control them.** Nine Next.js advisories in July 2026 alone. See [platform-and-packages.md](platform-and-packages.md).
+2. **Dependencies are the largest attack surface and you do not control them.** Nine Next.js advisories in July 2026 alone — and the surface is now **two** registries, npm and PyPI, with different defaults and a standing risk that only one of them gets hardened. See [platform-and-packages.md](platform-and-packages.md).
 2b. **The build pipeline skips every control in this directory.** Prompt-injection defenses, RLS, the sandbox, the fetch worker's isolation — all of them assume the running code is the code you wrote, and CI is where that assumption is made. It is also the surface an automated attacker reaches most cheaply, because misconfigured OIDC trust policies are enumerable from outside. See [build-pipeline.md](build-pipeline.md).
 3. **Business-logic flaws have no scanner and no pattern.** An agent that reasons about *your* system finds the quota that resets on a boundary, the entitlement checked in one path and not another, the state machine that allows publish-before-payment. Nothing in the automated suite looks for these. This is the class most likely to actually get you, and the only defense is that the logic be simple enough to be obviously correct — which is an argument for [../coderules/README.md](../coderules/README.md), not for a security tool.
 
@@ -94,13 +108,15 @@ Anchoring to a published taxonomy is how you find the thing you did not think of
 
 ### OWASP Top 10 for Agentic Applications (2026)
 
-Published 9 December 2025; it extends rather than replaces the LLM list. **Most of it does not apply, and the reason is the point:** this is a pipeline, not an agent. No memory, no tool calls, no inter-agent messaging, no autonomy between runs.
+Published 9 December 2025; it extends rather than replaces the LLM list. **Most of it does not apply, and the reason is the point:** this is a pipeline, not an agent. No memory, no inter-agent messaging, no autonomy between runs, and the only tools are read-only ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)).
+
+**That exemption is a design decision, not a lucky property, and it is now load-bearing enough to be re-checked deliberately** — because the barrier that used to enforce it disappeared with the Python move. Adopting LangGraph used to mean adopting a second language. It now means one line in `pyproject.toml`, and most of this list would apply the same day ([../techstack/ai-stack.md](../techstack/ai-stack.md), [platform-and-packages.md](platform-and-packages.md)).
 
 Three are worth checking anyway:
 
 - **ASI01 Agent Goal Hijack** — the injection case, gated by the human outline approval
-- **ASI05 Unexpected Code Execution** — `Slot`, contained by the sandbox and by never letting untrusted input reach the call that generates it
-- **ASI06 Memory & Context Poisoning** — not applicable *today*. This is the entry to re-read the moment any feature gives the pipeline persistent memory across generations, which is exactly the kind of feature that arrives looking harmless
+- **ASI05 Unexpected Code Execution** — `Slot`, contained by the sandbox and by never letting untrusted input reach the call that generates it. The framework CVEs in [platform-and-packages.md](platform-and-packages.md) are the *dependency* form of this entry, and the reason `pickle` and friends are unwelcome in `api`
+- **ASI06 Memory & Context Poisoning** — not applicable *today*. This is the entry to re-read the moment any feature gives the pipeline persistent memory across generations, which is exactly the kind of feature that arrives looking harmless — and it is also what an agent framework's checkpointer *is*, arriving as an implementation detail rather than a feature
 
 ### OWASP Top 10 (2025) — the web list
 
@@ -134,3 +150,5 @@ In value order, not effort order:
 **Do not add an AI-powered security layer.** A model classifying inputs as malicious is a recognition-based control with a new failure mode of its own, and it would be the most complex component in a product whose entire security argument rests on there being nowhere for an attack to land. It would add attack surface in the name of removing it.
 
 **Do not chase the news.** Most published AI-attack research targets systems with tool access, agent memory, or autonomous execution. This system has none of those, and adopting mitigations for risks it does not carry is how a threat model becomes too long to actually be read.
+
+**Do not adopt an agent framework to "do this properly."** It is the single change that would import most of the risk classes this document currently gets to skip, into the most privileged process in the system, in exchange for orchestrating four calls that are already in the right order ([../techstack/ai-stack.md](../techstack/ai-stack.md)). The decision is falsifiable and the two conditions that would reverse it are written down — neither is "it felt unprofessional not to."

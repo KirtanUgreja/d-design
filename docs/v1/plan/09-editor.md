@@ -150,7 +150,7 @@ Re-validate the tree after every patch, **against the current art direction's bu
 
 **Security**
 
-- [ ] Edit output is Zod-parsed like every other model response
+- [ ] Edit output is schema-parsed like every other model response
 - [ ] An edit instruction attempting to change a neighbouring block, restyle the page, or set a `href` outside the Brief's URL set is structurally unable to — the patch shape has no field for it, and the post-build checks still run on the patched tree
 
 ---

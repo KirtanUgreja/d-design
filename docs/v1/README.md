@@ -22,7 +22,7 @@ v1 is deliberately small: a single user, a local Postgres, no accounts, no deplo
 | If you need… | Go to |
 |---|---|
 | A block's props, or which layouts exist | [scene-schema.md](scene-schema.md) → "Block types", "Layouts and regions" |
-| Why character caps are enforced in Zod and not in the schema | [scene-schema.md](scene-schema.md) → "Validation rules" |
+| Why character caps are enforced in Pydantic and not in the JSON Schema | [scene-schema.md](scene-schema.md) → "Validation rules" |
 | Concrete token values for `cinematic-dark` | [art-direction.md](art-direction.md) → "Color", "Type", "Rhythm", "Motion" |
 | How reduced motion is handled | [art-direction.md](art-direction.md) → "Motion" (WCAG 2.3.3: media query *and* an in-page toggle) |
 | The request shape for a Build call | [ai-pipeline.md](ai-pipeline.md) → "Phase 3 — Build" |
@@ -49,7 +49,7 @@ v1 stands as the record of what was believed at the time. These parts have since
 | `storage.ts`: local disk → Supabase Storage | local disk → S3, MinIO locally | [../techstack/infrastructure.md](../techstack/infrastructure.md) |
 | Auth arrives with Supabase | Better Auth, in v3 | [../techstack/backend.md](../techstack/backend.md) |
 | A single named model for every phase | One seam, **no preferred vendor**; per-phase choice decided by repair rate | [../techstack/ai-stack.md](../techstack/ai-stack.md) |
-| Shape violations are *unrepresentable* — the decoder prevents them | **Zod is the only gate.** Enforcement varies by provider; the decoder shifts the odds | [scene-schema.md](scene-schema.md), [ai-pipeline.md](ai-pipeline.md) |
+| Shape violations are *unrepresentable* — the decoder prevents them | **The schema parse is the only gate.** Enforcement varies by provider; the decoder shifts the odds | [scene-schema.md](scene-schema.md), [ai-pipeline.md](ai-pipeline.md) |
 | PDFs go to the model as a document block | Extracted in the **fetch worker** first; model-native reading is the documented fallback | [../techstack/infrastructure.md](../techstack/infrastructure.md) |
 | Prompt caching is one mechanism with one discount | Activation, discount, and minimum prefix all vary by route | [ai-pipeline.md](ai-pipeline.md) |
 | Generation has no tools | No tools *with side effects*; read-only tools are tiered, and v1 ships three | [../techstack/pipeline-tools.md](../techstack/pipeline-tools.md) |

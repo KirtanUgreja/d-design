@@ -24,17 +24,16 @@ Splitting it means the expensive call only runs against a structure the user alr
 
 **In:** conversation, an uploaded document, or a URL. **Out:** `Brief`.
 
-```ts
-Brief {
-  goal: string;              // what this experience must achieve
-  audience: string;
-  keyMessages: string[];     // 3-5, APPROVED copy — see below
-  proofPoints: string[];     // stats, quotes, customer names
-  tone: string;
-  cta: { label: string; href: string };
-  assets: AssetRef[];
-  constraints?: string;      // legal, brand, must-not-say
-}
+```python
+class Brief(BaseModel):
+    goal: str                       # what this experience must achieve
+    audience: str
+    key_messages: list[str]         # 3-5, APPROVED copy — see below
+    proof_points: list[str]         # stats, quotes, customer names
+    tone: str
+    cta: Cta                        # label + href
+    assets: list[AssetRef]
+    constraints: str | None = None  # legal, brand, must-not-say
 ```
 
 Three entry paths, one output shape:
@@ -93,11 +92,10 @@ A post-build check rejects any `href` not tracing to a Brief-supplied URL, and a
 
 **In:** `Brief`. **Out:** `Outline`. Cheap, fast, one call.
 
-```ts
-Outline {
-  title: string;
-  scenes: { intent: SceneIntent; beat: string; layoutHint?: Layout }[]
-}
+```python
+class Outline(BaseModel):
+    title: str
+    scenes: list[OutlineScene]      # intent, beat, layout_hint?
 ```
 
 `beat` is one sentence describing what this scene does in the narrative — not its copy. The director decides *structure and pacing*, nothing else.
@@ -120,14 +118,16 @@ Streaming per scene matters for perceived speed: the user watches the experience
 
 There is exactly one call site for model access in the codebase ([../coderules/patterns.md](../coderules/patterns.md), rule 6). The Build phase does not know which model or which provider served it.
 
-```ts
-const scene = await complete<Scene>({
-  phase: 'build',
-  schema: SceneSchema,          // Zod — the same object that validates the response
-  system: BUILD_SYSTEM_PROMPT,  // stable prefix: prompt, schema, brief, brand kit, outline
-  user: sceneRequest,           // the only part that varies per scene
-});
+```python
+scene = await complete(
+    phase="build",
+    schema=Scene,              # Pydantic — the same class that validates the response
+    system=BUILD_SYSTEM_PROMPT,# stable prefix: prompt, schema, brief, brand kit, outline
+    user=scene_request,        # the only part that varies per scene
+)
 ```
+
+The schema handed to the model is `Scene.model_json_schema()`, produced in the same process that makes the call — so the constraint and the validator are one object and cannot drift ([../coderules/python.md](../coderules/python.md)).
 
 The seam's job is to normalize four things that differ across providers, because every one of them is load-bearing here:
 
@@ -154,7 +154,7 @@ v1 ships **tier-0 tools only** — pure reads of the user's own approved data, w
 
 `list_assets` closes a real gap: earlier drafts required the Build phase to select imagery and never said how. **The model picks an asset by id from what the user actually uploaded** — the same "arrange, never invent" rule that governs `CTA.href`, applied to media.
 
-**Tool-call arguments are external input and get one Zod parse at the tool boundary** ([../coderules/README.md](../coderules/README.md), rule 2). `read_document(id)` where `id` is not one of *this user's* documents is a rejection on ownership, not a lookup — and because that check authorizes, it fails closed (rule 10). An injected instruction saying "read document 7" must die on ownership, not on the model politely declining.
+**Tool-call arguments are external input and get one schema parse at the tool boundary** ([../coderules/README.md](../coderules/README.md), rule 2). `read_document(id)` where `id` is not one of *this user's* documents is a rejection on ownership, not a lookup — and because that check authorizes, it fails closed (rule 10). An injected instruction saying "read document 7" must die on ownership, not on the model politely declining.
 
 The line that does not move: **no tool with side effects.** No writes, no network, no email, no publishing. That is [../security/prompt-injection.md](../security/prompt-injection.md)'s Defense 5, and the tools above do not approach it.
 
@@ -168,36 +168,37 @@ The build prompt states, in order of importance:
 4. Respect character limits; they are hard
 5. Prefer fewer blocks. A scene with two blocks usually beats one with six
 
-**Point 3 is enforced by omission first, and by rejection always.** The schema handed to the model has no field where a hex code would fit — so on a route that enforces schemas natively there is nowhere to put one, and on every route the model is not being asked to resist a temptation the vocabulary never offered. Don't describe what not to do; leave out the place to do it. What *guarantees* it is the Zod parse and the presentational-value check, immediately below.
+**Point 3 is enforced by omission first, and by rejection always.** The schema handed to the model has no field where a hex code would fit — so on a route that enforces schemas natively there is nowhere to put one, and on every route the model is not being asked to resist a temptation the vocabulary never offered. Don't describe what not to do; leave out the place to do it. What *guarantees* it is the schema parse and the presentational-value check, immediately below.
 
 ### Validation: one gate, and a decoder that only shifts the odds
 
-An earlier draft of this document drew a hard line between constraints the decoder made *unrepresentable* and constraints Zod rejected after the fact. **Routing through a provider-neutral seam collapses that distinction, and it is better to state it plainly than to keep a guarantee that no longer holds.**
+An earlier draft of this document drew a hard line between constraints the decoder made *unrepresentable* and constraints the schema rejected after the fact. **Routing through a provider-neutral seam collapses that distinction, and it is better to state it plainly than to keep a guarantee that no longer holds.**
 
 | Constraint | Enforced by | Reality |
 |---|---|---|
-| Shape — which fields exist, which types, which enums | **Zod, after the response.** The decoder helps *if* the route enforces schemas natively | Usually correct. Not guaranteed — enforcement varies by provider and by endpoint, and endpoint support changes over time |
-| **Character caps** — `Headline ≤ 60`, `Body ≤ 240` | **Zod, after the response.** JSON Schema `minLength`/`maxLength` are widely unsupported by structured-output implementations regardless of route | Fails often. Triggers the repair loop |
-| Semantic rules — one `Headline` per scene, region validity, claim provenance | Zod + post-build checks | Occasionally |
+| Shape — which fields exist, which types, which enums | **Pydantic, after the response.** The decoder helps *if* the route enforces schemas natively | Usually correct. Not guaranteed — enforcement varies by provider and by endpoint, and endpoint support changes over time |
+| **Character caps** — `Headline ≤ 60`, `Body ≤ 240` | **Pydantic, after the response.** JSON Schema `minLength`/`maxLength` are widely unsupported by structured-output implementations regardless of route | Fails often. Triggers the repair loop |
+| Semantic rules — one `Headline` per scene, region validity, claim provenance | Pydantic validators + post-build checks | Occasionally |
 
-**The Zod parse was always the real gate.** Decoder enforcement was a cost and reliability optimization — it lowers how *often* the model emits something invalid. It was never what stopped invalid output from reaching a page. Output that fails Zod is rejected, repaired once, and then fails visibly.
+**The schema parse was always the real gate.** Decoder enforcement was a cost and reliability optimization — it lowers how *often* the model emits something invalid. It was never what stopped invalid output from reaching a page. Output that fails the parse is rejected, repaired once, and then fails visibly.
 
 Two consequences worth internalizing:
 
 1. **A hex code is no longer structurally unrepresentable — it is reliably rejected.** The security claim in [../security/prompt-injection.md](../security/prompt-injection.md) restates from *"a compromised model can only emit valid Scene JSON"* to *"a compromised model can only cause a rejected generation."* Same outcome, different route — and the no-styling regex check in [spec.md](spec.md) matters more now, not less. It is the thing that catches what the decoder was previously assumed to prevent.
-2. **State every budget in the prompt as a hard number.** Prompting is the only portable lever on output length, and it is what actually reduces repair frequency. Keep `maxLength` in the Zod schema anyway — it costs nothing and it is what does the rejecting.
+2. **State every budget in the prompt as a hard number.** Prompting is the only portable lever on output length, and it is what actually reduces repair frequency. Keep the length constraint on the Pydantic field anyway — it costs nothing and it is what does the rejecting.
 
 **The repair rate is the number that decides whether this trade was right** ([../techstack/decisions.md](../techstack/decisions.md)). It is recorded per phase and per model in `generations`. If Build's repair rate is materially worse than a direct vendor call, point that one phase at a single provider — the seam stays, only its routing changes, and nothing else in the pipeline moves. That is the entire reason the seam exists.
 
 ### Repair and refusal
 
-Every scene is Zod-validated on return. Invalid → one repair call containing the scene, the specific errors, and nothing else. Still invalid → surface the failure honestly. Do not silently drop the scene, and do not retry forever.
+Every scene is Pydantic-validated on return. Invalid → one repair call containing the scene, the specific errors, and nothing else. Still invalid → surface the failure honestly. Do not silently drop the scene, and do not retry forever.
 
 **A refusal is not an error status, and the seam must not let it look like success.** Models decline requests with a *successful* HTTP response whose content is empty or partial — the field that says so differs by provider, which is exactly why it is normalized in one place. Code that reads the first content block unconditionally crashes on the first refusal.
 
 ```ts
 // in the seam, not at every call site
-if (isRefusal(raw)) return err({ kind: 'refused', detail: refusalDetail(raw) });
+if refusal := detect_refusal(raw):
+    return err(Refused(detail=refusal))
 ```
 
 Marketing copy rarely trips a safety classifier. **Imported source material is arbitrary user content**, so Intake is where this fires, and a refusal there must reach the user as a refusal rather than as a validation failure they cannot act on.
@@ -287,13 +288,13 @@ Routing changes the number substantially in both directions: a budget model on D
 
 > **Token cost is not the constraint on this product.** Generated imagery, storage, bandwidth, and human review time all exceed it.
 
-That settles something the roadmap left open. Pricing is deferred to v3 by design, and this is the evidence that deferring it was safe — a free tier that hands out generation is not the existential risk it would be if a build cost $5. It is also why the visual loop is *not* a cost decision: doubling a rounding error to catch layout defects that Zod structurally cannot see is the easiest trade in the document.
+That settles something the roadmap left open. Pricing is deferred to v3 by design, and this is the evidence that deferring it was safe — a free tier that hands out generation is not the existential risk it would be if a build cost $5. It is also why the visual loop is *not* a cost decision: doubling a rounding error to catch layout defects a schema structurally cannot see is the easiest trade in the document.
 
 **Instrument rather than trust this table.** `generations` records tokens and calls per phase — both, because some providers now bill task quotas rather than tokens, and cost accounting that assumes per-token billing will eventually mismeasure ([../techstack/ai-stack.md](../techstack/ai-stack.md)).
 
 ## Model notes
 
-**There is no default model, and that is a decision rather than an omission** ([../techstack/ai-stack.md](../techstack/ai-stack.md)). Any model named here would be wrong within two quarters. What is fixed is the interface — a prompt and a Zod schema in, conforming JSON out — and the apparatus for choosing what sits behind it.
+**There is no default model, and that is a decision rather than an omission** ([../techstack/ai-stack.md](../techstack/ai-stack.md)). Any model named here would be wrong within two quarters. What is fixed is the interface — a prompt and a Pydantic schema in, conforming JSON out — and the apparatus for choosing what sits behind it.
 
 Four criteria decide, in this order:
 
@@ -319,10 +320,10 @@ From v3 the phases split across runtimes on the trust boundary ([../techstack/ba
 
 | | Where | Why |
 |---|---|---|
-| Intake, Director, Build, Edit | **App** | Interactive, latency-sensitive, streams to the editor |
+| Intake, Director, Build, Edit | **`api`** | Interactive, latency-sensitive, streams to the editor |
 | Document extraction, URL fetching | **Fetch worker** | Hostile input, and it holds nothing worth stealing |
-| Transcreation, posters, scheduled work | **Job worker** | Long-running, needs the database, never sees hostile input |
-| The visual verification loop (v2+) | **Job worker** | Needs the renderer and a browser together, and a validated scene tree is trusted input |
+| Transcreation, posters, scheduled work | **`jobs`** | Long-running, needs the database, never sees hostile input |
+| Publishing, and the visual verification loop (v2+) | **`render`** | Needs the renderer and a browser together, and a validated scene tree is trusted input. `jobs` orchestrates it; `render` performs it |
 
 **No prompts, no outputs, no brief content reach a log**, in any of them. `generations` holds phase, token and call counts, the repair flag, an error class, and a duration — enough to answer what it costs and which rules fail most, and nothing that would put a customer's embargoed launch messaging in an error tracker ([../security/tenancy-and-data.md](../security/tenancy-and-data.md)).
 

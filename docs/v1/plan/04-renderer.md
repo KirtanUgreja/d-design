@@ -56,7 +56,7 @@ function SceneRenderer(props: {
 }): ReactNode
 ```
 
-Nothing else. **No `mode`, no `process.env`, no `typeof window`, no branch on where it is running.** The lint rule from phase 00 enforces it; the reason is that from v3 the same components run in the browser, the app server, and the job worker, and a component that behaves differently in one of them is a published page that differs from the edited one.
+Nothing else. **No `mode`, no `process.env`, no `typeof window`, no branch on where it is running.** The lint rule from phase 00 enforces it; the reason is that from v2 the same components run in the browser, in `web`'s preview renders, and in the `render` service, and a component that behaves differently in one of them is a published page that differs from the edited one.
 
 Everything interactive — selection, fullscreen, the motion toggle, keyboard nav — is a wrapper's job. Interaction lives in the wrappers; rendering lives in the core; they do not mix.
 

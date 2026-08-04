@@ -24,7 +24,7 @@ This matters because application-level blocking is a game you keep losing: DNS r
 
 The same worker holds decrypted integration credentials — see [tenancy-and-data.md](tenancy-and-data.md). One isolated process for all outbound network access, and it is the only thing holding secrets.
 
-**There are two workers, and this is the quarantined one.** The fetch worker touches hostile input — URLs, screenshots, PDFs, uploaded images — and has no database access, no VPC route, and no secret beyond the integration token it is actively using. A separate **job worker** runs pg-boss with full database access and never parses attacker-controlled bytes. Splitting them means the process holding database credentials is never the process rendering an attacker's webpage. Topology in [../techstack/infrastructure.md](../techstack/infrastructure.md); the isolation is a subnet and a security group, so the socket-level test below asserts the network rather than the code.
+**There are two workers, and this is the quarantined one.** The fetch worker touches hostile input — URLs, screenshots, PDFs, uploaded images — and has no database access, no VPC route, and no secret beyond the integration token it is actively using. A separate **`jobs` worker** runs PGQueuer with full database access and never parses attacker-controlled bytes, and a **`render`** service holds the renderer but neither database credentials nor a model key. Splitting them means the process holding database credentials is never the process rendering an attacker's webpage. Topology in [../techstack/infrastructure.md](../techstack/infrastructure.md); the isolation is a subnet and a security group, so the socket-level test below asserts the network rather than the code.
 
 ### Application-level checks anyway
 
@@ -74,9 +74,9 @@ The same reasoning explains a rule from [../coderules/dependencies.md](../coderu
 
 ## The job queue
 
-pg-boss runs in the privileged worker, so its inputs deserve the same scrutiny as an HTTP route.
+PGQueuer runs in the privileged worker, so its inputs deserve the same scrutiny as an HTTP route.
 
-- **Job payloads are internal but not automatically trustworthy.** A payload is JSON in a database row; treat it as a boundary and Zod-parse it in the handler ([../coderules/typescript.md](../coderules/typescript.md)). It is cheap, and it means a bug in an enqueue path cannot become arbitrary behavior in a worker.
+- **Job payloads are internal but not automatically trustworthy.** A payload is JSON in a database row; treat it as a boundary and schema-parse it in the handler ([../coderules/python.md](../coderules/python.md)). It is cheap, and it means a bug in an enqueue path cannot become arbitrary behavior in a worker.
 - **Payloads carry ids, never data.** No brief text, no recipient fields, no credentials in a job row — the queue is a table, it is backed up, and it outlives the work.
 - **Ownership is re-checked at execution, not trusted from enqueue time.** A job enqueued before an account was deleted or downgraded must not run with the old entitlement. This is [failing closed](#failing-closed--owasp-a10) applied to time.
 - **Bounded retries and a dead-letter queue.** An unbounded retry on a job that calls a model is denial of wallet with a cron attached, and it is the version of that attack that comes from your own code rather than a user.

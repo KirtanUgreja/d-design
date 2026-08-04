@@ -66,7 +66,7 @@ Intake is the phase most exposed to injection, and paging is the mitigation that
 The single highest-value addition available to this pipeline, and it is well-supported rather than speculative.
 
 ```
-Build ──▶ Scene JSON ──▶ Zod ──▶ render offscreen ──▶ screenshot
+Build ──▶ Scene JSON ──▶ Pydantic ──▶ render offscreen ──▶ screenshot
                           │                              │
                           │                     vision model looks
                           │                              │
@@ -74,7 +74,7 @@ Build ──▶ Scene JSON ──▶ Zod ──▶ render offscreen ──▶ sc
                                           accept              revise once
 ```
 
-Zod proves the tree is *valid*. Nothing currently proves it is *good* — that headlines are not colliding, that a `split-left` with 200 characters of body is not overflowing its region, that a stat block against a dark background is legible, that the scene does not look identical to the one before it. Those are visual properties, and they are invisible to a validator by definition.
+The schema parse proves the tree is *valid*. Nothing currently proves it is *good* — that headlines are not colliding, that a `split-left` with 200 characters of body is not overflowing its region, that a stat block against a dark background is legible, that the scene does not look identical to the one before it. Those are visual properties, and they are invisible to a validator by definition.
 
 ### Why this is credible
 
@@ -112,9 +112,9 @@ Same discipline as schema repair: one corrective pass with the specific findings
 
 ### Where it runs, and what it costs
 
-**In the job worker**, which ships from the app repo and therefore has both the renderer and Playwright.
+**In the `render` service**, which is the one runtime holding both the renderer and Playwright. `jobs` orchestrates it and holds the database; `render` performs it and holds no credential at all ([backend.md](backend.md)).
 
-Not the fetch worker: a Zod-validated scene tree with no presentational values is *trusted* input, and putting the renderer in the quarantined container would give hostile-input territory a copy of the thing that makes pages. The trust split in [backend.md](backend.md) holds — the fetch worker renders attackers' pages, the job worker renders yours.
+Not the fetch worker: a schema-validated scene tree with no presentational values is *trusted* input, and putting the renderer in the quarantined container would give hostile-input territory a copy of the thing that makes pages. The trust split in [backend.md](backend.md) holds — the fetch worker renders attackers' pages, `render` renders yours.
 
 | | |
 |---|---|
@@ -128,7 +128,7 @@ Not the fetch worker: a Zod-validated scene tree with no presentational values i
 
 Three, and none of them move the tier-2 line.
 
-**Tool-call arguments are untrusted input.** Every argument is Zod-parsed at the tool boundary exactly like any other external input ([../coderules/typescript.md](../coderules/typescript.md)). `read_document(id)` where `id` is not one of *this user's* documents is a rejection, not a lookup — and that check is authorization, so it fails closed ([../security/infrastructure.md](../security/infrastructure.md)). An injected instruction saying "read document 7" must fail on ownership, not on the model declining.
+**Tool-call arguments are untrusted input.** Every argument is schema-parsed at the tool boundary exactly like any other external input ([../coderules/python.md](../coderules/python.md)). `read_document(id)` where `id` is not one of *this user's* documents is a rejection, not a lookup — and that check is authorization, so it fails closed ([../security/infrastructure.md](../security/infrastructure.md)). An injected instruction saying "read document 7" must fail on ownership, not on the model declining.
 
 **Tool calls are the pipeline's new denial-of-wallet surface.** A model in a tool loop can call `render_preview` repeatedly. Hard caps per generation: total tool calls, and renders specifically. This is the same class as unbounded repair, and the same answer.
 

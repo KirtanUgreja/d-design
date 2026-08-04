@@ -21,7 +21,7 @@ This is the last phase before any AI is involved. After it, a hand-written scene
 
 - `src/lib/storage.ts` — publishing writes an artifact through it. Do not write a second file-writing path
 - `src/features/renderer/index.ts` — the only import. If a wrapper reaches into `renderer/blocks/`, the boundary rule failed
-- `src/db/tenant.ts` — every read of an experience goes through `asUser`, single user or not
+- `api/db/tenant.py` — every read of an experience goes through `as_user`, single user or not
 
 **Verify externally**
 
@@ -36,7 +36,7 @@ This is the last phase before any AI is involved. After it, a hand-written scene
 src/features/publish/
   index.ts
   publish.ts            renderToString → artifact → storage
-  publish.data.ts       'server-only', Drizzle, the published-at filter
+  publish_data.py       SQLAlchemy, the published-at filter
   csp.ts                the header sets — published, embed, app
   publish.test.ts
 
@@ -59,7 +59,7 @@ publish() → renderToString(SceneRenderer) → HTML artifact → storage.ts →
 
 The page then **hydrates**, and Motion drives the reveals exactly as in the editor. Shipping a hand-written IntersectionObserver runtime instead would produce a lighter page and implement motion twice — and the second implementation is where the edit-equals-publish guarantee quietly leaks away ([../../techstack/frontend.md](../../techstack/frontend.md)).
 
-`publish.data.ts` owns the **service-role filter**: `where published_at is not null`. That clause is doing security work, and one data module per feature is what stops it being forgotten at the fiftieth call site ([../../coderules/patterns.md](../../coderules/patterns.md), rule 3).
+`publish_data.py` owns the **service-role filter**: `where published_at is not null`. That clause is doing security work, and one data module per feature is what stops it being forgotten at the fiftieth call site ([../../coderules/patterns.md](../../coderules/patterns.md), rule 3).
 
 ### CSP — and the one place v1 is stronger than v3
 
@@ -150,7 +150,7 @@ Two adjacent things that are cheap here and awkward later:
 | S3 + CloudFront + three origins | v3. `storage.ts` already speaks S3 against MinIO, so this is a destination change ([../../techstack/infrastructure.md](../../techstack/infrastructure.md)) |
 | Custom domains, ACM, dangling-DNS handling | v3, with real customers |
 | The `/r/fields` and `/v/beacon` endpoints | v3. Their absence is why `connect-src 'none'` still holds |
-| Publishing from the job worker | v3. One user, one experience at a time, no timeout pressure |
+| Publishing from the `render` service | v2, with the visual loop. In v1 a `web` route renders to local disk — one user, one experience at a time, no timeout pressure ([../../techstack/backend.md](../../techstack/backend.md)) |
 | Cache invalidation on publish | No CDN to invalidate |
 | PDF / PPTX export, speaker notes, presenter view | Not in v1, and asked for in week one. Have a real answer ready, not "coming soon" ([../spec.md](../spec.md), Risk 3) |
 

@@ -40,7 +40,7 @@ Adversary 5 does not introduce new controls; it changes which existing ones you 
  user input ─┬─ approved by a human ──▶ Brief ──▶ generation
              └─ imported / fetched ────▶ Brief ──▶ generation   ◀── UNTRUSTED
                                                       │
-                                          Zod-validated Scene JSON
+                                       schema-validated Scene JSON
                                                       │
                             ┌─────────────────────────┴──────────────┐
                             ▼                                        ▼
@@ -57,7 +57,7 @@ Adversary 5 does not introduce new controls; it changes which existing ones you 
 The runtime topology is a fourth boundary, and it is the newest ([../techstack/backend.md](../techstack/backend.md)):
 
 ```
-  app (Vercel)          job worker (Fargate)      fetch worker (Fargate)
+  web (Vercel)   api/jobs (Fargate)   render (Fargate)   fetch worker (Fargate)
   DB · sessions         DB · renderer · models    NO db · NO vpc route
   no hostile input      no hostile input          hostile input only
                                                   Chromium · parsers
@@ -67,7 +67,7 @@ The runtime topology is a fourth boundary, and it is the newest ([../techstack/b
 
 Three boundaries carry the weight:
 
-**The Zod schema.** A fully compromised model can still only emit valid `Scene` JSON. There is no field where "run this command" fits. This is the single strongest control in the system, and it was built for design reasons rather than security ones.
+**The `Scene` schema.** A fully compromised model can still only cause a rejected generation — nothing it emits reaches a page unless it is valid `Scene` JSON. There is no field where "run this command" fits. This is the single strongest control in the system, and it was built for design reasons rather than security ones.
 
 **The sandbox.** `Slot` is the one field that becomes executable code. An `srcdoc` iframe with `allow-scripts` and *without* `allow-same-origin` has an opaque origin: no storage, no cookies, no parent DOM, no credentialed requests.
 

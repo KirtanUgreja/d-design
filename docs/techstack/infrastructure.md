@@ -7,15 +7,19 @@ Where everything runs, and how the security requirements stop being promises and
 Two, split on the trust boundary rather than on the job boundary.
 
 ```
-d-design           Next.js app · renderer · pipeline · job worker · schema
-d-design-fetch     the network-isolated fetch worker
+d-design-api       PYTHON — the four phases · the model seam · data · jobs · THE SCHEMA
+d-design-web       TS — editor · renderer · Better Auth
+d-design-render    TS — scene tree → HTML · Playwright · the visual loop
+d-design-fetch     TS — the network-isolated fetch worker
 ```
 
-**Only the fetch worker gets its own repo**, because it is the only component whose isolation is a security property. The job worker ships from the app repo — it needs the schema, the data modules, and eventually the renderer, and separating it would buy nothing while duplicating everything.
+**One repo per runtime, and the separations are not all the same kind.** Only the fetch worker's is a *security* property. `render`'s is a *language* boundary — Python cannot server-side-render React ([backend.md](backend.md)) — and `web`'s is a deployment one. Labelling them honestly matters: three isolated services is not three security controls.
 
-The `Scene` schema is published as **`@d-design/schema`**, a private npm package, for the small amount the fetch worker needs. The version pin makes drift explicit rather than silent — the failure mode of a git submodule is a worker quietly sitting on an old commit, which is precisely the drift the one-source-of-truth rule exists to prevent ([../coderules/typescript.md](../coderules/typescript.md)).
+**`api` and `jobs` share a repo and a codebase**, two entry points, same models and same seam. Separating them would buy nothing while duplicating everything — the same reasoning the app and job worker used to have, moved to the other language.
 
-The renderer is **not** shared with the fetch worker, and never should be — that container handles hostile input, and page-making capability does not belong inside the quarantine. The job worker has it by virtue of shipping from the app repo, which is what lets publishing and the visual verification loop run there without a function-timeout ceiling ([backend.md](backend.md), [pipeline-tools.md](pipeline-tools.md)).
+The `Scene` schema lives in `d-design-api` as Pydantic and is published as **`@d-design/schema`** — a private npm package of *generated* TypeScript types and a Zod validator — for the three TypeScript repos ([../coderules/python.md](../coderules/python.md)). It is never hand-edited, and the gate fails if regenerating produces a diff. The version pin makes drift explicit rather than silent — the failure mode of a git submodule is a worker quietly sitting on an old commit, which is precisely the drift the one-source-of-truth rule exists to prevent ([../coderules/typescript.md](../coderules/typescript.md)).
+
+The renderer is **not** shared with the fetch worker, and never should be — that container handles hostile input, and page-making capability does not belong inside the quarantine. It lives in `render`, which has no database access and no model key, and that is what lets publishing and the visual verification loop run without a function-timeout ceiling ([backend.md](backend.md), [pipeline-tools.md](pipeline-tools.md)). `render` and the fetch worker are both Node and both run Playwright, which makes merging them look like a saving; it is the one merge the trust split forbids.
 
 ## AWS topology
 
@@ -24,7 +28,8 @@ The reason to be on AWS is that [../security/infrastructure.md](../security/infr
 ```
 VPC
 ├── private subnet (app tier)
-│   ├── ECS: job worker      → RDS, Secrets Manager, model API
+│   ├── ECS: api + jobs      → RDS, Secrets Manager, model API
+│   ├── ECS: render          → no RDS, no model key
 │   └── RDS Proxy → Aurora Postgres
 │
 └── isolated subnet (quarantine)
@@ -35,7 +40,7 @@ VPC
         · task role: one KMS key for integration credentials, nothing else
 ```
 
-**ECS Fargate**, one task definition per worker. Fargate over App Runner because App Runner hides exactly the networking that is the point; over Lambda because pg-boss wants a persistent process and 15 minutes does not fit a 12-locale transcreation run.
+**ECS Fargate**, one task definition per service — `api`, `jobs`, `render`, and the fetch worker. Fargate over App Runner because App Runner hides exactly the networking that is the point; over Lambda because PGQueuer wants a persistent process and 15 minutes does not fit a 12-locale transcreation run.
 
 The socket-level unreachability test in [../security/testing.md](../security/testing.md) — *from inside the worker, the metadata IP and a VPC host are unreachable* — is now a test of this configuration rather than of application code. That is the whole point: it asserts the network, and the network cannot be bypassed by a parsing bug.
 
@@ -91,14 +96,16 @@ The cache-key policy belongs in Terraform specifically. It is a security control
 
 ## CI/CD
 
-**GitHub Actions**, both repos.
+**GitHub Actions**, every repo.
 
 | | |
 |---|---|
-| **App repo** | Gate → Vercel deploys on push natively. Job-worker image builds to ECR and updates the Fargate service |
+| **`web`** | Gate → Vercel deploys on push natively |
+| **`api`** | Gate → `api` and `jobs` images build to ECR and update their Fargate services. **On merge: generate, bump, and publish `@d-design/schema`** |
+| **`render`** | Gate → image to ECR → Fargate service update |
 | **Fetch worker repo** | Gate → image to ECR → Fargate service update |
-| **Both** | typecheck, lint, format, Vitest, dependency advisory check, duplication report ([../coderules/ai-authorship.md](../coderules/ai-authorship.md)) |
-| **App repo, additionally** | Playwright suite including the security assertions, and the build-output grep for key-shaped strings |
+| **Every repo** | typecheck, lint, format, tests (pytest / Vitest), dependency advisory check, duplication report ([../coderules/ai-authorship.md](../coderules/ai-authorship.md)). `api` adds the schema-regeneration no-diff check |
+| **`web`, additionally** | Playwright suite including the security assertions, and the build-output grep for key-shaped strings |
 
 Terraform runs `plan` on PR and `apply` on merge to main, gated on review. An infrastructure change that alters a security group should be as visible as a code change that alters an auth check — more so, since nothing type-checks it.
 

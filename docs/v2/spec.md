@@ -62,7 +62,7 @@ Per the versioning convention, v1 docs stay as the record of what was believed. 
 | 11 primitives | 18 primitives | Structural range to match stylistic range |
 | No version history | Auto-snapshots + named saves | Reskin makes it a hard dependency |
 | `mode: 'scroll' \| 'slides'`, scroll rendered only | Both render | Makes the presentation framing finally honest |
-| Zod validation is the whole quality gate | Zod **plus a visual critic** | Zod proves valid, never good. Layout breakage across ADs is invisible to a validator |
+| Schema validation is the whole quality gate | The schema parse **plus a visual critic** | Pydantic proves valid, never good. Layout breakage across ADs is invisible to a validator |
 | AD token values are hand-authored by you | Partly **user-controlled**, and validated by grammar before becoming CSS | The first release where a token value is untrusted input |
 
 **Migration:** existing v1 experiences get `artDirection: { id: 'cinematic-dark', version: 1 }` and the v1 caps become that AD's budgets. No content changes. The `scenes` jsonb shape is otherwise unchanged.
@@ -111,7 +111,7 @@ Edit-phase patches are re-validated against the current AD's budgets. Editing a 
 **v2 is the release where the pipeline starts looking at what it made** ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)). It lands in v2 and not v1 for a reason that is specific rather than schedule-driven: the defect it catches is *layout breaking across art directions*, and that defect does not exist until there is more than one art direction.
 
 ```
-Build ──▶ Scene JSON ──▶ Zod ──▶ render offscreen ──▶ screenshot ──▶ vision critic
+Build ──▶ Scene JSON ──▶ Pydantic ──▶ render offscreen ──▶ screenshot ──▶ vision critic
                           │                                              │
                     (invalid: repair)                          accept · revise once
 ```
@@ -127,6 +127,8 @@ Three things about it that shape v2 specifically:
 **The critic is asked narrow questions.** "Is any text clipped or overlapping?" "Is every text element legible against what is behind it?" "Does this scene look meaningfully different from the previous one?" Not "is this good" — a vision model asked that returns flattery. **Beauty is not among the questions**; the critic catches broken, not boring, exactly as the AD linter enforces readability and has no opinion on taste.
 
 One revision, then accept. An unbounded critic loop is a token furnace that converges on nothing, and it is the precise autonomy that would turn this pipeline into an agent ([../techstack/ai-stack.md](../techstack/ai-stack.md)). Cost roughly doubles, from ~$0.20 to ~$0.40 per experience — which at these numbers is not a cost decision.
+
+**Build it as a `for` loop with a literal limit of 1, in the seam** ([../coderules/patterns.md](../coderules/patterns.md) rule 6) — roughly forty lines. This is the one place in the whole product that looks agent-shaped, and therefore the one place an agent framework will be proposed. It is not one: the model does not decide how many times the loop runs, your code does. The test is that single question, and the framework decision stays falsifiable on exactly it ([../techstack/ai-stack.md](../techstack/ai-stack.md)).
 
 ## Editor delta
 
@@ -186,7 +188,7 @@ The constraint binds the art direction, not the chrome. Changing a hand-authored
 
 Step 9 sits after reskin deliberately. The loop needs something to look at and a reason to look — before three ADs exist, it is an expensive way to confirm that a page you already stared at is fine.
 
-**Infrastructure in v2: unchanged from v1.** Docker Compose and a dev server ([../techstack/infrastructure.md](../techstack/infrastructure.md)). Three art directions, reskin, and the visual loop are pure application work — the loop needs a headless browser locally, not a deployed one. AWS lands with v3, which is the release that has users.
+**Infrastructure in v2: one addition.** Docker Compose grows the **`render` service** ([../techstack/backend.md](../techstack/backend.md)) — the visual loop needs the renderer and Playwright in the same process, and Python cannot server-side-render React. That also makes v2 the release where `@d-design/schema` gets published properly rather than file-linked, since `render` is the second TypeScript consumer ([../coderules/typescript.md](../coderules/typescript.md)). Three art directions and reskin remain pure application work. AWS lands with v3, which is the release that has users.
 
 ## Verification
 
@@ -195,7 +197,7 @@ Step 9 sits after reskin deliberately. The loop needs something to look at and a
 | **AD format completeness** | All 3 ADs express fully in the format with zero renderer changes. **If any AD needs a renderer change, the abstraction is wrong — stop and fix it.** |
 | **Linter** | Feed it a deliberately broken AD (2:1 contrast, non-monotonic scale, 4s durations). Every rule must fail it. |
 | **Token grammar** | Feed it an AD whose color token is `red; } body { background: url(//evil` and whose font family is a free string. Both **rejected as hard failures**, not sanitized — [../security/content-and-web.md](../security/content-and-web.md) |
-| **Visual critic catches what Zod cannot** | Hand-build a scene that is Zod-valid and visually broken — a 78-character headline under `bold-brutalist`, text over a busy image with no veil. The critic must flag both. A critic that passes them is miscalibrated and worse than none |
+| **Visual critic catches what the schema cannot** | Hand-build a scene that is schema-valid and visually broken — a 78-character headline under `bold-brutalist`, text over a busy image with no veil. The critic must flag both. A critic that passes them is miscalibrated and worse than none |
 | **Dual contrast** | An AD that passes WCAG 2.2 AA at 4.6:1 but scores `Lc 55` on dark must be **rejected**. If it passes, the APCA gate isn't wired — and that combination is exactly what muddy dark themes look like |
 | **View-transition names** | Reskin a 12-scene experience: assert no duplicate `view-transition-name` in the document, and that off-screen blocks carry none |
 | **Reskin matrix** | 3 ADs × 4 motion vocabularies × 2 modes = 24 combinations against 5 golden experiences. All must render valid, no crashes, overflow correctly reported. |

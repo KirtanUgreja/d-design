@@ -37,7 +37,7 @@ v3 is also where the product stops being a private tool and becomes a thing with
 | How live data stays compatible with a near-silent page | [live-data.md](live-data.md) → "The boundary problem, solved by fetching elsewhere" |
 | What a published page is actually allowed to request | [personalization.md](personalization.md) → "One static artifact, fields fetched at view" (exactly two endpoints) |
 | Why URL input is the most dangerous feature in the product | [ai-art-direction.md](ai-art-direction.md) → "URL input is the product pointing a browser at an address a stranger chose" |
-| Which runtime a given piece of v3 work runs in | [../techstack/backend.md](../techstack/backend.md) → "The three runtimes" |
+| Which runtime a given piece of v3 work runs in | [../techstack/backend.md](../techstack/backend.md) → "The five runtimes" |
 | 3D performance budgets and the fallback chain | [dimensional.md](dimensional.md) → "Performance" (WebGPU → WebGL2 → poster) |
 | Why image-to-3D of real products is refused | [dimensional.md](dimensional.md) → "Assets — never generate the product" |
 | Accounts, custom domains, the branding badge | [spec.md](spec.md) → "Shipping to real people" |

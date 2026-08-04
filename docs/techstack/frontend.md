@@ -93,7 +93,7 @@ Subset per script, `font-display: swap`, preload the display face.
 
 ## Testing
 
-Vitest for units and component behavior. **Playwright for anything that needs a real browser** — and in this product that is most of what matters:
+Vitest for units and component behaviour in the TypeScript repos (`api` uses pytest — [../coderules/python.md](../coderules/python.md)). **Playwright for anything that needs a real browser** — and in this product that is most of what matters:
 
 - Sandbox escape assertions, executed inside a real `srcdoc` iframe
 - The `connect-src` assertion — that a published page makes exactly two requests and no others

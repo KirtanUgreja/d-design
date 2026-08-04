@@ -50,11 +50,14 @@ Interaction lives in the wrappers. Rendering lives in the core. They do not mix.
 
 ## 3. Data access lives in feature data modules
 
-**Drizzle is imported only in `*.data.ts` files inside features. Never in a route, never in a component.**
+**The ORM is imported only in a feature's data module. Never in a route, never in a component, never in a handler.**
 
 ```
-features/publish/publish.data.ts   ← the only place publish queries the DB
+api/features/publish/publish_data.py   ← SQLAlchemy. The only place publish queries the DB
+web/features/auth/auth.data.ts         ← Drizzle. Auth tables only
 ```
+
+**Which ORM is a property of the runtime, not a choice at the call site** ([../techstack/backend.md](../techstack/backend.md) → "Two ORMs, one database"). `api` is SQLAlchemy over the application tables; `web` is Drizzle over the auth tables and nothing else. A SQLAlchemy import in `web` or a Drizzle import in `api` is not a style problem — it is a table-ownership violation, and the table-ownership rule is the only thing keeping two migration tools from destroying each other's schema.
 
 Each table's access has one home, and that home is where two things live that must not scatter:
 
@@ -65,14 +68,25 @@ A component that needs data calls a feature function that calls the data module.
 
 No generic repository wrapper over Drizzle. Drizzle is already the abstraction over SQL; wrapping it is speculative indirection ponytail deletes on sight.
 
-Every data module starts with `import 'server-only'`, which turns a client component importing it into a build error rather than a leak ([structure.md](structure.md)). Next.js's own security guidance names the Data Access Layer as the primary defense against accidental exposure — this rule predates that guidance here and agrees with it.
+Every TypeScript data module starts with `import 'server-only'`, which turns a client component importing it into a build error rather than a leak ([structure.md](structure.md)). Next.js's own security guidance names the Data Access Layer as the primary defense against accidental exposure — this rule predates that guidance here and agrees with it. Python has no equivalent marker and needs none: `api` has no client bundle to leak into.
 
 ## 4. Every tenant-scoped query runs inside the tenant wrapper
 
-**One wrapper. Not per query, not per route. One.**
+**Exactly two wrappers, one per language. Both are named below. A third is a bug.**
+
+The rule used to read *"One wrapper. Not per query, not per route. One."* The Python move made that impossible ([../techstack/decisions.md](../techstack/decisions.md) → "The Python backend move"), and the honest version is the one that says how many and which.
+
+```python
+# api/db/tenant.py — the only place app.user_id is set in Python
+@asynccontextmanager
+async def as_user(user_id: str):
+    async with session_factory() as s, s.begin():
+        await s.execute(text("select set_config('app.user_id', :uid, true)"), {"uid": user_id})
+        yield s
+```
 
 ```ts
-// db/tenant.ts  — the only place app.user_id is ever set
+// web/db/tenant.ts — the only place app.user_id is set in TypeScript
 import 'server-only';
 
 export function asUser<T>(userId: string, fn: (tx: Tx) => Promise<T>) {
@@ -85,13 +99,15 @@ export function asUser<T>(userId: string, fn: (tx: Tx) => Promise<T>) {
 
 Three things make this the most dangerous code in the backend, and all three are invisible in review:
 
-- **The `true` in `set_config` is what scopes the value to the transaction.** Without it the setting persists on the connection, and a pooled connection handed to the next request serves it as the previous user. One boolean between correct and a cross-tenant read.
+- **The `true` in `set_config` is what scopes the value to the transaction.** Without it the setting persists on the connection, and a pooled connection handed to the next request serves it as the previous user. One boolean between correct and a cross-tenant read. **Two copies of that boolean now exist.**
 - **The pooler must run in transaction mode.** Session mode binds a connection for a whole client session, which is the wrong lifetime for a web tier and silently breaks the scoping above.
 - **A tenant-scoped query outside a transaction is unsafe by construction** on a shared pool. This is the production consensus, not a preference: the shared pool is only safe when every tenant query has its own transaction.
 
-So the rule is not "remember to set the variable." It is **there is exactly one function that can talk to the database as a user, and everything goes through it.** A `db.select()` in a data module that did not come from `asUser` is the bug, and it is greppable.
+So the rule is not "remember to set the variable." It is **there are exactly two functions that can talk to the database as a user, they are the two files above, and everything goes through one of them.** A query in a data module that did not come from `as_user`/`asUser` is the bug, and it is greppable — the lint rule bans `set_config('app.user_id'` outside those two paths, which is what turns "two" from a claim into a fact.
 
-Test the unset case explicitly: `current_setting('app.user_id')` on a connection where it was never set must fail, not match everything. That is rule 5 below applied to isolation.
+**Duplicating a control is worse than having one**, and this is the clearest instance of that cost in the repo. The two implementations must be reviewed together and changed together; a fix applied to one is a latent cross-tenant read in the other. It is bounded only because the table sets are disjoint — `web`'s wrapper guards seven auth tables, `api`'s guards everything holding customer content. **If application tables ever become readable from `web`, re-read this rule as an incident report rather than a note.**
+
+Test the unset case explicitly, **in both languages**: `current_setting('app.user_id')` on a connection where it was never set must fail, not match everything. That is rule 5 below applied to isolation.
 
 ## 5. Anything that grants, fails closed
 
@@ -115,22 +131,30 @@ Prove it by injection: make each check throw and assert refusal. Reasoning about
 
 ## 6. One seam for model calls
 
-Every call to a model goes through one module. Not one per feature, not one per phase — one.
+Every call to a model goes through one module, in `api`. Not one per feature, not one per phase — one. **And there is no second one in TypeScript**: `web` and `render` never hold a model credential, so the "one call site" claim is a property of the architecture and not only of the code.
 
-```ts
-// ai/complete.ts
-export async function complete<T>(req: {
-  phase: 'intake' | 'director' | 'build' | 'edit' | 'critic';
-  schema: z.ZodType<T>;
-  ...
-}): Promise<Result<T>>
+```python
+# api/ai/complete.py
+async def complete[T](
+    phase: Literal["intake", "director", "build", "edit", "critic"],
+    schema: type[T],                 # a Pydantic model
+    system: str,                     # the stable, cacheable prefix
+    user: str,                       # the only part that varies
+    tools: list[Tool] | None = None, # tier 0 only
+) -> Result[T]: ...
 ```
 
 The seam exists because this product has **no preferred model vendor** ([../techstack/ai-stack.md](../techstack/ai-stack.md)) — only a preferred interface. That is only true if there is one place to change.
 
-It also owns four things that must not be reimplemented per call site: Zod parsing of the response, the single repair retry, the metadata log (model, route, tokens, calls, repair, latency), and the tool-call caps. Every one of those is a rule from somewhere else in this repo, and a second call path is a second place for each of them to be missing.
+It also owns five things that must not be reimplemented per call site: `model_validate` of the response, the single repair retry, refusal normalization, the metadata log (model, route, tokens, calls, repair, latency), and the tool-call caps. Every one is a rule from somewhere else in this repo, and a second call path is a second place for each of them to be missing.
 
 **Tool arguments are parsed at the tool boundary and ownership-checked there**, and the ownership check fails closed per rule 5. An injected *"read document 7"* must die because document 7 belongs to someone else — never because the model chose not to.
+
+### Bounded loops live here too, and stay bounded
+
+v2's visual verification loop ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)) renders a scene, shows it to a vision critic, and applies **at most one** revision. It belongs in this module, as a `for` loop with a literal limit — roughly forty lines.
+
+**It is not an agent and must not be built with an agent framework** ([../techstack/ai-stack.md](../techstack/ai-stack.md)). The limit is a number in your code, not a budget the model negotiates. The test is one question: *can the model change how many times this runs?* If no, it is a loop. If yes, that is the trigger to reread the framework decision — and to reread [../security/adversarial-ai.md](../security/adversarial-ai.md)'s agentic section, which currently does not apply for exactly this reason.
 
 ## 7. Formatting is locale-aware from day one
 

@@ -80,7 +80,7 @@ If the hero comp is not there yet, **iterate here rather than proceeding.** Ever
 |---|---|
 | A second art direction | v2. One AD proves nothing about variety, and the plan says so rather than pretending otherwise ([../spec.md](../spec.md), Risk 4) |
 | Commercial type | v2, when three ADs make the difference visible. The highest-leverage money in the product, deferred not refused ([../../techstack/decisions.md](../../techstack/decisions.md) → Still open) |
-| A token file format / AD authoring schema | v2, when users author them. v1's tokens are one hand-written TypeScript object |
+| A token file format / AD authoring schema | v2, when users author them. v1's tokens are one hand-written TypeScript object in `web` |
 | Texture beyond grain, glow, vignette | Only add a fifth if a comp needed it |
 
 ---

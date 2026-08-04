@@ -47,7 +47,15 @@ Run it, then assert it in the test suite against every table, including tables t
 
 Every table carries RLS. Ownership is either a direct `owner_id` or a join through `experiences`.
 
-Identity comes from a **session variable set per transaction**, not from `auth.uid()` — see [../techstack/backend.md](../techstack/backend.md) for the wrapper that sets it. `set local`, inside a transaction, in exactly one place: a connection returned to the pool carrying a stale `app.user_id` would serve the next request as the wrong user.
+Identity comes from a **session variable set per transaction**, not from `auth.uid()` — see [../techstack/backend.md](../techstack/backend.md) for the wrappers that set it. Transaction-scoped, because a connection returned to the pool carrying a stale `app.user_id` would serve the next request as the wrong user.
+
+**There are two such wrappers, one per language, and that is a weakening worth naming rather than a detail.** The Python backend owns the application tables; Better Auth stays in Node and owns the auth tables ([../techstack/decisions.md](../techstack/decisions.md) → "The Python backend move"). A control that exists twice can be fixed once, which is the failure mode to watch for. Three things bound it:
+
+- **The table sets are disjoint and enforced**, so `web`'s wrapper guards seven auth tables Better Auth already scopes by session, and `api`'s guards everything holding customer content.
+- **A lint rule asserts `set_config('app.user_id'` appears in exactly two files** ([../coderules/patterns.md](../coderules/patterns.md) rule 4). "Exactly two" is a fact the gate checks, not a claim in prose.
+- **The unset case is tested in both**: `current_setting('app.user_id')` on a connection where it was never set must fail, not match everything.
+
+If application tables ever become readable from `web`, this stops being a bounded cost and becomes the primary tenant-isolation risk in the system.
 
 ```sql
 alter table experiences enable row level security;

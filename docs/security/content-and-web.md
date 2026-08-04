@@ -95,7 +95,7 @@ Scroll depth, CTA reach, duration. No authentication is possible: the sender is 
 So accept what it is — **analytics from this endpoint are indicative, not authoritative** — and bound the damage:
 
 - **Rate limit hard, per IP and per experience.** It is a free write path into your database
-- **Strict payload schema, small body cap.** Zod-parsed like any external input
+- **Strict payload schema, small body cap.** Schema-parsed like any external input
 - **No PII accepted, ever** — the endpoint takes an experience id, an optional token, and metrics. If a field arrives that could identify someone, the schema rejects it rather than storing it
 - **Fire-and-forget, `204`.** No response content means nothing to probe
 

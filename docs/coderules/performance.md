@@ -14,7 +14,7 @@ Three, and they are the whole list. Everything else is cold, and cold code shoul
 
 The thing a viewer waits on, and the thing a marketer's audience judges. Non-negotiable, because it is not an optimization — it is the product working.
 
-- Published pages are **static artifacts, not routes**. The job worker renders HTML once at publish and writes it to S3; CloudFront serves it. No server, no DB query, no LLM call per view ([../techstack/infrastructure.md](../techstack/infrastructure.md)). [../v3/live-data.md](../v3/live-data.md) bakes live values in at render precisely so this stays true.
+- Published pages are **static artifacts, not routes**. The `render` service produces the HTML once at publish and `jobs` writes it to S3; CloudFront serves it. No server, no DB query, no LLM call per view ([../techstack/infrastructure.md](../techstack/infrastructure.md)). [../v3/live-data.md](../v3/live-data.md) bakes live values in at render precisely so this stays true.
 - **Images and video are the weight**, not the code. Enforce dimension caps, serve compressed, lazy-load below the fold. `ScrollSequence` and 3D carry hard budgets — see [../v3/dimensional.md](../v3/dimensional.md).
 - **Fonts** are the other weight. Subset per script, `font-display: swap`, preload the display face.
 - **Hydration is the only JavaScript**, and it is a deliberate spend ([../techstack/frontend.md](../techstack/frontend.md)): React and Motion ship so that published motion is the same code as edited motion. Nothing else is allowed to join them — no analytics SDK, no tag manager, no third-party script. The budget is already committed.
@@ -64,7 +64,7 @@ Turbopack is the default builder in 16 (2–5× faster builds). Nothing to decid
 
 - **Static and cacheable by default.** A published page that never touches the DB scales to a viral launch for free and cannot exhaust a connection pool.
 - **Do expensive work once, at publish, not per view.** Transcreation, live-data fetch, 3D poster generation — all happen at publish or on a schedule, never on the viewer's request.
-- **Expensive work runs in the job worker, not in a request.** It has no function-timeout ceiling, so a 12-locale publish is one job rather than a chunking workaround. If something is being split up to fit inside a request, it is in the wrong process.
+- **Expensive work runs in `jobs`, not in a request.** It has no function-timeout ceiling, so a 12-locale publish is one job rather than a chunking workaround. If something is being split up to fit inside a request, it is in the wrong process.
 - **Server components by default; client components only where interaction lives.** The editor is interactive; a published page mostly is not.
 - **Measure with a real tool** — the profiler, Lighthouse, a token counter — before changing code for speed. "This feels slow" is a reason to measure, not a reason to optimize.
 

@@ -10,9 +10,11 @@
 
 **One source of truth, everything else derived.**
 
-Zod schemas define the shapes; TypeScript types come from `z.infer`, never written twice. The scene schema has no field for a hex code, so the "AI emits no styling" rule is enforced by the type system before any check runs. The renderer is one pure function, so editor and published output cannot drift.
+Pydantic models define the shapes; the model's JSON Schema comes from `model_json_schema()`, and TypeScript types plus a Zod validator are **generated** from the same source into `@d-design/schema`. Never written twice, in either language. The scene schema has no field for a hex code, so the "AI emits no styling" rule is enforced by the type system before any check runs. The renderer is one pure function, so editor and published output cannot drift.
 
 Every rule in this directory is an application of that idea: make the wrong thing unrepresentable, and you never have to police it.
+
+**Two languages make that idea harder, not optional** ([../techstack/decisions.md](../techstack/decisions.md) → "The Python backend move"). Python owns the backend; TypeScript owns the renderer, because it is React and there can only be one of it. Every place the boundary is crossed — the schema, the tenant wrapper, the ORM — the rule is the same shape: **one definition, generated or named, and a gate that fails if a second appears.**
 
 It also happens to be the right defense against how this code gets written. Most of it will be Claude's, and the measured failure mode of AI-written code is not incorrectness — it is **duplication**: a second copy of something that already exists, correct in isolation, corrosive in aggregate. A rule that leaves only one place for a thing to live is a rule that failure mode cannot get past. See [ai-authorship.md](ai-authorship.md).
 
@@ -21,7 +23,8 @@ It also happens to be the right defense against how this code gets written. Most
 | Doc | |
 |---|---|
 | [structure.md](structure.md) | Feature folders, public APIs, file and naming conventions |
-| [typescript.md](typescript.md) | Strict TS, Zod boundaries, errors as typed Results |
+| [python.md](python.md) | Strict Python, Pydantic boundaries, the schema codegen, `Result` in a language without unions |
+| [typescript.md](typescript.md) | Strict TS, generated schema consumption, errors as typed Results |
 | [dependencies.md](dependencies.md) | Stdlib and platform first; how a new dependency earns its place |
 | [patterns.md](patterns.md) | The renderer core, data access, tenant isolation, failing closed, the model seam |
 | [performance.md](performance.md) | Clarity first, measure before optimizing, the real hot paths |
@@ -32,29 +35,34 @@ It also happens to be the right defense against how this code gets written. Most
 
 Eleven lines. If a change violates one, the change is wrong, not the rule.
 
-1. **Strict TypeScript.** No `any`, no non-null `!`. The compiler is the first test.
-2. **One Zod parse per input, at entry** — including **tool-call arguments**. Past that point the value is typed and trusted.
+1. **Strict types, both languages.** TypeScript: no `any`, no non-null `!`. Python: full annotations, `mypy --strict`, no bare `Any`, no `# type: ignore` without a reason on the same line. The type checker is the first test.
+2. **One schema parse per input, at entry** — Pydantic in `api`, Zod in `web` — including **tool-call arguments**. Past that point the value is typed and trusted.
 3. **Expected failures are typed Results.** Only bugs throw.
-4. **Features talk through their public API** (`index.ts`), never through each other's internals.
-5. **No new dependency without a one-line justification** in `dependencies.md`.
+4. **Features talk through their public API** (`index.ts` / `__init__.py`), never through each other's internals.
+5. **No new dependency without a one-line justification** in `dependencies.md`. **An agent framework needs one too**, and "everyone uses it" is not one.
 6. **The renderer core is pure and mode-free.** Behavior is injected from outside.
 7. **AI output carries no presentational values.** The schema has no field for them; a runtime check backs it up.
-8. **Drizzle lives in feature data modules**, never in routes or components — and those modules are marked `server-only`.
-9. **Every tenant-scoped query runs inside the tenant transaction wrapper.** A pooled connection outside a transaction is a cross-tenant read.
+8. **The ORM lives in feature data modules**, never in routes or components — SQLAlchemy in `*_data.py`, Drizzle in `*.data.ts`, and the TypeScript ones are marked `server-only`.
+9. **Every tenant-scoped query runs inside the tenant transaction wrapper.** There are **exactly two** wrappers, one per language, and both are named in `patterns.md`. A third is a bug.
 10. **Anything that grants, fails closed.** Availability may degrade open; authorization never does.
-11. **The pre-commit gate is green** — typecheck, lint, format — or the commit does not land.
+11. **The pre-commit gate is green** — typecheck, lint, format, **and the schema regenerates with no diff** — or the commit does not land.
 
-Rules 9 and 10 are newer than the rest and came from the security and tech-stack work rather than from taste. Both describe failures that are silent, that look like ordinary code in review, and that no type system catches — which is exactly the profile of a rule worth writing down.
+Rules 9 and 10 came from the security and tech-stack work rather than from taste. Both describe failures that are silent, that look like ordinary code in review, and that no type system catches — which is exactly the profile of a rule worth writing down.
+
+**Rules 2, 8, 9, and 11 all changed shape with the Python move**, and in the same direction: something that used to be true because there was only one place for it to be true is now true because a gate says so. That is the trade the move made, and the gate is what makes it survivable.
 
 ## Find it fast
 
 | If you need… | Go to |
 |---|---|
-| Where a file goes, and the repo/package layout | [structure.md](structure.md) → "Three deployables, two repos", "Feature folders" |
+| Where a file goes, and the repo/package layout | [structure.md](structure.md) → "Five runtimes, five repos", "Feature folders" |
 | The server/client boundary — `server-only`, taint, Server Actions | [structure.md](structure.md) → "The server/client boundary" |
 | Naming and file conventions | [structure.md](structure.md) → "Files" |
+| Which Python, and what the type checker is set to | [python.md](python.md) → "Strict, and what that means here" |
+| **Where the `Scene` schema lives and how it crosses languages** | [python.md](python.md) → "The schema is the source of truth" |
+| `Result` in Python | [python.md](python.md) → "Errors" |
 | Which TypeScript, and the TS 7 compiler-API caveat | [typescript.md](typescript.md) → "Which TypeScript — and the one thing that breaks" |
-| How types are derived, and where the model's JSON Schema comes from | [typescript.md](typescript.md) → "Types come from schemas" |
+| How TypeScript types are derived now | [typescript.md](typescript.md) → "Types come from the generated schema" |
 | What counts as external input | [typescript.md](typescript.md) → "Trust boundaries: one parse, at entry" |
 | `Result` vs throwing | [typescript.md](typescript.md) → "Errors" |
 | Publishing `@d-design/schema` | [typescript.md](typescript.md) → "The schema is a published package" |

@@ -69,15 +69,15 @@ That combination means no storage, no cookies, no parent DOM access, no credenti
 | | |
 |---|---|
 | **Next.js 16 (App Router) + React 19.2** | Turbopack and the React Compiler are both stable as of 16; Cache Components give explicit control over what's cached on the publish route. React 19.2's View Transitions are the natural mechanism for v2's reskin — worth knowing it's there, not worth using yet |
-| **TypeScript** | Strict. See [../coderules/typescript.md](../coderules/typescript.md) |
+| **~~TypeScript everywhere~~ → Python backend + TypeScript renderer** | **Superseded.** `api` and `jobs` are Python (FastAPI); `web`, `render`, and the fetch worker are TypeScript. See [../coderules/python.md](../coderules/python.md), [../coderules/typescript.md](../coderules/typescript.md), and [../techstack/decisions.md](../techstack/decisions.md) → "The Python backend move" |
 | **Postgres in Docker → ~~Supabase~~ RDS/Aurora** | Still Postgres either way, so the migration is a connection string. **Superseded:** the operational stack moved to AWS — see [../techstack/decisions.md](../techstack/decisions.md) |
-| **Drizzle** | Typed SQL, migrations |
-| **Zod** | Schema, validation, and inferred types — one source |
+| **~~Drizzle~~ → SQLAlchemy + Alembic** | Typed SQL and migrations over the application tables. Drizzle survives in `web` for the auth tables only |
+| **~~Zod~~ → Pydantic** | Schema and validation, **the one source**. TypeScript types and a Zod validator are generated from it into `@d-design/schema` |
 | **Motion** (`motion`, import `motion/react`) | **Not `framer-motion`.** Renamed in 2025 and now maintained independently at motion.dev; the old package still installs but is no longer actively developed |
 | **Tailwind** | App chrome only. Never the art direction — that's CSS variables |
 | **No preferred model vendor** | Every phase goes through one provider seam. **Superseded:** an earlier draft named a single model for every phase; model choice is now an empirical question answered by repair rate — see [../techstack/ai-stack.md](../techstack/ai-stack.md) and [ai-pipeline.md](ai-pipeline.md) |
 
-**Where this runs in v1: Docker Compose and a dev server. That is all** — no AWS account, no workers, no CDN, no auth ([../techstack/infrastructure.md](../techstack/infrastructure.md)). The operational stack lands with v3, the release that has real users. Building it earlier feels productive and does not move Risk 1 at all.
+**Where this runs in v1: Docker Compose and two dev servers** — Next.js for `web`, uvicorn for `api`, and nothing else. No AWS account, no `jobs`, no `render`, no CDN, no auth ([../techstack/infrastructure.md](../techstack/infrastructure.md)). Publishing in v1 is a `web` route writing to local disk; the `render` service arrives in v2 with the visual loop. The operational stack lands with v3, the release that has real users. Building it earlier feels productive and does not move Risk 1 at all.
 
 Two consequences of the Postgres-first choice:
 
@@ -88,7 +88,7 @@ Two consequences of the Postgres-first choice:
 
 ## Build order
 
-1. Scene schema + Zod types — everything depends on this shape
+1. Scene schema in Pydantic, plus the generator that emits TypeScript types and a Zod validator — everything depends on this shape, and on the two languages agreeing about it
 2. `cinematic-dark` tokens + motion vocabulary
 3. `SceneRenderer` + the 11 primitives — **the long pole; this is design work, not typing**
 4. Publish route, embed, fullscreen
@@ -109,7 +109,7 @@ Both are nearly free while writing the renderer and brutally expensive to retrof
 
 v3 ships RTL for Arabic and Hebrew, and if the renderer was authored logically, RTL costs setting `dir` on the root — no mirrored stylesheet, no per-component branching. Authored physically, it means auditing every primitive under every art direction. **This is a v1 decision with a v3 payoff and no v1 upside** ([../v3/localization.md](../v3/localization.md)). `transform` is the one documented exception, and it is where motion lives — noted in [art-direction.md](art-direction.md).
 
-**Keep the renderer pure.** No `mode` prop, no `process.env`, no `typeof window` ([../coderules/patterns.md](../coderules/patterns.md), rule 6). It looks like an ordinary component-hygiene rule in v1, where the renderer runs in one process. It is load-bearing from v3, where the same components run in the app, in the job worker that publishes, and in the visual verification loop — and must behave identically in all three.
+**Keep the renderer pure.** No `mode` prop, no `process.env`, no `typeof window` ([../coderules/patterns.md](../coderules/patterns.md), rule 6). It looks like an ordinary component-hygiene rule in v1, where the renderer runs in one process. It is load-bearing from v2, where the same components run in the browser, in `web`'s preview renders, and in the `render` service that publishes and drives the visual verification loop — and must behave identically in all three. With a Python backend the renderer is the *only* thing crossing the language boundary as code rather than as data, which raises the stakes on its purity rather than lowering them.
 
 Step 5 also brings the pipeline's first tools: `get_brand_kit`, `list_assets`, `get_constraints` — pure reads, no side effects ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)). `list_assets` is how the Build phase selects imagery, which earlier drafts required without ever specifying.
 
@@ -130,8 +130,8 @@ generations  id, experience_id, phase, tokens_in, tokens_out,
 ```
 
 The scene tree lives as a single `jsonb` column, not normalized into scene and
-block tables. It is always read and written whole, it is validated by Zod rather
-than by SQL, and normalizing it would buy queries nobody runs.
+block tables. It is always read and written whole, it is validated by Pydantic
+rather than by SQL, and normalizing it would buy queries nobody runs.
 
 `generations` exists only to answer two questions later: what does an experience
 actually cost, and which validation rules fail most. Both decide real things —
@@ -147,10 +147,10 @@ Six checks. Each maps to a build-order step and fails loudly if that step regres
 
 | What | How |
 |---|---|
-| **Schema** | Round-trip a hand-written `Experience` through Zod, render it, assert no invalid state survives. One `test_scene_schema.ts` with asserts. |
+| **Schema** | Round-trip a hand-written `Experience` through Pydantic, render it, assert no invalid state survives. One `test_scene_schema.py`. **Plus the cross-language check** — the same fixture through the generated Zod validator, same verdict ([../coderules/python.md](../coderules/python.md)) |
 | **No styling in AI output** | Walk every block prop in a generated tree, fail on `/#[0-9a-f]{3,8}\|[\d.]+(px\|rem\|em\|ms\|s)\b/i`. This is the invariant test — see scene-schema. |
 | **Renderer** | One page rendering all 11 primitives under `cinematic-dark`. Visual judgment, not snapshots — quality here is human. |
-| **Pipeline** | 5 golden briefs → Director + Build → assert 100% Zod-valid after at most one repair. The one automated check that matters. |
+| **Pipeline** | 5 golden briefs → Director + Build → assert 100% schema-valid after at most one repair. The one automated check that matters. |
 | **Edit** | Patch a block, assert the tree stays valid and only the target block changed. |
 | **Slot sandbox** | Put `fetch()` and `localStorage` in a slot, confirm both throw. Executed inside a real frame, not jsdom — [../security/testing.md](../security/testing.md) |
 | **Logical properties** | Set `dir="rtl"` on the root and confirm the layout mirrors with no stylesheet change. Costs nothing now; it is the only cheap moment to find out the renderer was authored physically |

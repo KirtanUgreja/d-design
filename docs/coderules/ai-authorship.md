@@ -39,12 +39,12 @@ The rules in this directory were written for clarity. They happen to be exactly 
 
 | Rule | What it stops |
 |---|---|
-| Types derived from Zod ([typescript.md](typescript.md)) | The most damaging duplication of all — a second definition of a core shape — is *unrepresentable*, not merely discouraged |
+| Types generated from Pydantic ([python.md](python.md)) | The most damaging duplication of all — a second definition of a core shape — is caught by a gate that regenerates and fails on a diff. It used to be *unrepresentable*; across two languages it is *detected*, which is weaker and is why the gate is not optional |
 | One renderer, no mode branches ([patterns.md](patterns.md)) | A second "publish-flavored" renderer, which is precisely the thing an AI would helpfully write |
 | Feature public APIs (`index.ts`) | Gives the model a short, readable catalog of what already exists. A good index is a duplication defense |
 | The dependency ledger ([dependencies.md](dependencies.md)) | Stops the other direction — a package added for something already in the tree |
 | `Result` as the one error type | No parallel error-handling convention per feature |
-| The `asUser` wrapper and the model seam ([patterns.md](patterns.md)) | The two newest "exactly one place" rules, and the two where a helpfully-written second copy is worst |
+| The tenant wrappers and the model seam ([patterns.md](patterns.md)) | The "exactly N places" rules, and the ones where a helpfully-written extra copy is worst. **The tenant wrapper now legitimately exists twice**, which makes a third copy far easier to write and far harder to notice |
 
 **The last row is the one to watch, because it is where this failure mode stops being a maintenance cost and becomes a vulnerability.** A model asked to add a query has every reason to write `db.select(...)` directly — it is shorter, it works in testing, and it reads fine. It also skips the transaction that scopes `app.user_id`, which is a cross-tenant read. Same for a second model call written inline: it works, and it silently has no repair loop, no metadata log, and no tool-call cap.
 
@@ -63,7 +63,7 @@ The pattern: **make the canonical thing easy to find and the duplicate hard to w
 **4. Read the diff where "almost correct" is expensive.** You cannot review everything solo, and pretending otherwise means reviewing nothing. Read these properly; skim the rest:
 
 - **the scene schema** — every downstream guarantee is a consequence of this shape
-- **`*.data.ts` files** — the service-role filter and the RLS assumption are security-critical, and a missing `where` clause is textbook almost-correct ([../security/tenancy-and-data.md](../security/tenancy-and-data.md))
+- **Feature data modules** (`*_data.py`, `*.data.ts`) — the service-role filter and the RLS assumption are security-critical, and a missing `where` clause is textbook almost-correct ([../security/tenancy-and-data.md](../security/tenancy-and-data.md))
 - **every `catch`** — a permissive default is the single most reviewable-looking vulnerability there is ([patterns.md](patterns.md), rule 5). Grep for `catch` in a diff and ask what each one grants
 - **the no-styling backstop and the AD linter** — a check that is subtly too permissive still passes its own tests
 - **anything touching the sandbox, the sanitizer, or a signed URL**

@@ -1,5 +1,7 @@
 # TypeScript
 
+The renderer half of the codebase — `web`, `render`, and the fetch worker. The backend is [python.md](python.md), and the two are held together by a codegen step that this document is now downstream of rather than the source of.
+
 ## Strict, and then stricter
 
 `tsconfig` runs `strict: true` plus `noUncheckedIndexedAccess` and `erasableSyntaxOnly`. ESLint bans two things the compiler allows:
@@ -33,37 +35,32 @@ Typecheck runs on 7; type-aware lint runs on the pinned 6. It is two compilers o
 
 This is also the reason to be unhurried about it. Nothing in this project needs 7 on day one; the gate is fast enough on 6 for a codebase this size. Take it when the ecosystem has caught up, not because the number is large.
 
-## Types come from schemas, never written twice
+## Types come from the generated schema, never written twice
 
-Zod is the source of truth. Types are inferred.
-
-```ts
-// schema/scene.ts
-export const Block = z.discriminatedUnion('type', [...]);
-export type Block = z.infer<typeof Block>;   // derived, never hand-written
-```
-
-A hand-written type that duplicates a schema is a second source of truth that will drift. If you have a type and a validator for the same shape, the type is wrong — infer it.
-
-### The JSON Schema is derived too
-
-This project has a second, less obvious place the same shape would be written twice. Structured outputs needs a **JSON Schema** to constrain generation ([../v1/ai-pipeline.md](../v1/ai-pipeline.md)); validation needs a **Zod schema** to parse the response. Two documents describing one shape, in different syntaxes, in different files, kept in sync by hand — the exact drift this rule exists to prevent, and the worst possible place for it. A JSON Schema that has quietly fallen behind the Zod schema means the model is constrained to generate the wrong thing, and you find out through a repair-rate creep rather than an error.
-
-Zod 4 removes the problem: **`z.toJSONSchema()` is built in.** The Zod schema stays the single source of truth, the JSON Schema is generated from it at build time, and drift is not something to police.
+**Superseded.** This section used to say *"Zod is the source of truth."* It is not any more — **Pydantic is** ([python.md](python.md)), and both the TypeScript types and the Zod validator are generated from it into `@d-design/schema`.
 
 ```ts
-// schema/scene.ts — the one definition
-export const Scene = z.object({ /* ... */ });
-export type Scene = z.infer<typeof Scene>;              // types derived
-export const SCENE_JSON_SCHEMA = z.toJSONSchema(Scene); // model constraint derived
+// node_modules/@d-design/schema — GENERATED. Do not edit.
+export const Block: z.ZodType<...>;   // generated validator
+export type Block = ...;              // generated type
 ```
 
-Zod 4 is the version to build on regardless: ~14× faster string parsing and a 57% smaller core bundle than v3, with `z.discriminatedUnion` validating in O(1) off the discriminator — which is exactly the shape `Block` is.
+The rule that matters most is short: **never hand-edit generated code, and never hand-write a type that duplicates the generated one.** The gate regenerates and fails on a diff, so a hand-edit does not survive a commit — but it will look entirely reasonable in review, which is why it is stated here rather than left to the gate.
 
-Two caveats to know before relying on it:
+If you find yourself wanting a type the generated schema does not give you, that is a signal the Pydantic schema is missing something. **Change it there.** A local type alias for a generated shape is the first copy, and the first copy is where the drift starts.
 
-- **Keep a discriminated union off the schema root.** `toJSONSchema` output for a root-level `discriminatedUnion` has known rough edges with strict structured-output validators. Not a problem here — the root is an object (`Scene`/`Experience`) and `Block` is nested — but it is a constraint on how the schema is shaped, so it is written down rather than rediscovered.
-- **Character caps still do not survive the trip.** Structured outputs does not support `minLength`/`maxLength`; the generated JSON Schema carries the *shape*, and Zod enforces the *lengths* after the response. That two-layer split is described in [../v1/scene-schema.md](../v1/scene-schema.md) and is unchanged by generating the schema — it just means one file now produces both layers.
+### Why the editor still gets a Zod validator
+
+Generating types alone would have been simpler and it was considered ([../techstack/decisions.md](../techstack/decisions.md)). The editor patches a block and revalidates the tree after every change ([../v1/ai-pipeline.md](../v1/ai-pipeline.md)); routing that through the Python API would put a network round trip inside a keystroke-scale interaction and make the editor useless offline.
+
+So a validator is generated too. It is **not** a second source of truth — it is the same source, compiled twice, and the round-trip test in [python.md](python.md) proves both agree on the same fixture.
+
+Zod 4 remains the version to build on: ~14× faster string parsing and a 57% smaller core bundle than v3, with `z.discriminatedUnion` validating in O(1) off the discriminator — which is exactly the shape `Block` is.
+
+Two caveats survive the change of source and are worth knowing before relying on them:
+
+- **The discriminated union stays off the schema root.** `Scene`/`Experience` is an object and `Block` is nested inside it. Root-level tagged unions have known rough edges with strict structured-output validators, so this is a constraint on how the Pydantic schema is written, enforced by convention on the other side of the boundary.
+- **Character caps do not survive the trip to the model.** Structured outputs widely ignores `minLength`/`maxLength`. The generated JSON Schema carries the *shape*; Pydantic enforces the *lengths* on the response ([../v1/scene-schema.md](../v1/scene-schema.md)). The generated Zod carries them too, which is what lets the editor reject an over-long headline without asking the server.
 
 ## Trust boundaries: one parse, at entry
 
@@ -118,11 +115,13 @@ Truly impossible states as Results means every call site handles a branch that c
 
 ## The schema is a published package
 
-`src/schema/` ships as **`@d-design/schema`** so the fetch worker can use it ([structure.md](structure.md)). That makes the most important shape in the system a versioned artifact, and versioned artifacts have their own discipline.
+The generated output ships as **`@d-design/schema`** so `web`, `render`, and the fetch worker can use it ([structure.md](structure.md)). That makes the most important shape in the system a versioned artifact, and versioned artifacts have their own discipline.
 
-- **The app repo consumes the workspace source, not the published package.** Publishing exists for the *other* repo. If the app ever consumed the tarball, every schema change — which is most of v1 — would need a publish before it could be used.
+**With one repo per runtime, every TypeScript consumer now takes the published package** — there is no workspace shortcut left. That is a real cost the Python move added: a schema change is a generate, a publish, and three bumps, where it used to be a file edit.
+
 - **Version bumps go through Changesets**, so a bump is a reviewed file in the PR that caused it rather than a decision made at publish time.
-- **A breaking schema change is a major bump and the fetch worker is updated in the same session.** A pinned version drifting behind is the exact silent divergence a package was chosen to prevent ([../techstack/decisions.md](../techstack/decisions.md)); the pin only helps if someone reads it.
+- **A breaking schema change is a major bump, and every consumer is updated in the same session.** A pinned version drifting behind is the exact silent divergence a package was chosen to prevent ([../techstack/decisions.md](../techstack/decisions.md)); the pin only helps if someone reads it.
+- **During v1 this is friction with no payoff yet**, because there is one consumer and the schema changes constantly. A local file link is the right shortcut, marked `ponytail:` with the trigger — the second TypeScript consumer, which arrives with `render` in v2.
 
 **Publish with npm trusted publishing (OIDC from GitHub Actions).** Short-lived credentials, no long-lived npm token in CI — one fewer permanent secret, and it removes the credential class that the registry compromises in [dependencies.md](dependencies.md) were built on.
 

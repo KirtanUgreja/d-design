@@ -33,7 +33,7 @@ src/features/intake/
   index.ts
   interview.ts          the Q&A loop → Brief
   prompts/intake.ts
-  intake.data.ts        'server-only' — the briefs table
+  intake_data.py        the briefs table
   intake.test.ts
 ```
 
@@ -109,7 +109,7 @@ The first screen a user touches, and one of the four that gets real design atten
 briefs  id, experience_id, owner_id, payload (jsonb), created_at
 ```
 
-RLS policy and isolation test, same pattern as phase 00. `intake.data.ts` starts with `import 'server-only'`.
+RLS policy and isolation test, same pattern as phase 00, through `as_user`.
 
 **The brief is stored; it is never logged.** It is the customer's unreleased launch messaging, and the distinction between a row in a table the user owns and a line in an error tracker is the whole of [../../security/tenancy-and-data.md](../../security/tenancy-and-data.md).
 
@@ -122,8 +122,8 @@ RLS policy and isolation test, same pattern as phase 00. `intake.data.ts` starts
 **Brief construction**
 
 - [ ] `goal`, `audience`, and `cta` are always asked, never inferred. Assert it: a transcript that never mentions the audience must not produce a Brief with one
-- [ ] `keyMessages` capped at 3–5 by Zod
-- [ ] The Brief is Zod-parsed once, at entry, and trusted thereafter
+- [ ] `key_messages` capped at 3–5 by Pydantic
+- [ ] The Brief is schema-parsed once, at entry, and trusted thereafter
 - [ ] A user's exact `keyMessages` text survives into the Brief unmodified — if the interview smooths it, the claims rule is already broken
 
 **URLs**
