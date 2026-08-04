@@ -23,16 +23,14 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U postgres -d ddesign"
           --health-interval 2s --health-timeout 3s --health-retries 20
-      minio:
-        image: bitnami/minio:latest
-        env:
-          MINIO_ROOT_USER: minioadmin
-          MINIO_ROOT_PASSWORD: minioadmin
-          MINIO_DEFAULT_BUCKETS: d-design
-        ports: ['9000:9000']
-        options: >-
-          --health-cmd "mc ready local"
-          --health-interval 2s --health-timeout 3s --health-retries 30
+      # MinIO is NOT declared here. The official minio/minio image needs
+      # `server /data` as a command argument (its default CMD is bare `minio`,
+      # which just prints usage and exits) — verified by running it with no
+      # args. `services:` only supports image/env/ports/options, and `options`
+      # can add docker-create flags but not trailing positional args, so there
+      # is no way to hand this image its required command through this block.
+      # Started as an explicit step below instead, the same way
+      # docker-compose.yml does it locally with `command: server /data`.
     env:
       DATABASE_URL: postgresql+asyncpg://app_user:app_user@localhost:5432/ddesign
       MIGRATION_DATABASE_URL: postgresql+asyncpg://migrator:migrator@localhost:5432/ddesign
@@ -43,12 +41,34 @@ jobs:
       LOCAL_USER_ID: 00000000-0000-4000-8000-000000000001
     steps:
       - uses: actions/checkout@v5
+
+      # Same image, tag, and command as docker-compose.yml's minio service —
+      # started early so it has the run of the setup steps below to become
+      # healthy before pytest needs it.
+      - name: start MinIO
+        run: |
+          docker run -d --name minio -p 9000:9000 \
+            -e MINIO_ROOT_USER=minioadmin -e MINIO_ROOT_PASSWORD=minioadmin \
+            minio/minio:RELEASE.2025-04-22T22-12-26Z server /data
+          for i in $(seq 1 30); do
+            docker exec minio mc ready local && exit 0
+            sleep 1
+          done
+          echo "::error::MinIO never became ready" && exit 1
+
       - uses: astral-sh/setup-uv@v7
         with:
           enable-cache: true
       # web is needed for the schema check below — the chain has two ends and
       # CI is where it cannot be skipped with --no-verify.
+      # `version:` pinned explicitly rather than left to auto-detect. The
+      # action's own auto-detection reads a root package.json's
+      # `packageManager` field, and this repo's is in web/package.json — a
+      # subdirectory action-setup never looks in — which is why every run
+      # failed with "No pnpm version is specified" until this was pinned.
       - uses: pnpm/action-setup@v4
+        with:
+          version: 11.20.0
       - uses: actions/setup-node@v6
         with: { node-version: 26, cache: pnpm, cache-dependency-path: web/pnpm-lock.yaml }
 
@@ -77,6 +97,15 @@ jobs:
             -f api/migrations/roles.sql
           cd api && uv run alembic upgrade head
 
+      - name: create MinIO bucket
+        # The bare "local" alias `mc ready` uses above is read-only enough for
+        # a liveness check but not for `mb` — verified locally: `mb` against
+        # unauthenticated "local" returns Access Denied. Root credentials via
+        # an explicit alias are what a write actually needs.
+        run: |
+          docker exec minio mc alias set local http://localhost:9000 minioadmin minioadmin
+          docker exec minio mc mb --ignore-existing local/d-design
+
       - run: uv run pytest -q
         working-directory: api
 
@@ -84,7 +113,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      # version: pinned — see the api job above for why auto-detect fails here.
       - uses: pnpm/action-setup@v4
+        with:
+          version: 11.20.0
       - uses: actions/setup-node@v6
         with: { node-version: 26, cache: pnpm, cache-dependency-path: web/pnpm-lock.yaml }
       - run: pnpm install --frozen-lockfile
@@ -112,7 +144,10 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: astral-sh/setup-uv@v7
+      # version: pinned — see the api job above for why auto-detect fails here.
       - uses: pnpm/action-setup@v4
+        with:
+          version: 11.20.0
       - uses: actions/setup-node@v6
         with: { node-version: 26 }
       # Fails on a known-critical advisory in either tree. The attacker picks
