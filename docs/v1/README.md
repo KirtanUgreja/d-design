@@ -12,6 +12,7 @@ v1 is deliberately small: a single user, a local Postgres, no accounts, no deplo
 |---|---|
 | [spec.md](spec.md) | The problem, the bet, 15 locked decisions, architecture, stack, persistence, build order, verification, risks |
 | [plan/](plan/README.md) | **The implementation plan.** Twelve phases from an empty repo to a published experience, each with what to read, what to build, and what to verify. Build status lives in its README |
+| [comps/](comps/README.md) | Phase 02's hand-written comps — real HTML/CSS, three scenes, the tokens extracted from them. What phase 03 reads |
 | [scene-schema.md](scene-schema.md) | **The IR.** Every type, all 11 blocks, 6 layouts and their regions, all validation rules, the editing patch shape |
 | [art-direction.md](art-direction.md) | The token layer: 5 groups, `cinematic-dark`'s concrete values, motion implementation, accessibility |
 | [ai-pipeline.md](ai-pipeline.md) | The four phases with concrete API shapes, validation and repair, caching, and what an experience costs |
