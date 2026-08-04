@@ -1,0 +1,124 @@
+name: gate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ddesign
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ddesign"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+      minio:
+        image: bitnami/minio:latest
+        env:
+          MINIO_ROOT_USER: minioadmin
+          MINIO_ROOT_PASSWORD: minioadmin
+          MINIO_DEFAULT_BUCKETS: d-design
+        ports: ['9000:9000']
+        options: >-
+          --health-cmd "mc ready local"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      DATABASE_URL: postgresql+asyncpg://app_user:app_user@localhost:5432/ddesign
+      MIGRATION_DATABASE_URL: postgresql+asyncpg://migrator:migrator@localhost:5432/ddesign
+      S3_ENDPOINT: http://localhost:9000
+      S3_BUCKET: d-design
+      S3_ACCESS_KEY: minioadmin
+      S3_SECRET_KEY: minioadmin
+      LOCAL_USER_ID: 00000000-0000-4000-8000-000000000001
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      # web is needed for the schema check below — the chain has two ends and
+      # CI is where it cannot be skipped with --no-verify.
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with: { node-version: 26, cache: pnpm, cache-dependency-path: web/pnpm-lock.yaml }
+
+      # --frozen is not uv's default the way --frozen-lockfile is pnpm's.
+      # A build that can resolve differently than the last one is not a build.
+      - run: uv sync --frozen
+        working-directory: api
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+
+      - run: uv run ruff format --check .
+        working-directory: api
+      - run: uv run ruff check .
+        working-directory: api
+      - run: uv run mypy
+        working-directory: api
+
+      # THE step. Regenerate from Pydantic and fail on a diff — the same check
+      # as the pre-commit gate, run again where it cannot be bypassed.
+      - run: pnpm --silent schema:check
+        working-directory: web
+
+      - name: roles and migrations
+        run: |
+          PGPASSWORD=postgres psql -h localhost -U postgres -d ddesign -v ON_ERROR_STOP=1 \
+            -f api/migrations/roles.sql
+          cd api && uv run alembic upgrade head
+
+      - run: uv run pytest -q
+        working-directory: api
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with: { node-version: 26, cache: pnpm, cache-dependency-path: web/pnpm-lock.yaml }
+      - run: pnpm install --frozen-lockfile
+        working-directory: web
+      - run: pnpm exec prettier --check .
+        working-directory: web
+      - run: pnpm exec eslint . --max-warnings 0
+        working-directory: web
+      - run: pnpm exec tsc --noEmit
+        working-directory: web
+      - run: pnpm exec vitest run
+        working-directory: web
+      - run: pnpm build
+        working-directory: web
+
+  invariants:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: ./scripts/checks/invariants.sh
+      - run: ./scripts/check-docs.sh
+
+  advisories:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v6
+        with: { node-version: 26 }
+      # Fails on a known-critical advisory in either tree. The attacker picks
+      # the softer side, so neither is allowed to be the softer side.
+      - run: pnpm install --frozen-lockfile && pnpm audit --audit-level critical
+        working-directory: web
+      - run: uvx pip-audit --strict --disable-pip -r <(uv export --frozen --no-dev --no-emit-project)
+        working-directory: api
+        shell: bash

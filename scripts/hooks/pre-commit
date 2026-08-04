@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+# The gate. A commit that fails any step does not land.
+#
+# The steps differ per side because the languages do; the discipline does not.
+#
+#   api  (Python)                    web  (TypeScript)
+#   1. format    — Ruff format       1. format    — Prettier
+#   2. lint      — Ruff              2. lint      — ESLint, no warnings
+#   3. typecheck — mypy --strict     3. typecheck — tsc --noEmit
+#   4. schema    — regenerate; FAIL ON DIFF
+#
+# Step 4 is the most important thing here. The Scene schema lives in Pydantic
+# and TypeScript consumes a generated copy. If the generated output can drift
+# from its source, "one source of truth" is a comment rather than a fact.
+#
+# ponytail: one hook that dispatches by staged path, rather than husky in web
+# and pre-commit in api. Two hook managers cannot both own .git/hooks, and this
+# is one repo. If the runtimes ever split into separate repos, each takes the
+# half of this file that applies to it.
+#
+# Installed by `scripts/setup.sh` via core.hooksPath, so it is versioned rather
+# than living in an untracked .git directory.
+
+set -uo pipefail
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+[ -n "$staged" ] || exit 0
+
+touches() { grep -qE "$1" <<<"$staged"; }
+
+fail=0
+step() {
+  local label=$1; shift
+  local out
+  if ! out=$("$@" 2>&1); then
+    printf '\n✗ %s\n%s\n' "$label" "$out" >&2
+    fail=1
+  else
+    printf '  ✓ %s\n' "$label"
+  fi
+}
+
+if touches '^api/'; then
+  echo 'api'
+  step 'ruff format' uv run --project api ruff format --check api
+  step 'ruff'        uv run --project api ruff check api
+  step 'mypy'        env -C api uv run mypy
+fi
+
+if touches '^web/'; then
+  echo 'web'
+  step 'prettier'  env -C web pnpm exec prettier --check .
+  step 'eslint'    env -C web pnpm exec eslint . --max-warnings 0
+  step 'tsc'       env -C web pnpm exec tsc --noEmit
+fi
+
+# Step 4. Runs whenever either side of the chain moved — and the chain has two
+# ends, so "either side" includes a hand-edit to the generated TypeScript.
+if touches '^api/schema/|^web/src/schema/|^web/scripts/generate-schema'; then
+  echo 'schema'
+  step 'regenerates with no diff' env -C web pnpm --silent schema:check
+fi
+
+echo 'invariants'
+step 'project invariants' ./scripts/checks/invariants.sh
+
+if touches '\.md$'; then
+  step 'docs' ./scripts/check-docs.sh
+fi
+
+[ "$fail" -eq 0 ] || printf '\nthe gate is red — the commit did not land.\n' >&2
+exit "$fail"

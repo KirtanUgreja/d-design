@@ -222,14 +222,41 @@ GitHub Actions, one workflow **per repo**: the gate · tests (pytest / Vitest) �
 
 ---
 
+## Built — and the five places it deviated
+
+Built 4 Aug 2026. Everything below is a deliberate departure from the plan above, with the trigger that would undo it.
+
+**1. One repo, two project roots.** The plan says two repos. It is `api/` and `web/`, each with its own project root, lockfile and gate, inside this repo. Two hook managers cannot both own `.git/hooks`, so husky-plus-`pre-commit` became one dispatching `scripts/hooks/pre-commit` that runs the same four Python steps and three TypeScript steps against whatever is staged. **Trigger:** `render` or the fetch worker arriving in v2 — at which point each runtime takes the half of that hook that applies to it. Nothing in the layout resists the split; the paths are already `api/…` and `web/…`.
+
+**2. The JSON Schema → Zod generator is ours.** `json-schema-to-zod` was pinned first, exactly as this phase instructs, and it does not resolve `$ref` — every member of the nested tagged union came out as `z.any()` and every character cap was dropped. **A validator that silently accepts anything is worse than no validator**, and finding that here rather than in phase 01 is the entire reason this phase pins generators. `web/scripts/generate-schema.mjs` emits the closed subset of JSON Schema that Pydantic actually produces, and throws on anything it does not recognize rather than degrading. **Trigger to delete it:** a maintained converter that handles `$ref`, `oneOf` + `discriminator`, and Zod 4 output.
+
+**3. `json-schema-to-typescript` went with it.** Types come from `z.infer` on the generated validator, so the schema and its type cannot disagree — the property `z.infer` gave inside one language, recovered across the split. Two dependencies deleted rather than added.
+
+**4. `extra="forbid"` on every schema model** (`api/schema/base.py`). The cross-language fixture test found this immediately: Pydantic ignores an unknown key, the emitter was producing `z.strictObject`, and the two disagreed on the one input worth disagreeing about. Forbidding puts `additionalProperties: false` in the JSON Schema and makes both sides return the same verdict — and it is the right behaviour anyway, since model output is untrusted input and an unknown field is a signal.
+
+**5. Pinned behind the current release, on purpose.** Next.js **16.2.12** and TypeScript **6.0.3**. 16.3.0 was 20 hours old and pnpm's release-age gate refused it, which is the gate working rather than a problem; bump when it clears. TypeScript stays on 6 for the reason in the table above.
+
+Two things the plan expected that turned out not to be needed: `pgcrypto` (`gen_random_uuid()` has been core since Postgres 13, and `migrator` has no privilege to create an extension), and a custom lint rule for `pickle`/`yaml.load` in `api` (Ruff's `S` ruleset covers it; `scripts/checks/invariants.sh` catches the import anywhere).
+
+**Where things ended up**
+
+| | |
+|---|---|
+| `api/` | `lib/` · `db/` (engine, models, `tenant.py`) · `schema/` · `routes/` · `migrations/` · `tests/` · `scripts/export_schema.py` |
+| `web/` | `src/app/` · `src/schema/` (`generated/` off-limits) · `scripts/generate-schema.mjs` · `eslint.config.mjs` |
+| repo root | `docker-compose.yml` · `scripts/setup.sh` · `scripts/hooks/{pre-commit,post-edit.sh}` · `scripts/checks/invariants.sh` · `.github/workflows/gate.yml` |
+
 ## Exit gate
 
-- [ ] Both gates green, both CI workflows green, hook fires on a bad `.ts` **and** a bad `.py` write
-- [ ] **The schema round-trips: Pydantic → JSON Schema → TS types + Zod validator, regenerating with no diff.** Prove the chain on a throwaway model before phase 01 designs the real one against it
-- [ ] `as_user` exists, is the only place `set_config` appears, and the lint rule blocks bypassing it
-- [ ] Unset-`app.user_id` fails rather than matching all rows
-- [ ] RLS policies on both tables, isolation test passing
-- [ ] `docker compose up` gives Postgres and MinIO, offline
-- [ ] `storage.py` reads and writes an object through the S3 API against MinIO
-- [ ] `web` and `api` both start, and `web` can reach `api`
-- [ ] `AGENTS.md` reviewed against what actually got built — it is the file every later session inherits
+- [x] Both gates green (2.4s for the whole tree), CI workflow written, post-edit hook fires on a bad `.ts` **and** a bad `.py` write
+- [x] **The schema round-trips: Pydantic → JSON Schema → Zod validator + inferred types, regenerating with no diff.** Proved on `schema/probe.py`, a throwaway carrying the one structural property phase 01 depends on — a discriminated union nested inside an object
+- [x] `as_user` exists, is the only place `set_config` appears, and `invariants.sh` fails when a second file appears — verified by writing the violation and watching it fail
+- [x] Unset-`app.user_id` fails rather than matching all rows. Observed on Postgres 18: the value reverts to `""` and `''::uuid` raises, so it refuses rather than matching
+- [x] RLS policies on both tables, isolation test passing — including `with check`, which blocks writing a row owned by someone else
+- [x] `docker compose up` gives Postgres and MinIO, offline
+- [x] `storage.py` reads and writes an object through the S3 API against MinIO, and a missing key is a `Result` rather than an exception
+- [x] `web` builds and `api` starts
+- [x] A package published in the last day refuses to resolve **on both sides** — `next@16.3.0` blocked by pnpm, `boto3==1.43.63` blocked by uv, neither lockfile moved
+- [x] `AGENTS.md` reviewed against what actually got built
+
+One item is deferred rather than done: **`web` reaching `api` over HTTP**. There is no route in `web` that needs `api` yet, and building a client for a caller that does not exist is the speculative duplication this phase spent its budget avoiding. It lands in phase 06, with the first real call.
