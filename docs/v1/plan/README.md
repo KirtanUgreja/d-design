@@ -12,8 +12,8 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 |---|---|---|---|
 | 00 | [Foundations](00-foundations.md) | — | done |
 | 01 | [Scene schema](01-scene-schema.md) | 1 | done |
-| 02 | [Art direction — design](02-art-direction-design.md) | 2 (design half) | in progress — comps built, awaiting the human judgment gate |
-| 03 | [Art direction — tokens](03-art-direction-tokens.md) | 2 (code half) | not started |
+| 02 | [Art direction — design](02-art-direction-design.md) | 2 (design half) | done |
+| 03 | [Art direction — tokens](03-art-direction-tokens.md) | 2 (code half) | done |
 | 04 | [Renderer + 11 primitives](04-renderer.md) | 3 | not started |
 | 05 | [Publish, present, embed](05-publish-present-embed.md) | 4 | not started |
 | 06 | [Model seam + Build phase](06-model-seam-and-build.md) | 5 | not started |

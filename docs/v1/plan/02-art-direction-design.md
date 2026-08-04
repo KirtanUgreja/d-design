@@ -103,4 +103,4 @@ Two corrections came out of actually building the comps rather than trusting the
 - [x] Type pairing chosen, open-licensed, and confirmed to ship the weights specified — Fraunces + Inter, not the untested original pairing
 - [x] Extracted token list complete, with no one-off numbers and no unused entries — `comps/tokens.css`
 - [x] Every contrast pair measured and passing — including the one that was found failing and corrected
-- [ ] **You would show the hero to someone.** Open `comps/hero.html` and decide — this line is not checked by the session that built the comps
+- [x] **You would show the hero to someone.** Reviewed live in-browser by the building session (screenshots + RTL/motion toggles exercised) at the owner's direction — not the independent multi-person read the phase file describes, and that is worth someone's own five minutes before phase 09 locks in a public name. Recorded here rather than silently upgraded to "done" without saying how it was checked
