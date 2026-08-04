@@ -11,7 +11,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | # | Phase | Spec step | Status |
 |---|---|---|---|
 | 00 | [Foundations](00-foundations.md) | — | done |
-| 01 | [Scene schema](01-scene-schema.md) | 1 | not started |
+| 01 | [Scene schema](01-scene-schema.md) | 1 | done |
 | 02 | [Art direction — design](02-art-direction-design.md) | 2 (design half) | not started |
 | 03 | [Art direction — tokens](03-art-direction-tokens.md) | 2 (code half) | not started |
 | 04 | [Renderer + 11 primitives](04-renderer.md) | 3 | not started |

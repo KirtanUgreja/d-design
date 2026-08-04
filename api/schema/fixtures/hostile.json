@@ -1,0 +1,169 @@
+{
+  "id": "exp-hostile",
+  "title": "Hostile Experience",
+  "mode": "scroll",
+  "brandId": "brand-1",
+  "artDirection": "cinematic-dark",
+  "scenes": [
+    {
+      "id": "s1",
+      "intent": "hook",
+      "layout": "centered",
+      "blocks": [
+        {
+          "id": "b1",
+          "props": {
+            "type": "eyebrow",
+            "text": "EYEBROWxxxxxxxxxxxxxxxxx"
+          },
+          "motion": "reveal"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "intent": "problem",
+      "layout": "full-bleed",
+      "blocks": [
+        {
+          "id": "b2",
+          "region": "content",
+          "props": {
+            "type": "headline",
+            "text": "Headline at the maximum length allowedxxxxxxxxxxxxxxxxxxxxxx",
+            "emphasis": "hero"
+          },
+          "motion": "reveal"
+        },
+        {
+          "id": "b3",
+          "region": "content",
+          "props": {
+            "type": "body",
+            "text": "Body copy pushed all the way to the character cap to see what breaks abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyz abcdefghijklmnopqrstuvwxyzxxxxxxxxxx"
+          },
+          "motion": "reveal"
+        },
+        {
+          "id": "b4",
+          "region": "content",
+          "props": {
+            "type": "quote",
+            "text": "A quote that runs all the way to the two hundred character limit to make sure the renderer and the editor both survive the longest plausible testimonial a customer might actually givexxxxxxxxxxxxxxxxx",
+            "attribution": "Attribution Name Very Long Title Herexxxxxxxxxxxxxxxxxxxxxxx",
+            "role": "Role Title Also Fairly Long For A Business Cardxxxxxxxxxxxxx"
+          },
+          "motion": "reveal"
+        },
+        {
+          "id": "b5",
+          "region": "content",
+          "props": {
+            "type": "list",
+            "style": "numbered",
+            "items": [
+              {
+                "text": "A list item pushed to the eighty character cap for maximum plausible lengthxxxxx",
+                "detail": "A supporting detail string pushed to the one hundred twenty character cap for this list item abcdefghijklmnopqrstuvwxyzx"
+              },
+              {
+                "text": "A list item pushed to the eighty character cap for maximum plausible lengthxxxxx",
+                "detail": "A supporting detail string pushed to the one hundred twenty character cap for this list item abcdefghijklmnopqrstuvwxyzx"
+              },
+              {
+                "text": "A list item pushed to the eighty character cap for maximum plausible lengthxxxxx",
+                "detail": "A supporting detail string pushed to the one hundred twenty character cap for this list item abcdefghijklmnopqrstuvwxyzx"
+              },
+              {
+                "text": "A list item pushed to the eighty character cap for maximum plausible lengthxxxxx",
+                "detail": "A supporting detail string pushed to the one hundred twenty character cap for this list item abcdefghijklmnopqrstuvwxyzx"
+              },
+              {
+                "text": "A list item pushed to the eighty character cap for maximum plausible lengthxxxxx",
+                "detail": "A supporting detail string pushed to the one hundred twenty character cap for this list item abcdefghijklmnopqrstuvwxyzx"
+              }
+            ]
+          },
+          "motion": "reveal"
+        },
+        {
+          "id": "b6",
+          "region": "content",
+          "props": {
+            "type": "image",
+            "assetId": "asset-1",
+            "alt": "Alt text describing the image in as much length as the one hundred sixty character cap allows for accessibility abcdefghijklmnopqrstuvwxyzxxxxxxxxxxxxxxxxxxxxxx",
+            "fit": "cover"
+          },
+          "motion": "reveal"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "intent": "proof",
+      "layout": "grid",
+      "blocks": [
+        {
+          "id": "b7",
+          "props": {
+            "type": "stat",
+            "value": "999.9x",
+            "label": "Longest plausible stat labelxxxxxxxxxxxx",
+            "prefix": "~",
+            "suffix": "avg"
+          },
+          "motion": "reveal"
+        },
+        {
+          "id": "b8",
+          "props": {
+            "type": "stat",
+            "value": "1.23M",
+            "label": "Another long stat label herexxxxxxxxxxxx"
+          },
+          "motion": "reveal"
+        },
+        {
+          "id": "b9",
+          "props": {
+            "type": "stat",
+            "value": "<1ms",
+            "label": "Third long stat label goes herexxxxxxxxx"
+          },
+          "motion": "reveal"
+        },
+        {
+          "id": "b10",
+          "props": {
+            "type": "stat",
+            "value": "100%",
+            "label": "Fourth long stat label right herexxxxxxx"
+          },
+          "motion": "reveal"
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "intent": "cta",
+      "layout": "centered",
+      "blocks": [
+        {
+          "id": "b11",
+          "props": {
+            "type": "cta",
+            "label": "Maximum length CTA labelxxxxxxxx",
+            "href": "https://example.com/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            "style": "primary"
+          },
+          "motion": "reveal"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "createdAt": "2026-08-04T00:00:00Z",
+    "updatedAt": "2026-08-04T00:00:00Z"
+  }
+}

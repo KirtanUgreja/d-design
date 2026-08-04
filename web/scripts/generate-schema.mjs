@@ -151,8 +151,20 @@ function toZod(node) {
       return withDefault(expr, node);
     }
     case 'object': {
+      const properties = node.properties ?? {};
+
+      // A bare open object — `dict[str, object]` on the Python side, with no
+      // named properties at all — is a record, not a shape. `BlockPatch.props`
+      // is exactly this: the fields being patched vary by block type, so
+      // there is nothing to name. `z.record` keeps the keys typed as strings
+      // and the values as `unknown`, which still requires narrowing before
+      // use — it is not the same permissive default as `z.any()`.
+      if (Object.keys(properties).length === 0 && node.additionalProperties === true) {
+        return withDefault('z.record(z.string(), z.unknown())', node);
+      }
+
       const required = new Set(node.required ?? []);
-      const entries = Object.entries(node.properties ?? {}).map(([key, prop]) => {
+      const entries = Object.entries(properties).map(([key, prop]) => {
         const expr = toZod(prop);
         return `${lit(key)}: ${required.has(key) ? expr : `${expr}.optional()`}`;
       });
@@ -165,7 +177,7 @@ function toZod(node) {
       if (extra !== false && extra !== undefined) {
         unsupported(
           node,
-          'additionalProperties as a schema, or `true`, is not supported',
+          'additionalProperties as a schema, on an object with named properties, is not supported',
         );
       }
       const object = extra === false ? 'z.strictObject' : 'z.object';
@@ -234,19 +246,30 @@ function ordered(defs) {
 
 function render(schemas) {
   const defs = collectDefs(schemas);
-  const parts = [HEADER];
 
+  // Every top-level exported model is a definition in its own right too, and
+  // it can collide with a $def already collected above: `Scene` is exported
+  // directly AND appears as a $def inside `Experience` (which embeds scenes).
+  // Fold both into the one namespace `ordered` walks, so each name is emitted
+  // exactly once regardless of which side first introduced it — the earlier
+  // version emitted the root loop separately and produced two `export const
+  // sceneSchema` declarations for exactly this reason.
+  for (const [name, schema] of Object.entries(schemas)) {
+    const { $defs: _nested, ...root } = schema;
+    const seen = defs[name];
+    if (seen && JSON.stringify(seen) !== JSON.stringify(root)) {
+      throw new Error(
+        `generate-schema: ${name} is both a $def and a differently-shaped root export`,
+      );
+    }
+    defs[name] = root;
+  }
+
+  const parts = [HEADER];
   for (const name of ordered(defs)) {
     parts.push(`export const ${varName(name)} = ${toZod(defs[name])};`);
     parts.push(`export type ${name} = z.infer<typeof ${varName(name)}>;`);
   }
-
-  for (const [name, schema] of Object.entries(schemas)) {
-    const { $defs: _defs, ...root } = schema;
-    parts.push(`export const ${varName(name)} = ${toZod(root)};`);
-    parts.push(`export type ${name} = z.infer<typeof ${varName(name)}>;`);
-  }
-
   return parts.join('\n\n');
 }
 

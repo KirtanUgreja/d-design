@@ -6,23 +6,262 @@
 
 import { z } from 'zod';
 
-export const probeBodySchema = z.strictObject({
-  kind: z.literal('body'),
-  text: z.string().max(240),
+export const abstractVisualPropsSchema = z.strictObject({
+  generator: z.enum([
+    'gradient-mesh',
+    'particle-field',
+    'grid-lines',
+    'orb',
+    'noise-veil',
+  ]),
+  intensity: z.enum(['subtle', 'medium', 'bold']),
+  seed: z.int().min(0).max(2147483647),
+  type: z.literal('abstract-visual'),
 });
 
-export type ProbeBody = z.infer<typeof probeBodySchema>;
+export type AbstractVisualProps = z.infer<typeof abstractVisualPropsSchema>;
 
-export const probeHeadlineSchema = z.strictObject({
-  kind: z.literal('headline'),
-  text: z.string().max(60),
+export const assetSchema = z.strictObject({
+  alt: z.string().max(160).nullable().default(null).optional(),
+  height: z.int().gt(0).nullable().default(null).optional(),
+  id: z.string().min(1),
+  kind: z.enum(['image', 'video']),
+  mime: z.string().min(1).max(128),
+  source: z.enum(['upload', 'generated']),
+  storageKey: z.string().min(1),
+  width: z.int().gt(0).nullable().default(null).optional(),
 });
 
-export type ProbeHeadline = z.infer<typeof probeHeadlineSchema>;
+export type Asset = z.infer<typeof assetSchema>;
 
-export const probeSchema = z.strictObject({
-  blocks: z.array(z.discriminatedUnion('kind', [probeHeadlineSchema, probeBodySchema])),
-  id: z.string(),
+export const assetRefSchema = z.strictObject({
+  description: z.string().max(200).default('').optional(),
+  id: z.string().min(1),
 });
 
-export type Probe = z.infer<typeof probeSchema>;
+export type AssetRef = z.infer<typeof assetRefSchema>;
+
+export const eyebrowPropsSchema = z.strictObject({
+  text: z.string().min(1).max(24),
+  type: z.literal('eyebrow'),
+});
+
+export type EyebrowProps = z.infer<typeof eyebrowPropsSchema>;
+
+export const headlinePropsSchema = z.strictObject({
+  emphasis: z.enum(['hero', 'section']).nullable().default(null).optional(),
+  text: z.string().min(1).max(60),
+  type: z.literal('headline'),
+});
+
+export type HeadlineProps = z.infer<typeof headlinePropsSchema>;
+
+export const bodyPropsSchema = z.strictObject({
+  emphasis: z.enum(['lead', 'normal', 'muted']).nullable().default(null).optional(),
+  text: z.string().min(1).max(240),
+  type: z.literal('body'),
+});
+
+export type BodyProps = z.infer<typeof bodyPropsSchema>;
+
+export const quotePropsSchema = z.strictObject({
+  attribution: z.string().max(60).nullable().default(null).optional(),
+  role: z.string().max(60).nullable().default(null).optional(),
+  text: z.string().min(1).max(200),
+  type: z.literal('quote'),
+});
+
+export type QuoteProps = z.infer<typeof quotePropsSchema>;
+
+export const listItemSchema = z.strictObject({
+  detail: z.string().max(120).nullable().default(null).optional(),
+  text: z.string().min(1).max(80),
+});
+
+export type ListItem = z.infer<typeof listItemSchema>;
+
+export const listPropsSchema = z.strictObject({
+  items: z.array(listItemSchema).min(2).max(5),
+  style: z.enum(['bullets', 'numbered', 'checks']),
+  type: z.literal('list'),
+});
+
+export type ListProps = z.infer<typeof listPropsSchema>;
+
+export const statPropsSchema = z.strictObject({
+  label: z.string().min(1).max(40),
+  prefix: z.string().max(8).nullable().default(null).optional(),
+  suffix: z.string().max(8).nullable().default(null).optional(),
+  type: z.literal('stat'),
+  value: z.string().min(1).max(12),
+});
+
+export type StatProps = z.infer<typeof statPropsSchema>;
+
+export const imagePropsSchema = z.strictObject({
+  alt: z.string().min(1).max(160),
+  assetId: z.string().min(1),
+  fit: z.enum(['cover', 'contain']),
+  treatment: z.enum(['plain', 'framed', 'bleed']).nullable().default(null).optional(),
+  type: z.literal('image'),
+});
+
+export type ImageProps = z.infer<typeof imagePropsSchema>;
+
+export const videoPropsSchema = z.strictObject({
+  assetId: z.string().min(1),
+  autoplay: z.boolean(),
+  loop: z.boolean(),
+  posterAssetId: z.string().nullable().default(null).optional(),
+  type: z.literal('video'),
+});
+
+export type VideoProps = z.infer<typeof videoPropsSchema>;
+
+export const ctaPropsSchema = z.strictObject({
+  href: z
+    .string()
+    .min(1)
+    .max(2048)
+    .regex(new RegExp('^(https?://|mailto:|tel:|#|/($|[^/]))')),
+  label: z.string().min(1).max(32),
+  style: z.enum(['primary', 'secondary']),
+  type: z.literal('cta'),
+});
+
+export type CtaProps = z.infer<typeof ctaPropsSchema>;
+
+export const slotPropsSchema = z.strictObject({
+  css: z.string().max(20000).default('').optional(),
+  description: z.string().min(1).max(200),
+  height: z.enum(['viewport', 'auto']),
+  html: z.string().max(20000).default('').optional(),
+  js: z.string().max(20000).default('').optional(),
+  type: z.literal('slot'),
+});
+
+export type SlotProps = z.infer<typeof slotPropsSchema>;
+
+export const blockSchema = z.strictObject({
+  id: z.string().min(1),
+  motion: z
+    .enum(['reveal', 'emphasize', 'parallax', 'none'])
+    .default('reveal')
+    .optional(),
+  props: z.discriminatedUnion('type', [
+    eyebrowPropsSchema,
+    headlinePropsSchema,
+    bodyPropsSchema,
+    quotePropsSchema,
+    listPropsSchema,
+    statPropsSchema,
+    imagePropsSchema,
+    videoPropsSchema,
+    ctaPropsSchema,
+    abstractVisualPropsSchema,
+    slotPropsSchema,
+  ]),
+  region: z
+    .enum(['bg', 'content', 'left', 'right', 'cells'])
+    .nullable()
+    .default(null)
+    .optional(),
+});
+
+export type Block = z.infer<typeof blockSchema>;
+
+export const blockPatchSchema = z.strictObject({
+  blockId: z.string().min(1),
+  props: z.record(z.string(), z.unknown()),
+  sceneId: z.string().min(1),
+});
+
+export type BlockPatch = z.infer<typeof blockPatchSchema>;
+
+export const brandKitSchema = z.strictObject({
+  displayFont: z.string().min(1).max(120),
+  id: z.string().min(1),
+  logoAssetId: z.string().nullable().default(null).optional(),
+  neutral: z.string().min(1).max(32),
+  primary: z.string().min(1).max(32),
+  secondary: z.string().min(1).max(32),
+  textFont: z.string().min(1).max(120),
+});
+
+export type BrandKit = z.infer<typeof brandKitSchema>;
+
+export const briefCtaSchema = z.strictObject({
+  href: z.string().min(1).max(2048),
+  label: z.string().min(1).max(32),
+});
+
+export type BriefCta = z.infer<typeof briefCtaSchema>;
+
+export const briefSchema = z.strictObject({
+  assets: z.array(assetRefSchema).max(50).optional(),
+  audience: z.string().min(1).max(300),
+  constraints: z.string().max(1000).nullable().default(null).optional(),
+  cta: briefCtaSchema,
+  goal: z.string().min(1).max(500),
+  keyMessages: z.array(z.string()).min(3).max(5),
+  proofPoints: z.array(z.string()).max(20).optional(),
+  tone: z.string().min(1).max(200),
+});
+
+export type Brief = z.infer<typeof briefSchema>;
+
+export const experienceMetaSchema = z.strictObject({
+  createdAt: z.string(),
+  publishedAt: z.string().nullable().default(null).optional(),
+  updatedAt: z.string(),
+});
+
+export type ExperienceMeta = z.infer<typeof experienceMetaSchema>;
+
+export const sceneSchema = z.strictObject({
+  blocks: z.array(blockSchema).min(1).max(8),
+  id: z.string().min(1),
+  intent: z.enum(['hook', 'problem', 'reveal', 'proof', 'cta']),
+  layout: z.enum([
+    'full-bleed',
+    'split-left',
+    'split-right',
+    'centered',
+    'stack',
+    'grid',
+  ]),
+  notes: z.string().max(2000).nullable().default(null).optional(),
+});
+
+export type Scene = z.infer<typeof sceneSchema>;
+
+export const experienceSchema = z.strictObject({
+  artDirection: z.literal('cinematic-dark'),
+  brandId: z.string().min(1),
+  id: z.string().min(1),
+  meta: experienceMetaSchema,
+  mode: z.enum(['scroll', 'slides']),
+  scenes: z.array(sceneSchema).min(3).max(12),
+  title: z.string().min(1).max(200),
+});
+
+export type Experience = z.infer<typeof experienceSchema>;
+
+export const outlineSceneSchema = z.strictObject({
+  beat: z.string().min(1).max(200),
+  intent: z.enum(['hook', 'problem', 'reveal', 'proof', 'cta']),
+  layoutHint: z
+    .enum(['full-bleed', 'split-left', 'split-right', 'centered', 'stack', 'grid'])
+    .nullable()
+    .default(null)
+    .optional(),
+});
+
+export type OutlineScene = z.infer<typeof outlineSceneSchema>;
+
+export const outlineSchema = z.strictObject({
+  scenes: z.array(outlineSceneSchema).min(3).max(12),
+  title: z.string().min(1).max(200),
+});
+
+export type Outline = z.infer<typeof outlineSchema>;

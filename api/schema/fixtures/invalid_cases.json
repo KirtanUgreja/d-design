@@ -1,0 +1,902 @@
+[
+  {
+    "name": "region not on layout",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "headline",
+                "text": "Ship the thing"
+              },
+              "motion": "reveal",
+              "region": "left"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "two headlines in one scene",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "headline",
+                "text": "Ship the thing"
+              },
+              "motion": "reveal"
+            },
+            {
+              "id": "b1b",
+              "props": {
+                "type": "headline",
+                "text": "Second headline"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "grid with fewer than two cells",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "grid",
+          "blocks": [
+            {
+              "id": "b1",
+              "region": "cells",
+              "props": {
+                "type": "stat",
+                "value": "1",
+                "label": "only one"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "duplicate block id in a scene",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "headline",
+                "text": "Ship the thing"
+              },
+              "motion": "reveal"
+            },
+            {
+              "id": "b1",
+              "props": {
+                "type": "body",
+                "text": "duplicate id"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "no hook scene",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "headline",
+                "text": "Ship the thing"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "hook is not the first scene",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "headline",
+                "text": "Ship the thing"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "no CTA in the experience",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "headline",
+                "text": "Ship the thing"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "body",
+                "text": "no cta here"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "two slots in the experience",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "slot",
+                "description": "demo",
+                "html": "",
+                "css": "",
+                "js": "",
+                "height": "auto"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "slot",
+                "description": "demo",
+                "html": "",
+                "css": "",
+                "js": "",
+                "height": "auto"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "duplicate scene id",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "headline",
+                "text": "Ship the thing"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s1",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "headline text over the character cap",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "headline",
+                "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "fewer than three scenes",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "headline",
+                "text": "Ship the thing"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "list with fewer than two items",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "list",
+                "style": "bullets",
+                "items": [
+                  {
+                    "text": "only one"
+                  }
+                ]
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "scene with no blocks",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": []
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "https://example.com/start",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  },
+  {
+    "name": "CTA href uses a disallowed scheme",
+    "valid": false,
+    "data": {
+      "id": "exp-minimal",
+      "title": "Minimal Experience",
+      "mode": "scroll",
+      "brandId": "brand-1",
+      "artDirection": "cinematic-dark",
+      "scenes": [
+        {
+          "id": "s1",
+          "intent": "hook",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b1",
+              "props": {
+                "type": "headline",
+                "text": "Ship the thing"
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s2",
+          "intent": "problem",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b2",
+              "props": {
+                "type": "body",
+                "text": "Most launches take too long."
+              },
+              "motion": "reveal"
+            }
+          ]
+        },
+        {
+          "id": "s3",
+          "intent": "cta",
+          "layout": "centered",
+          "blocks": [
+            {
+              "id": "b3",
+              "props": {
+                "type": "cta",
+                "label": "Get started",
+                "href": "javascript:alert(1)",
+                "style": "primary"
+              },
+              "motion": "reveal"
+            }
+          ]
+        }
+      ],
+      "meta": {
+        "createdAt": "2026-08-04T00:00:00Z",
+        "updatedAt": "2026-08-04T00:00:00Z"
+      }
+    }
+  }
+]
