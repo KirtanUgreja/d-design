@@ -131,6 +131,13 @@ jobs:
         working-directory: web
       - run: pnpm build
         working-directory: web
+      # Explicit install, not a lifecycle script — the same discipline
+      # dependencies.md asks for on every native-binary package. Only
+      # chromium: the one browser project.name in playwright.config.ts uses.
+      - run: pnpm exec playwright install --with-deps chromium
+        working-directory: web
+      - run: pnpm test:e2e
+        working-directory: web
 
   invariants:
     runs-on: ubuntu-latest

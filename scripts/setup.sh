@@ -17,6 +17,9 @@ echo '→ api (uv, frozen)'
 echo '→ web (pnpm, frozen)'
 (cd web && pnpm install --frozen-lockfile)
 
+echo '→ playwright (chromium only, explicit — not a lifecycle script)'
+(cd web && pnpm exec playwright install chromium)
+
 echo '→ infrastructure'
 docker compose up -d
 

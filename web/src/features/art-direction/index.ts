@@ -17,6 +17,7 @@ export type {
 export { CINEMATIC_DARK, FONT_REGISTRY } from './cinematic-dark';
 
 export type { Color } from './color';
+export { toCssColor } from './color';
 
 export type {
   Easing,

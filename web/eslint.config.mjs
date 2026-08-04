@@ -97,7 +97,17 @@ export default tseslint.config(
     },
   },
 
-  { files: RENDERER, rules: { 'no-restricted-syntax': ['error', ...rendererPurity] } },
+  {
+    files: RENDERER,
+    rules: {
+      'no-restricted-syntax': ['error', ...rendererPurity],
+      // next/image is a Next.js server feature (the /_next/image optimizer
+      // route) — unavailable in the job worker and the render service that
+      // run this same tree from v2 on. A plain <img> is the one that behaves
+      // identically in all three processes (patterns.md rule 2).
+      '@next/next/no-img-element': 'off',
+    },
+  },
 
   // Generated. Linting it would report on the emitter's formatting choices,
   // and the fail-on-diff gate is what actually guards this directory.
