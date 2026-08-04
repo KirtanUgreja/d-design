@@ -85,7 +85,11 @@ ignore = [
 ban-relative-imports = "all"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]   # pytest is assert
+# pytest is assert. Both patterns: api/tests/ for cross-cutting tests, and
+# test_*.py colocated next to the module it tests (docs/coderules/structure.md
+# -> "Colocate").
+"tests/*" = ["S101"]
+"**/test_*.py" = ["S101"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
@@ -95,7 +99,13 @@ asyncio_mode = "auto"
 # pool bug and is not one.
 asyncio_default_fixture_loop_scope = "session"
 asyncio_default_test_loop_scope = "session"
-testpaths = ["tests"]
+# Not "tests" only. Tests colocate with the module they test
+# (docs/coderules/structure.md -> "Colocate") — api/schema/test_scene.py sits
+# next to schema/scene.py, and api/tests/ holds what is cross-cutting rather
+# than owned by one feature. `testpaths = ["tests"]` would silently stop
+# collecting the colocated ones; the default (search from rootdir) picks up
+# both without needing a list that has to be kept in sync with every new
+# feature directory.
 # `api/` is the project root, not an installed package — the same reason
 # scripts run as `python -m`. This puts the top-level modules on the path.
 pythonpath = ["."]

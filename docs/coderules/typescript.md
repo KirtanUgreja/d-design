@@ -53,14 +53,15 @@ If you find yourself wanting a type the generated schema does not give you, that
 
 Generating types alone would have been simpler and it was considered ([../techstack/decisions.md](../techstack/decisions.md)). The editor patches a block and revalidates the tree after every change ([../v1/ai-pipeline.md](../v1/ai-pipeline.md)); routing that through the Python API would put a network round trip inside a keystroke-scale interaction and make the editor useless offline.
 
-So a validator is generated too. It is **not** a second source of truth — it is the same source, compiled twice, and the round-trip test in [python.md](python.md) proves both agree on the same fixture.
+So a validator is generated too. It is **not** a second source of truth — it is the same source, compiled twice, and the round-trip test in [python.md](python.md) proves both agree on the same fixture — **for what JSON Schema can say.** Phase 01 built that test and it immediately drew the line: field-level shape (a length cap, an item count, a pattern) crosses the boundary; whole-tree structural rules ("exactly one hook and it is first," "ids unique within this list") do not, because JSON Schema validates one node's shape and has no vocabulary for a predicate over a whole tree. That is not an emitter gap to fix — it is what the format is. The nine rules of that shape stay Python-only, asserted at the pipeline boundary; the five that are field-level generate into Zod and are what the editor actually needs, since `BlockPatch` — the only offline write path — touches one block's props and cannot violate a whole-tree rule regardless ([../v1/plan/01-scene-schema.md](../v1/plan/01-scene-schema.md) → "Built").
 
 Zod 4 remains the version to build on: ~14× faster string parsing and a 57% smaller core bundle than v3, with `z.discriminatedUnion` validating in O(1) off the discriminator — which is exactly the shape `Block` is.
 
-Two caveats survive the change of source and are worth knowing before relying on them:
+Three caveats survive the change of source and are worth knowing before relying on them:
 
 - **The discriminated union stays off the schema root.** `Scene`/`Experience` is an object and `Block` is nested inside it. Root-level tagged unions have known rough edges with strict structured-output validators, so this is a constraint on how the Pydantic schema is written, enforced by convention on the other side of the boundary.
 - **Character caps do not survive the trip to the model.** Structured outputs widely ignores `minLength`/`maxLength`. The generated JSON Schema carries the *shape*; Pydantic enforces the *lengths* on the response ([../v1/scene-schema.md](../v1/scene-schema.md)). The generated Zod carries them too, which is what lets the editor reject an over-long headline without asking the server.
+- **A cross-field rule worth having offline is worth rewriting as a field-level one.** `CTA.href`'s scheme allowlist was a `model_validator` — correct, but Python-only, and the property panel patches `href` directly. Rewritten as a `Field(pattern=...)`, it generates into Zod's `.regex()` and the editor now rejects a pasted `javascript:` URL without a round trip. Not every cross-field rule can make this move — most need real cross-field or cross-array reasoning a pattern cannot express — but check before assuming a rule has to stay Python-only.
 
 ## Trust boundaries: one parse, at entry
 

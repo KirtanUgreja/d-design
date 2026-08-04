@@ -6,4 +6,21 @@
 // arrives in v2 there is a second TypeScript consumer, and publishing it as
 // @d-design/schema is a package.json and a Changeset.
 
-export { probeSchema, type Probe } from './generated/schema';
+export {
+  experienceSchema,
+  type Experience,
+  sceneSchema,
+  type Scene,
+  blockSchema,
+  type Block,
+  assetSchema,
+  type Asset,
+  brandKitSchema,
+  type BrandKit,
+  briefSchema,
+  type Brief,
+  outlineSchema,
+  type Outline,
+  blockPatchSchema,
+  type BlockPatch,
+} from './generated/schema';

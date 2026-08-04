@@ -149,12 +149,30 @@ It never leaves the process. The seam is in the same codebase as the schema, so 
 
 ---
 
+## Built — and the finding that reshaped "cross-language agreement"
+
+Built 4 Aug 2026. One deviation here is bigger than the others and is worth reading before touching this schema again.
+
+**Wire names are camelCase; the base class earns its keep.** `schema/base.py` gained `alias_generator=to_camel` and `populate_by_name=True`. Without it, `model_json_schema()` emits Python's own attribute names — `brand_id`, `art_direction` — onto the wire, and the generated Zod/TS would carry them too. `docs/v1/scene-schema.md`'s own interfaces are camelCase (`brandId`, `artDirection`, `createdAt`), and `structure.md` already says camelCase in TypeScript, snake_case in Python, "the rules are parallel, the spellings are native." Skipping the alias would have been exactly the transliteration mistake that sentence warns against, just moved to the wire instead of a filename.
+
+**`Block.type` lives on `props`, not on `Block` itself.** The spec draws two fields — `Block.type` and `Block.props`, discriminated by the first. Pydantic discriminates a union by a field *inside* the union, and a duplicate `type` on the wrapper buys nothing a reader couldn't get from `props.type`. The patch shape (`{sceneId, blockId, props}`) is unchanged.
+
+**The finding: nine of the fourteen validation rules cannot reach TypeScript, and this is not an emitter gap.** The cross-language fixture test was built exactly as the phase file specifies — one JSON file, both languages, one verdict per case — and it immediately found that rules like "exactly one hook, and it is first," "at least one CTA somewhere," and "ids unique within this list" have no JSON Schema representation. JSON Schema validates the shape of one node; it has no vocabulary for a predicate over a whole tree — no way to say "count the items in this nested array matching this discriminator" or "this array's items must be pairwise distinct by a key." That is a property of the format, discovered here rather than assumed away, and forcing it through by hand-authoring `if`/`then` JSON Schema branches would have violated `python.md`'s own rule that the JSON Schema is never a file someone maintains.
+
+The honest split, once found: five of the fourteen rules are **field-level shape** (a length cap, an item count, a regex) and cross the wire cleanly — `fixtures/wire_invalid_cases.json` holds these and both `api/tests/test_schema_codegen.py` and `web/src/schema/schema.test.ts` read it. The other nine are **whole-tree structural** rules, enforced by Pydantic's `model_validator`s exactly as designed, asserted Python-only in `schema/test_scene.py` against the full `fixtures/invalid_cases.json`. This split is not a weakening of editor-side validation: `BlockPatch` — the only write path that runs entirely offline, in the property panel — can only change one block's props. It cannot delete the one CTA, retag which scene is the hook, or duplicate an id, so none of the nine whole-tree rules are reachable from the interaction the offline validator exists to protect (`typescript.md`'s "keystroke-scale interaction" case is about caps and shape, and those five are exactly what made the cut).
+
+**One rule moved from cross-field to field-level on purpose, and got stronger for it.** `CtaProps.href`'s scheme allowlist was originally a `model_validator` calling `urlparse()` — correct, but Python-only, and the property panel patches `href` directly. Rewritten as `Field(pattern=HREF_PATTERN)`, it now generates into the Zod validator as `.regex()`, so a pasted `javascript:` URL is rejected in the browser instead of only at the next full-tree validation. The pattern itself had to drop a lookahead (`/(?!/)` → `/($|[^/])`) — Pydantic's Rust regex engine doesn't support look-around, and the same string has to parse as a JS `RegExp` on the other side of the boundary, so the portable subset both engines share is what got written, not the more expressive one.
+
+**A second false positive, from the same test suite, for a different reason.** `hostile.json`'s `Stat.value: "<1ms"` tripped the no-styling regex — `[\d.]+(px|rem|em|pt|ms|s)\b` cannot distinguish a CSS duration from a benchmark number, and `"<50ms"` is the spec's own example of a legitimate `Stat.value`. This is not a value leaking through — `Stat` has no styling field to leak from — it is the regex matching content it was never meant to look at. Fixed the way the file's own docstring requires: an explicit named-field exemption (`STAT_CONTENT_FIELDS = {"value", "prefix", "suffix"}`), the same mechanism already used for Slot's code fields, never a loosened pattern. `Stat.label` stays covered.
+
+**Two Python-only checks beyond the spec's two.** `assert_hrefs_are_supplied` and `assert_stats_are_supported` join `assert_assets_resolve` as pipeline-boundary functions — the first enforces the URL rule from `docs/v1/ai-pipeline.md` ("every `CTA.href` traces to a Brief-supplied URL"), the second gives `Stat.value` the same "arrange, never invent" treatment as URLs. Neither needs a Pydantic validator; both need the Brief, which is exactly the "keeps `schema/` free of a database import" reasoning the phase file already gives for `assert_assets_resolve`.
+
 ## Exit gate
 
-- [ ] Every scene-tree shape in the system traces to one Pydantic definition — TypeScript types and the Zod validator are generated, and regenerating produces no diff
-- [ ] The cross-language fixture agreement test passes in both directions
-- [ ] Fourteen rejection tests, one per validation rule, all passing
-- [ ] The no-styling walker passes the fixtures and rejects six presentational patterns
-- [ ] `SCENE_JSON_SCHEMA` is deterministic
-- [ ] Three JSON fixtures exist, including `hostile.json`, loadable from both languages
-- [ ] `api/schema/__init__.py` is short enough to read in one screen — it is the catalog every later phase reads before writing something that already exists
+- [x] Every scene-tree shape in the system traces to one Pydantic definition — TypeScript types and the Zod validator are generated, and regenerating produces no diff
+- [x] The cross-language fixture agreement test passes in both directions, **for the subset JSON Schema can express** — see the finding above. Both languages read the same files; nothing is duplicated by hand
+- [x] Fourteen rejection tests, one per validation rule, all passing — in Python (`schema/test_scene.py`); five of the fourteen also pass in TypeScript (`web/src/schema/schema.test.ts`)
+- [x] The no-styling walker passes the fixtures and rejects six presentational patterns, with two named exemptions (Slot code, Stat content) and neither is a loosened regex
+- [x] `SCENE_JSON_SCHEMA` is deterministic — same bytes across two calls in-process and across a subprocess restart
+- [x] Three JSON fixtures exist, including `hostile.json` (all four caps at exactly their limit), loadable from both languages
+- [x] `api/schema/__init__.py` is short enough to read in one screen
