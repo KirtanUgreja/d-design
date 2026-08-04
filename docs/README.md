@@ -1,6 +1,6 @@
 # d-design docs
 
-> Design corpus for an AI presentation-experience engine. 43 documents, nothing built yet. Every directory has a README that routes to the exact file you need.
+> Design corpus for an AI presentation-experience engine. 49 documents plus a 13-file build plan, nothing built yet. Every directory has a README that routes to the exact file you need.
 
 **New here?** Read [v1/scene-schema.md](v1/scene-schema.md) first. Everything else depends on that shape.
 
@@ -22,6 +22,7 @@ Two kinds of directory, and the difference matters when you are looking for some
 | [techstack/](techstack/README.md) | current | Where every piece runs, which model, what the AI may call |
 | [security/](security/README.md) | current | Threat model and every control, gated to the version that needs it |
 | [coderules/](coderules/README.md) | current | How the code stays consistent when an AI writes most of it |
+| [design/](design/README.md) | current | How **our own** app and website look and feel — not what the engine produces |
 
 ## Find it fast
 
@@ -36,10 +37,13 @@ Route by the question you arrived with, not by the topic name.
 | What tools the AI may call | [techstack/pipeline-tools.md](techstack/pipeline-tools.md) |
 | Why the AI never writes styling | [v1/spec.md](v1/spec.md) → "The bet" |
 | What we are building, in what order | Each version's `spec.md` → "Build order" |
+| The phase-by-phase plan for actually building v1 | [v1/plan/README.md](v1/plan/README.md) |
 | Every locked decision, and its rejected alternative | Each version's `spec.md` → "Locked decisions", and [techstack/decisions.md](techstack/decisions.md) |
 | Where a piece of infrastructure runs | [techstack/infrastructure.md](techstack/infrastructure.md) |
 | Whether something is a security risk | [security/README.md](security/README.md) — it routes by threat |
 | A rule about how to write the code | [coderules/README.md](coderules/README.md) |
+| How our own site and app should look | [design/principles.md](design/principles.md) — and note it is *not* the art direction |
+| An open product-design decision, with a recommended default | [design/questions.md](design/questions.md) |
 | Why a competitor died | [v1/market.md](v1/market.md) |
 | The legal obligations | [v3/compliance.md](v3/compliance.md) — EU AI Act, in force since 2 Aug 2026 |
 

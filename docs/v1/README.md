@@ -11,6 +11,7 @@ v1 is deliberately small: a single user, a local Postgres, no accounts, no deplo
 | Doc | What's in it |
 |---|---|
 | [spec.md](spec.md) | The problem, the bet, 15 locked decisions, architecture, stack, persistence, build order, verification, risks |
+| [plan/](plan/README.md) | **The implementation plan.** Twelve phases from an empty repo to a published experience, each with what to read, what to build, and what to verify. Build status lives in its README |
 | [scene-schema.md](scene-schema.md) | **The IR.** Every type, all 11 blocks, 6 layouts and their regions, all validation rules, the editing patch shape |
 | [art-direction.md](art-direction.md) | The token layer: 5 groups, `cinematic-dark`'s concrete values, motion implementation, accessibility |
 | [ai-pipeline.md](ai-pipeline.md) | The four phases with concrete API shapes, validation and repair, caching, and what an experience costs |
@@ -30,6 +31,8 @@ v1 is deliberately small: a single user, a local Postgres, no accounts, no deplo
 | Why AI-generated product imagery is refused | [ai-pipeline.md](ai-pipeline.md) → "Imagery" |
 | The database tables | [spec.md](spec.md) → "Persistence" |
 | What is explicitly *not* in v1 | [spec.md](spec.md) → "Not in v1" |
+| What to build first, and what blocks what | [plan/README.md](plan/README.md) → "Dependency graph" |
+| How far through the build you are | [plan/README.md](plan/README.md) → "Status" |
 | What the AI is allowed to call | [ai-pipeline.md](ai-pipeline.md) → "What the Build phase may call" |
 | Why the decoder no longer guarantees the schema | [scene-schema.md](scene-schema.md) → "Why the length caps matter more than they look" |
 | What v1 has to run on | [spec.md](spec.md) → "Stack" — Docker Compose and a dev server, no AWS |
