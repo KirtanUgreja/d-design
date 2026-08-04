@@ -122,10 +122,20 @@ One function, token object → a CSS custom property bundle applied at the scene
 
 ---
 
+## Built
+
+Built 4 Aug 2026, in `web/src/features/art-direction/`. No plan deviations worth a section of their own this time — one structural note and one naming note.
+
+**Motion really is a fifth group that ships as a second export, not a field.** `patterns.md` rule 2 is explicit that `SceneRenderer(tree, artDirection, motion)` takes motion as its own parameter, so `ArtDirection` holds only color/type/rhythm/texture and `CINEMATIC_MOTION`/`REDUCED_MOTION` live in `motion-vocabulary.ts` as siblings, not nested. Getting this wrong would have meant threading a `prefers-reduced-motion` read into the art-direction object itself — exactly the environment branch rule 6 exists to keep out of anything the renderer touches.
+
+**Type keys are derived, not re-typed.** `web/src/schema/index.ts` doesn't export `HeadlineProps`/`BodyProps` individually — they're internal shapes of the `Block` discriminated union. Rather than widen the schema's public surface for two types nothing else needs, `TypeRoleKey` projects them out of `Block['props']` with `Extract<..., {type: T}>['emphasis']`. Same guarantee the phase asks for (a role added to `emphasis` is a compile error until `TYPE_SCALE` covers it), zero new schema exports.
+
+Two values carried forward from phase 02's corrections rather than the original draft: `--ink-faint` at 0.50 alpha (not 0.38), and Fraunces as the display face (not Instrument Serif). Both are asserted directly in `art-direction.test.ts` so a future edit that quietly reverts either fails the gate rather than the next comp review.
+
 ## Exit gate
 
-- [ ] The three comps from phase 02 can be rebuilt using only tokens from this file, with no literal values
-- [ ] No token typed as a bare string; the type test proves it
-- [ ] Brand resolver enforces contrast, and fails closed when it cannot
-- [ ] Both motion vocabularies exist, and neither reads the environment
-- [ ] `src/features/art-direction/index.ts` reads in one screen
+- [x] The three comps from phase 02 can be rebuilt using only tokens from this file, with no literal values — every space/measure/content-max value in `to-css-vars.test` matches `docs/v1/comps/tokens.css` exactly
+- [x] No token typed as a bare string — `NoBareString<ArtDirection>`, a compile-time check via `tsc --noEmit`, not a runtime assertion
+- [x] Brand resolver enforces contrast, and fails closed when it cannot — proven by injection (a synthetic light background where lightening-only can never separate from it), not assumed
+- [x] Both motion vocabularies exist, and neither reads the environment — asserted by reading the module's own source and grepping for `typeof window` / `process.env` / `matchMedia`
+- [x] `src/features/art-direction/index.ts` reads in one screen
