@@ -166,12 +166,39 @@ Tokens are injected into the srcdoc as CSS variables **through `to-css-vars`**, 
 
 ---
 
+## Built
+
+Built 5 Aug 2026, in `web/src/features/renderer/` (+ the review page at `web/src/app/dev/primitives/`). Structure matches the Make section — `layouts/`, `blocks/`, `motion/reveal.tsx`, `scene.tsx`, `scene-renderer.tsx` — with a few additions the plan named at a level this section fills in.
+
+**One shared `RegionBlocks` (in `layouts/region-blocks.tsx`), not six.** The Search section's warning — "six layouts is exactly the count where an AI writes six near-identical grid helpers" — is exactly what would have happened without it. Every layout except `grid` (where each block is its own grid cell, not a stack) delegates its per-region stagger-and-reveal list to this one component. Scene-level padding moved the same way: it lived in every non-full-bleed layout at first, got noticed as the same two lines repeated four times, and now lives once in `scene.tsx`'s wrapper (full-bleed opts out — it bleeds on purpose).
+
+**`tokens.ts` builds variable *names*, never values.** Every block references `var(--type-hero-size)` etc. through small typed helpers (`typeStyle`, `spaceVar`, `COLOR_VAR`) rather than re-deriving anything `to-css-vars.ts` already computed — the "one token→string path" rule from Search, seen from the consumer side. `SceneRenderer` calls `toCssVars(ad)` exactly once, spreads it as the root's inline style, and every descendant only ever writes `var(--x)` string references — which is also how the renderer stays free of `className` entirely (the phase-00 lint rule bans a literal string there, and there was never a reason to fight it: styling *is* CSS variables here, nothing else).
+
+**Progressive enhancement without a `setState`-in-effect.** The obvious "flip a flag after mount" pattern for the resting→animated upgrade trips `react-hooks/set-state-in-effect` (a cascading-render risk). `motion/reveal.tsx`'s `useArmed()` uses `useSyncExternalStore` with a no-op subscribe and a server/client snapshot split instead — `false` on every process's first render (including the one with no JS, which never reaches the client snapshot at all), `true` once hydrated. No extra render, no effect body doing the flipping.
+
+**Fontsource, not left to a system-font fallback.** `FONT_REGISTRY` names `'Fraunces'`/`'Inter'` by id; nothing before this phase made either name resolve to an actual face, so the review page rendered in Georgia. `@fontsource/fraunces` and `@fontsource/inter` (400/500/600, imported in `globals.css`) is `techstack/frontend.md`'s already-documented Fontsource decision, installed — a ledger line in `dependencies.md`, not a new decision.
+
+**Asset resolution doesn't exist yet, so `Image`/`Video` render a deterministic placeholder.** `blocks/asset-placeholder.ts` builds an inline SVG data URI from the art direction's own `bgElevated`/`hairline` tokens, `ponytail`-marked with the real trigger: storage.ts, phase 10. Nothing about the block's props changes when that lands.
+
+**`AbstractVisual` ships `gradient-mesh` only, as specified** — a seeded `mulberry32` PRNG placing 2–4 blurred radial-gradient blobs from the palette. The other four generator values are still schema-legal (a model could emit them today); they fall back to the same generator rather than rendering nothing, `ponytail`-marked for phase 11.
+
+**The hostile fixture earned its keep twice**, which is the whole reason phase 01 built it before this phase needed it:
+
+1. A headline at the character cap with no internal whitespace (`"...allowedxxxxxxxxxxx"`) overflowed the viewport on both sides. Every layout already constrained *width*; nothing told the browser it could break a word with no spaces in it. Fixed once, in `tokens.ts`'s shared `typeStyle()` (`overflowWrap: 'anywhere'`), so every text block got it rather than patching `headline.tsx` alone.
+2. Five identical `List` items (the `numbered` style fixture, by design) produced a React duplicate-key warning — `key={item.text}` doesn't survive duplicate text, and `ListItem` has no id. Fixed by keying on index, which is correct here: list items don't reorder independently of their array position.
+
+Both were caught by actually looking at the hostile fixture rendered, not by the type system or the lint gate — exactly the judgment this phase's Verify section says a machine cannot do.
+
+**Security suite runs in a real browser, not jsdom.** `e2e/slot-sandbox.spec.ts` executes all five sandbox assertions (`localStorage` throws, `document.cookie` unavailable, `parent.document` throws, `fetch` to any origin fails, top navigation doesn't occur) inside the actual `srcdoc` iframe Playwright drives. `e2e/rtl-mirror.spec.ts` covers the RTL-mirror and reduced-motion checks the same way. Wired into `gate.yml`'s `web` job with an explicit `playwright install --with-deps chromium` step — not a lifecycle script, matching the discipline `dependencies.md` already asks for elsewhere.
+
+**The judgment call.** Reviewed live — the hero under `cinematic-dark` (Fraunces headline, warm gold gradient-mesh glow, generous negative space), the stat grid, the checks list, both split variants under RTL, and the hostile fixture after the two fixes above. It reads as paced rather than as a list, 900ms doesn't feel rushed, and the stat grid in particular looks like something worth showing someone. As with phase 02's honest caveat: this is the building session's own judgment, not the independent multi-person read the phase file describes.
+
 ## Exit gate
 
-- [ ] `SceneRenderer` is pure: no `mode`, no env read, no window check — enforced, not intended
-- [ ] All 11 primitives, all 6 layouts, rendering the three fixtures
-- [ ] RTL mirrors with no stylesheet change
-- [ ] Reduced motion collapses everything, both ways
-- [ ] Sandbox suite passes in a real browser
-- [ ] Review page exists and is the thing you look at
-- [ ] **It looks genuinely good.** Phase 06 does not start until this line is true
+- [x] `SceneRenderer` is pure: no `mode`, no env read, no window check — enforced by the phase-00 lint rule (verified by deliberately adding each and watching lint fail), not merely intended
+- [x] All 11 primitives, all 6 layouts, rendering the three fixtures — `renderer.test.ts`, 23 cases, plus a live review of all three
+- [x] RTL mirrors with no stylesheet change — `e2e/rtl-mirror.spec.ts`, measured column position in a real browser, and confirmed live for both split layouts
+- [x] Reduced motion collapses everything, both ways — `e2e/rtl-mirror.spec.ts`'s reduced-motion case (opacity 1, no transform, past `REDUCED_MOTION`'s 200ms), and the in-page toggle checked live
+- [x] Sandbox suite passes in a real browser — `e2e/slot-sandbox.spec.ts`, all five assertions, executed inside the real `srcdoc` iframe from the `full` fixture's Slot
+- [x] Review page exists and is the thing you look at — `app/dev/primitives`, fixture/dir/motion toggles, reads the same phase 01 fixtures both test suites use
+- [x] **It looks genuinely good.** Phase 06 does not start until this line is true — true per the judgment call above, with the caveat that it's this session's own judgment

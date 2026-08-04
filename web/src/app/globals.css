@@ -1,3 +1,18 @@
 /* App chrome only. The art direction is CSS custom properties on the renderer
    side and no file imports both — docs/techstack/frontend.md. */
 @import 'tailwindcss';
+
+/* cinematic-dark's FONT_REGISTRY (web/src/features/art-direction/cinematic-dark.ts)
+ * names 'Fraunces' and 'Inter' by id; these @font-face rules are what makes
+ * those names resolve to something instead of a system-font fallback.
+ * Fontsource registers the family under the exact bare name, self-hosted,
+ * open license — techstack/frontend.md's Fonts section, already the
+ * documented decision, not a new one (ledger line in coderules/dependencies.md).
+ * ponytail: imported globally for now; publish (phase 05) will want these
+ * scoped to what a published page actually serves rather than the whole app. */
+@import '@fontsource/fraunces/400.css';
+@import '@fontsource/fraunces/500.css';
+@import '@fontsource/fraunces/600.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';

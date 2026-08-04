@@ -1,0 +1,32 @@
+// The standing judgment surface for the rest of v1 (docs/v1/plan/04-renderer.md).
+// Every one of the 11 primitives, every one of the 6 layouts, under
+// cinematic-dark, driven by the phase 01 fixtures — including hostile.json,
+// the fixture that predicts real briefs (maximum-length copy in every field).
+//
+// Not part of the published artifact — dev-only, and outside src/features/renderer/,
+// so ordinary app chrome (Tailwind) is fair game for the harness controls.
+
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+import { experienceSchema } from '@/schema';
+
+import { PrimitivesHarness } from './primitives-harness';
+
+// import.meta.dirname isn't populated in Turbopack's SSR bundle for this
+// route; process.cwd() is `web/` for both `next dev` and `next build`.
+const FIXTURES = join(process.cwd(), '..', 'api', 'schema', 'fixtures');
+const readFixture = (name: string) =>
+  experienceSchema.parse(
+    JSON.parse(readFileSync(join(FIXTURES, `${name}.json`), 'utf8')),
+  );
+
+export default function PrimitivesPage() {
+  const experiences = {
+    minimal: readFixture('minimal'),
+    full: readFixture('full'),
+    hostile: readFixture('hostile'),
+  };
+
+  return <PrimitivesHarness experiences={experiences} />;
+}

@@ -87,6 +87,12 @@ sharp (or platform image API) — server-side image re-encode/EXIF strip (v1) �
 a DOM sanitizer for SVG (v1) — SVG sanitization is a moving target against a
   motivated attacker; this is the one place NOT to write our own.
 stripe — billing (v3) — never hand-roll payments.
+@fontsource/fraunces, @fontsource/inter (v1, phase 04) — self-hosted, open-
+  license type for cinematic-dark's FONT_REGISTRY. techstack/frontend.md
+  already committed to Fontsource for licensing reasons (these faces are
+  redistributed to a customer's published-page audience, not just used by
+  our own app) — installing the two families FONT_REGISTRY already names is
+  that decision, not a new one.
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."
