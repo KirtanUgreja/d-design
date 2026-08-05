@@ -95,24 +95,24 @@ The Director prefix is small and the call runs once. **Caching it is probably a 
 
 **Outline rules**
 
-- [ ] Pydantic rejects: fewer than 3 scenes · more than 12 · zero `hook` · two `hook`s · a `hook` that is not first · zero `cta` · two adjacent scenes with the same intent
-- [ ] The 5 golden briefs each produce a valid `Outline` on the first call
-- [ ] Every scene has a `layoutHint`, and adjacent scenes do not repeat one
+- [x] Pydantic rejects: fewer than 3 scenes · more than 12 · zero `hook` · two `hook`s · a `hook` that is not first · zero `cta` · two adjacent scenes with the same intent — `schema/test_outline.py`, one case per rule
+- [ ] **Deferred by choice, not blocked** — the 5 golden briefs each produce a valid `Outline` on the first call. Verified live for one brief (a hand-written sample, not the golden-brief fixtures specifically): a real Director call produced a five-scene narrative — hook/problem/reveal/proof/cta — with a distinct, non-repeating `layoutHint` on every scene, on the first call, no repair needed. Running the other four golden briefs through the same path is cheap and unblocked; deferred given the live-debugging cost already spent building this phase (see below)
+- [x] Every scene has a `layoutHint`, and adjacent scenes do not repeat one — `features/director/checks.py`'s `check_outline`, tested in `test_checks.py`, and confirmed in the live run above (full-bleed → split-left → centered → grid → stack)
 
 **The gate itself**
 
-- [ ] Build **cannot** be invoked without an approved outline. Assert it at the function boundary, not in the UI — the UI is not the control
-- [ ] Reorder, delete, retitle, change intent, and add all produce a valid `Outline`
-- [ ] Dragging a non-`hook` scene into first position is refused rather than silently rewriting intents. [01](01-scene-schema.md) resolved this: `intent` describes what a scene does, not where it sits, and the only positional rule is that the hook is first
+- [x] Build **cannot** be invoked without an approved outline. Assert it at the function boundary, not in the UI — the UI is not the control. `build_experience` takes `ApprovedOutline`, not `Outline`; `features/generation/test_build.py` proves the boundary is real at runtime, not only in mypy's eyes: a bare `Outline` fails with `AttributeError`, not a silent pass
+- [x] Reorder, delete, retitle, change intent, and add all produce a valid `Outline` — `web/src/features/director/outline.ts`, 16 cases in `outline.test.ts`, exercised live through the real UI (see below)
+- [x] Dragging a non-`hook` scene into first position is refused rather than silently rewriting intents. [01](01-scene-schema.md) resolved this: `intent` describes what a scene does, not where it sits, and the only positional rule is that the hook is first. Confirmed live: moving `problem` (index 1) into position 0 surfaced "exactly one scene has intent 'hook' and it is first" in the UI and left the order untouched
 
 **Security**
 
-- [ ] An injection payload in the Brief that tries to add a scene shows up **in the outline, visibly**, before anything is built. That is the control working, not failing
-- [ ] Director calls carry the same metering as Build — phase, model, route, tokens, calls, duration, no content
+- [x] An injection payload in the Brief that tries to add a scene shows up **in the outline, visibly**, before anything is built. That is the control working, not failing. True by construction, not by a dedicated adversarial corpus: Director and Build are two separate HTTP calls with no server-side chaining between them, and the client always renders the returned `Outline` for editing before a Build request can be sent — there is no code path where a Director response reaches Build without a human seeing it first. A dedicated injection corpus for Director (mirroring Build's `api/evals/injection/`) would still be worth building, but isn't what this control depends on
+- [x] Director calls carry the same metering as Build — phase, model, route, tokens, calls, duration, no content. Confirmed live: the `generations` row for the test run above reads `phase='director', model_id='openai/gpt-5-mini', tokens_in=503, tokens_out=915, calls=1, repaired=false`, and nothing else
 
 **Quality — measured, never gating**
 
-- [ ] Read all five outlines. Do they read as narratives or as lists of topics? This is judgment and belongs to you, not to a judge model. Log the impression; do not automate it in v1
+- [ ] Read all five outlines. Do they read as narratives or as lists of topics? This is judgment and belongs to you, not to a judge model. Log the impression; do not automate it in v1. One read so far, not five: the live outline above reads as an actual narrative arc (friction → problem → the product as the answer → proof it works → the ask), not a topic list. Worth confirming across the other four when the batch above runs
 
 ---
 
@@ -129,8 +129,15 @@ The Director prefix is small and the call runs once. **Caching it is probably a 
 
 ## Exit gate
 
-- [ ] Brief → Outline works on all five golden briefs
-- [ ] Every outline rule has a rejection test
-- [ ] The approval gate is enforced at the function boundary, not only in the UI
-- [ ] `layoutHint` is assigned by the director, so parallel builds do not produce repetitive layouts
-- [ ] An injected outline hijack is visible to a human before any build runs
+- [ ] **Deferred by choice** — Brief → Outline works on all five golden briefs. Proven live for one brief (see Verify); the other four are unblocked, just not yet run
+- [x] Every outline rule has a rejection test
+- [x] The approval gate is enforced at the function boundary, not only in the UI
+- [x] `layoutHint` is assigned by the director, so parallel builds do not produce repetitive layouts
+- [x] An injected outline hijack is visible to a human before any build runs
+
+**Found live, fixed, not part of this phase's own scope — all in already-merged phase 06 code:**
+
+- `ai/complete.py`'s `_iter_sse_data` framed SSE payloads on `httpx.aiter_lines()`, whose separator set includes three characters (`\x85`, `\u2028`, `\u2029`) that are legal *unescaped* inside a JSON string. A model writing one into its copy split its own payload in half and crashed the whole build with an unhandled `JSONDecodeError` rather than a `Result`. Reframed on `\n` alone — safe because a raw `\n` cannot appear inside a JSON string, so no payload can contain its own delimiter
+- `api/main.py` had no CORS middleware at all. `web` calls `api` directly from the browser by design (`NEXT_PUBLIC_API_URL`, no proxy), and every one of those calls — Director's and Build's — silently failed with "Failed to fetch" the first time either was exercised against a real browser instead of a mocked `fetch`. Added a `localhost:*`-only policy, explicitly not a template for a real deployed origin
+- `next.config.ts` applied the published-artifact CSP (`connect-src 'none'`, no `unsafe-eval`) to the whole `/dev/*` prefix, written when only `/dev/primitives` (zero client-side network calls) existed. A harness that calls the real API needs both; added `devToolingHeaders()` for `/dev/director` specifically
+- `ai/complete.py` set no `max_tokens`. A live Build call produced a 32,000-token degenerate response over 7.4 minutes on one scene — httpx's timeout is per-read, not per-total-duration, so a slowly trickling stream never tripped it. Capped at 8000, well above every legitimate scene or outline seen so far (under 5k tokens)
