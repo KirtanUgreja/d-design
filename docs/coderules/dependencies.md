@@ -93,6 +93,10 @@ stripe — billing (v3) — never hand-roll payments.
   redistributed to a customer's published-page audience, not just used by
   our own app) — installing the two families FONT_REGISTRY already names is
   that decision, not a new one.
+server-only (v1, phase 05) — the marker structure.md already mandates for
+  every *.data.ts and anything holding a secret ("a client component
+  importing it is a build-time error"). web/src/lib/storage.ts is the first
+  file that needed it; installing it is that existing rule, not a new one.
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."

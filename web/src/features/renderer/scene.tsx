@@ -65,7 +65,9 @@ export function Scene({
   );
 
   return (
-    <section style={{ position: 'relative' }}>
+    // The id is what present/fullscreen.tsx's arrow-key navigation scrolls
+    // to — a wrapper's concern, but it needs an anchor the core provides.
+    <section id={`scene-${scene.id}`} style={{ position: 'relative' }}>
       <Texture artDirection={artDirection} />
       {scene.layout === 'full-bleed' ? (
         body

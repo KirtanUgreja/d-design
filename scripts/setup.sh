@@ -16,6 +16,7 @@ echo '→ api (uv, frozen)'
 
 echo '→ web (pnpm, frozen)'
 (cd web && pnpm install --frozen-lockfile)
+[ -f web/.env.local ] || cp web/.env.example web/.env.local
 
 echo '→ playwright (chromium only, explicit — not a lifecycle script)'
 (cd web && pnpm exec playwright install chromium)

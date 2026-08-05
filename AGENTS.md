@@ -2,7 +2,7 @@
 
 AI presentation-experience engine. The AI emits **content + intent**; a separate art-direction token layer resolves intent into type, spacing, color, easing, duration. **The AI never writes styling.** That one constraint is what makes editing safe, reskin cheap, and the product boundary real.
 
-**Status: phases 00–04 done — the renderer looks genuinely good, so the one hard gate in the whole plan has cleared. Phase 05 (publish, present, embed) next.** `docs/` is the spec; `docs/v1/plan/README.md` is the build status. Start at `docs/README.md`.
+**Status: phases 00–05 done — a hand-written scene tree can be published, viewed, presented fullscreen, and embedded with no AI anywhere in the loop. Phase 06 (model seam + Build phase) next — the first phase with a model call in it.** `docs/` is the spec; `docs/v1/plan/README.md` is the build status. Start at `docs/README.md`.
 
 **Two languages.** `api` and `jobs` are Python (FastAPI); `web`, `render`, and the fetch worker are TypeScript. **Pydantic owns the `Scene` schema** — the Zod validator and its types are generated from it and are never hand-edited. See `docs/techstack/decisions.md` → "The Python backend move".
 

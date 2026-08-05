@@ -12,7 +12,7 @@ table exists because something reads it.
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, ForeignKey, String, func, text
+from sqlalchemy import DateTime, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -45,13 +45,23 @@ class Brand(Base):
 class Experience(Base):
     __tablename__ = "experiences"
 
+    # Without this, an UPDATE leaves `updated_at` (a server-side `onupdate`)
+    # marked expired, and the next attribute read tries a lazy refresh —
+    # which raises `MissingGreenlet` under asyncio instead of quietly
+    # blocking, since there is no sync fallback to fall into. `eager_defaults`
+    # fetches server-computed columns via RETURNING on the same statement.
+    __mapper_args__ = {"eager_defaults": True}  # noqa: RUF012 -- SQLAlchemy's own convention; `ClassVar` collides with `DeclarativeBase`'s stub for this name
+
     id: Mapped[UUID] = mapped_column(
         primary_key=True, server_default=text("gen_random_uuid()")
     )
     owner_id: Mapped[UUID] = mapped_column(index=True)
     title: Mapped[str] = mapped_column(String(200))
     mode: Mapped[str] = mapped_column(String(16))
-    brand_id: Mapped[UUID | None] = mapped_column(ForeignKey("brands.id"), default=None)
+    # Opaque text, not a `brands.id` FK yet — brand kit is phase 10, and this
+    # column is unreachable as a real FK until a brands row exists to point
+    # at. See migrations/versions/0002_brand_id_as_text.py.
+    brand_id: Mapped[str | None] = mapped_column(String(64), default=None)
     art_direction: Mapped[str] = mapped_column(String(64))
 
     # The scene tree is one column and is never normalized. It is always read
