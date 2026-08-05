@@ -1,0 +1,29 @@
+{
+  "brief": {
+    "goal": "Promote a fractional CFO consulting service to venture-backed startup founders",
+    "audience": "Founders of Series A and B startups who have never worked with a finance leader before",
+    "keyMessages": [
+      "A part-time CFO for the cost of one junior finance hire",
+      "Board-ready reporting from month one, not month six",
+      "We have closed three funding rounds as the finance lead in the room"
+    ],
+    "proofPoints": [
+      "worked with 40+ venture-backed companies since 2019",
+      "clients raise their next round 30% faster on average"
+    ],
+    "tone": "credible, calm, executive",
+    "cta": { "label": "Book a call", "href": "https://example.com/consult" },
+    "assets": [],
+    "constraints": "Never state a specific client name or company without approval"
+  },
+  "outline": {
+    "title": "Finance leadership before you can afford a full-time CFO",
+    "scenes": [
+      { "intent": "hook", "beat": "The board meeting nobody felt ready for" },
+      { "intent": "problem", "beat": "A full-time CFO is too expensive, no CFO is too risky" },
+      { "intent": "proof", "beat": "40+ startups, 30% faster fundraises" },
+      { "intent": "cta", "beat": "Book a call before the next board meeting" }
+    ]
+  },
+  "brandId": null
+}

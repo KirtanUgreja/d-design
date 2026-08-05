@@ -1,0 +1,82 @@
+"""Promptfoo's custom Python provider for the Build pipeline
+(docs/v1/plan/06-model-seam-and-build.md -> "8. The five golden briefs").
+
+Promptfoo is a Node CLI; its Python provider hook is the documented escape
+hatch for a case its declarative HTTP provider does not fit
+(docs/techstack/ai-stack.md): the pipeline's unit here is a whole SSE stream
+of several events, not one request/response, so this calls
+`build_experience` in-process instead of re-implementing an SSE client for
+eval purposes — that client already exists, tested, in
+`web/src/features/generation`.
+
+Protocol: https://www.promptfoo.dev/docs/providers/python/ —
+`call_api(prompt, options, context)` returns `{"output": ...}`.
+
+NOT wired into CI. Running this makes a real, billed OpenRouter call per
+scene per test case — it needs a real `OPENROUTER_API_KEY`, which is a
+later decision (docs/v1/plan/06-model-seam-and-build.md, task tracked
+separately). Run locally once that key exists:
+
+    npx promptfoo@latest eval -c promptfooconfig.yaml
+"""
+
+import asyncio
+import json
+from pathlib import Path
+from typing import cast
+
+from lib.result import Err
+from schema.brief import Brief
+from schema.outline import Outline
+
+_EVALS_DIR = Path(__file__).parent
+
+
+def load_fixture(relative_path: str) -> dict[str, object]:
+    return cast(
+        dict[str, object], json.loads((_EVALS_DIR.parent / relative_path).read_text())
+    )
+
+
+async def run_build(fixture: dict[str, object]) -> dict[str, object]:
+    # Imported lazily: this module is imported by Promptfoo's Python bridge
+    # for every `--dry-run` and `-h`, and there is no reason to pay the
+    # whole `api` import graph (db engine, config()) until a case actually
+    # runs.
+    from config import config
+    from features.generation.build import build_experience
+
+    brief = Brief.model_validate(fixture["brief"])
+    outline = Outline.model_validate(fixture["outline"])
+    brand_id = cast(str | None, fixture.get("brandId"))
+    scenes: list[dict[str, object]] = []
+    errors: list[dict[str, object]] = []
+
+    async for event in build_experience(
+        brief=brief,
+        outline=outline,
+        brand_id=brand_id,
+        owner_id=config().local_user_id,
+        experience_id="00000000-0000-4000-8000-0000000000ee",
+    ):
+        if isinstance(event.result, Err):
+            errors.append(
+                {
+                    "index": event.index,
+                    "code": event.result.error.code,
+                    "message": event.result.error.message,
+                }
+            )
+        else:
+            scenes.append(event.result.value.model_dump(by_alias=True))
+
+    return {"scenes": scenes, "errors": errors, "brief": fixture["brief"]}
+
+
+def call_api(
+    prompt: str, options: dict[str, object], context: dict[str, object]
+) -> dict[str, object]:
+    vars_ = cast(dict[str, object], context["vars"])
+    fixture = load_fixture(cast(str, vars_["fixture"]))
+    result = asyncio.run(run_build(fixture))
+    return {"output": json.dumps(result)}

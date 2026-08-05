@@ -4,15 +4,15 @@
 in `web`, and two migration tools against one database survive only because the
 table sets are disjoint (docs/techstack/backend.md -> "Two ORMs, one database").
 
-The other three tables — `assets`, `briefs`, `generations` — arrive in the
-phases that need them, each with its own policy and its own isolation test. A
-table exists because something reads it.
+The remaining tables — `assets`, `briefs` — arrive in the phases that need
+them, each with its own policy and its own isolation test. A table exists
+because something reads it.
 """
 
 from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import DateTime, String, func, text
+from sqlalchemy import Boolean, DateTime, Integer, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -77,4 +77,65 @@ class Experience(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Quota(Base):
+    """One row per owner, seeded by the migration (v1 has no signup flow to
+    provision one on account creation). The atomic increment
+    (`features/generation/generation_data.py::consume_quota`) is
+    `update ... where used < limit and not halted returning used` — a single
+    statement, so there is no window between the check and the consumption
+    (docs/techstack/backend.md -> "Rate limits and quotas").
+
+    `halted` is the kill switch, folded into the same row rather than a
+    second table or a second query: one round trip, one lock, and a missing
+    `RETURNING` row means "refused" either way — the caller doesn't need to
+    tell "over quota" from "halted" apart to fail closed correctly
+    (docs/coderules/patterns.md rule 5).
+    """
+
+    __tablename__ = "quotas"
+
+    owner_id: Mapped[UUID] = mapped_column(primary_key=True)
+    used: Mapped[int] = mapped_column(Integer, server_default=text("0"))
+    # ponytail: one flat number, no per-phase split, no billing period reset.
+    # Real limits and periods arrive with billing (v3) — ../techstack/decisions.md.
+    limit: Mapped[int] = mapped_column(Integer)
+    halted: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Generation(Base):
+    """Metadata only — phase, counts, a repair flag, an error class, a
+    duration. No prompt, no output, no brief content, ever
+    (docs/v1/ai-pipeline.md -> "generations", docs/security/tenancy-and-data.md).
+    `owner_id` is denormalized onto the row (not joined through
+    `experience_id`) because RLS policies key off a column on the row they
+    guard, the same shape as every other tenant-scoped table here.
+    """
+
+    __tablename__ = "generations"
+
+    __mapper_args__ = {"eager_defaults": True}  # noqa: RUF012
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    owner_id: Mapped[UUID] = mapped_column(index=True)
+    experience_id: Mapped[UUID] = mapped_column(index=True)
+    phase: Mapped[str] = mapped_column(String(16))
+    model_id: Mapped[str] = mapped_column(String(120))
+    provider_route: Mapped[str] = mapped_column(String(120))
+    tokens_in: Mapped[int] = mapped_column(Integer, server_default=text("0"))
+    tokens_out: Mapped[int] = mapped_column(Integer, server_default=text("0"))
+    cached_tokens: Mapped[int] = mapped_column(Integer, server_default=text("0"))
+    calls: Mapped[int] = mapped_column(Integer, server_default=text("1"))
+    repaired: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
+    error_class: Mapped[str | None] = mapped_column(String(64), default=None)
+    duration_ms: Mapped[int] = mapped_column(Integer, server_default=text("0"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
     )

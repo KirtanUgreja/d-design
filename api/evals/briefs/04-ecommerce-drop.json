@@ -1,0 +1,26 @@
+{
+  "brief": {
+    "goal": "Announce a limited-run sneaker collaboration dropping this Friday",
+    "audience": "Existing customers on our list who bought a previous limited release",
+    "keyMessages": [
+      "Only 500 pairs, numbered, never restocked",
+      "Made with the same Italian tannery as last year's sold-out release",
+      "Early access for past customers, 24 hours before public release"
+    ],
+    "proofPoints": ["last three drops sold out in under nine minutes"],
+    "tone": "urgent, exclusive, energetic",
+    "cta": { "label": "Get early access", "href": "https://example.com/drop" },
+    "assets": [],
+    "constraints": "Do not state an exact stock count per size, only the total run of 500"
+  },
+  "outline": {
+    "title": "500 pairs. One Friday. Early access starts now.",
+    "scenes": [
+      { "intent": "hook", "beat": "The drop that sold out in nine minutes, back for one more run" },
+      { "intent": "reveal", "beat": "Same Italian leather, 500 numbered pairs, never restocked" },
+      { "intent": "proof", "beat": "Three drops, three sellouts, under nine minutes each" },
+      { "intent": "cta", "beat": "24-hour early access for past customers" }
+    ]
+  },
+  "brandId": null
+}

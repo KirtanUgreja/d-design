@@ -9,6 +9,7 @@ cleanly generatable. A validator that needs the database cannot cross to
 TypeScript.
 """
 
+from collections.abc import Sequence
 from typing import Literal
 
 from pydantic import Field, model_validator
@@ -81,16 +82,22 @@ class Experience(Schema):
         return self
 
 
-def assert_assets_resolve(exp: Experience, known_ids: frozenset[str]) -> Result[None]:
+def assert_assets_resolve(
+    scenes: Sequence[Scene], known_ids: frozenset[str]
+) -> Result[None]:
     """Every `assetId` names a real asset the caller owns.
 
     Called at the pipeline boundary where the asset id set is available. An
     `assetId` that resolves to nothing is a validation failure rather than a
     broken image on someone's launch page — the same "arrange, never invent"
     rule that governs `CTA.href`.
+
+    Takes `scenes` rather than a whole `Experience` because Build validates
+    one streamed scene at a time (docs/v1/plan/06-model-seam-and-build.md);
+    passing `[exp.scenes]` still works for whole-tree callers.
     """
     missing: list[str] = []
-    for scene in exp.scenes:
+    for scene in scenes:
         for block in scene.blocks:
             props = block.props
             if props.type == "image":
@@ -107,7 +114,7 @@ def assert_assets_resolve(exp: Experience, known_ids: frozenset[str]) -> Result[
 
 
 def assert_hrefs_are_supplied(
-    exp: Experience, supplied: frozenset[str]
+    scenes: Sequence[Scene], supplied: frozenset[str]
 ) -> Result[None]:
     """Every `CTA.href` traces back to a URL the user gave us.
 
@@ -117,7 +124,7 @@ def assert_hrefs_are_supplied(
     """
     invented = [
         b.props.href
-        for s in exp.scenes
+        for s in scenes
         for b in s.blocks
         if b.props.type == "cta" and b.props.href not in supplied
     ]
@@ -129,7 +136,7 @@ def assert_hrefs_are_supplied(
 
 
 def assert_stats_are_supported(
-    exp: Experience, proof_points: frozenset[str]
+    scenes: Sequence[Scene], proof_points: frozenset[str]
 ) -> Result[None]:
     """Every `Stat.value` appears somewhere in the brief's proof points.
 
@@ -141,7 +148,7 @@ def assert_stats_are_supported(
     haystack = " ".join(proof_points).lower()
     invented = [
         b.props.value
-        for s in exp.scenes
+        for s in scenes
         for b in s.blocks
         if b.props.type == "stat" and b.props.value.lower() not in haystack
     ]

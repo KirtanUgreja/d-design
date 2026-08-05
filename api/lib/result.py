@@ -22,6 +22,12 @@ ErrorCode = Literal[
     "quota_exceeded",
     "upstream_unavailable",
     "repair_exhausted",
+    # A declined request is not the same failure as a malformed one — a
+    # refusal can arrive as a *successful* HTTP response with empty or
+    # partial content, and repairing it is nonsensical (docs/v1/ai-pipeline.md
+    # -> "Repair and refusal"). One code, so a caller can route it to "tell
+    # the user" instead of "retry and then fail".
+    "refused",
 ]
 
 
