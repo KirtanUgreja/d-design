@@ -4,9 +4,9 @@
 in `web`, and two migration tools against one database survive only because the
 table sets are disjoint (docs/techstack/backend.md -> "Two ORMs, one database").
 
-The remaining tables — `assets`, `briefs` — arrive in the phases that need
-them, each with its own policy and its own isolation test. A table exists
-because something reads it.
+The remaining table — `assets` — arrives in the phase that needs it, with its
+own policy and its own isolation test. A table exists because something reads
+it.
 """
 
 from datetime import datetime
@@ -136,6 +136,37 @@ class Generation(Base):
     repaired: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     error_class: Mapped[str | None] = mapped_column(String(64), default=None)
     duration_ms: Mapped[int] = mapped_column(Integer, server_default=text("0"))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class BriefRow(Base):
+    """The approved-claims record (docs/v1/plan/08-intake.md -> "The `briefs`
+    table"). Stored as one `jsonb` payload rather than a column per field:
+    `schema/brief.py` is the source of truth for the shape, and spreading it
+    across columns would be a second definition to keep in step — the row is
+    written and read whole, never queried by field.
+
+    **Stored, never logged.** It is the customer's unreleased launch messaging,
+    and the whole of docs/security/tenancy-and-data.md is the difference
+    between a row in a table they own and a line in an error tracker. The
+    canary test in `features/intake/test_privacy.py` is what keeps that true.
+
+    Named `BriefRow`, not `Brief`, because `schema.brief.Brief` is the Pydantic
+    shape and having two `Brief`s in scope is how the wrong one gets imported.
+    """
+
+    __tablename__ = "briefs"
+
+    __mapper_args__ = {"eager_defaults": True}  # noqa: RUF012
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    owner_id: Mapped[UUID] = mapped_column(index=True)
+    experience_id: Mapped[UUID] = mapped_column(index=True)
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

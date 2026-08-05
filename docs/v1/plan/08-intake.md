@@ -29,13 +29,18 @@
 ## Make
 
 ```
-src/features/intake/
-  index.ts
-  interview.ts          the Q&A loop → Brief
-  prompts/intake.ts
+api/features/intake/
+  __init__.py           the public surface
+  interview.py          the Q&A loop → Brief
+  checks.py             the claims rule, as a check
+  prompts/intake.py
   intake_data.py        the briefs table
-  intake.test.ts
+  test_interview.py · test_privacy.py
+api/routes/intake.py
+api/migrations/versions/0004_briefs.py
 ```
+
+**Paths corrected 2026-08-05.** This section was written before the Python backend move (`../../techstack/decisions.md`) and named `src/features/intake/*.ts`. Intake calls the model, so it lives in `api` beside Director and Build — there is exactly one model call site and it is `api/ai/complete.py`. The Search list above has the same drift: read `api/schema/brief.py`, `api/ai/complete.py` and `api/features/generation/checks.py`.
 
 ### Why import is deferred
 
@@ -48,7 +53,7 @@ So it waits. Two consequences worth being explicit about:
 - **The `Brief` shape does not change.** Import produces the same object by a different route, so this is purely additive when the worker exists. No downstream phase knows the difference
 - **v1 has no untrusted-input path at all.** Every byte reaching the model was typed by the single user. That is why phase 06's injection corpus runs against pasted text — which is still worth running, because the corpus has to exist and be green *before* the path that needs it opens
 
-Record it as a `ponytail:` comment at the top of `interview.ts` naming the ceiling and the upgrade path.
+Record it as a `ponytail:` comment at the top of `interview.py` naming the ceiling and the upgrade path.
 
 ### The three entry paths, minus one
 
@@ -121,28 +126,28 @@ RLS policy and isolation test, same pattern as phase 00, through `as_user`.
 
 **Brief construction**
 
-- [ ] `goal`, `audience`, and `cta` are always asked, never inferred. Assert it: a transcript that never mentions the audience must not produce a Brief with one
-- [ ] `key_messages` capped at 3–5 by Pydantic
-- [ ] The Brief is schema-parsed once, at entry, and trusted thereafter
-- [ ] A user's exact `keyMessages` text survives into the Brief unmodified — if the interview smooths it, the claims rule is already broken
+- [x] `goal`, `audience`, and `cta` are always asked, never inferred. Enforced two ways, neither of them a prompt instruction: `interview.py`'s `next_question` decides completeness deterministically (the model is never asked whether the interview is done), and `BriefDraft` — the model's entire output shape — **has no field for any of the three**, so an inferred audience has nowhere to travel. `test_interview.py` asserts the doc's exact wording: a transcript missing the audience returns a question and never reaches the seam at all
+- [x] `key_messages` capped at 3–5 by Pydantic — on `BriefDraft` and `Brief` both; rejection tested at 2 and at 6
+- [x] The Brief is schema-parsed once, at entry, and trusted thereafter — the model's output is parsed as `BriefDraft` inside the seam, and the `Brief` is constructed once in `_as_brief`
+- [x] A user's exact `keyMessages` text survives into the Brief unmodified. `features/intake/checks.py` is the third layer this doc says is the only one that catches anything: every key message and proof point must be a normalized substring of what the user typed. Splitting and reordering pass; a single reworded word fails. Deliberately not punctuation-insensitive, so "cuts costs, sometimes" cannot match a claim of "cuts costs"
 
 **URLs**
 
-- [ ] `javascript:`, `data:`, `vbscript:`, and `//evil.example` in `cta.href` are all rejected
-- [ ] The set of user-supplied URLs is stored on the Brief and is what phase 06's provenance check reads
+- [x] `javascript:`, `data:`, `vbscript:`, `//evil.example` and `JAVASCRIPT:` in `cta.href` are all rejected — `BriefCta.href` now carries `HREF_PATTERN`, **imported from `schema/scene.py`, not restated**. Because a `pattern` is a JSON Schema keyword, it crossed into the generated Zod validator on regeneration, so `web` inherits the same allowlist
+- [x] The user-supplied URL is stored on the Brief and is what phase 06's provenance check reads — `check_scene`'s `supplied_hrefs` is `{brief.cta.href}`, unchanged. v1 supplies exactly one URL
 
 **Refusals**
 
-- [ ] A prompt that trips a safety classifier reaches the user **as a refusal**, not as a validation failure they cannot act on. This is the phase where refusals actually fire, and the seam's normalization is what makes it possible
+- [x] A refusal reaches the user **as a refusal** — `advance` returns the seam's `Err` unflattened, so a `refused` code stays `refused` rather than collapsing into a generic validation failure. Tested
 
 **Privacy**
 
-- [ ] `generations` rows for `phase: 'intake'` contain no brief content
-- [ ] A canary string typed into the interview appears in the `briefs` table and **nowhere else** — not in logs, not in error output, not in `generations`
+- [x] `generations` rows for `phase: 'intake'` contain no brief content — the seam logs call metadata only, and the canary test greps `generations` for the canary
+- [x] A canary string appears in the `briefs` table and nowhere else — `features/intake/test_privacy.py`. It also covers error output specifically: a rejected `javascript:` href produces a message carrying the field name and Pydantic's own text, never the user's value
 
 **Isolation**
 
-- [ ] `briefs` has an RLS policy and an isolation test, same as every other table
+- [x] `briefs` has an RLS policy and an isolation test — policy created in the same migration as the table, verified live against Postgres. Two-owner isolation tested, plus a `with check` test proving a tenant cannot insert a row owned by someone else
 
 ---
 
@@ -158,11 +163,20 @@ RLS policy and isolation test, same pattern as phase 00, through `as_user`.
 
 ---
 
+## What is not built yet
+
+The API half of this phase is done and its controls are tested. **The Intake UI is not built**, and neither is a live run against a real model — both are what stands between this phase and `done`:
+
+- `web/src/features/intake/` — the prompt box, the structured interview, and the permanently-visible editable Brief. This is one of the four screens that gets real design attention ([../../design/app.md](../../design/app.md)), and the four decisions in "The interview is not a chat" above are its brief
+- A live Intake call, the way `scripts/verify_director.py` proved the Director. The claims check is strict by design, and how often a real model paraphrases rather than splits is a question only a live run answers — if it paraphrases constantly, the prompt needs work, not the check
+
+---
+
 ## Exit gate
 
-- [ ] Prompt and Q&A both produce a valid `Brief`
-- [ ] The three always-ask fields are enforced, not encouraged
-- [ ] URL scheme allowlist shared with phase 06, not duplicated
-- [ ] A refusal surfaces as a refusal
-- [ ] Canary test proves brief content lives in exactly one place
-- [ ] `ponytail:` comment on the deferred import path names the ceiling and the upgrade
+- [ ] Prompt and Q&A both produce a valid `Brief` — proven at the API, both paths, with a mocked seam (`test_interview.py`). **Not yet proven live against a real model, and the Intake UI is not built** — see below
+- [x] The three always-ask fields are enforced, not encouraged
+- [x] URL scheme allowlist shared with phase 06, not duplicated
+- [x] A refusal surfaces as a refusal
+- [x] Canary test proves brief content lives in exactly one place
+- [x] `ponytail:` comment on the deferred import path names the ceiling and the upgrade — top of `features/intake/interview.py`

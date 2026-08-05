@@ -191,7 +191,11 @@ export const brandKitSchema = z.strictObject({
 export type BrandKit = z.infer<typeof brandKitSchema>;
 
 export const briefCtaSchema = z.strictObject({
-  href: z.string().min(1).max(2048),
+  href: z
+    .string()
+    .min(1)
+    .max(2048)
+    .regex(new RegExp('^(https?://|mailto:|tel:|#|/($|[^/]))')),
   label: z.string().min(1).max(32),
 });
 

@@ -11,6 +11,7 @@ from routes.director import router as director_router
 from routes.experiences import router as experiences_router
 from routes.generation import router as generation_router
 from routes.health import router as health_router
+from routes.intake import router as intake_router
 
 app = FastAPI(title="d-design api", docs_url=None, redoc_url=None)
 
@@ -41,5 +42,6 @@ app.add_middleware(
 
 app.include_router(health_router)
 app.include_router(experiences_router)
+app.include_router(intake_router)
 app.include_router(director_router)
 app.include_router(generation_router)
