@@ -66,3 +66,32 @@ export function appHeaders(): Record<string, string> {
     ...SHARED,
   };
 }
+
+/** `/dev/*` pages that call the real API in the browser — found live,
+ * building the Director harness (docs/v1/plan/07-director.md): every
+ * button on the page silently did nothing under `publishedHeaders()`.
+ * Two separate breaks, not one — `connect-src 'none'` blocks the fetch to
+ * `api` regardless of dev or production mode, and `next dev`'s React
+ * additionally needs `unsafe-eval` to hydrate at all (a production build
+ * does not; this is why `pnpm test:e2e`, which runs against `pnpm build`,
+ * never hit it). `/dev/primitives` never needed this — it reads fixtures
+ * server-side and makes zero client-side network calls — so it stays on
+ * `publishedHeaders()`; a harness that exercises a live feature needs
+ * this instead. Same "this tooling never ships" reasoning as every other
+ * `/dev/*` relaxation: no real user ever reaches this route. */
+export function devToolingHeaders(): Record<string, string> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+  return {
+    'Content-Security-Policy': [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data:",
+      "font-src 'self'",
+      `connect-src 'self' ${apiUrl}`.trim(),
+      "frame-ancestors 'none'",
+      "base-uri 'none'",
+    ].join('; '),
+    ...SHARED,
+  };
+}

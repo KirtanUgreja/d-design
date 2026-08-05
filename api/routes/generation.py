@@ -18,6 +18,7 @@ from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
 
 from config import config
+from features.director import approve_outline
 from features.generation.build import BuildEvent, build_experience
 from lib.result import Err
 from schema.base import Schema
@@ -61,7 +62,7 @@ async def _events(experience_id: str, body: BuildRequest) -> AsyncIterator[str]:
     count = 0
     async for event in build_experience(
         brief=body.brief,
-        outline=body.outline,
+        approved_outline=approve_outline(body.outline),
         brand_id=body.brand_id,
         owner_id=config().local_user_id,
         experience_id=experience_id,

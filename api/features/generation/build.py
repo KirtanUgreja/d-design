@@ -13,6 +13,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
 from ai.complete import complete
+from features.director import ApprovedOutline
 
 # Direct submodule imports, not `from features.generation import ...` — this
 # module is itself re-exported through that package's `__init__.py`, and
@@ -25,7 +26,6 @@ from features.generation.prompts.build import (
 from features.generation.tools import get_brand_kit, list_assets
 from lib.result import Err, Result, ok
 from schema.brief import Brief
-from schema.outline import Outline
 from schema.scene import Scene
 
 
@@ -46,7 +46,7 @@ class BuildEvent:
 async def build_experience(
     *,
     brief: Brief,
-    outline: Outline,
+    approved_outline: ApprovedOutline,
     brand_id: str | None,
     owner_id: str,
     experience_id: str,
@@ -56,7 +56,13 @@ async def build_experience(
     rather than raised, and the loop continues: failure at scene 6 of 8
     keeps the five that already succeeded (docs/v1/plan/06-model-seam-and-build.md
     -> "7b. What the client does with those events"), and it is the
-    caller's job to decide whether to keep streaming or stop."""
+    caller's job to decide whether to keep streaming or stop.
+
+    Takes `ApprovedOutline`, not `Outline` — Build only ever runs against a
+    structure the user already approved, and mypy enforces that on every
+    call site (docs/v1/plan/07-director.md -> "The gate is the product
+    decision"), not only the route layer's own discipline."""
+    outline = approved_outline.outline
     brand_kit = get_brand_kit(brand_id)
     assets = list_assets()
     system = build_system_prompt(brief, outline, brand_kit, assets)

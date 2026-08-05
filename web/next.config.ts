@@ -1,6 +1,11 @@
 import type { NextConfig } from 'next';
 
-import { appHeaders, embedHeaders, publishedHeaders } from './src/features/publish/csp';
+import {
+  appHeaders,
+  devToolingHeaders,
+  embedHeaders,
+  publishedHeaders,
+} from './src/features/publish/csp';
 
 function asHeaderList(headers: Record<string, string>): { key: string; value: string }[] {
   return Object.entries(headers).map(([key, value]) => ({ key, value }));
@@ -55,6 +60,15 @@ const nextConfig: NextConfig = {
       // the catch-all's CSP, since Next merges per key and there's nothing
       // to merge without an explicit value.
       { source: '/dev/:path*', headers: asHeaderList(publishedHeaders()) },
+      // More specific match, applied after — Next's per-key override
+      // ordering (see the comment above) means this wins over the
+      // catch-all `/dev/:path*` line for every key it sets. Director's
+      // harness calls the real API from the browser; `publishedHeaders()`'s
+      // `connect-src 'none'` silently blocked every one of those calls
+      // (docs/v1/plan/07-director.md, found live) — see csp.ts's
+      // `devToolingHeaders` docstring for the second, dev-mode-only break
+      // this also fixes.
+      { source: '/dev/director/:path*', headers: asHeaderList(devToolingHeaders()) },
     ];
   },
 };

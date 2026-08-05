@@ -47,6 +47,7 @@ async def run_build(fixture: dict[str, object]) -> dict[str, object]:
     # whole `api` import graph (db engine, config()) until a case actually
     # runs.
     from config import config
+    from features.director import approve_outline
     from features.generation.build import build_experience
 
     brief = Brief.model_validate(fixture["brief"])
@@ -55,9 +56,13 @@ async def run_build(fixture: dict[str, object]) -> dict[str, object]:
     scenes: list[dict[str, object]] = []
     errors: list[dict[str, object]] = []
 
+    # The fixture's outline is hand-authored, in the repo, reviewed in the
+    # diff — a human already approved it the same way the outline-editor
+    # gate would (docs/v1/plan/07-director.md). This eval tests Build in
+    # isolation, not the Director -> approve -> Build chain end to end.
     async for event in build_experience(
         brief=brief,
-        outline=outline,
+        approved_outline=approve_outline(outline),
         brand_id=brand_id,
         owner_id=config().local_user_id,
         experience_id="00000000-0000-4000-8000-0000000000ee",

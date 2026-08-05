@@ -60,6 +60,18 @@ class Completion[T]:
 _ENDPOINT = "https://openrouter.ai/api/v1/chat/completions"
 _TIMEOUT = httpx.Timeout(90.0, connect=10.0)
 
+# Verified live (2026-08): with no cap, a single Build scene ran 32k output
+# tokens over 7.4 minutes — a degenerate generation (a known LLM failure
+# mode, the model stuck producing filler instead of stopping), not a
+# repair or a retry. httpx's timeout does not catch this: it is a per-read
+# timeout, and a slowly trickling stream never trips it no matter the
+# total duration. Every legitimate scene or outline seen so far is under
+# 5k tokens; 8000 leaves real headroom while still cutting a runaway off
+# early — the same "cap it, denial-of-wallet is the same class of problem
+# as unbounded repair" reasoning docs/security/prompt-injection.md already
+# applies to tool calls, extended here to output length.
+_MAX_OUTPUT_TOKENS = 8000
+
 
 def _model_for_phase(phase: Phase) -> str:
     c = config()
@@ -151,6 +163,7 @@ def _payload(
         "model": model,
         "stream": True,
         "stream_options": {"include_usage": True},
+        "max_tokens": _MAX_OUTPUT_TOKENS,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
