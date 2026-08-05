@@ -8,11 +8,13 @@
 
 ## How this is organized
 
-Two kinds of directory, and the difference matters when you are looking for something.
+Three kinds of directory, and the difference matters when you are looking for something.
 
 **Versioned** — what gets built, and when. A decision recorded in `v1/` stays as the record of what was believed at the time; when `v2/` changes it, `v2/` says so. Do not read a version directory as current truth without checking whether a later one supersedes it.
 
 **Cross-cutting** — true across all versions, kept current rather than versioned. If these disagree with a version directory, these win.
+
+**Dated** — a record of what was said on a day, superseded by nothing and superseding nothing. Never cite one as truth.
 
 | Directory | | What it answers |
 |---|---|---|
@@ -23,6 +25,7 @@ Two kinds of directory, and the difference matters when you are looking for some
 | [security/](security/README.md) | current | Threat model and every control, gated to the version that needs it |
 | [coderules/](coderules/README.md) | current | How the code stays consistent when an AI writes most of it |
 | [design/](design/README.md) | current | How **our own** app and website look and feel — not what the engine produces |
+| [reviews/](reviews/README.md) | dated | What we showed people, and the prompt that produced it |
 
 ## Find it fast
 
