@@ -96,7 +96,7 @@ The Director prefix is small and the call runs once. **Caching it is probably a 
 **Outline rules**
 
 - [x] Pydantic rejects: fewer than 3 scenes · more than 12 · zero `hook` · two `hook`s · a `hook` that is not first · zero `cta` · two adjacent scenes with the same intent — `schema/test_outline.py`, one case per rule
-- [ ] **Deferred by choice, not blocked** — the 5 golden briefs each produce a valid `Outline` on the first call. Verified live for one brief (a hand-written sample, not the golden-brief fixtures specifically): a real Director call produced a five-scene narrative — hook/problem/reveal/proof/cta — with a distinct, non-repeating `layoutHint` on every scene, on the first call, no repair needed. Running the other four golden briefs through the same path is cheap and unblocked; deferred given the live-debugging cost already spent building this phase (see below)
+- [x] The 5 golden briefs each produce a valid `Outline` on the first call. **Run live 2026-08-05** against `openai/gpt-5-mini` via `scripts/verify_director.py`, which runs every fixture in `evals/briefs/` through `direct_brief`: 5/5 returned an `Outline` and passed `check_outline`, with no failures. First-call by construction — `direct_brief` has no retry of its own, so a `Result` back is a first-call result. Shapes were 5 scenes (01, 02, 05) and 6 scenes (03, 04); 03 and 04 used `reveal` twice, non-adjacently, which is legal — the only positional rule is that the hook is first
 - [x] Every scene has a `layoutHint`, and adjacent scenes do not repeat one — `features/director/checks.py`'s `check_outline`, tested in `test_checks.py`, and confirmed in the live run above (full-bleed → split-left → centered → grid → stack)
 
 **The gate itself**
@@ -112,7 +112,7 @@ The Director prefix is small and the call runs once. **Caching it is probably a 
 
 **Quality — measured, never gating**
 
-- [ ] Read all five outlines. Do they read as narratives or as lists of topics? This is judgment and belongs to you, not to a judge model. Log the impression; do not automate it in v1. One read so far, not five: the live outline above reads as an actual narrative arc (friction → problem → the product as the answer → proof it works → the ask), not a topic list. Worth confirming across the other four when the batch above runs
+- [ ] Read all five outlines. Do they read as narratives or as lists of topics? This is judgment and belongs to you, not to a judge model. Log the impression; do not automate it in v1. **All five are now generated and printable on demand** (`scripts/verify_director.py`), so the only thing outstanding is the human read — deliberately left unticked, because nothing but a person can tick it. This section never gates the exit gate
 
 ---
 
@@ -129,7 +129,7 @@ The Director prefix is small and the call runs once. **Caching it is probably a 
 
 ## Exit gate
 
-- [ ] **Deferred by choice** — Brief → Outline works on all five golden briefs. Proven live for one brief (see Verify); the other four are unblocked, just not yet run
+- [x] Brief → Outline works on all five golden briefs — run live 2026-08-05, 5/5 valid on the first call (see Verify). Repeatable as `uv run --env-file .env python -m scripts.verify_director`
 - [x] Every outline rule has a rejection test
 - [x] The approval gate is enforced at the function boundary, not only in the UI
 - [x] `layoutHint` is assigned by the director, so parallel builds do not produce repetitive layouts

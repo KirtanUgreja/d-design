@@ -17,8 +17,8 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 04 | [Renderer + 11 primitives](04-renderer.md) | 3 | done |
 | 05 | [Publish, present, embed](05-publish-present-embed.md) | 4 | done |
 | 06 | [Model seam + Build phase](06-model-seam-and-build.md) | 5 | done |
-| 07 | [Director phase](07-director.md) | 6 | in progress — 4/5 exit gate items done, the 5-golden-brief batch verification deferred by choice |
-| 08 | [Intake](08-intake.md) | 7 | not started |
+| 07 | [Director phase](07-director.md) | 6 | done |
+| 08 | [Intake](08-intake.md) | 7 | in progress |
 | 09 | [Editor](09-editor.md) | 8 | not started |
 | 10 | [Brand kit + uploads](10-brand-and-uploads.md) | 9 | not started |
 | 11 | [Visuals + Slot](11-visuals-and-slot.md) | 10 | not started |

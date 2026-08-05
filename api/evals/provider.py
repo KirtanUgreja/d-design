@@ -47,6 +47,7 @@ async def run_build(fixture: dict[str, object]) -> dict[str, object]:
     # whole `api` import graph (db engine, config()) until a case actually
     # runs.
     from config import config
+    from db.engine import engine, session_factory
     from features.director import approve_outline
     from features.generation.build import build_experience
 
@@ -56,27 +57,42 @@ async def run_build(fixture: dict[str, object]) -> dict[str, object]:
     scenes: list[dict[str, object]] = []
     errors: list[dict[str, object]] = []
 
-    # The fixture's outline is hand-authored, in the repo, reviewed in the
-    # diff — a human already approved it the same way the outline-editor
-    # gate would (docs/v1/plan/07-director.md). This eval tests Build in
-    # isolation, not the Director -> approve -> Build chain end to end.
-    async for event in build_experience(
-        brief=brief,
-        approved_outline=approve_outline(outline),
-        brand_id=brand_id,
-        owner_id=config().local_user_id,
-        experience_id="00000000-0000-4000-8000-0000000000ee",
-    ):
-        if isinstance(event.result, Err):
-            errors.append(
-                {
-                    "index": event.index,
-                    "code": event.result.error.code,
-                    "message": event.result.error.message,
-                }
-            )
-        else:
-            scenes.append(event.result.value.model_dump(by_alias=True))
+    try:
+        # The fixture's outline is hand-authored, in the repo, reviewed in the
+        # diff — a human already approved it the same way the outline-editor
+        # gate would (docs/v1/plan/07-director.md). This eval tests Build in
+        # isolation, not the Director -> approve -> Build chain end to end.
+        async for event in build_experience(
+            brief=brief,
+            approved_outline=approve_outline(outline),
+            brand_id=brand_id,
+            owner_id=config().local_user_id,
+            experience_id="00000000-0000-4000-8000-0000000000ee",
+        ):
+            if isinstance(event.result, Err):
+                errors.append(
+                    {
+                        "index": event.index,
+                        "code": event.result.error.code,
+                        "message": event.result.error.message,
+                    }
+                )
+            else:
+                scenes.append(event.result.value.model_dump(by_alias=True))
+    finally:
+        # Promptfoo calls `call_api` once per case and `asyncio.run` closes its
+        # loop each time — but `db.engine.engine()` is `@cache`d for the life
+        # of the *process*, so case 2 checks out an asyncpg connection bound to
+        # case 1's dead loop. `pool_pre_ping` then discards it and opens a
+        # fresh one, which is why every case after the first lost exactly one
+        # scene to "quota check unavailable: RuntimeError" and it was always
+        # scene 0 — the hook. The quota check refusing on an unreachable DB is
+        # correct (it fails closed); the pool outliving its loop is the bug.
+        # Found by reading run 31024749251's uploaded eval-results.json, which
+        # is the whole reason that artifact exists.
+        await engine().dispose()
+        engine.cache_clear()
+        session_factory.cache_clear()
 
     return {"scenes": scenes, "errors": errors, "brief": fixture["brief"]}
 
