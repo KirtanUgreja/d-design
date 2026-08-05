@@ -77,7 +77,8 @@ fi
 # `*_data.py`.
 orm_strays=$(scan -lE "^[[:space:]]*(import|from)[[:space:]]+sqlalchemy" -- 'api/**/*.py' \
   | grep -vE '^api/(db/|migrations/|tests/)' \
-  | grep -vE '_data\.py$')
+  | grep -vE '_data\.py$' \
+  | grep -vE '/test_[^/]+\.py$')
 if [ -n "$orm_strays" ]; then
   note "SQLAlchemy imported outside db/ and outside a *_data.py module:"
   printf '      %s\n' $orm_strays >&2

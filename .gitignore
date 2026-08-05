@@ -22,6 +22,7 @@ web/out/
 web/test-results/
 web/playwright-report/
 web/tsconfig.tsbuildinfo
+web/.data/
 
 # Local env
 .env
