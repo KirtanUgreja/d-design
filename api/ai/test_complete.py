@@ -235,6 +235,62 @@ async def test_upstream_error_status_is_a_result_failure(
     assert result.error.code == "upstream_unavailable"
 
 
+@pytest.mark.parametrize(
+    ("name", "separator"),
+    [
+        ("line separator", "\u2028"),
+        ("paragraph separator", "\u2029"),
+        ("next line", "\x85"),
+    ],
+)
+async def test_unicode_separators_in_copy_do_not_split_the_sse_payload(
+    monkeypatch: pytest.MonkeyPatch, _logged: AsyncMock, name: str, separator: str
+) -> None:
+    """Regression, found live in CI (docs/v1/plan/06-model-seam-and-build.md).
+
+    These three are legal *unescaped* inside a JSON string, and a JavaScript
+    gateway's `JSON.stringify` does not escape them — so they reach us raw on
+    the wire. `httpx.aiter_lines()` splits on all three anyway (it follows
+    `str.splitlines()`), cutting one `data:` payload into two, and each half
+    parses as truncated JSON: `JSONDecodeError: Unterminated string`. The
+    model only has to write one of these into its copy for a whole build to
+    die, so the framing has to be ours, not splitlines'.
+    """
+    text = f"before{separator}after"
+    # `ensure_ascii=False` on BOTH dumps is the point: it puts the raw
+    # character on the wire, exactly as a JS gateway's `JSON.stringify`
+    # does. The default `ensure_ascii=True` escapes it to a `\\uXXXX`
+    # sequence and the bug does not reproduce.
+    content = json.dumps({"text": text}, ensure_ascii=False)
+    body = json.dumps(
+        {
+            "model": "test/model",
+            "provider": "test-provider",
+            "choices": [{"delta": {"content": content}, "finish_reason": "stop"}],
+        },
+        ensure_ascii=False,
+    )
+    wire = f"data: {body}\n\ndata: [DONE]\n\n".encode()
+    assert separator.encode() in wire, "raw separator never reached the wire"
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=wire)
+
+    _install_transport(monkeypatch, handler)
+
+    result = await complete(
+        phase="build",
+        schema=_Widget,
+        system="sys",
+        user="usr",
+        owner_id="owner-1",
+        experience_id="exp-1",
+    )
+
+    assert isinstance(result, Ok), f"{name} split the payload"
+    assert result.value.value.text == text
+
+
 async def test_quota_exceeded_short_circuits_before_any_http_call(
     monkeypatch: pytest.MonkeyPatch,
     _quota_always_ok: AsyncMock,

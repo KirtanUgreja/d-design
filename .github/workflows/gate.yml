@@ -145,15 +145,20 @@ jobs:
       # has none (verified live — `promptfoo eval --ci` is `error: unknown
       # option`), and none is needed — a non-zero exit on any assertion
       # failure is `eval`'s default behavior, not something a flag turns on.
-      # --max-concurrency 1: verified live (twice) that the default of 4
-      # makes Promptfoo's persistent Python worker time out on 2 of 12
-      # cases — each fixture is several *sequential* model calls (2-4
-      # minutes of real work), and the worker cannot actually run 4 of
-      # those concurrently the way the flag implies. Every assertion passed
-      # both times; only the worker's own concurrency handling didn't.
-      # Slower (~45-70 min total instead of ~15-30) but reliable.
+      # REQUEST_TIMEOUT_MS is what bounds a Promptfoo Python-worker call
+      # (`getRequestTimeoutMs()`, default 3e5 = the 5 minutes that showed up
+      # as "Python worker timed out after 300000ms"). One eval case here is
+      # a whole build — several *sequential* model calls, and gpt-5-mini has
+      # produced 12k-token scenes — so 5 minutes is simply below the real
+      # cost of one case. 30 minutes is generous against an observed ~3-4
+      # minute average, and the job's own 6h ceiling still bounds a hang.
+      #
+      # --max-concurrency 1 because the worker pool is one worker
+      # (`workerCount = 1`); asking for 4 only queues 4 cases onto it.
       - name: golden-brief + injection eval
         working-directory: api
+        env:
+          REQUEST_TIMEOUT_MS: '1800000'
         run: |
           PYTHONPATH="$PWD" PROMPTFOO_PYTHON="$PWD/.venv/bin/python3" \
             npx --yes promptfoo@0.122.0 eval -c promptfooconfig.yaml \

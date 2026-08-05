@@ -176,40 +176,55 @@ class _RawCompletion(BaseModel):
     cached_tokens: int
 
 
+def _sse_payload(line: str) -> str | None:
+    """The JSON text of one SSE `data:` line — `None` for anything else
+    (`event:`, `id:`, a comment, a blank)."""
+    stripped = line.rstrip("\r").strip()
+    if not stripped.startswith("data:"):
+        return None
+    return stripped[len("data:") :].strip() or None
+
+
 async def _iter_sse_data(response: httpx.Response) -> AsyncIterator[dict[str, object]]:
-    # Verified live against OpenRouter (2026-08): a single logical SSE event
-    # can arrive as *multiple* consecutive `data:` lines — observed with
-    # `openai/gpt-5-mini` on a long streamed delta — and the SSE spec says
-    # those get concatenated (joined by `\n`) into one payload before
-    # parsing. Treating every `data:` line as its own complete JSON object,
-    # as this used to, parses a truncated fragment and raises
-    # `json.JSONDecodeError: Unterminated string` — a crash, not a `Result`,
-    # for a wire-format case that was always possible.
-    buffer: list[str] = []
+    """Frames the stream on `\\n` — deliberately NOT `response.aiter_lines()`.
 
-    def _flush() -> dict[str, object] | None:
-        if not buffer:
-            return None
-        data = "\n".join(buffer)
-        buffer.clear()
-        if data == "[DONE]":
-            return None
-        return cast(dict[str, object], json.loads(data))
+    httpx splits lines on `str.splitlines()` semantics, whose separator set
+    is `\\n\\r\\x0b\\x0c\\x1c\\x1d\\x1e\\x85\\u2028\\u2029`
+    (httpx/_decoders.py, `LineDecoder`). Six of those are not SSE line
+    terminators, and three — `\\x85`, `\\u2028`, `\\u2029` — are legal
+    *unescaped* inside a JSON string, which JavaScript's `JSON.stringify`
+    (what an OpenAI-compatible gateway serializes with) does not escape. So
+    a model that writes one of them into its copy splits its own `data:`
+    payload in half on the way in, and the halves parse as truncated JSON.
 
-    async for line in response.aiter_lines():
-        if line.startswith("data:"):
-            buffer.append(line[len("data:") :].strip())
-            continue
-        if line == "":
-            parsed = _flush()
-            if parsed is not None:
-                yield parsed
-            continue
-        # A non-`data:`, non-blank line (`event:`, `id:`, a comment) ends
-        # nothing on its own — SSE events are blank-line-delimited.
-    parsed = _flush()
-    if parsed is not None:
-        yield parsed
+    Verified live: this is what `JSONDecodeError: Unterminated string` was,
+    and it killed a whole build rather than one scene, because the raise
+    escaped `_stream_once`'s `except httpx.HTTPError` entirely.
+    `test_complete.py` pins all three characters.
+
+    Framing on `\\n` alone is safe in a way `splitlines()` is not: a raw
+    `\\n` or `\\r` *cannot* appear inside a JSON string — JSON requires both
+    escaped — so no payload can contain its own delimiter. One `data:` line
+    carries one whole JSON object, which is the shape every
+    OpenAI-compatible stream emits.
+    """
+    buffer = ""
+    async for chunk in response.aiter_text():
+        buffer += chunk
+        while "\n" in buffer:
+            line, buffer = buffer.split("\n", 1)
+            data = _sse_payload(line)
+            if data is None:
+                continue
+            if data == "[DONE]":
+                return
+            yield cast(dict[str, object], json.loads(data))
+
+    # A final event with no trailing newline. Rare, but dropping it would
+    # silently lose the usage chunk that carries `cached_tokens`.
+    data = _sse_payload(buffer)
+    if data is not None and data != "[DONE]":
+        yield cast(dict[str, object], json.loads(data))
 
 
 async def _stream_once(
@@ -257,7 +272,14 @@ async def _stream_once(
                     details = usage.get("prompt_tokens_details")
                     if isinstance(details, dict):
                         cached_tokens = cast(int, details.get("cached_tokens", 0))
-    except httpx.HTTPError as e:
+    # `JSONDecodeError` belongs here for the same reason `HTTPError` does: a
+    # malformed chunk is the upstream misbehaving, which is an expected
+    # failure of an external boundary, not a bug in this process (rule 3,
+    # and rule 2 — model output is external input). Leaving it to raise is
+    # what turned one bad character into a dead build instead of one failed
+    # scene, and it skipped `log_generation` on the way out, so the call was
+    # billed and unrecorded.
+    except (httpx.HTTPError, json.JSONDecodeError) as e:
         return err("upstream_unavailable", f"{type(e).__name__}: {e}")
 
     return ok(
