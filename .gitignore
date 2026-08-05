@@ -24,6 +24,9 @@ web/playwright-report/
 web/tsconfig.tsbuildinfo
 web/.data/
 
+# Eval run output — uploaded as a CI artifact, never committed
+api/eval-results.json
+
 # Local env
 .env
 .env.local

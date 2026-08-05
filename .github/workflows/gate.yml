@@ -155,6 +155,13 @@ jobs:
       #
       # --max-concurrency 1 because the worker pool is one worker
       # (`workerCount = 1`); asking for 4 only queues 4 cases onto it.
+      #
+      # --output: the console table truncates each cell to ~60 characters, so
+      # a failure shows the first line of a scene and never the assertion that
+      # failed or the text that tripped it. Run 31010631635 cost a session of
+      # guessing for exactly that reason. The JSON artifact is the whole
+      # output plus every assertion's own reason, and `if: always()` is the
+      # point of it — the run that needs reading is the run that just failed.
       - name: golden-brief + injection eval
         working-directory: api
         env:
@@ -162,7 +169,16 @@ jobs:
         run: |
           PYTHONPATH="$PWD" PROMPTFOO_PYTHON="$PWD/.venv/bin/python3" \
             npx --yes promptfoo@0.122.0 eval -c promptfooconfig.yaml \
-            --no-progress-bar --max-concurrency 1
+            --no-progress-bar --max-concurrency 1 \
+            --output eval-results.json
+
+      - name: eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: api/eval-results.json
+          if-no-files-found: warn
 
   web:
     runs-on: ubuntu-latest

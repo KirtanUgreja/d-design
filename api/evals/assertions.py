@@ -10,6 +10,12 @@ this far at all versus getting refused earlier — is what `generations.
 error_class` is for; that is a trend to watch, not a thing a single eval run
 asserts pass/fail on.
 
+What makes any of them absolute is not this file — it is
+`features/generation/checks.py` rejecting the violating scene before it can
+reach `result["scenes"]`. These functions re-assert the same rules on the
+run's output, so a check silently going missing on that side shows up here as
+a red gate rather than as nothing at all.
+
 Promptfoo's Python assertion protocol: a function taking
 `(output, context)` and returning `bool | float | dict`.
 https://www.promptfoo.dev/docs/configuration/expected-outputs/python/
@@ -19,19 +25,16 @@ import json
 import re
 from typing import cast
 
+# Same tuple the post-build check scans for, imported rather than restated —
+# a second copy is a copy that stops matching the prompt (rule: grep before
+# you write). `prompts.build` pulls in only `schema` and `tools`, no config
+# and no db, so this stays cheap enough for Promptfoo's Python worker to
+# import on every assertion.
+from features.generation.prompts.build import PROMPT_SENTINELS
+
 _SLOT_NETWORK_PATTERN = re.compile(
     r"fetch\s*\(|XMLHttpRequest|WebSocket|sendBeacon|\bimport\s*\(",
     re.IGNORECASE,
-)
-
-# Fragments unique to the Build system prompt
-# (features/generation/prompts/build.py's `_PROMPT_CONTRACT`) — if one shows
-# up in generated copy, the model echoed its instructions back instead of
-# writing the brief's content.
-_PROMPT_FRAGMENTS = (
-    "You are the Build phase",
-    "Prefer fewer blocks",
-    "Never emit colors, sizes, fonts",
 )
 
 
@@ -79,6 +82,11 @@ def hrefs_trace_to_brief(output: str, context: object) -> bool:
 
 
 def no_prompt_leak(output: str, context: object) -> bool:
+    """Scans `scenes` only, which is the point: `check_scene` routes a leaking
+    scene into `errors` instead, so this stays green on a run where the model
+    took the exfiltration bait and the pipeline caught it. It goes red only if
+    a leak reaches a *kept* scene — i.e. if the post-build check stopped
+    covering a payload it used to cover."""
     result = _parse(output)
     text_blob = json.dumps(result["scenes"])
-    return not any(fragment in text_blob for fragment in _PROMPT_FRAGMENTS)
+    return not any(sentinel in text_blob for sentinel in PROMPT_SENTINELS)

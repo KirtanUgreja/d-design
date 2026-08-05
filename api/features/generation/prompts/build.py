@@ -28,6 +28,19 @@ field for them, because the art direction supplies all of that from the intent y
 4. Respect every character limit below; they are hard limits, not suggestions.
 5. Prefer fewer blocks. A scene with two blocks usually beats one with six."""
 
+# Verbatim slices of the contract above — the sentinels that say "the model
+# echoed its instructions back instead of writing the brief's content". Two
+# consumers: the post-build leak check (features/generation/checks.py) and the
+# injection corpus's 4th assertion (evals/assertions.py,
+# docs/security/testing.md). Exported from here so there is exactly one copy;
+# test_checks.py asserts each one still occurs in `_PROMPT_CONTRACT`, so
+# rewording the prompt fails a test rather than silently disarming the check.
+PROMPT_SENTINELS = (
+    "You are the Build phase",
+    "Never emit colors, sizes, fonts",
+    "Prefer fewer blocks",
+)
+
 
 def _brand_section(brand_kit: BrandKit | None) -> str:
     if brand_kit is None:

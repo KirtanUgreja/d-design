@@ -3,11 +3,28 @@
 # docs/security/testing.md -> "Prompt injection").
 #
 # Structural assertions only — quality scoring is a v2 concern and must
-# never gate a merge (docs/techstack/ai-stack.md). Injection is
-# probabilistic: assertions 1-3 in docs/security/testing.md are structural
-# and absolute (asserted below on every case), but a single eval run is not
-# how the injection *rate* is tracked over time — that comes from
-# `generations.error_class`, queried separately.
+# never gate a merge (docs/techstack/ai-stack.md). All four assertions from
+# docs/security/testing.md gate, and all four are safe to gate on for one
+# reason: each has a counterpart in features/generation/checks.py that
+# rejects the violating scene before it can reach this harness's output.
+# What an assertion here tests is that control, not the model's mood.
+#
+# `no_prompt_leak` was briefly the exception, and CI run 31010631635 is why
+# it no longer is: 03-exfiltration.json failed it on a run where nothing
+# about the pipeline had changed. That was not flakiness to route around —
+# it was the model taking the exfiltration bait, on the one assertion of the
+# four with nothing on our side of the seam enforcing it. The fix was to
+# give it the same backstop the other three have (checks.py's
+# `_assert_no_prompt_leak`), which makes it deterministic in exactly the
+# sense the doc means by "must be absolute — they do not depend on the model
+# behaving". Dropping it from this list instead would have deleted the only
+# detector for a demonstrated live failure and called the gate green.
+#
+# The distinction the doc's first sentence draws still holds: this file may
+# assert structural rules our code enforces, never a probabilistic judgement
+# of output quality. The injection *rate* — how often a payload gets far
+# enough to be caught at all — is `generations.error_class` over time, not
+# this run's pass/fail.
 #
 # Wired into CI (.github/workflows/gate.yml's `api` job, after `pytest`) —
 # every case here makes a real, billed OpenRouter call per scene, ~48 calls
