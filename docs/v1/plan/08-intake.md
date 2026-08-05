@@ -168,13 +168,13 @@ RLS policy and isolation test, same pattern as phase 00, through `as_user`.
 The API half of this phase is done and its controls are tested. **The Intake UI is not built**, and neither is a live run against a real model — both are what stands between this phase and `done`:
 
 - `web/src/features/intake/` — the prompt box, the structured interview, and the permanently-visible editable Brief. This is one of the four screens that gets real design attention ([../../design/app.md](../../design/app.md)), and the four decisions in "The interview is not a chat" above are its brief
-- A live Intake call, the way `scripts/verify_director.py` proved the Director. The claims check is strict by design, and how often a real model paraphrases rather than splits is a question only a live run answers — if it paraphrases constantly, the prompt needs work, not the check
+- ~~A live Intake call~~ — **done 2026-08-05** (see the exit gate). The open question was whether the claims check is so strict that a real model trips it constantly; on the first live call it did not, splitting the user's sentences rather than rewording them. One call is not a rate, so it is worth re-running as the prompt changes
 
 ---
 
 ## Exit gate
 
-- [ ] Prompt and Q&A both produce a valid `Brief` — proven at the API, both paths, with a mocked seam (`test_interview.py`). **Not yet proven live against a real model, and the Intake UI is not built** — see below
+- [ ] Prompt and Q&A both produce a valid `Brief` — proven at the API, both paths, with a mocked seam (`test_interview.py`), and **verified live 2026-08-05** against `openai/gpt-5-mini` for the prompt path: the model split the user's typed sentences verbatim rather than smoothing them, so the claims check passed on the first call, and it correctly lifted a "do not describe it as…" line into `constraints`. `goal` and `audience` came back byte-identical to the answers, as they must — they are copied, not generated. **The Intake UI is not built**, which is what keeps this unticked — see below
 - [x] The three always-ask fields are enforced, not encouraged
 - [x] URL scheme allowlist shared with phase 06, not duplicated
 - [x] A refusal surfaces as a refusal
