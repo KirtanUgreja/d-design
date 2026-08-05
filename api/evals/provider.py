@@ -19,7 +19,7 @@ billed OpenRouter call per scene per test case. Needs `PYTHONPATH` set to
 path, and Promptfoo's Python worker doesn't add it for you:
 
     PYTHONPATH="$PWD" PROMPTFOO_PYTHON="$PWD/.venv/bin/python3" \\
-        npx promptfoo@0.122.0 eval -c promptfooconfig.yaml --ci
+        npx promptfoo@0.122.0 eval -c promptfooconfig.yaml
 """
 
 import asyncio

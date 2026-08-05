@@ -141,12 +141,15 @@ jobs:
       # bare `python3` resolves to on the runner — that one has none of
       # fastapi/pydantic/sqlalchemy/httpx installed.
       # Version pinned to what this workflow was verified against, the same
-      # discipline as the pnpm/node versions above.
+      # discipline as the pnpm/node versions above. No `--ci` flag: 0.122.0
+      # has none (verified live — `promptfoo eval --ci` is `error: unknown
+      # option`), and none is needed — a non-zero exit on any assertion
+      # failure is `eval`'s default behavior, not something a flag turns on.
       - name: golden-brief + injection eval
         working-directory: api
         run: |
           PYTHONPATH="$PWD" PROMPTFOO_PYTHON="$PWD/.venv/bin/python3" \
-            npx --yes promptfoo@0.122.0 eval -c promptfooconfig.yaml --ci
+            npx --yes promptfoo@0.122.0 eval -c promptfooconfig.yaml --no-progress-bar
 
   web:
     runs-on: ubuntu-latest

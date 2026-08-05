@@ -17,7 +17,7 @@
 # build.md -> Exit gate). Run locally the same way CI does:
 #
 #   PYTHONPATH="$PWD" PROMPTFOO_PYTHON="$PWD/.venv/bin/python3" \
-#     npx promptfoo@0.122.0 eval -c promptfooconfig.yaml --ci
+#     npx promptfoo@0.122.0 eval -c promptfooconfig.yaml
 
 providers:
   - id: 'python:evals/provider.py'
