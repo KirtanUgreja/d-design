@@ -39,6 +39,14 @@ jobs:
       S3_ACCESS_KEY: minioadmin
       S3_SECRET_KEY: minioadmin
       LOCAL_USER_ID: 00000000-0000-4000-8000-000000000001
+      # Placeholder — no test makes a live call yet; the model seam's tests
+      # mock the HTTP call. Real keys are a later decision
+      # (docs/v1/plan/06-model-seam-and-build.md).
+      OPENROUTER_API_KEY: sk-or-placeholder-ci
+      OPENROUTER_MODEL_INTAKE: anthropic/claude-sonnet-4.5
+      OPENROUTER_MODEL_DIRECTOR: anthropic/claude-sonnet-4.5
+      OPENROUTER_MODEL_BUILD: anthropic/claude-sonnet-4.5
+      OPENROUTER_MODEL_EDIT: anthropic/claude-sonnet-4.5
     steps:
       - uses: actions/checkout@v5
 

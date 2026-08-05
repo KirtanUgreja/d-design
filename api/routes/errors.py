@@ -14,6 +14,7 @@ _STATUS = {
     "quota_exceeded": 429,
     "upstream_unavailable": 503,
     "repair_exhausted": 502,
+    "refused": 422,
 }
 
 

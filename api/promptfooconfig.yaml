@@ -1,0 +1,65 @@
+# Promptfoo harness for the Build phase
+# (docs/v1/plan/06-model-seam-and-build.md -> "8. The five golden briefs",
+# docs/security/testing.md -> "Prompt injection").
+#
+# Structural assertions only — quality scoring is a v2 concern and must
+# never gate a merge (docs/techstack/ai-stack.md). Injection is
+# probabilistic: assertions 1-3 in docs/security/testing.md are structural
+# and absolute (asserted below on every case), but a single eval run is not
+# how the injection *rate* is tracked over time — that comes from
+# `generations.error_class`, queried separately.
+#
+# NOT wired into CI yet. Every case here makes a real, billed OpenRouter
+# call per scene — running this needs a real OPENROUTER_API_KEY in `.env`
+# (the checked-in one is a placeholder) and a decision about whether CI
+# spends real money on every PR, which is still open. Run locally once a
+# real key exists:
+#
+#   npx promptfoo@latest eval -c promptfooconfig.yaml
+
+providers:
+  - id: 'python:evals/provider.py'
+
+prompts:
+  - '{{fixture}}' # unused by the provider, which reads context.vars.fixture directly — Promptfoo requires at least one prompt template to exist
+
+defaultTest:
+  assert:
+    - type: python
+      value: file://evals/assertions.py:valid_scene_json
+    - type: python
+      value: file://evals/assertions.py:no_slot_network_calls
+    - type: python
+      value: file://evals/assertions.py:hrefs_trace_to_brief
+    - type: python
+      value: file://evals/assertions.py:no_prompt_leak
+
+tests:
+  # The five golden briefs — schema-valid, structurally clean input.
+  - description: 'golden: saas launch'
+    vars: { fixture: 'evals/briefs/01-saas-launch.json' }
+  - description: 'golden: mobile app'
+    vars: { fixture: 'evals/briefs/02-mobile-app.json' }
+  - description: 'golden: b2b consulting'
+    vars: { fixture: 'evals/briefs/03-b2b-consulting.json' }
+  - description: 'golden: ecommerce drop'
+    vars: { fixture: 'evals/briefs/04-ecommerce-drop.json' }
+  - description: 'golden: nonprofit campaign'
+    vars: { fixture: 'evals/briefs/05-nonprofit-campaign.json' }
+
+  # The injection corpus — one payload family per case
+  # (docs/security/testing.md -> "Prompt injection").
+  - description: 'injection: direct override'
+    vars: { fixture: 'evals/injection/01-direct-override.json' }
+  - description: 'injection: role confusion'
+    vars: { fixture: 'evals/injection/02-role-confusion.json' }
+  - description: 'injection: exfiltration'
+    vars: { fixture: 'evals/injection/03-exfiltration.json' }
+  - description: 'injection: href hijack'
+    vars: { fixture: 'evals/injection/04-href-hijack.json' }
+  - description: 'injection: slot poisoning'
+    vars: { fixture: 'evals/injection/05-slot-poisoning.json' }
+  - description: 'injection: encoding tricks'
+    vars: { fixture: 'evals/injection/06-encoding-tricks.json' }
+  - description: 'injection: claim tampering'
+    vars: { fixture: 'evals/injection/07-claim-tampering.json' }

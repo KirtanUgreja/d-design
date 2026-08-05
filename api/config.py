@@ -28,6 +28,15 @@ class Config:
     # session's user id — the wrapper does not know the difference, which is
     # the whole reason for building it now.
     local_user_id: str
+    # One provider seam, OpenRouter behind it (docs/techstack/backend.md ->
+    # "Model access"). No default model for any phase — a wrong default is
+    # worse than a loud failure, since "wrong" here means silently spending
+    # money on a model nobody chose (docs/techstack/ai-stack.md).
+    openrouter_api_key: str
+    openrouter_model_intake: str
+    openrouter_model_director: str
+    openrouter_model_build: str
+    openrouter_model_edit: str
 
 
 @cache
@@ -40,4 +49,9 @@ def config() -> Config:
         s3_secret_key=_require("S3_SECRET_KEY"),
         s3_region=os.environ.get("S3_REGION", "us-east-1"),
         local_user_id=_require("LOCAL_USER_ID"),
+        openrouter_api_key=_require("OPENROUTER_API_KEY"),
+        openrouter_model_intake=_require("OPENROUTER_MODEL_INTAKE"),
+        openrouter_model_director=_require("OPENROUTER_MODEL_DIRECTOR"),
+        openrouter_model_build=_require("OPENROUTER_MODEL_BUILD"),
+        openrouter_model_edit=_require("OPENROUTER_MODEL_EDIT"),
     )

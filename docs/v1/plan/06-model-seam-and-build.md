@@ -232,11 +232,11 @@ Promptfoo, structural assertions only, running in CI as a hard gate. Quality sco
 
 ## Exit gate
 
-- [ ] Exactly one model call site exists in the system, and the lint/grep proves it. `web` holds no model credential, so this is architectural as well as enforced
-- [ ] No agent framework is in `pyproject.toml`, asserted by CI
-- [ ] 5 golden briefs, 100% valid after ≤ 1 repair, in CI as a hard gate
-- [ ] All three post-build checks run on every tree
-- [ ] Quota is atomic, the kill switch halts, and both fail closed under injected failure
-- [ ] Injection corpus runs and its rate is recorded
-- [ ] `generations` holds metadata and nothing else — proven with a canary
-- [ ] Caching is verified active, not assumed
+- [x] Exactly one model call site exists in the system, and the lint/grep proves it. `web` holds no model credential, so this is architectural as well as enforced — `api/ai/complete.py` is the only file referencing `openrouter.ai` or `OPENROUTER_API_KEY` outside `config.py` (which only reads the env var) and `evals/provider.py` (which calls `build_experience`, not the endpoint directly)
+- [x] No agent framework is in `pyproject.toml`, asserted by CI — `scripts/checks/invariants.sh`
+- [ ] **Blocked** — 5 golden briefs, 100% valid after ≤ 1 repair, in CI as a hard gate. The 5 briefs and `promptfooconfig.yaml` exist (`api/evals/`), but running them needs a real, billed `OPENROUTER_API_KEY` — `.env` and CI both carry a placeholder today. Deferred by choice rather than oversight: run locally once a real key exists, then decide whether CI gates on it
+- [x] All three post-build checks run on every tree — `features/generation/checks.py`, wired into `build_experience`, tested in `features/generation/test_checks.py`
+- [x] Quota is atomic, the kill switch halts, and both fail closed under injected failure — `features/generation/test_quota.py`: the parallel-race test (10 concurrent requests against a balance of 1 → exactly one succeeds), the halted-row test, and the unknown-owner/unreachable-quota test all pass
+- [ ] **Blocked**, same reason as the golden briefs — injection corpus runs and its rate is recorded. The 7-payload corpus exists (`api/evals/injection/`) with structural assertions (`api/evals/assertions.py`, unit-tested against synthetic output); it has not been run against a live model, so no rate exists yet to record
+- [x] `generations` holds metadata and nothing else — proven with a canary — `api/ai/test_canary.py` sends a canary string through the real seam (mocked HTTP, real quota check, real DB write) and greps every column of the resulting row for it
+- [ ] **Blocked**, same reason — caching is verified active, not assumed. `cached_tokens` is threaded through the seam and logged, but confirming it is non-zero from scene 2 onward needs a real multi-scene build against a live, cache-capable route
