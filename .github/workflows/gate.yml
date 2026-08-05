@@ -131,7 +131,7 @@ jobs:
       # Structural assertions only — quality scoring is v2 and never gates a
       # merge (docs/techstack/ai-stack.md). Real money, real time: ~48
       # model calls (5 golden briefs + 7 injection payloads, several scenes
-      # each), a few dollars and ~15-30 minutes per run on gpt-5-mini.
+      # each) on gpt-5-mini.
       #
       # PYTHONPATH: `api/` is the Python project root, not a package
       # (AGENTS.md) — `evals/provider.py`'s `from lib.result import Err`
@@ -145,11 +145,19 @@ jobs:
       # has none (verified live — `promptfoo eval --ci` is `error: unknown
       # option`), and none is needed — a non-zero exit on any assertion
       # failure is `eval`'s default behavior, not something a flag turns on.
+      # --max-concurrency 1: verified live (twice) that the default of 4
+      # makes Promptfoo's persistent Python worker time out on 2 of 12
+      # cases — each fixture is several *sequential* model calls (2-4
+      # minutes of real work), and the worker cannot actually run 4 of
+      # those concurrently the way the flag implies. Every assertion passed
+      # both times; only the worker's own concurrency handling didn't.
+      # Slower (~45-70 min total instead of ~15-30) but reliable.
       - name: golden-brief + injection eval
         working-directory: api
         run: |
           PYTHONPATH="$PWD" PROMPTFOO_PYTHON="$PWD/.venv/bin/python3" \
-            npx --yes promptfoo@0.122.0 eval -c promptfooconfig.yaml --no-progress-bar
+            npx --yes promptfoo@0.122.0 eval -c promptfooconfig.yaml \
+            --no-progress-bar --max-concurrency 1
 
   web:
     runs-on: ubuntu-latest

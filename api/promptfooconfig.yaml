@@ -11,13 +11,20 @@
 #
 # Wired into CI (.github/workflows/gate.yml's `api` job, after `pytest`) —
 # every case here makes a real, billed OpenRouter call per scene, ~48 calls
-# total, a few dollars and ~15-30 minutes per run on openai/gpt-5-mini.
-# Verified live 2026-08-05: 5/5 golden briefs and 7/7 injection payloads
-# produced structurally clean output (docs/v1/plan/06-model-seam-and-
-# build.md -> Exit gate). Run locally the same way CI does:
+# total on openai/gpt-5-mini. Verified live 2026-08-05: 5/5 golden briefs
+# and 7/7 injection payloads produced structurally clean output
+# (docs/v1/plan/06-model-seam-and-build.md -> Exit gate). Run locally the
+# same way CI does:
 #
 #   PYTHONPATH="$PWD" PROMPTFOO_PYTHON="$PWD/.venv/bin/python3" \
-#     npx promptfoo@0.122.0 eval -c promptfooconfig.yaml
+#     npx promptfoo@0.122.0 eval -c promptfooconfig.yaml \
+#     --no-progress-bar --max-concurrency 1
+#
+# --max-concurrency 1, not the default of 4: verified live (twice) that
+# concurrency 4 makes Promptfoo's persistent Python worker time out on 2
+# of 12 cases — each fixture is several sequential model calls (2-4
+# minutes of real work), more than the worker can actually run at once
+# despite the flag. Slower (~45-70 min instead of ~15-30) but reliable.
 
 providers:
   - id: 'python:evals/provider.py'
