@@ -12,12 +12,14 @@ eval purposes — that client already exists, tested, in
 Protocol: https://www.promptfoo.dev/docs/providers/python/ —
 `call_api(prompt, options, context)` returns `{"output": ...}`.
 
-NOT wired into CI. Running this makes a real, billed OpenRouter call per
-scene per test case — it needs a real `OPENROUTER_API_KEY`, which is a
-later decision (docs/v1/plan/06-model-seam-and-build.md, task tracked
-separately). Run locally once that key exists:
+Wired into CI (.github/workflows/gate.yml). Running this makes a real,
+billed OpenRouter call per scene per test case. Needs `PYTHONPATH` set to
+`api/` — this module's absolute imports (`lib.result`, `config`,
+`features.generation.build`) only resolve with the project root on the
+path, and Promptfoo's Python worker doesn't add it for you:
 
-    npx promptfoo@latest eval -c promptfooconfig.yaml
+    PYTHONPATH="$PWD" PROMPTFOO_PYTHON="$PWD/.venv/bin/python3" \\
+        npx promptfoo@0.122.0 eval -c promptfooconfig.yaml --ci
 """
 
 import asyncio

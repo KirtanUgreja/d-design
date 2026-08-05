@@ -71,6 +71,67 @@ def _model_for_phase(phase: Phase) -> str:
     }[phase]
 
 
+# Verified live against OpenRouter (2026-08): a schema carrying integer
+# `minimum`/`maximum` or array `maxItems`/`minItems` makes every Anthropic-
+# family route (Anthropic direct, Bedrock, Azure) reject the request outright
+# with 400 `output_config.format.schema: ... not supported` — before the
+# request ever reaches the model. `oneOf` (Pydantic's own encoding of a
+# `discriminator`-tagged union, e.g. `Block.props`) fails the same way with
+# "Schema type 'oneOf' is not supported". OpenAI's own models accept the full
+# keyword set and `oneOf`, but "the seam must never assume [strict] held"
+# (docs/v1/plan/06-model-seam-and-build.md), so these always get adjusted
+# before anything goes over the wire, regardless of route.
+#
+# Pydantic still enforces every stripped constraint locally on the way back —
+# `complete()`'s repair retry is exactly the backstop for a value that
+# violates a bound the provider never saw. Renaming `oneOf` to `anyOf` is
+# safe rather than lossy: every `BlockProps` variant requires its own
+# `type` literal with `additionalProperties: false`, so no payload can ever
+# satisfy two variants at once — "exactly one" and "at least one" coincide
+# here.
+_UNSUPPORTED_STRICT_KEYWORDS = frozenset(
+    {
+        "minimum",
+        "maximum",
+        "exclusiveMinimum",
+        "exclusiveMaximum",
+        "minItems",
+        "maxItems",
+        # Sibling of `oneOf`/`anyOf` on a discriminated union — "For 'anyOf',
+        # 'discriminator' is not supported" once `oneOf` above is renamed.
+        # Each variant's own `type` literal still discriminates for the
+        # model; this key only ever spoke to a validator that no longer sees
+        # `oneOf` to attach it to.
+        "discriminator",
+    }
+)
+
+
+def _strip_unsupported_keywords(node: object) -> object:
+    if isinstance(node, dict):
+        out = {
+            ("anyOf" if k == "oneOf" else k): _strip_unsupported_keywords(v)
+            for k, v in node.items()
+            if k not in _UNSUPPORTED_STRICT_KEYWORDS
+        }
+        # Both OpenAI's and Anthropic's strict mode require every key in
+        # `properties` to also appear in `required` — a field with a Pydantic
+        # default (`motion: Motion = "reveal"`, `region: Region | None =
+        # None`) is exactly the kind of thing Pydantic's own JSON Schema
+        # omits from `required`, and OpenAI rejects that outright: "'required'
+        # is required to be ... including every key in properties." The model
+        # still always emits a value for the key; only Python's own default
+        # ever applies, and only when the field is genuinely absent from a
+        # hand-authored fixture, not from a model response.
+        properties = out.get("properties")
+        if isinstance(properties, dict):
+            out["required"] = list(properties.keys())
+        return out
+    if isinstance(node, list):
+        return [_strip_unsupported_keywords(v) for v in node]
+    return node
+
+
 def _payload(
     model: str, system: str, user: str, schema: type[BaseModel]
 ) -> dict[str, object]:
@@ -79,9 +140,11 @@ def _payload(
     # re-ordered schema dump is a different prefix, and this is the one place
     # the schema becomes bytes in the request (docs/v1/ai-pipeline.md ->
     # "Prompt caching").
-    json_schema = json.loads(
-        serialize_deterministically(
-            schema.model_json_schema(ref_template="#/$defs/{model}")
+    json_schema = _strip_unsupported_keywords(
+        json.loads(
+            serialize_deterministically(
+                schema.model_json_schema(ref_template="#/$defs/{model}")
+            )
         )
     )
     return {
@@ -114,15 +177,39 @@ class _RawCompletion(BaseModel):
 
 
 async def _iter_sse_data(response: httpx.Response) -> AsyncIterator[dict[str, object]]:
-    async for line in response.aiter_lines():
-        if not line.startswith("data:"):
-            continue
-        data = line[len("data:") :].strip()
+    # Verified live against OpenRouter (2026-08): a single logical SSE event
+    # can arrive as *multiple* consecutive `data:` lines — observed with
+    # `openai/gpt-5-mini` on a long streamed delta — and the SSE spec says
+    # those get concatenated (joined by `\n`) into one payload before
+    # parsing. Treating every `data:` line as its own complete JSON object,
+    # as this used to, parses a truncated fragment and raises
+    # `json.JSONDecodeError: Unterminated string` — a crash, not a `Result`,
+    # for a wire-format case that was always possible.
+    buffer: list[str] = []
+
+    def _flush() -> dict[str, object] | None:
+        if not buffer:
+            return None
+        data = "\n".join(buffer)
+        buffer.clear()
         if data == "[DONE]":
-            return
-        if not data:
+            return None
+        return cast(dict[str, object], json.loads(data))
+
+    async for line in response.aiter_lines():
+        if line.startswith("data:"):
+            buffer.append(line[len("data:") :].strip())
             continue
-        yield cast(dict[str, object], json.loads(data))
+        if line == "":
+            parsed = _flush()
+            if parsed is not None:
+                yield parsed
+            continue
+        # A non-`data:`, non-blank line (`event:`, `id:`, a comment) ends
+        # nothing on its own — SSE events are blank-line-delimited.
+    parsed = _flush()
+    if parsed is not None:
+        yield parsed
 
 
 async def _stream_once(

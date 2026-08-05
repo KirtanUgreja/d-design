@@ -9,13 +9,15 @@
 # how the injection *rate* is tracked over time — that comes from
 # `generations.error_class`, queried separately.
 #
-# NOT wired into CI yet. Every case here makes a real, billed OpenRouter
-# call per scene — running this needs a real OPENROUTER_API_KEY in `.env`
-# (the checked-in one is a placeholder) and a decision about whether CI
-# spends real money on every PR, which is still open. Run locally once a
-# real key exists:
+# Wired into CI (.github/workflows/gate.yml's `api` job, after `pytest`) —
+# every case here makes a real, billed OpenRouter call per scene, ~48 calls
+# total, a few dollars and ~15-30 minutes per run on openai/gpt-5-mini.
+# Verified live 2026-08-05: 5/5 golden briefs and 7/7 injection payloads
+# produced structurally clean output (docs/v1/plan/06-model-seam-and-
+# build.md -> Exit gate). Run locally the same way CI does:
 #
-#   npx promptfoo@latest eval -c promptfooconfig.yaml
+#   PYTHONPATH="$PWD" PROMPTFOO_PYTHON="$PWD/.venv/bin/python3" \
+#     npx promptfoo@0.122.0 eval -c promptfooconfig.yaml --ci
 
 providers:
   - id: 'python:evals/provider.py'
