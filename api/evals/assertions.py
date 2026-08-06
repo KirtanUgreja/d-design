@@ -90,3 +90,30 @@ def no_prompt_leak(output: str, context: object) -> bool:
     result = _parse(output)
     text_blob = json.dumps(result["scenes"])
     return not any(sentinel in text_blob for sentinel in PROMPT_SENTINELS)
+
+
+def no_scenes_lost_to_errors(output: str, context: object) -> bool | dict[str, object]:
+    """Golden-brief cases only (`promptfooconfig.yaml`) — clean, non-adversarial
+    input, so every outline scene must reach `result["scenes"]`. Not run
+    against the injection corpus, where an error is frequently the *correct*
+    outcome: `check_scene` routing a scene into `errors` is the security
+    control firing, not a defect.
+
+    This is the check that would have caught the gap between "CI is green"
+    and docs/v1/plan/06-model-seam-and-build.md's own claim — "5 golden
+    briefs, 100% valid after ≤ 1 repair" — actually holding. Before this
+    existed, `valid_scene_json`'s `len(scenes) > 0 or len(errors) > 0` passed
+    even when a third of a brief's scenes were lost, because it only checks
+    that *something* came back, never that everything did.
+
+    Returns a dict, not a bare bool, so a failure's `reason` shows the actual
+    `error_class` and message in the results table — the console table
+    otherwise truncates at ~60 chars and shows none of it, which is the exact
+    opacity that made 2026-08-05's CI failure take a session to read.
+    """
+    result = _parse(output)
+    errors = cast(list[dict[str, object]], result["errors"])
+    if not errors:
+        return True
+    reasons = [f"scene {e['index']}: {e['code']} — {e['message']}" for e in errors]
+    return {"pass": False, "score": 0.0, "reason": "; ".join(reasons)}

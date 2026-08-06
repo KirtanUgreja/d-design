@@ -86,3 +86,30 @@ def test_no_prompt_leak_flags_fragment() -> None:
 def test_no_prompt_leak_true_for_ordinary_copy() -> None:
     scene = _scene(HeadlineProps(type="headline", text="Ship it today").model_dump())
     assert assertions.no_prompt_leak(_output([scene], []), None) is True
+
+
+def test_no_scenes_lost_to_errors_true_when_none() -> None:
+    scene = _scene(HeadlineProps(type="headline", text="Ship it today").model_dump())
+    assert assertions.no_scenes_lost_to_errors(_output([scene], []), None) is True
+
+
+def test_no_scenes_lost_to_errors_fails_with_reason() -> None:
+    """A dict, not a bare False — CI run 31031983435's whole lesson was that
+    a truncated console table hides the assertion and the message both."""
+    output = _output(
+        [],
+        [
+            {
+                "index": 0,
+                "code": "repair_exhausted",
+                "message": "invalid after one repair attempt",
+            }
+        ],
+    )
+    result = assertions.no_scenes_lost_to_errors(output, None)
+    assert isinstance(result, dict)
+    assert result["pass"] is False
+    reason = result["reason"]
+    assert isinstance(reason, str)
+    assert "repair_exhausted" in reason
+    assert "scene 0" in reason

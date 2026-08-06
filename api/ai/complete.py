@@ -72,6 +72,33 @@ _TIMEOUT = httpx.Timeout(90.0, connect=10.0)
 # applies to tool calls, extended here to output length.
 _MAX_OUTPUT_TOKENS = 8000
 
+# Verified live (2026-08, phase 08): every model behind `_model_for_phase`
+# is a reasoning model, and OpenRouter bills its hidden reasoning tokens out
+# of the *same* `max_tokens` budget as the visible completion — a trivial
+# 40-word request burned 256 reasoning tokens and hit `finish_reason:
+# length` with `content: null`, zero visible output, at the default
+# setting. `reasoning.max_tokens` does NOT cap this (set to 50, the model
+# still spent 256 and produced nothing); `reasoning.effort: "minimal"` is
+# the lever that actually works — same run, 0 reasoning tokens, full
+# content, `finish_reason: stop`, a quarter of the cost.
+#
+# This is very likely what the 32k-token runaway above actually was, and a
+# quieter version of it is the more likely explanation for CI's
+# `repair_exhausted` failures on the golden briefs (docs/v1/plan/
+# 06-model-seam-and-build.md): on an unlucky call, reasoning silently eats
+# a variable, sometimes large slice of `_MAX_OUTPUT_TOKENS`, and Build's
+# `strict: true` structured output has to fit the rest — the smaller that
+# rest gets, the likelier a scene runs out of room mid-structure.
+#
+# Every call through this seam fills an already-fully-specified schema —
+# Intake selects and splits, Director sequences a fixed set of intents,
+# Build writes bounded copy, Edit patches one field — none of it is
+# open-ended problem solving reasoning effort is for. If a future phase
+# genuinely needs it, that is a `_model_for_phase`-shaped decision (a
+# per-phase override), not a reason to leave every phase paying the tax
+# today for a benefit none of them use.
+_REASONING = {"effort": "minimal"}
+
 
 def _model_for_phase(phase: Phase) -> str:
     c = config()
@@ -164,6 +191,7 @@ def _payload(
         "stream": True,
         "stream_options": {"include_usage": True},
         "max_tokens": _MAX_OUTPUT_TOKENS,
+        "reasoning": _REASONING,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},

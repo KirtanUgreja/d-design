@@ -74,6 +74,19 @@ def _install_transport(
     monkeypatch.setattr(httpx, "AsyncClient", _client)
 
 
+def test_payload_asks_for_minimal_reasoning() -> None:
+    """Verified live (2026-08): every model behind this seam is a reasoning
+    model, and OpenRouter bills hidden reasoning tokens out of the same
+    `max_tokens` budget as the visible completion — a trivial request burned
+    256 reasoning tokens and returned `content: null` at the default
+    setting, and `reasoning.max_tokens` did not cap it. `effort: "minimal"`
+    is the lever that actually works. One structural assertion so a future
+    edit cannot drop the key without a test noticing — see
+    `ai/complete.py`'s `_REASONING` for the full account."""
+    payload = complete_module._payload("test/model", "sys", "usr", _Widget)
+    assert payload["reasoning"] == {"effort": "minimal"}
+
+
 async def test_successful_completion_parses_first_try(
     monkeypatch: pytest.MonkeyPatch, _logged: AsyncMock
 ) -> None:

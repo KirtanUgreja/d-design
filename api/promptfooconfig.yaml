@@ -26,12 +26,25 @@
 # enough to be caught at all — is `generations.error_class` over time, not
 # this run's pass/fail.
 #
+# `no_scenes_lost_to_errors` (below, golden-brief cases only) exists because
+# CI run 31031983435 found the gap between "green" and the exit gate's own
+# claim: `valid_scene_json` only asserts *something* came back, so a golden
+# brief could silently lose scenes to `repair_exhausted` and still pass.
+# Not added to the injection cases — there, `errors` is frequently the
+# *correct* outcome (a rejected scene is `check_scene` catching the payload),
+# so asserting zero errors on adversarial input would be asserting the
+# control never fires.
+#
 # Wired into CI (.github/workflows/gate.yml's `api` job, after `pytest`) —
 # every case here makes a real, billed OpenRouter call per scene, ~48 calls
-# total on openai/gpt-5-mini. Verified live 2026-08-05: 5/5 golden briefs
-# and 7/7 injection payloads produced structurally clean output
-# (docs/v1/plan/06-model-seam-and-build.md -> Exit gate). Run locally the
-# same way CI does:
+# total on openai/gpt-5-mini. The 2026-08-05 "5/5 golden briefs and 7/7
+# injection payloads produced structurally clean output" claim this comment
+# used to make was true of that one run and got restated as durable — CI run
+# 31031983435 caught it out: 3/5 golden briefs lost a scene each to
+# `repair_exhausted`, which `valid_scene_json` alone cannot see. Root cause
+# and fix are in `ai/complete.py`'s `_REASONING` and this file's exit-gate
+# entry (docs/v1/plan/06-model-seam-and-build.md -> Exit gate). Run locally
+# the same way CI does:
 #
 #   PYTHONPATH="$PWD" PROMPTFOO_PYTHON="$PWD/.venv/bin/python3" \
 #     npx promptfoo@0.122.0 eval -c promptfooconfig.yaml \
@@ -60,18 +73,37 @@ defaultTest:
     - type: python
       value: file://evals/assertions.py:no_prompt_leak
 
+# Each golden-brief case's `assert` merges with, not replaces,
+# `defaultTest.assert` (verified against this exact promptfoo version with a
+# synthetic zero-cost provider before relying on it here) — every case below
+# still gets assertions 1-4 on top of its own.
 tests:
   # The five golden briefs — schema-valid, structurally clean input.
   - description: 'golden: saas launch'
     vars: { fixture: 'evals/briefs/01-saas-launch.json' }
+    assert:
+      - type: python
+        value: file://evals/assertions.py:no_scenes_lost_to_errors
   - description: 'golden: mobile app'
     vars: { fixture: 'evals/briefs/02-mobile-app.json' }
+    assert:
+      - type: python
+        value: file://evals/assertions.py:no_scenes_lost_to_errors
   - description: 'golden: b2b consulting'
     vars: { fixture: 'evals/briefs/03-b2b-consulting.json' }
+    assert:
+      - type: python
+        value: file://evals/assertions.py:no_scenes_lost_to_errors
   - description: 'golden: ecommerce drop'
     vars: { fixture: 'evals/briefs/04-ecommerce-drop.json' }
+    assert:
+      - type: python
+        value: file://evals/assertions.py:no_scenes_lost_to_errors
   - description: 'golden: nonprofit campaign'
     vars: { fixture: 'evals/briefs/05-nonprofit-campaign.json' }
+    assert:
+      - type: python
+        value: file://evals/assertions.py:no_scenes_lost_to_errors
 
   # The injection corpus — one payload family per case
   # (docs/security/testing.md -> "Prompt injection").
