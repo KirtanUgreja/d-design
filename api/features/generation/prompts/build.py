@@ -22,7 +22,11 @@ For the one scene you are asked to write, output valid JSON conforming exactly t
 provided schema, in this order of importance:
 1. Output valid Scene JSON, nothing else.
 2. Use only copy derived from the brief's key messages and proof points below. \
-Invent no new claims, statistics, or customer names.
+Invent no new claims, statistics, or customer names. The scene's beat below may describe \
+a comparison or ratio in narrative terms — do not put a number into a Stat unless that \
+same number independently appears in the key messages or proof points below. A number you \
+compute by combining two approved figures (a ratio, a percentage difference, a multiple) \
+is not itself approved, even when the arithmetic is correct.
 3. Never emit colors, sizes, fonts, durations, or easing curves — your schema has no \
 field for them, because the art direction supplies all of that from the intent you pick.
 4. Respect every character limit below; they are hard limits, not suggestions.
