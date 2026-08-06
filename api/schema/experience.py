@@ -9,6 +9,7 @@ cleanly generatable. A validator that needs the database cannot cross to
 TypeScript.
 """
 
+import re
 from collections.abc import Sequence
 from typing import Literal
 
@@ -135,26 +136,104 @@ def assert_hrefs_are_supplied(
     return ok(None)
 
 
-def assert_stats_are_supported(
-    scenes: Sequence[Scene], proof_points: frozenset[str]
-) -> Result[None]:
-    """Every `Stat.value` appears somewhere in the brief's proof points.
+# English prose conventionally spells out numbers under twenty ("last three
+# drops", "under nine minutes") rather than using digits — verified live as
+# a real, not hypothetical, case: CI run 31079241915's ecommerce-drop fixture
+# wrote a Stat "9m" against a proof point reading "nine minutes", which no
+# amount of digit-boundary matching alone can see through. Bounded at twenty
+# on purpose: past that, prose almost always uses digits already, so a larger
+# table would be paying for cases that do not occur rather than the one that
+# did.
+_NUMBER_WORDS = {
+    "zero": "0",
+    "one": "1",
+    "two": "2",
+    "three": "3",
+    "four": "4",
+    "five": "5",
+    "six": "6",
+    "seven": "7",
+    "eight": "8",
+    "nine": "9",
+    "ten": "10",
+    "eleven": "11",
+    "twelve": "12",
+    "thirteen": "13",
+    "fourteen": "14",
+    "fifteen": "15",
+    "sixteen": "16",
+    "seventeen": "17",
+    "eighteen": "18",
+    "nineteen": "19",
+    "twenty": "20",
+}
+_NUMBER_WORD = re.compile(r"\b(" + "|".join(_NUMBER_WORDS) + r")\b")
+_LEADING_NUMBER = re.compile(r"\d[\d,.]*")
 
-    The weakest of the three, deliberately: it is a substring check, because a
-    proof point reads "we cut latency to under 50ms" and the stat reads
-    "<50ms". It catches the invented number, which is the failure that matters,
-    and does not try to catch paraphrase.
+
+def _digitize(text: str) -> str:
+    return _NUMBER_WORD.sub(lambda m: _NUMBER_WORDS[m.group(1)], text)
+
+
+def assert_stats_are_supported(
+    scenes: Sequence[Scene], approved_copy: frozenset[str]
+) -> Result[None]:
+    r"""Every `Stat.value` traces to the brief's own approved copy.
+
+    `approved_copy` is `proof_points` **and** `key_messages` — both are
+    "APPROVED copy... arrange and shorten, never invent" per the Brief's own
+    docstring and docs/v1/plan/08-intake.md's claims rule; there was never a
+    principled reason a Stat could compress one but not the other.
+    `constraints` is deliberately excluded even though it is also
+    user-supplied: it is the injection corpus's own payload field in two of
+    seven fixtures (evals/injection/03-exfiltration.json,
+    04-href-hijack.json), because the model reads it as an instruction, not
+    copy to cite — treating it as a source a Stat may match against would
+    let an injected constraint manufacture its own provenance.
+
+    The weakest of the three, deliberately, and doubly so after CI run
+    31079241915: a Stat's 12-character cap forces exactly the reformatting a
+    whole-string substring check cannot see through — "processes over 2
+    billion spans per day" has to become something like "2B spans/day" to
+    fit, and "94 cents of every dollar" has to become "94%". Matching on the
+    Stat's own leading number is what the docstring already claimed to do
+    ("catches the invented number... does not try to catch paraphrase") —
+    this makes the code actually do it, rather than requiring the surrounding
+    words to match too. A value with no leading number (rare; the spec's own
+    examples — "10x", "2.4M", "<50ms" — are all numeric) falls back to the
+    original whole-value check.
+
+    Bounded by "no adjacent digit", not `\b`: `\b` treats a digit and a
+    letter as the same word class, so `\b50\b` does not match "50ms" — the
+    very case the docstring above already uses as its worked example, and
+    the first version of this fix broke it, caught by
+    `test_valid_scene_passes` before this ever shipped. `(?<!\d)50(?!\d)`
+    is the boundary actually wanted: "4" must not match inside "40" or "24"
+    (a digit on either side), but "50" must match inside "50ms" or "68"
+    inside "68%" (a letter or symbol on either side is fine). Commas
+    stripped from both sides first, so "12,000" and "12000" are the same
+    number; the decimal point is not stripped, because "2.4" and "24" are not.
+    Spelled-out numbers under twenty are digitized before matching, for the
+    same reason — see `_NUMBER_WORDS`.
     """
-    haystack = " ".join(proof_points).lower()
-    invented = [
-        b.props.value
-        for s in scenes
-        for b in s.blocks
-        if b.props.type == "stat" and b.props.value.lower() not in haystack
-    ]
+    haystack = _digitize(" ".join(approved_copy).lower()).replace(",", "")
+    invented: list[str] = []
+    for s in scenes:
+        for b in s.blocks:
+            if b.props.type != "stat":
+                continue
+            value = b.props.value.lower()
+            number = _LEADING_NUMBER.search(value)
+            if number:
+                needle = number.group().replace(",", "")
+                pattern = rf"(?<!\d){re.escape(needle)}(?!\d)"
+                if not re.search(pattern, haystack):
+                    invented.append(b.props.value)
+            elif value not in haystack:
+                invented.append(b.props.value)
     if invented:
         return err(
             "invalid_input",
-            f"stats not traceable to a proof point: {sorted(set(invented))}",
+            f"stats not traceable to the brief's approved copy: {sorted(set(invented))}",
         )
     return ok(None)

@@ -64,8 +64,11 @@ def check_scene(scene: Scene, brief: Brief) -> Result[None]:
     if isinstance(hrefs, Err):
         return hrefs
 
-    proof_points = frozenset(brief.proof_points)
-    stats = assert_stats_are_supported([scene], proof_points)
+    # proof_points AND key_messages — both are approved copy a Stat may
+    # compress; constraints is excluded on purpose, see
+    # assert_stats_are_supported's docstring.
+    approved_copy = frozenset({*brief.proof_points, *brief.key_messages})
+    stats = assert_stats_are_supported([scene], approved_copy)
     if isinstance(stats, Err):
         return stats
 

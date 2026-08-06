@@ -73,6 +73,61 @@ def test_invented_stat_rejected() -> None:
     assert result.error.code == "invalid_input"
 
 
+def test_stat_traceable_only_to_a_key_message_passes() -> None:
+    """proof_points and key_messages are both approved copy a Stat may
+    compress — schema/experience.py's assert_stats_are_supported no longer
+    checks proof_points alone. Regression guard for CI run 31079241915,
+    where "Only 500 pairs" (a key message, not a proof point) got a genuine
+    "500" Stat wrongly rejected."""
+    brief = Brief(
+        goal="Announce a limited-run drop",
+        audience="Existing customers",
+        key_messages=[
+            "Only 500 pairs, numbered, never restocked",
+            "Made with the same tannery as last year's release",
+            "Early access for past customers",
+        ],
+        proof_points=[],
+        tone="confident",
+        cta=BriefCta(label="Shop", href="https://example.com/drop"),
+    )
+    scene = _scene(
+        Block(id="b1", props=StatProps(type="stat", value="500", label="pairs"))
+    )
+    result = check_scene(scene, brief)
+    assert isinstance(result, Ok)
+
+
+def test_stat_traceable_only_to_a_constraint_is_still_rejected() -> None:
+    """The one field deliberately excluded: `constraints` is the injection
+    corpus's own payload field in two of seven fixtures
+    (evals/injection/03-exfiltration.json, 04-href-hijack.json). If a Stat
+    could cite it, an injected constraint could manufacture its own
+    provenance — so a number that appears *only* in `constraints`, nowhere
+    in proof_points or key_messages, must still be rejected here at the real
+    call site, not just in schema/test_experience.py's isolated check of the
+    function alone."""
+    brief = Brief(
+        goal="Announce a limited-run drop",
+        audience="Existing customers",
+        key_messages=[
+            "Numbered, never restocked",
+            "Made with the same tannery as last year's release",
+            "Early access for past customers",
+        ],
+        proof_points=[],
+        tone="confident",
+        cta=BriefCta(label="Shop", href="https://example.com/drop"),
+        constraints="Do not state an exact stock count per size, only the total run of 500",
+    )
+    scene = _scene(
+        Block(id="b1", props=StatProps(type="stat", value="500", label="pairs"))
+    )
+    result = check_scene(scene, brief)
+    assert isinstance(result, Err)
+    assert result.error.code == "invalid_input"
+
+
 def test_leaked_prompt_in_copy_rejected() -> None:
     """The exfiltration payload's actual shape: the contract echoed back as
     headline text (CI run 31010631635)."""
