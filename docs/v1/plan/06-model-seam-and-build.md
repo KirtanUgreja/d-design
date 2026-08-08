@@ -263,7 +263,7 @@ Two schema-compatibility fixes landed in `ai/complete.py` as a result, both prov
 
 ## Open defect — `maxLength` is enforced by the provider, as truncation
 
-**Found 2026-08-09, running phase 08's end-to-end build in a browser. Not fixed; the fix is a design decision, and the two obvious ones each fail in the opposite direction.**
+**Found 2026-08-09, running phase 08's end-to-end build in a browser. Cause not fixed; the blind spot is closed — see "What was done" below. The two fixes that would address the cause each fail in the opposite direction.**
 
 The seam sends `maxLength` over the wire. The provider honours it *during constrained decoding, by cutting the string off at the bound* rather than by rejecting the response. A hook came back with the eyebrow `"Tracepoint: API observX"` — 23 of 24 characters, mid-word — and a scene whose body ended `"your whole stack in one\n"`.
 
@@ -288,3 +288,17 @@ Directions worth considering, none of them free, in rough order of how much they
 - **Reconsider the Build model.** `gpt-5-mini` was chosen on cost after `claude-haiku-4.5` rejected the schema outright ("compiled grammar is too large"). Per-phase model selection is already in this phase's Skipped table, to be decided "by measured repair rate against real briefs" — this is that measurement arriving
 
 Reproduce with `api/evals/briefs/`, or with the three-scene outline in the session that found it: any brief whose copy is longer than an eyebrow.
+
+### What was done — the blind spot, not the cause
+
+The dangerous property was never the truncation itself. It was that truncated copy is *structurally valid*, so every control passed it: Pydantic accepted it, all four post-build checks passed, `repair` never fired, and the only way to discover it was to read a generated page. A defect nothing can see is worse than a louder one.
+
+`features/generation/checks.py` → `find_truncation` now recognizes the endings a clip leaves and finished copy does not — trailing whitespace, a dangling separator (`observ-`, `services,`), and characters that never belong in generated display copy anywhere in the string (newline, tab, soft hyphen, zero-width space; every block renders as one run of text, so a newline is not a formatting choice the model can be making).
+
+It is deliberately **separate from `check_scene`**, because the two want opposite handling. Those are claims and security controls: a scene failing one is *wrong*, and rejecting it is the point. This is a transport artifact — the model wrote fine copy and the decoder cut it — so `build_experience` draws the scene again, once, and only rejects if the second draw is truncated too. A redraw surfaces as `repaired`, which the client renders as nothing at all, and which makes the truncation rate observable in `generations` for the first time.
+
+**What it does not catch, and cannot.** A clip landing on a word boundary — `"See every request across"`, exactly 24 characters — is indistinguishable from deliberate short copy without reading it. Length alone cannot be the signal either: `schema/fixtures/hostile.json` is hand-authored at exactly the cap in every field *on purpose*, as the fixture proving maximum-length copy renders.
+
+Verified live on the brief that found the defect: the garbled hook was caught, redrawn, and rejected rather than published; a scene whose redraw came back clean was kept. **Two honest consequences** — some truncation still ships (the word-boundary class above), and the build now fails scenes it previously shipped quietly, so the visible error rate went up. That is the trade this check was chosen to make.
+
+**The next lever, deliberately not pulled:** treating "text length is exactly the field's cap" as truncation would catch nearly all of the remainder, since a decoder clip lands on the cap with probability 1 while a model lands there by chance rarely. It was left out because this model truncates *constantly* at `eyebrow`'s 24 characters, so switching it on today converts a quality problem into mass scene loss. It becomes the right move the moment the caps are raised or the Build model changes — i.e. together with one of the cause-level fixes above, not instead of one.

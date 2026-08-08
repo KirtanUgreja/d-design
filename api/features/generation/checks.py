@@ -73,3 +73,80 @@ def check_scene(scene: Scene, brief: Brief) -> Result[None]:
         return stats
 
     return _assert_no_prompt_leak(scene)
+
+
+# Verified live 2026-08-09 (docs/v1/plan/06-model-seam-and-build.md -> "Open
+# defect"): the provider honours the schema's `maxLength` during constrained
+# decoding by cutting the string off at the bound instead of rejecting the
+# response. The result is copy like "Tracepoint - API observ-" or
+# "your whole stack in one\xa0" — structurally valid, so Pydantic accepts it,
+# every check below passes, `repair` never fires, and the garbling reaches a
+# published page.
+#
+# These are the endings a clip leaves behind and finished copy does not.
+# Deliberately narrow: a truncated string that happens to end on a word
+# boundary ("See every request across", exactly 24) is indistinguishable from
+# deliberate short copy without reading it, and `schema/fixtures/hostile.json`
+# is hand-authored at exactly the cap in every field on purpose. Length alone
+# is therefore not the signal — this catches the fraction that is provable and
+# lets the rest through, which is still the difference between a defect that
+# always ships silently and one that mostly does not.
+_CLIP_SUFFIXES = ("-", "—", "–", "/", ",", ":", ";", "&", "+")  # noqa: RUF001
+
+# Characters that never belong in generated display copy, anywhere in the
+# string. Every block here renders as a single run of text — the renderer has
+# no markdown, no `white-space: pre`, and no line-break primitive — so a
+# newline is not a formatting choice the model can be making. Observed live in
+# the same run: "Setup in ten minutes\nvia" and "Cuts mean time to\nre\xads\xado",
+# the latter with soft hyphens, which are invisible and exist only to mark
+# hyphenation points a text engine may use. Both are the decoder filling space
+# it should not have had.
+_NEVER_IN_COPY = {
+    "\n": "newline",
+    "\r": "carriage return",
+    "\t": "tab",
+    "\xad": "soft hyphen",
+    "​": "zero-width space",
+    "﻿": "byte-order mark",
+}
+
+
+def find_truncation(scene: Scene) -> str | None:
+    """The field and value that look cut off mid-token, or None.
+
+    Separate from `check_scene` and not folded into it, because the two want
+    opposite handling. Those are claims and security controls: a scene that
+    fails one is wrong and rejecting it is the point. This is a transport
+    artifact — the model wrote fine copy and the decoder truncated it — so the
+    right response is to ask again, which is what `build_experience` does.
+    """
+    for key, value in _walk_strings(scene.model_dump(by_alias=True)):
+        if value != value.rstrip():
+            # Trailing whitespace is never deliberate in display copy, and it
+            # is what a clip mid-token leaves when the next token began with a
+            # space or a newline. The strongest signal available, and the one
+            # that does not depend on the value's length at all.
+            return f"{key}={value!r} (ends in whitespace)"
+        if value.endswith(_CLIP_SUFFIXES):
+            return f"{key}={value!r} (ends mid-token)"
+        for char, name in _NEVER_IN_COPY.items():
+            if char in value:
+                return f"{key}={value!r} (contains a {name})"
+    return None
+
+
+def _walk_strings(node: object, path: str = "") -> list[tuple[str, str]]:
+    if isinstance(node, dict):
+        found: list[tuple[str, str]] = []
+        for key, value in node.items():
+            # `href` is a URL the user supplied, not generated copy, and a
+            # trailing separator is legal in one.
+            if key != "href":
+                found += _walk_strings(value, f"{path}.{key}" if path else str(key))
+        return found
+    if isinstance(node, list):
+        out: list[tuple[str, str]] = []
+        for i, item in enumerate(node):
+            out += _walk_strings(item, f"{path}[{i}]")
+        return out
+    return [(path, node)] if isinstance(node, str) and node else []

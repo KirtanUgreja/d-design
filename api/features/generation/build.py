@@ -11,6 +11,7 @@ latency becomes the thing to cut.
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from functools import partial
 
 from ai.complete import complete
 from features.director import ApprovedOutline
@@ -18,13 +19,13 @@ from features.director import ApprovedOutline
 # Direct submodule imports, not `from features.generation import ...` — this
 # module is itself re-exported through that package's `__init__.py`, and
 # routing back through it here would be a circular import.
-from features.generation.checks import check_scene
+from features.generation.checks import check_scene, find_truncation
 from features.generation.prompts.build import (
     build_scene_user_prompt,
     build_system_prompt,
 )
 from features.generation.tools import get_brand_kit, list_assets
-from lib.result import Err, Result, ok
+from lib.result import Err, Result, err, ok
 from schema.brief import Brief
 from schema.scene import Scene
 
@@ -70,7 +71,9 @@ async def build_experience(
 
     for index, outline_scene in enumerate(outline.scenes):
         user = build_scene_user_prompt(outline_scene, index, total)
-        result = await complete(
+
+        call = partial(
+            complete,
             phase="build",
             schema=Scene,
             system=system,
@@ -78,16 +81,53 @@ async def build_experience(
             owner_id=owner_id,
             experience_id=experience_id,
         )
+
+        result = await call()
         if isinstance(result, Err):
             yield BuildEvent(index=index, result=result, repaired=False)
             continue
-
         completion = result.value
+
+        # The seam's own repair cannot see this one: the provider truncates
+        # copy at the schema's `maxLength` during decoding, and what comes back
+        # is structurally valid, so `model_validate` succeeds and there is
+        # nothing for a repair prompt to be built from
+        # (docs/v1/plan/06-model-seam-and-build.md -> "Open defect"). Asking
+        # again is the whole remedy available here — the model wrote fine copy
+        # and the transport cut it, so a second draw is a genuinely different
+        # roll rather than the same failure repeated.
+        redrawn = False
+        if find_truncation(completion.value) is not None:
+            redrawn = True
+            retry = await call()
+            if isinstance(retry, Err):
+                yield BuildEvent(index=index, result=retry, repaired=True)
+                continue
+            completion = retry.value
+            truncated = find_truncation(completion.value)
+            if truncated is not None:
+                # Losing the scene beats shipping it. Garbled copy on a
+                # published page is the failure this whole check exists to
+                # stop, and "failure at scene 6 of 8 keeps the five" is
+                # already how this loop is designed to degrade.
+                yield BuildEvent(
+                    index=index,
+                    result=err("invalid_input", f"truncated copy: {truncated}"),
+                    repaired=True,
+                )
+                continue
+
         checked = check_scene(completion.value, brief)
         if isinstance(checked, Err):
             yield BuildEvent(index=index, result=checked, repaired=False)
             continue
 
         yield BuildEvent(
-            index=index, result=ok(completion.value), repaired=completion.repaired
+            index=index,
+            result=ok(completion.value),
+            # A redraw counts as a repair: same meaning to the client, which
+            # renders it as nothing at all, and the same thing worth counting
+            # in `generations` — this is now the only place a truncation rate
+            # is observable at all.
+            repaired=completion.repaired or redrawn,
         )

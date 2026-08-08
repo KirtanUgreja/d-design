@@ -3,7 +3,9 @@ values, CTA.href provenance, Stat provenance, no prompt leak
 (docs/v1/plan/06-model-seam-and-build.md). Pure functions, no DB, no model
 call."""
 
-from features.generation.checks import check_scene
+import pytest
+
+from features.generation.checks import check_scene, find_truncation
 from features.generation.prompts.build import _PROMPT_CONTRACT, PROMPT_SENTINELS
 from lib.result import Err, Ok
 from schema.brief import Brief, BriefCta
@@ -167,3 +169,113 @@ def test_sentinels_still_occur_in_the_contract() -> None:
     leak check silently passing everything forever."""
     for sentinel in PROMPT_SENTINELS:
         assert sentinel in _PROMPT_CONTRACT
+
+
+# --- Truncation, the defect docs/v1/plan/06-model-seam-and-build.md records ---
+
+
+def _scene_with(text: str, block_type: str = "eyebrow") -> Scene:
+    return Scene.model_validate(
+        {
+            "id": "s1",
+            "intent": "hook",
+            "layout": "centered",
+            "blocks": [
+                {
+                    "id": "b1",
+                    "region": "content",
+                    "props": {"type": block_type, "text": text},
+                }
+            ],
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Tracepoint — API observ-",  # clipped mid-hyphenation
+        "Requests vanish between\n",  # clipped where the next token was a newline
+        "your whole stack in one\xa0",  # ...or a non-breaking space
+        "trace — no more hunting\n",
+        "Requests cross services,",  # clipped on a separator
+    ],
+)
+def test_real_truncations_are_caught(text: str) -> None:
+    """Every one of these came off the wire in the live run that found the
+    defect. The provider cuts the string at `maxLength` during decoding, so
+    what arrives is structurally valid — Pydantic accepts it and, until this
+    check existed, it shipped."""
+    assert find_truncation(_scene_with(text)) is not None
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["Tracepoint launch", "The visibility gap", "Setup in ten minutes.", "One trace"],
+)
+def test_deliberate_short_copy_is_not_truncation(text: str) -> None:
+    """The cost of a false positive is a wasted model call and, twice over, a
+    lost scene — so the check has to stay narrow."""
+    assert find_truncation(_scene_with(text)) is None
+
+
+def test_the_hostile_fixture_is_not_truncation() -> None:
+    """`schema/fixtures/hostile.json` is hand-authored at exactly the cap in
+    every field, on purpose — it is the fixture that proves maximum-length copy
+    renders (docs/v1/plan/01-scene-schema.md). It is also why length alone
+    cannot be the signal: a clip and a deliberately maximal string are the same
+    length by construction, and only the *ending* separates them."""
+    import json
+    from pathlib import Path
+
+    fixture = json.loads(
+        (
+            Path(__file__).resolve().parents[2] / "schema/fixtures/hostile.json"
+        ).read_text()
+    )
+    for raw in fixture["scenes"]:
+        assert find_truncation(Scene.model_validate(raw)) is None
+
+
+def test_a_supplied_href_is_never_read_as_truncation() -> None:
+    """A URL legitimately ends in a separator, and it is the user's text
+    anyway — the AI never composes one."""
+    scene = Scene.model_validate(
+        {
+            "id": "s1",
+            "intent": "cta",
+            "layout": "centered",
+            "blocks": [
+                {
+                    "id": "b1",
+                    "region": "content",
+                    "props": {
+                        "type": "cta",
+                        "label": "Start",
+                        "href": "https://example.com/trial/",
+                        "style": "primary",
+                    },
+                }
+            ],
+        }
+    )
+    assert find_truncation(scene) is None
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Setup in ten minutes\nvia",  # newline mid-copy
+        "Cuts mean time to\nre\xads\xado",  # newline plus soft hyphens
+        "Read the\tdocs",
+        "Invisible​space",
+    ],
+)
+def test_characters_that_never_belong_in_copy_are_truncation(text: str) -> None:
+    """Every block here renders as a single run of text — the renderer has no
+    markdown, no `white-space: pre` and no line-break primitive — so a newline
+    is not a formatting choice the model can be making. Soft hyphens are worse:
+    invisible, and meaningful only to a hyphenation engine. Both are the
+    decoder filling space it should not have had, and both were observed live.
+    """
+    assert find_truncation(_scene_with(text, "body")) is not None
