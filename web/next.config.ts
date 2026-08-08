@@ -3,6 +3,7 @@ import type { NextConfig } from 'next';
 import {
   appHeaders,
   devToolingHeaders,
+  editorHeaders,
   embedHeaders,
   publishedHeaders,
 } from './src/features/publish/csp';
@@ -53,6 +54,11 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       { source: '/:path*', headers: asHeaderList(appHeaders()) },
+      // The first product route to embed the renderer, and so the first to
+      // need `style-src 'unsafe-inline'` outside /dev/* — see
+      // `editorHeaders`. More specific than the catch-all and applied after
+      // it, which is what makes it win per Next's per-key override ordering.
+      { source: '/edit/:path*', headers: asHeaderList(editorHeaders()) },
       { source: '/p/:id*', headers: asHeaderList(publishedHeaders()) },
       { source: '/e/:id*', headers: asHeaderList(embedHeaders()) },
       // Needs the same `style-src 'unsafe-inline'` relaxation as published

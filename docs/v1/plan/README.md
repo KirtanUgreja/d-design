@@ -19,7 +19,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 06 | [Model seam + Build phase](06-model-seam-and-build.md) | 5 | done — one open defect, see the phase file |
 | 07 | [Director phase](07-director.md) | 6 | done |
 | 08 | [Intake](08-intake.md) | 7 | done |
-| 09 | [Editor](09-editor.md) | 8 | not started |
+| 09 | [Editor](09-editor.md) | 8 | done — one exit-gate item open, see the phase file |
 | 10 | [Brand kit + uploads](10-brand-and-uploads.md) | 9 | not started |
 | 11 | [Visuals + Slot](11-visuals-and-slot.md) | 10 | not started |
 

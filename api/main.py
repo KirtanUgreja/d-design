@@ -8,6 +8,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routes.director import router as director_router
+from routes.edit import router as edit_router
 from routes.experiences import router as experiences_router
 from routes.generation import router as generation_router
 from routes.health import router as health_router
@@ -45,3 +46,4 @@ app.include_router(experiences_router)
 app.include_router(intake_router)
 app.include_router(director_router)
 app.include_router(generation_router)
+app.include_router(edit_router)

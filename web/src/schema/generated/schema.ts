@@ -214,6 +214,13 @@ export const briefSchema = z.strictObject({
 
 export type Brief = z.infer<typeof briefSchema>;
 
+export const editResultSchema = z.strictObject({
+  props: z.record(z.string(), z.unknown()).optional(),
+  refusal: z.string().max(400).nullable().default(null).optional(),
+});
+
+export type EditResult = z.infer<typeof editResultSchema>;
+
 export const experienceMetaSchema = z.strictObject({
   createdAt: z.string(),
   publishedAt: z.string().nullable().default(null).optional(),

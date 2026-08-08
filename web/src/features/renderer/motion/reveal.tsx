@@ -21,6 +21,13 @@ interface RevealProps {
   vocabulary: MotionVocabulary;
   delayMs: number;
   children: React.ReactNode;
+  /** The block this wrapper belongs to, stamped on whichever element this
+   * ends up rendering. Identity, not a mode: emitted unconditionally, the
+   * same in all three processes, and carried by the published page too, so
+   * rule 2 is untouched. The editor's selection overlay measures the box it
+   * lands on — the alternative being the one the phase doc calls proof the
+   * design is wrong, an overlay reaching into `renderer/blocks/`. */
+  blockId?: string;
 }
 
 const REST_STYLE = { opacity: 1, transform: 'none' } as const;
@@ -39,12 +46,12 @@ function useArmed(): boolean {
   );
 }
 
-export function Reveal({ intent, vocabulary, delayMs, children }: RevealProps) {
+export function Reveal({ intent, vocabulary, delayMs, children, blockId }: RevealProps) {
   const armed = useArmed();
 
   if (intent === 'parallax') {
     return (
-      <Parallax vocabulary={vocabulary} armed={armed}>
+      <Parallax vocabulary={vocabulary} armed={armed} blockId={blockId}>
         {children}
       </Parallax>
     );
@@ -52,7 +59,11 @@ export function Reveal({ intent, vocabulary, delayMs, children }: RevealProps) {
 
   const def = vocabulary.intents[intent];
   if (!armed || intent === 'none') {
-    return <div style={REST_STYLE}>{children}</div>;
+    return (
+      <div style={REST_STYLE} data-block-id={blockId}>
+        {children}
+      </div>
+    );
   }
 
   const hidden =
@@ -62,6 +73,7 @@ export function Reveal({ intent, vocabulary, delayMs, children }: RevealProps) {
 
   return (
     <motion.div
+      data-block-id={blockId}
       initial={hidden}
       whileInView={REST_STYLE}
       viewport={{ once: true, amount: vocabulary.triggerRatio }}
@@ -80,10 +92,12 @@ function Parallax({
   vocabulary,
   armed,
   children,
+  blockId,
 }: {
   vocabulary: MotionVocabulary;
   armed: boolean;
   children: React.ReactNode;
+  blockId?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const distance = vocabulary.intents.parallax.distancePx;
@@ -95,14 +109,14 @@ function Parallax({
 
   if (!armed || distance === 0) {
     return (
-      <div ref={ref} style={REST_STYLE}>
+      <div ref={ref} style={REST_STYLE} data-block-id={blockId}>
         {children}
       </div>
     );
   }
 
   return (
-    <motion.div ref={ref} style={{ y }}>
+    <motion.div ref={ref} style={{ y }} data-block-id={blockId}>
       {children}
     </motion.div>
   );

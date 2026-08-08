@@ -96,6 +96,8 @@ A stack of past trees with structural sharing. It is the feature that makes AI-a
 
 The canvas overlays selection, handles, and the panel *around* the rendered output. Nothing about selection enters `SceneRenderer`. The lint rule from phase 00 enforces it and the guarantee it protects is the product's spine: what you edit is byte-for-byte what you publish.
 
+**Built 2026-08-09, with one addition to the renderer worth defending.** The overlay has to find a block's box in the DOM, and the only alternatives were reaching into `renderer/blocks/` — which this phase's Search section names as proof the design is wrong — or measuring nothing. So `Reveal` now stamps `data-block-id` on the wrapper it already renders. That is **identity, not a mode**: emitted unconditionally, byte-identical in all three processes, carried by the published page too, and readable without branching on anything. The scene has carried `id="scene-…"` since phase 04 for exactly the same reason. A `mode` prop would have been the other thing, and it is still banned.
+
 ### The Edit call
 
 **In:** one block, its scene context, and a user instruction. **Out:** `Partial<BlockProps>`. One tier-0 tool: `read_block(id)`, so an edit is a diff rather than a rewrite.
@@ -164,15 +166,21 @@ Re-validate the tree after every patch, **against the current art direction's bu
 | Collaboration | Not in v1, and it changes the store's shape fundamentally — worth knowing before Zustand is chosen, and it does not change the choice for a single user |
 | Regenerating a whole scene from the editor | Clearly needed eventually. The open question is whether it re-reads neighbours for consistency; resolve it when a real user asks, not before |
 | Hand-editing `Slot` code | v1 exposes `description` only. Hand-editing sandboxed code is a feature for a different product |
+| A `motion` control | `motion` lives on `Block`, not on `props`, and `BlockPatch` carries `props` only — offering it would mean widening the one shape both producers share, which is not a decision to make from inside a panel. [../scene-schema.md](../scene-schema.md) does list it as editable, so this is owed. Trigger: add `motion?` to `BlockPatch`, regenerate, handle it beside `props` in `applyPatch` |
+| Delete and reorder, for blocks and scenes | Also in the scene-schema table, and also not a `BlockPatch`. They are tree operations, so they want their own store actions and their own undo entries — a bigger design than this phase's patch path, and nothing in the exit gate turns on them |
+| Loading a real experience into the editor | `/edit/[id]` reads the phase 01 `full` fixture. `api` has no scenes-by-experience read: publish stores a whole `Experience`, and Build streams scenes to the client without persisting them. Trigger: that GET exists |
+| The art-direction switcher's toolbar space | The doc says reserve it now. It is not reserved — there is no toolbar yet, and reserving space in a chrome that does not exist is not reservation. Trigger: the editor grows a toolbar, which is before v2 fills it |
 
 ---
 
 ## Exit gate
 
-- [ ] One patch shape, two producers, one validation site
-- [ ] Only-the-target-block-changed test passing
-- [ ] Undo/redo across both edit kinds
-- [ ] The property panel is generated and provably cannot offer a presentational control
-- [ ] A user hunting for a colour picker gets an answer where they looked, not a docs link
-- [ ] The renderer is still pure
-- [ ] Editing feels instant
+- [x] One patch shape, two producers, one validation site — `web/src/features/editor/patch.ts` is the only place a patch is applied, and both producers construct the same `BlockPatch`. The AI's half arrives as `EditResult.props` and is handed to the identical function, which is why there is one undo stack rather than two
+- [x] Only-the-target-block-changed test passing, and asserted by **identity** rather than deep-compare — a deep compare passes even when an untouched block was rebuilt identically, and a rebuilt block is the re-render hot path 3 forbids
+- [x] Undo/redo across both edit kinds, plus a refused patch not consuming an undo step and a new edit forking the redo branch
+- [x] The property panel is generated and provably cannot offer a presentational control — `controls.ts` walks the generated Zod union and contains no list of block types; `editor.test.ts` walks every derived control against `PRESENTATIONAL`
+- [x] A user hunting for a colour picker gets an answer where they looked — `StylingAnswer`, inline in the panel, naming emphasis, the brand kit and reroll. The reach is counted
+- [x] The renderer is still pure — `SceneRenderer` takes the same three props; selection is measured from outside via `data-block-id`, which is identity rather than a mode (see below)
+- [ ] **Editing feels instant** — not measured. The structural-sharing property it depends on is tested, and the React Compiler is on, but "check with the profiler, not by feel" has not been done
+
+**Verified live 2026-08-09** at `/edit/<uuid>`: select a headline, edit `text` in the panel and watch the renderer update with the selection box tracking the reflow, then type "make the headline smaller and dark blue" into the element prompt and get back a written refusal offering the emphasis field and the brand kit, with the tree untouched.

@@ -27,8 +27,14 @@ export function RegionBlocks({
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: spaceVar(4), ...style }}>
       {blocks.map((block, i) => (
+        // `blockId` adds no element — it lands on the wrapper `Reveal` already
+        // renders. Identity rather than a mode: unconditional, byte-identical
+        // in all three processes, and carried by the published page too, so
+        // rule 2 is untouched. The scene has carried `id="scene-…"` since
+        // phase 04 for exactly the same reason.
         <Reveal
           key={block.id}
+          blockId={block.id}
           intent={block.motion ?? 'reveal'}
           vocabulary={motion}
           delayMs={staggerDelayMs(motion, i)}

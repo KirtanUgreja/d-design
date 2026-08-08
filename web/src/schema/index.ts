@@ -27,4 +27,6 @@ export {
   type Outline,
   blockPatchSchema,
   type BlockPatch,
+  editResultSchema,
+  type EditResult,
 } from './generated/schema';

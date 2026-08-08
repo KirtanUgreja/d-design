@@ -90,6 +90,33 @@ export function appHeaders(): Record<string, string> {
   };
 }
 
+/** App routes that embed the renderer — the editor canvas, and any preview
+ * that follows it.
+ *
+ * The renderer is 100%-inline-style by design (docs/coderules/patterns.md rule
+ * 2 — no Tailwind, no classNames under `renderer/`), so `appHeaders`'s
+ * `style-src 'self'` silently drops every style it sets and the page renders
+ * fontless and unstyled. That failure is already written down twice in this
+ * codebase — it is why `/dev/primitives` runs on `publishedHeaders`, and
+ * `next.config.ts` records finding it the first time — and the editor is the
+ * first *product* route to embed the renderer, so it is the first to need the
+ * same allowance without being dev tooling.
+ *
+ * Everything else stays at the app policy: `frame-ancestors 'none'` (an
+ * editor in an iframe is a clickjacking target in a way a published page is
+ * not), and `connect-src` limited to the one API origin. */
+export function editorHeaders(): Record<string, string> {
+  const app = appHeaders();
+  const policy = app['Content-Security-Policy'] ?? '';
+  return {
+    ...app,
+    'Content-Security-Policy': policy.replace(
+      "style-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+    ),
+  };
+}
+
 /** `/dev/*` pages that call the real API in the browser — found live,
  * building the Director harness (docs/v1/plan/07-director.md): every
  * button on the page silently did nothing under `publishedHeaders()`.

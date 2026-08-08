@@ -18,7 +18,7 @@ from pydantic import BaseModel
 from schema.brief import Brief, InterviewStep, Question
 from schema.experience import Asset, BrandKit, Experience
 from schema.outline import Outline
-from schema.patch import BlockPatch
+from schema.patch import BlockPatch, EditResult
 from schema.scene import Block, Scene
 
 EXPORTED: dict[str, type[BaseModel]] = {
@@ -36,6 +36,7 @@ EXPORTED: dict[str, type[BaseModel]] = {
     "Question": Question,
     "Outline": Outline,
     "BlockPatch": BlockPatch,
+    "EditResult": EditResult,
 }
 
 __all__ = [
@@ -45,6 +46,7 @@ __all__ = [
     "BlockPatch",
     "BrandKit",
     "Brief",
+    "EditResult",
     "Experience",
     "InterviewStep",
     "Outline",
