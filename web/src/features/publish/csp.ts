@@ -51,15 +51,38 @@ export function embedHeaders(): Record<string, string> {
 }
 
 /** App routes: no framing, no inline styles — the two allowances published
- * pages need and app routes must not carry. */
+ * pages need and app routes must not carry.
+ *
+ * **`connect-src` is explicit, and it has to be.** `api` is a different
+ * origin from `web`, and the pipeline's browser-side calls — Intake's
+ * interview, Director, and Build's SSE stream — all run from an app route
+ * (`/new`). Without this line `connect-src` falls back to `default-src
+ * 'self'` and every one of them is blocked, in production as well as in dev.
+ * Until phase 08 every such call lived under `/dev/*`, which is why
+ * `devToolingHeaders` below found the same break first and this one did not:
+ * the app CSP had never had a browser-to-api call to allow. The allowance is
+ * one exact origin from configuration, not a wildcard.
+ *
+ * **`unsafe-eval` in development only.** `next dev`'s React needs it to
+ * hydrate at all; a production build does not, which is why `pnpm test:e2e`
+ * (which runs against `pnpm build`) never sees this and a `pnpm dev` session
+ * sees nothing but dead buttons. Gated on `NODE_ENV` so the shipped policy
+ * stays strict — the same break `devToolingHeaders` documents, reaching a
+ * real product route for the first time rather than a harness. */
 export function appHeaders(): Record<string, string> {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? '';
+  const script =
+    process.env.NODE_ENV === 'production'
+      ? "script-src 'self' 'unsafe-inline'"
+      : "script-src 'self' 'unsafe-inline' 'unsafe-eval'";
   return {
     'Content-Security-Policy': [
       "default-src 'self'",
-      "script-src 'self'",
+      script,
       "style-src 'self'",
       "img-src 'self' data:",
       "font-src 'self'",
+      `connect-src 'self' ${apiUrl}`.trim(),
       "frame-ancestors 'none'",
       "base-uri 'none'",
     ].join('; '),

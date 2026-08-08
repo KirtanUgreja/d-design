@@ -15,7 +15,7 @@ tree below is exported without being listed twice.
 
 from pydantic import BaseModel
 
-from schema.brief import Brief
+from schema.brief import Brief, InterviewStep, Question
 from schema.experience import Asset, BrandKit, Experience
 from schema.outline import Outline
 from schema.patch import BlockPatch
@@ -28,6 +28,12 @@ EXPORTED: dict[str, type[BaseModel]] = {
     "Asset": Asset,
     "BrandKit": BrandKit,
     "Brief": Brief,
+    # `InterviewStep` pulls `Question` in as a `$def`, the same way `Experience`
+    # pulls in `Scene` — listed anyway, because the Intake screen renders a
+    # question on its own and a shape web imports by name should be a row here
+    # rather than something reached through another model's `$defs`.
+    "InterviewStep": InterviewStep,
+    "Question": Question,
     "Outline": Outline,
     "BlockPatch": BlockPatch,
 }
@@ -40,6 +46,8 @@ __all__ = [
     "BrandKit",
     "Brief",
     "Experience",
+    "InterviewStep",
     "Outline",
+    "Question",
     "Scene",
 ]

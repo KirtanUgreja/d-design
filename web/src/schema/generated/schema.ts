@@ -251,6 +251,22 @@ export const experienceSchema = z.strictObject({
 
 export type Experience = z.infer<typeof experienceSchema>;
 
+export const questionSchema = z.strictObject({
+  field: z.string().min(1),
+  index: z.int().min(1),
+  text: z.string().min(1),
+  total: z.int().min(1),
+});
+
+export type Question = z.infer<typeof questionSchema>;
+
+export const interviewStepSchema = z.strictObject({
+  brief: briefSchema.nullable().default(null).optional(),
+  question: questionSchema.nullable().default(null).optional(),
+});
+
+export type InterviewStep = z.infer<typeof interviewStepSchema>;
+
 export const outlineSceneSchema = z.strictObject({
   beat: z.string().min(1).max(200),
   intent: z.enum(['hook', 'problem', 'reveal', 'proof', 'cta']),

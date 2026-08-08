@@ -160,21 +160,34 @@ RLS policy and isolation test, same pattern as phase 00, through `as_user`.
 | `list_documents` / `read_document` tools | They exist to page a document safely, and there are no documents |
 | Model-native PDF reading | The documented fallback for the day a parser advisory lands with no patch. Available immediately, costs tokens, needs the seam to expose native document input per provider |
 | Multi-turn brief revision | Users edit the Brief directly. Add a conversational revision loop only if direct editing proves insufficient |
+| The design pass on the Intake screen | It is one of the four hot screens ([../../design/app.md](../../design/app.md)) and it is currently correct rather than crafted: the layout, type and motion are unstyled defaults over Tailwind. Trigger: before the product is shown to anyone outside the build |
+| A readable message for a rejected `cta.href` | The user currently sees Pydantic's raw `String should match pattern '^(https?://\|mailto:...'`. It is honest and it leaks nothing, which is why it ships; it is not something to show a marketer. Trigger: the same design pass |
+| Reloading a stored Brief into the screen | `loadBrief` exists and is tested, and nothing calls it — `/new` mints a fresh `experienceId` per visit, so there is never a brief to reload. Trigger: experiences get real identity and a URL, which is phase 09's editor |
 
 ---
 
-## What is not built yet
+## Built, on the web side
 
-The API half of this phase is done and its controls are tested. **The Intake UI is not built**, and neither is a live run against a real model — both are what stands between this phase and `done`:
+`web/src/features/intake/` — the prompt box, the structured interview, and the permanently-visible editable Brief, mounted at `/new` (`web/src/app/new/`), which is also where the product path Intake → outline gate → Build is composed. Verified live in a browser, end to end, 2026-08-09.
 
-- `web/src/features/intake/` — the prompt box, the structured interview, and the permanently-visible editable Brief. This is one of the four screens that gets real design attention ([../../design/app.md](../../design/app.md)), and the four decisions in "The interview is not a chat" above are its brief
-- ~~A live Intake call~~ — **done 2026-08-05** (see the exit gate). The open question was whether the claims check is so strict that a real model trips it constantly; on the first live call it did not, splitting the user's sentences rather than rewording them. One call is not a rate, so it is worth re-running as the prompt changes
+Three things worth recording because they are decisions rather than code:
+
+- **`InterviewStep` and `Question` moved into `api/schema/` and into `EXPORTED`.** They are the route's response shape, so they cross the language boundary, and the alternative was a hand-written Zod copy on the TypeScript side — the exact drift the codegen exists to prevent ([../../coderules/typescript.md](../../coderules/typescript.md)). `BriefDraft` stayed inside Python, which is the same rule pointing the other way: `web` never sees it
+- **Two new routes, `GET`/`PUT /experiences/{id}/brief`.** Without them "the Brief stays visible and editable, permanently" is true of the screen and false of the record. `PUT` deliberately does **not** run `checks.py` — that check exists to stop the *model* rewording the user's copy, and text the user typed is approved by definition. `routes/test_intake.py` asserts this so it is not "fixed" later. The `cta.href` allowlist still applies, because a Brief parses at entry on both paths
+- **`Question` carries `index`/`total`.** The "visible progress" [../../design/app.md](../../design/app.md) asks for, derived from `REQUIRED` server-side so there is one definition of how many questions there are
+
+### The CSP break this phase found
+
+`appHeaders()` had no `connect-src`, so it fell back to `default-src 'self'` — and `api` is a different origin. Every browser-side pipeline call from a real app route was blocked, **in production as well as in dev**. It had never shown up because until now every such call lived under `/dev/*`, where phase 07 had already hit the same wall and fixed it locally with `devToolingHeaders()` ([07-director.md](07-director.md)).
+
+Fixed in `web/src/features/publish/csp.ts`: an explicit `connect-src 'self' <NEXT_PUBLIC_API_URL>` — one exact origin from configuration, not a wildcard — plus `'unsafe-inline'` on `script-src` (Next sets `self.__next_r` from an inline script; without it the page never hydrates and every button is silently dead) and `'unsafe-eval'` in development only, which `next dev`'s React needs and a production build does not. The correct end state for the inline-script allowance is a per-request nonce through middleware, the same deferral `publishedHeaders()` already records.
 
 ---
 
 ## Exit gate
 
-- [ ] Prompt and Q&A both produce a valid `Brief` — proven at the API, both paths, with a mocked seam (`test_interview.py`), and **verified live 2026-08-05** against `openai/gpt-5-mini` for the prompt path: the model split the user's typed sentences verbatim rather than smoothing them, so the claims check passed on the first call, and it correctly lifted a "do not describe it as…" line into `constraints`. `goal` and `audience` came back byte-identical to the answers, as they must — they are copied, not generated. **The Intake UI is not built**, which is what keeps this unticked — see below
+- [x] Prompt and Q&A both produce a valid `Brief` — proven at the API, both paths, with a mocked seam (`test_interview.py`), and **verified live 2026-08-05** against `openai/gpt-5-mini` for the prompt path: the model split the user's typed sentences verbatim rather than smoothing them, so the claims check passed on the first call, and it correctly lifted a "do not describe it as…" line into `constraints`. `goal` and `audience` came back byte-identical to the answers, as they must — they are copied, not generated. **Verified again 2026-08-09 through the built UI**, in a browser: four questions with progress, a `javascript:` CTA rejected with the field name and pattern and no echo of the user's value, the same claims-faithful split, an edit saved, and the Brief handed to the Director, which produced a six-scene outline that then built
+- [x] The Intake UI is built — `web/src/features/intake/`, mounted at `/new`. The screen's four decisions are its own docstring; what is *not* built is the design pass that would make it one of the four hot screens rather than a correct one. It is currently plain — see below
 - [x] The three always-ask fields are enforced, not encouraged
 - [x] URL scheme allowlist shared with phase 06, not duplicated
 - [x] A refusal surfaces as a refusal

@@ -27,8 +27,12 @@ from ai.complete import complete
 from features.intake.checks import check_draft
 from features.intake.prompts.intake import build_intake_prompt
 from lib.result import Err, Result, err, ok
-from schema.base import Schema
-from schema.brief import Brief, BriefCta, BriefDraft
+
+# `InterviewStep` and `Question` are the shape this route returns, so they live
+# in `schema/` and generate into web's Zod validator like every other
+# cross-boundary shape — not defined here, where web would have to hand-write a
+# second copy (docs/coderules/typescript.md).
+from schema.brief import Brief, BriefCta, BriefDraft, InterviewStep, Question
 
 # Asked in this order, and the order is the narrative one — what are you
 # trying to do, who for, what do they do next — not the schema's field order.
@@ -46,25 +50,12 @@ REQUIRED: tuple[tuple[str, str], ...] = (
 )
 
 
-class Question(Schema):
-    field: str
-    text: str
-
-
-class InterviewStep(Schema):
-    """Exactly one of these is set. `question` means keep going; `brief` means
-    Intake is done and the Director can be called."""
-
-    question: Question | None = None
-    brief: Brief | None = None
-
-
 def next_question(answers: Mapping[str, str]) -> Question | None:
     """Deterministic, and deliberately not a model call. The three always-ask
     fields are enforced here or nowhere."""
-    for field, text in REQUIRED:
+    for index, (field, text) in enumerate(REQUIRED, start=1):
         if not answers.get(field, "").strip():
-            return Question(field=field, text=text)
+            return Question(field=field, text=text, index=index, total=len(REQUIRED))
     return None
 
 

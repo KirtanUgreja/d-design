@@ -55,6 +55,22 @@ class BriefDraft(Schema):
     constraints: str | None = Field(default=None, max_length=1000)
 
 
+class Question(Schema):
+    """One step of the structured interview.
+
+    `index`/`total` are the "visible progress" docs/design/app.md asks the
+    Intake screen for, derived from the question list in
+    `features/intake/interview.py` rather than counted client-side, so there is
+    one definition of how many questions there are. 1-based: it is read by a
+    human, not indexed into.
+    """
+
+    field: str = Field(min_length=1)
+    text: str = Field(min_length=1)
+    index: int = Field(ge=1)
+    total: int = Field(ge=1)
+
+
 class Brief(Schema):
     # `goal`, `audience` and `cta` are always asked and never assumed. They
     # determine narrative structure, and guessing them wastes the entire
@@ -68,3 +84,21 @@ class Brief(Schema):
     cta: BriefCta
     assets: list[AssetRef] = Field(default_factory=list, max_length=50)
     constraints: str | None = Field(default=None, max_length=1000)
+
+
+class InterviewStep(Schema):
+    """What `POST /experiences/{id}/intake` returns, and therefore a
+    cross-boundary shape rather than an internal one — which is why it lives
+    here and is in `EXPORTED`, while `BriefDraft` above is neither.
+
+    Exactly one of the two is set. `question` means keep going; `brief` means
+    Intake is done and the Director can be called. That "exactly one" is a
+    whole-object rule, so it does not survive into JSON Schema and therefore
+    not into Zod (docs/coderules/typescript.md -> "for what JSON Schema can
+    say"). The client does not need it to: it renders the brief if there is
+    one and the question otherwise, and both being absent is a bug, not a
+    state to handle.
+    """
+
+    question: Question | None = None
+    brief: Brief | None = None
