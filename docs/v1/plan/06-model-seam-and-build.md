@@ -258,3 +258,33 @@ Promptfoo, structural assertions only, running in CI as a hard gate. Quality sco
 Two schema-compatibility fixes landed in `ai/complete.py` as a result, both provider-agnostic (applied regardless of route, not just for the provider that surfaced them):
 - `_strip_unsupported_keywords`: strips `minimum`/`maximum`/`minItems`/`maxItems`/`discriminator` and renames `oneOf` → `anyOf` before a schema goes over the wire — every one of these still gets enforced locally by Pydantic on the way back, with the existing one-repair retry as the backstop for a value the provider's own (weaker) structural check let through
 - `_iter_sse_data`: fixed to concatenate multi-line SSE `data:` blocks per spec before parsing, rather than treating every `data:` line as its own complete JSON object — found live against `gpt-5-mini`, would have silently crashed the seam (an unhandled `JSONDecodeError`, not a `Result`) on any long enough streamed delta
+
+---
+
+## Open defect — `maxLength` is enforced by the provider, as truncation
+
+**Found 2026-08-09, running phase 08's end-to-end build in a browser. Not fixed; the fix is a design decision, and the two obvious ones each fail in the opposite direction.**
+
+The seam sends `maxLength` over the wire. The provider honours it *during constrained decoding, by cutting the string off at the bound* rather than by rejecting the response. A hook came back with the eyebrow `"Tracepoint: API observX"` — 23 of 24 characters, mid-word — and a scene whose body ended `"your whole stack in one\n"`.
+
+**This is the worst failure shape the pipeline can produce.** Truncated text is structurally valid: Pydantic accepts it, all four post-build checks pass, `repair` never fires, and the garbling reaches a published page. A rejected scene gets repaired; a silently trimmed one gets shipped. Every existing control is blind to it by construction, because every one of them asks "is this valid?" and the answer is yes.
+
+It also invalidates a stated assumption elsewhere: [../../coderules/typescript.md](../../coderules/typescript.md) says "structured outputs widely ignores `minLength`/`maxLength` — the generated JSON Schema carries the *shape*; Pydantic enforces the *lengths* on the response." That is not what this provider does, and the architecture's backstop is therefore not the thing catching lengths today. **Update that sentence when this is fixed, not before** — it is currently a description of the intent rather than of the behaviour.
+
+Two fixes were tried live and both were reverted:
+
+| Tried | Result |
+|---|---|
+| Strip `maxLength`/`minLength` from the wire schema, restoring the documented arrangement (provider never sees a bound, Pydantic enforces, repair backstops) | Text came back well-formed and **over the caps**, and one repair attempt is not enough to bring it under. 3 of 3 scenes died with `repair_exhausted` — a total build failure, strictly worse than garbling |
+| Put the caps in the prompt as prose, derived from the Pydantic models, plus a one-line description of what each block is *for* | No measurable improvement, and the runs that included it were worse: the model used `eyebrow` for every text block, six in one scene, as a line-wrapping device, once emitting `"Tracepoint: see every请求跨"`. n=1 per run against a high-variance model, so this is "no evidence it helps", not "evidence it hurts" — but it is not landable on that basis |
+
+What the two results together say: the caps are doing real work at decode time, and removing them without also raising the repair budget or the caps themselves just moves the failure. `EyebrowProps.text` at 24 characters is the sharpest edge — small enough that `gpt-5-mini` reliably wants more room than it has.
+
+Directions worth considering, none of them free, in rough order of how much they change:
+
+- **Raise the tightest caps.** 24 characters for an eyebrow is a typographic judgment from phase 02 that the model cannot hit. Cheapest change, but it is a change to the art direction's contract, not to the pipeline
+- **Raise the repair budget above one** for length-only violations specifically. The one-repair cap is a deliberate cost control ([the seam's own docstring](../../../api/ai/complete.py)); a length violation is the cheapest possible repair and arguably deserves its own budget
+- **Detect truncation as a post-build check.** Text ending mid-word, or landing exactly on a cap, is mechanically detectable and would at least convert a silent ship into a repair. Does not fix the cause
+- **Reconsider the Build model.** `gpt-5-mini` was chosen on cost after `claude-haiku-4.5` rejected the schema outright ("compiled grammar is too large"). Per-phase model selection is already in this phase's Skipped table, to be decided "by measured repair rate against real briefs" — this is that measurement arriving
+
+Reproduce with `api/evals/briefs/`, or with the three-scene outline in the session that found it: any brief whose copy is longer than an eyebrow.
