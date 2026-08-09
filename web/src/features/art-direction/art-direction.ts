@@ -378,14 +378,16 @@ export type VisualStrength = number;
 // The art direction
 // ---------------------------------------------------------------------------
 
-/** The ids that exist. Mirrors `Experience.art_direction` in
- * `api/schema/experience.py`, which is the source of truth — the two are kept
- * in step by hand, and the moment there is a third this should be generated
- * from the schema like everything else that crosses the boundary. */
-export type ArtDirectionId = 'cinematic-dark' | 'editorial-light';
-
 export interface ArtDirection {
-  id: ArtDirectionId;
+  /** Which art direction this is, for messages and dev harnesses — never a
+   * branch. It was a two-value union until v2 phase 01, which made a missing
+   * art direction a compile error and had nowhere to put a version; art
+   * directions are rows now, so the identity that matters is `ArtDirectionRef`
+   * (`{id, version}`) and it is checked against the store rather than by the
+   * compiler. `docs/v2/plan/01-ad-format.md` -> "`resolveArtDirection` stops
+   * being a code table" is explicit that losing the compile-time check
+   * deliberately beats pretending it survived a database read. */
+  id: string;
   color: Palette;
   fonts: Record<FontSlot, FontFamilyId>;
   type: Record<TypeRoleKey, TypeRole>;

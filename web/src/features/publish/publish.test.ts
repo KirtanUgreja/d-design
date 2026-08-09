@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { seededRecord } from '@/features/art-direction/server';
 import { deleteArtifact, readArtifact, writeArtifact } from '@/lib/storage';
 import { experienceSchema } from '@/schema';
 
@@ -13,12 +14,18 @@ import {
   unpublishExperience,
 } from './publish';
 
+// The seeded record, as `api` would serve it — the second call publishing now
+// makes. Art directions are rows since v2 phase 01, and the artifact freezes
+// the tokens rather than a reference, which is what makes a published page
+// unable to restyle itself (v2 rule 15).
+const AD_RECORD = seededRecord('cinematic-dark');
+
 const MINIMAL_EXPERIENCE = {
   id: 'exp-1',
   title: 'Minimal Experience',
   mode: 'scroll',
   brandId: 'brand-1',
-  artDirection: 'cinematic-dark',
+  artDirection: { id: 'cinematic-dark', version: 1 },
   scenes: [
     {
       id: 's1',
@@ -85,13 +92,18 @@ describe('publish/unpublish', () => {
       .mockResolvedValueOnce(
         new Response(JSON.stringify(MINIMAL_EXPERIENCE), { status: 200 }),
       )
+      .mockResolvedValueOnce(new Response(JSON.stringify(AD_RECORD), { status: 200 }))
       .mockResolvedValueOnce(new Response('{}', { status: 200 }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     const result = await publishExperience(id);
     expect(result.ok).toBe(true);
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(String(fetchMock.mock.calls[1]?.[0])).toContain(`/experiences/${id}/publish`);
+    // Three: read the experience, resolve its art direction, mark published.
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
+      '/art-directions/cinematic-dark/1',
+    );
+    expect(String(fetchMock.mock.calls[2]?.[0])).toContain(`/experiences/${id}/publish`);
 
     const artifact = await readPublishedArtifact(id);
     expect(artifact.ok).toBe(true);
@@ -129,7 +141,8 @@ describe('publish/unpublish', () => {
     await writeArtifact(id, {
       title: 'x',
       mode: 'scroll',
-      artDirection: 'cinematic-dark',
+      artDirectionRef: { id: 'cinematic-dark', version: 1 },
+      artDirection: AD_RECORD,
       scenes: [],
       publishedAt: new Date().toISOString(),
     });
@@ -189,7 +202,7 @@ describe('saveScenes', () => {
       title: 'Minimal Experience',
       mode: 'scroll',
       brandId: 'brand-1',
-      artDirection: 'cinematic-dark',
+      artDirection: { id: 'cinematic-dark', version: 1 },
     });
   });
 

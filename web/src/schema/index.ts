@@ -29,4 +29,12 @@ export {
   type BlockPatch,
   editResultSchema,
   type EditResult,
+  // The v2 art direction. `ArtDirectionRecord` is what `from-record.ts` turns
+  // into tokens and what `render` receives instead of an id; `ArtDirectionRef`
+  // is what an `Experience` carries and what resolves against the store.
+  artDirectionRecordSchema,
+  type ArtDirectionRecord,
+  artDirectionRefSchema,
+  type ArtDirectionRef,
+  type ContentBudgets,
 } from './generated/schema';

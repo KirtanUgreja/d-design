@@ -12,6 +12,7 @@ from typing import Protocol
 import httpx
 import pytest
 
+from features.art_direction.seed import CINEMATIC_DARK
 from features.overflow.measure import measure_overflow
 from lib.result import Err, Ok, Result
 from schema.overflow import OverflowReport
@@ -72,7 +73,7 @@ def render_returns(
 
 async def _measure() -> Result[OverflowReport]:
     return await measure_overflow(
-        scenes=[SCENE], art_direction="cinematic-dark", viewport_height=600
+        scenes=[SCENE], art_direction=CINEMATIC_DARK, viewport_height=600
     )
 
 

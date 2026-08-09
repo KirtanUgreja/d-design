@@ -12,19 +12,33 @@ import 'server-only';
 
 import { z } from 'zod';
 
+import { loadArtDirection } from '@/features/art-direction/server';
 import { err, ok, type Result } from '@/lib/result';
 import { deleteArtifact, readArtifact, writeArtifact } from '@/lib/storage';
-import { experienceSchema, sceneSchema, type Experience, type Scene } from '@/schema';
+import {
+  artDirectionRecordSchema,
+  experienceSchema,
+  sceneSchema,
+  type Experience,
+  type Scene,
+} from '@/schema';
 
 const publishedArtifactSchema = z.strictObject({
   title: z.string(),
   mode: z.enum(['scroll', 'slides']),
-  // Taken from the generated `Experience` rather than restated. It was
-  // `z.literal('cinematic-dark')`, which was a second source of truth that
-  // happened to agree — and stopped agreeing the moment `api`'s Literal grew a
-  // second value, with nothing to catch it but a runtime parse failure on a
-  // freshly published page.
-  artDirection: experienceSchema.shape.artDirection,
+  // The whole record, not the reference, and this is where v2 rule 15 stops
+  // being a doc line and becomes a file on disk: **a published page never
+  // restyles itself.** A reference would be resolved at serve time, so editing
+  // an art direction — or its row being deleted — would silently change or
+  // break a page that was published months ago. Freezing the tokens means the
+  // artifact is the whole page, which is also what keeps `/p/[id]` a disk read
+  // with no database query and no call to `api` (see the route).
+  //
+  // The reference is kept alongside it because "which art direction is this,
+  // and which version" is a question the editor asks and a token blob cannot
+  // answer.
+  artDirectionRef: experienceSchema.shape.artDirection,
+  artDirection: artDirectionRecordSchema,
   scenes: z.array(sceneSchema),
   publishedAt: z.string(),
 });
@@ -105,10 +119,18 @@ export async function publishExperience(id: string): Promise<Result<void>> {
   if (!parsed.ok) return parsed;
 
   const experience = parsed.value;
+  // Resolved once, here, and frozen. A publish whose art direction cannot be
+  // resolved fails rather than shipping a page with no tokens — rule 10's
+  // reasoning applied to publishing: anything that could produce an unstyled
+  // page for a customer's audience fails closed.
+  const resolved = await loadArtDirection(experience.artDirection);
+  if (!resolved.ok) return resolved;
+
   const artifact: PublishedArtifact = {
     title: experience.title,
     mode: experience.mode,
-    artDirection: experience.artDirection,
+    artDirectionRef: experience.artDirection,
+    artDirection: resolved.value.record,
     scenes: experience.scenes,
     publishedAt: new Date().toISOString(),
   };

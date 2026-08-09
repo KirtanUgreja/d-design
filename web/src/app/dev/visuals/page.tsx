@@ -18,7 +18,8 @@
 
 import type { CSSProperties } from 'react';
 
-import { CINEMATIC_DARK, toCssVars } from '@/features/art-direction';
+import { toCssVars } from '@/features/art-direction';
+import { seededArtDirection } from '@/features/art-direction/server';
 import { AbstractVisualBlock } from '@/features/renderer';
 
 const GENERATORS = [
@@ -126,7 +127,7 @@ export default async function VisualsReviewPage() {
     <main
       style={
         {
-          ...toCssVars(CINEMATIC_DARK),
+          ...toCssVars(seededArtDirection('cinematic-dark').artDirection),
           background: 'var(--bg)',
           color: 'var(--ink)',
           minBlockSize: '100vh',

@@ -11,7 +11,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | # | Phase | Spec step | Status |
 |---|---|---|---|
 | 00 | [Foundations](00-foundations.md) | infra | **done** |
-| 01 | [AD format v2](01-ad-format.md) | 1 | **in progress** — record defined; converter, seed and equality proof not started |
+| 01 | [AD format v2](01-ad-format.md) | 1 | **done** |
 | 02 | [Motion as an axis](02-motion-axis.md) | 2 | not started |
 | 03 | [The AD linter](03-ad-linter.md) | 3 | not started |
 | 04 | [Three art directions](04-three-art-directions.md) | 4, 5 | not started |
@@ -52,7 +52,7 @@ They exist because four defects were visible in the output and none of them was 
 
 | Spec step | What already exists | What this plan still owes it |
 |---|---|---|
-| 1 — AD format v2 | Types split from values; a `FontFamilyId` registry keyed by family; `ArtDirectionId` is a schema `Literal` | `budgets`, `version`, `brandMapping`, DTCG primitives, and the `art_directions` table. **The format is still v1's** |
+| 1 — AD format v2 | Types split from values; a `FontFamilyId` registry keyed by family; `ArtDirectionId` is a schema `Literal` | ~~`budgets`, `version`, `brandMapping`, DTCG primitives, and the `art_directions` table~~ — **delivered by [01](01-ad-format.md)**. Both directions are rows; the TypeScript constants are deleted |
 | 2 — motion as its own axis | Two `MotionVocabulary` objects, and `resolveArtDirection` pairs one to each AD | The pairing is a code table, not a **selectable axis on the experience**. That is the whole of phase 02 |
 | 4 — `editorial-light` | Hand-authored, linted by eye, shipped | Migrating it into the v2 format, and re-authoring anything the linter rejects |
 

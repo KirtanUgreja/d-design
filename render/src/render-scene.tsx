@@ -13,8 +13,8 @@
 
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import type { ArtDirectionId } from '@/features/art-direction';
-import { REDUCED_MOTION, resolveArtDirection, toCssVars } from '@/features/art-direction';
+import type { ArtDirection, MotionVocabulary } from '@/features/art-direction';
+import { REDUCED_MOTION, toCssVars } from '@/features/art-direction';
 import { SceneRenderer } from '@/features/renderer';
 import type { Scene } from '@/schema';
 
@@ -31,14 +31,16 @@ const DOCUMENT_STYLE = `
 
 export function renderDocument(
   scenes: Scene[],
-  // `ArtDirectionId`, not `string`. The narrowing happens once, in the server's
-  // entry parse, and the type is what stops a second caller skipping it —
-  // `resolveArtDirection` would otherwise be reachable with an arbitrary name.
-  artDirectionId: ArtDirectionId,
+  // Tokens, not an id. This service resolved an id against a code table until
+  // v2 phase 01 put art directions in the database — and **it holds no
+  // credential**, so it cannot read that database and must never be given a
+  // way to. What changed instead is the payload: the caller sends the record,
+  // `server.ts` parses it with the same generated validator it parses scenes
+  // with, and by the time it reaches here it is as validated as the tree is.
+  artDirection: ArtDirection,
+  motion: MotionVocabulary,
   reducedMotion: boolean,
 ): string {
-  const { artDirection, motion } = resolveArtDirection(artDirectionId);
-
   // `REDUCED_MOTION` is the art-direction layer's own answer rather than a
   // zeroed copy assembled here. It is the default for a screenshot because a
   // reveal caught mid-flight is a half-faded scene, and a critic reviewing one

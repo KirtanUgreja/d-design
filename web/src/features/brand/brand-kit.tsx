@@ -16,12 +16,10 @@
 // free text there is a CSS injection wearing a friendly label.
 
 import {
-  ART_DIRECTION_IDS,
-  resolveArtDirection,
   relativeLuminance,
   resolveBrand,
   toCssColor,
-  type ArtDirectionId,
+  type ArtDirection,
 } from '@/features/art-direction';
 import type { BrandKit } from '@/schema';
 
@@ -37,12 +35,18 @@ const INPUT =
 
 export function BrandKitForm({
   kit,
+  artDirections,
   onChange,
   onSave,
   saving,
   error,
 }: {
   kit: BrandKit;
+  /** Every art direction this account can publish under, resolved on the
+   * server. The contrast notice below answers "here is what happens wherever
+   * you publish this", which needs all of them — and since v2 phase 01 that is
+   * a store read, so it cannot happen inside a client component. */
+  artDirections: ArtDirection[];
   onChange: (kit: BrandKit) => void;
   onSave: () => void;
   saving: boolean;
@@ -76,7 +80,7 @@ export function BrandKitForm({
         value={kit.primary}
         onChange={(primary) => onChange({ ...kit, primary })}
       />
-      <ContrastNotice kit={kit} />
+      <ContrastNotice kit={kit} artDirections={artDirections} />
 
       <ColorField
         label="Secondary"
@@ -180,18 +184,30 @@ function ColorField({
  * colour cannot reach legibility at all — which fails closed rather than
  * shipping unreadable text.
  */
-function ContrastNotice({ kit }: { kit: BrandKit }) {
+function ContrastNotice({
+  kit,
+  artDirections,
+}: {
+  kit: BrandKit;
+  artDirections: ArtDirection[];
+}) {
   return (
     <div className="space-y-2">
-      {ART_DIRECTION_IDS.map((id) => (
-        <ContrastNoticeFor key={id} kit={kit} id={id} />
+      {artDirections.map((artDirection) => (
+        <ContrastNoticeFor key={artDirection.id} kit={kit} artDirection={artDirection} />
       ))}
     </div>
   );
 }
 
-function ContrastNoticeFor({ kit, id }: { kit: BrandKit; id: ArtDirectionId }) {
-  const { artDirection } = resolveArtDirection(id);
+function ContrastNoticeFor({
+  kit,
+  artDirection,
+}: {
+  kit: BrandKit;
+  artDirection: ArtDirection;
+}) {
+  const id = artDirection.id;
   const resolved = resolveBrand(kit, artDirection);
   const ground = relativeLuminance(artDirection.color.bg) > 0.5 ? 'light' : 'dark';
 

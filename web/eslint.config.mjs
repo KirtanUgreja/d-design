@@ -71,9 +71,23 @@ export default tseslint.config(
         {
           patterns: [
             {
-              group: ['@/features/*/*', '../features/*/*', './features/*/*'],
+              group: [
+                '@/features/*/*',
+                '../features/*/*',
+                './features/*/*',
+                // `server.ts` is a declared public surface, not a reach-through.
+                // One feature has two of them, because the renderer is a client
+                // component and the art-direction *store* is a data module
+                // carrying `server-only` — one barrel exporting both makes that
+                // marker fire on the renderer. The split is by runtime, and each
+                // half is still a single surface with nothing reachable around
+                // it. See web/src/features/art-direction/index.ts.
+                '!@/features/*/server',
+                '!../features/*/server',
+                '!./features/*/server',
+              ],
               message:
-                'Import a feature through its index.ts. The index is the whole contract (structure.md).',
+                'Import a feature through its index.ts (or its server.ts). The index is the whole contract (structure.md).',
             },
             {
               group: ['@/schema/generated/*', '**/schema/generated/*'],

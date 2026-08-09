@@ -16,7 +16,8 @@
 // is the layering the whole Slot design rests on.
 
 import { SceneRenderer } from '@/features/renderer';
-import { CINEMATIC_DARK, REDUCED_MOTION } from '@/features/art-direction';
+import { REDUCED_MOTION } from '@/features/art-direction';
+import { seededArtDirection } from '@/features/art-direction/server';
 import { sceneSchema } from '@/schema';
 
 // The marker goes first, and every probe is wrapped. Found the hard way: in an
@@ -66,7 +67,7 @@ export default function HostileSlotPage() {
   return (
     <SceneRenderer
       scenes={[SCENE]}
-      artDirection={CINEMATIC_DARK}
+      artDirection={seededArtDirection('cinematic-dark').artDirection}
       motion={REDUCED_MOTION}
     />
   );

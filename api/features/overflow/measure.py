@@ -7,8 +7,15 @@ clips it. So the measurement happens where a layout exists — the `render`
 service from phase 00, which is its first customer, ahead of the critic.
 
 `render` holds no credential and this module sends it none: a scene tree, an
-art-direction id, a viewport. That is the whole payload, and it is why calling
-a browser-driving service from here is safe.
+art-direction record, a viewport. That is the whole payload, and it is why
+calling a browser-driving service from here is safe.
+
+**The record rather than an id, since v2 phase 01.** Art directions became
+database rows, and `render` cannot read the store — it holds no credential, by
+design, because that is what makes running a browser next to it safe. So the
+tokens travel on the wire, and `render` parses them with the same generated
+validator `web` uses. A record has no field a free-form CSS string can arrive
+in, which is what keeps that safe rather than merely convenient.
 """
 
 import httpx
@@ -16,6 +23,7 @@ from pydantic import TypeAdapter, ValidationError
 
 from config import config
 from lib.result import Result, err, ok
+from schema.art_direction import ArtDirectionRecord
 from schema.overflow import BlockExtent, OverflowReport, SceneOverflow
 from schema.scene import Scene
 
@@ -42,7 +50,7 @@ class SceneExtent(SceneOverflow):
 async def measure_overflow(
     *,
     scenes: list[Scene],
-    art_direction: str,
+    art_direction: ArtDirectionRecord,
     viewport_height: int,
     viewport_width: int = 1280,
 ) -> Result[OverflowReport]:
@@ -55,7 +63,9 @@ async def measure_overflow(
     """
     payload = {
         "scenes": [scene.model_dump(mode="json", by_alias=True) for scene in scenes],
-        "artDirection": art_direction,
+        "artDirection": art_direction.model_dump(
+            mode="json", by_alias=True, exclude_none=True
+        ),
         "viewport": {"width": viewport_width, "height": viewport_height},
     }
 

@@ -11,7 +11,7 @@
 
 import { notFound } from 'next/navigation';
 
-import { resolveArtDirection } from '@/features/art-direction';
+import { fromRecord } from '@/features/art-direction';
 import { PresentedExperience } from '@/features/present';
 import { readPublishedArtifact } from '@/features/publish';
 
@@ -24,10 +24,18 @@ export default async function PublishedPage({
   const artifact = await readPublishedArtifact(id);
   if (!artifact.ok) notFound();
 
-  // The artifact carries its own art direction, and this is where that stops
-  // being decoration and starts being the product: two published pages from the
-  // same renderer, told apart by one string.
-  const { artDirection, motion } = resolveArtDirection(artifact.value.artDirection);
+  // The artifact carries its own art direction *whole* — the tokens, not a
+  // reference to them. That is what makes a published page never restyle itself
+  // (v2 rule 15) and what keeps this route a disk read: no store lookup, no call
+  // to `api`, per view.
+  //
+  // A record that will not resolve is a 404 rather than an unstyled page. It
+  // means the artifact was written by a build that knew a font family or a
+  // motion vocabulary this one does not, and serving the scene tree with no
+  // tokens would be strictly worse than serving nothing.
+  const resolved = fromRecord(artifact.value.artDirection);
+  if (!resolved.ok) notFound();
+  const { artDirection, motion } = resolved.value;
   return (
     <PresentedExperience
       scenes={artifact.value.scenes}

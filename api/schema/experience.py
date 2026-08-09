@@ -16,6 +16,7 @@ from typing import Literal
 from pydantic import Field, model_validator
 
 from lib.result import Result, err, ok
+from schema.art_direction import ArtDirectionRef
 from schema.base import Schema
 from schema.scene import Mode, Scene
 
@@ -54,20 +55,19 @@ class Asset(Schema):
 FontId = Literal["fraunces", "inter"]
 
 
-# The art directions that exist. A `Literal`, so an unknown id is a 422 at the
-# edge rather than a page rendered with no tokens at all — and so `web`'s own
-# `ArtDirectionId` is generated from here rather than written twice
-# (docs/coderules/python.md).
+# The art direction an experience is styled by. Two values in a `Literal` until
+# v2 phase 01; an `{id, version}` reference from it onward.
 #
-# One value became two when art direction #2 landed, and that is the whole of
-# what the schema owed that exercise: the renderer took no change, this took
-# one line, and the token layer took the rest (docs/v1/spec.md, Risk 4).
+# The Literal was the better shape for exactly as long as art directions were
+# code. It made an unknown id a 422 at the edge and a missing resolver row a
+# compile error — but it also had nowhere to put a version, and from phase 06 a
+# published page is pinned to one (v2 rule 15: a published page never restyles
+# itself). A reference that cannot say *which* `cinematic-dark` makes that rule
+# unenforceable, which is why migration 0010 already widened the column.
 #
-# Adding a third is this line plus an `ArtDirection` object in
-# `web/src/features/art-direction/` plus a row in its resolver — and the
-# resolver is `Record<ArtDirectionId, …>`, so forgetting the row is a type
-# error rather than a page that renders as unstyled HTML.
-ArtDirectionId = Literal["cinematic-dark", "editorial-light"]
+# What replaces the Literal is not a looser string. It is a pair validated
+# against `art_directions`, which is a stronger check than a Literal was —
+# it proves the version exists as well as the id. See `ArtDirectionRef`.
 
 
 class BrandKit(Schema):
@@ -91,7 +91,7 @@ class Experience(Schema):
     title: str = Field(min_length=1, max_length=200)
     mode: Mode
     brand_id: str = Field(min_length=1)
-    art_direction: ArtDirectionId
+    art_direction: ArtDirectionRef
     scenes: list[Scene] = Field(min_length=3, max_length=12)
     meta: ExperienceMeta
 

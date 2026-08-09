@@ -14,17 +14,20 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import {
-  CINEMATIC_DARK,
-  CINEMATIC_MOTION,
-  REDUCED_MOTION,
-} from '@/features/art-direction';
+import { CINEMATIC_MOTION, REDUCED_MOTION } from '@/features/art-direction';
+import { seededArtDirection } from '@/features/art-direction/server';
 import { experienceSchema, sceneSchema } from '@/schema';
 
 import { AbstractVisualBlock } from './blocks/abstract-visual';
 import { isSafeHref } from './blocks/href-safety';
 import { seedFromId } from './blocks/visual-seed';
 import { SceneRenderer } from './scene-renderer';
+
+// Resolved from the seeded record rather than imported as a constant — as of
+// v2 phase 01 there is no constant, and this is what a page actually renders
+// with. The renderer takes an `ArtDirection` object either way, which is the
+// point: the token layer moved and the renderer took no change.
+const CINEMATIC_DARK = seededArtDirection('cinematic-dark').artDirection;
 
 const FIXTURES = join(process.cwd(), '..', 'api', 'schema', 'fixtures');
 const readFixture = (name: string) =>

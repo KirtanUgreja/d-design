@@ -7,6 +7,7 @@ data modules, same seam. `jobs` arrives in v3 and will sit next to this file.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from routes.art_directions import router as art_directions_router
 from routes.assets import asset_by_id as asset_by_id_router
 from routes.assets import router as assets_router
 from routes.brand import router as brand_router
@@ -54,3 +55,4 @@ app.include_router(assets_router)
 # `/a/{id}` — the path the renderer composes. See routes/assets.py.
 app.include_router(asset_by_id_router)
 app.include_router(brand_router)
+app.include_router(art_directions_router)

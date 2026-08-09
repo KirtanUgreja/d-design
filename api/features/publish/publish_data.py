@@ -16,6 +16,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models import Experience
+from schema.art_direction import ArtDirectionRef
 
 
 async def find_by_id(session: AsyncSession, experience_id: UUID) -> Experience | None:
@@ -31,37 +32,27 @@ async def find_published_by_id(
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
-# Everything that exists is version 1 until phase 01 starts inserting second
-# rows into `art_directions`. A literal rather than a lookup, deliberately:
-# a lookup here would be this module deciding which version an experience gets,
-# which is a product decision and belongs to the phase that adds the picker.
-_CURRENT_AD_VERSION = 1
+def ad_ref(ref: ArtDirectionRef) -> dict[str, object]:
+    """The reference as the column stores it.
+
+    This was a pair of conversions between an `ArtDirectionId` string and a
+    `{id, version}` dict, with the version supplied here as a constant because
+    the schema had nowhere to carry one. Phase 01 gave it somewhere, and both
+    conversions collapsed into a `model_dump` — which is the shape of a stopgap
+    doing its job and then going away.
+    """
+    return ref.model_dump(mode="json", by_alias=True)
 
 
-def ad_ref(art_direction: str) -> dict[str, object]:
-    """`ArtDirectionId` -> the stored reference."""
-    return {"id": art_direction, "version": _CURRENT_AD_VERSION}
-
-
-def ad_id(ref: dict[str, object]) -> str:
-    """The stored reference -> `ArtDirectionId`.
+def ad_ref_from_row(stored: dict[str, object]) -> ArtDirectionRef:
+    """The column -> the reference.
 
     Raises rather than returning a `Result`: migration 0010 converted every
     existing row and the column has been written through `ad_ref` ever since,
-    so a reference with no `id` is a bug in this process, not an expected
-    failure of an external boundary (rule 3).
-
-    An earlier draft also accepted a bare string, for a database restored from
-    a pre-0010 dump. mypy pointed out the branch was unreachable — the column
-    is typed as an object — and it was right in a way worth keeping: a dump
-    that old also predates the `motion_vocabulary` column, so it would fail
-    long before reaching here. Defensive code for a case that cannot arrive is
-    a comment that looks like a control.
+    so a malformed reference is a bug in this process, not an expected failure
+    of an external boundary (rule 3).
     """
-    value = ref.get("id")
-    if not isinstance(value, str):
-        raise ValueError(f"art_direction reference has no id: {ref!r}")
-    return value
+    return ArtDirectionRef.model_validate(stored)
 
 
 async def create(
@@ -72,7 +63,7 @@ async def create(
     title: str,
     mode: str,
     brand_id: str | None,
-    art_direction: str,
+    art_direction: ArtDirectionRef,
     scenes: list[dict[str, object]],
 ) -> Experience:
     """`experience_id` is the caller's proposal, and `None` means "you pick" —
@@ -113,7 +104,7 @@ async def replace(
     title: str,
     mode: str,
     brand_id: str | None,
-    art_direction: str,
+    art_direction: ArtDirectionRef,
     scenes: list[dict[str, object]],
 ) -> Experience:
     """A full replace, not a patch — `BlockPatch` (one block, editor-scoped) is

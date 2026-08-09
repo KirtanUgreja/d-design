@@ -16,6 +16,9 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { notFound } from 'next/navigation';
+
+import { loadArtDirection } from '@/features/art-direction/server';
 import { readExperience } from '@/features/publish';
 import { experienceSchema } from '@/schema';
 
@@ -34,11 +37,21 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
   const loaded = await readExperience(id);
   const experience = loaded.ok ? loaded.value : fixture();
 
+  // The art direction is resolved here, on the server, and handed down as
+  // tokens. The editor canvas is a client component and the store read is
+  // `server-only`, which is the boundary doing its job rather than an
+  // inconvenience: what-you-edit-is-what-you-ship means the canvas renders the
+  // direction the artifact will publish under, and that is a fact the server
+  // establishes once instead of something the browser re-derives.
+  const resolved = await loadArtDirection(experience.artDirection);
+  if (!resolved.ok) notFound();
+
   return (
     <EditorScreen
       experienceId={id}
       title={experience.title}
-      artDirectionId={experience.artDirection}
+      artDirection={resolved.value.artDirection}
+      motion={resolved.value.motion}
       initialScenes={experience.scenes}
       stored={loaded.ok}
     />

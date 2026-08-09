@@ -42,25 +42,409 @@ export const contentBudgetsSchema = z.strictObject({
 
 export type ContentBudgets = z.infer<typeof contentBudgetsSchema>;
 
+export const lengthSchema = z.strictObject({
+  unit: z.enum(['px', 'rem', 'ch', 'vw', 'vh', 'svh', '%']),
+  value: z.number(),
+});
+
+export type Length = z.infer<typeof lengthSchema>;
+
+export const grainLayerSchema = z.strictObject({
+  color: z.enum([
+    'bg',
+    'bgElevated',
+    'ink',
+    'inkMuted',
+    'inkFaint',
+    'accent',
+    'accentSoft',
+    'veil',
+    'hairline',
+  ]),
+  density: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  intensity: z.number().min(0).max(1),
+  kind: z.literal('grain'),
+  offset: lengthSchema,
+  scale: lengthSchema,
+});
+
+export type GrainLayer = z.infer<typeof grainLayerSchema>;
+
+export const halftoneLayerSchema = z.strictObject({
+  angle: z.number(),
+  color: z.enum([
+    'bg',
+    'bgElevated',
+    'ink',
+    'inkMuted',
+    'inkFaint',
+    'accent',
+    'accentSoft',
+    'veil',
+    'hairline',
+  ]),
+  intensity: z.number().min(0).max(1),
+  kind: z.literal('halftone'),
+  offset: lengthSchema,
+  scale: lengthSchema,
+  steps: z.union([z.literal(2), z.literal(3), z.literal(4)]),
+});
+
+export type HalftoneLayer = z.infer<typeof halftoneLayerSchema>;
+
+export const hatchLayerSchema = z.strictObject({
+  angle: z.number(),
+  color: z.enum([
+    'bg',
+    'bgElevated',
+    'ink',
+    'inkMuted',
+    'inkFaint',
+    'accent',
+    'accentSoft',
+    'veil',
+    'hairline',
+  ]),
+  cross: z.boolean(),
+  density: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  intensity: z.number().min(0).max(1),
+  kind: z.literal('hatch'),
+  offset: lengthSchema,
+  scale: lengthSchema,
+});
+
+export type HatchLayer = z.infer<typeof hatchLayerSchema>;
+
+export const ditherLayerSchema = z.strictObject({
+  color: z.enum([
+    'bg',
+    'bgElevated',
+    'ink',
+    'inkMuted',
+    'inkFaint',
+    'accent',
+    'accentSoft',
+    'veil',
+    'hairline',
+  ]),
+  intensity: z.number().min(0).max(1),
+  kind: z.literal('dither'),
+  offset: lengthSchema,
+  scale: lengthSchema,
+  steps: z.union([z.literal(2), z.literal(3), z.literal(4)]),
+});
+
+export type DitherLayer = z.infer<typeof ditherLayerSchema>;
+
+export const weaveLayerSchema = z.strictObject({
+  color: z.enum([
+    'bg',
+    'bgElevated',
+    'ink',
+    'inkMuted',
+    'inkFaint',
+    'accent',
+    'accentSoft',
+    'veil',
+    'hairline',
+  ]),
+  density: z.union([z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  intensity: z.number().min(0).max(1),
+  kind: z.literal('weave'),
+  offset: lengthSchema,
+  scale: lengthSchema,
+});
+
+export type WeaveLayer = z.infer<typeof weaveLayerSchema>;
+
+export const ruleLayerSchema = z.strictObject({
+  axis: z.enum(['block', 'inline']),
+  color: z.enum([
+    'bg',
+    'bgElevated',
+    'ink',
+    'inkMuted',
+    'inkFaint',
+    'accent',
+    'accentSoft',
+    'veil',
+    'hairline',
+  ]),
+  intensity: z.number().min(0).max(1),
+  kind: z.literal('rule'),
+  offset: lengthSchema,
+  scale: lengthSchema,
+  weight: z.enum(['hairline', 'thin', 'thick']),
+});
+
+export type RuleLayer = z.infer<typeof ruleLayerSchema>;
+
+export const ratioSchema = z.strictObject({
+  h: z.int().max(100).gt(0),
+  w: z.int().max(100).gt(0),
+});
+
+export type Ratio = z.infer<typeof ratioSchema>;
+
+export const imageTreatmentSchema = z.strictObject({
+  edge: lengthSchema,
+  frame: z.enum(['none', 'hairline', 'block', 'inset']),
+  overlay: z
+    .discriminatedUnion('kind', [
+      grainLayerSchema,
+      halftoneLayerSchema,
+      hatchLayerSchema,
+      ditherLayerSchema,
+      weaveLayerSchema,
+      ruleLayerSchema,
+    ])
+    .nullable()
+    .default(null)
+    .optional(),
+  ratios: z.array(ratioSchema).min(1).max(6),
+  tone: z.enum(['as-shot', 'mono', 'duotone', 'posterize']),
+  veil: z.number().min(0).max(1),
+});
+
+export type ImageTreatment = z.infer<typeof imageTreatmentSchema>;
+
+export const sceneFitTableSchema = z.strictObject({
+  centered: z.enum(['viewport', 'content']),
+  'full-bleed': z.enum(['viewport', 'content']),
+  grid: z.enum(['viewport', 'content']),
+  'split-left': z.enum(['viewport', 'content']),
+  'split-right': z.enum(['viewport', 'content']),
+  stack: z.enum(['viewport', 'content']),
+});
+
+export type SceneFitTable = z.infer<typeof sceneFitTableSchema>;
+
+export const clampTripleSchema = z.strictObject({
+  max: lengthSchema,
+  min: lengthSchema,
+  preferred: lengthSchema,
+});
+
+export type ClampTriple = z.infer<typeof clampTripleSchema>;
+
+export const fluidRhythmSchema = z.strictObject({
+  contentMax: lengthSchema,
+  fit: sceneFitTableSchema,
+  fitMinBlock: lengthSchema,
+  fitPlace: z.enum(['center', 'start', 'end']),
+  fitScrollMargin: lengthSchema,
+  measure: lengthSchema,
+  scenePaddingX: clampTripleSchema,
+  scenePaddingY: clampTripleSchema,
+});
+
+export type FluidRhythm = z.infer<typeof fluidRhythmSchema>;
+
+export const fluidTypeRoleSchema = z.strictObject({
+  case: z.literal('uppercase').nullable().default(null).optional(),
+  color: z
+    .enum([
+      'bg',
+      'bgElevated',
+      'ink',
+      'inkMuted',
+      'inkFaint',
+      'accent',
+      'accentSoft',
+      'veil',
+      'hairline',
+    ])
+    .nullable()
+    .default(null)
+    .optional(),
+  font: z.enum(['display', 'text']),
+  size: clampTripleSchema,
+});
+
+export type FluidTypeRole = z.infer<typeof fluidTypeRoleSchema>;
+
+export const fluidTypeScaleSchema = z.strictObject({
+  eyebrow: fluidTypeRoleSchema,
+  hero: fluidTypeRoleSchema,
+  lead: fluidTypeRoleSchema,
+  muted: fluidTypeRoleSchema,
+  normal: fluidTypeRoleSchema,
+  section: fluidTypeRoleSchema,
+  stat: fluidTypeRoleSchema,
+});
+
+export type FluidTypeScale = z.infer<typeof fluidTypeScaleSchema>;
+
+export const artDirectionFluidSchema = z.strictObject({
+  image: imageTreatmentSchema,
+  rhythm: fluidRhythmSchema,
+  texture: z
+    .array(
+      z.discriminatedUnion('kind', [
+        grainLayerSchema,
+        halftoneLayerSchema,
+        hatchLayerSchema,
+        ditherLayerSchema,
+        weaveLayerSchema,
+        ruleLayerSchema,
+      ]),
+    )
+    .max(8),
+  type: fluidTypeScaleSchema,
+  visualBlend: z.enum(['screen', 'multiply']),
+});
+
+export type ArtDirectionFluid = z.infer<typeof artDirectionFluidSchema>;
+
 export const artDirectionExtensionsSchema = z.strictObject({
   brandMapping: brandMappingSchema,
   budgets: contentBudgetsSchema,
-  defaultMotion: z.string().min(1),
-  fluid: z.record(z.string(), z.unknown()).optional(),
+  defaultMotion: z.string().min(1).max(64),
+  fluid: artDirectionFluidSchema,
 });
 
 export type ArtDirectionExtensions = z.infer<typeof artDirectionExtensionsSchema>;
+
+export const dtcgColorValueSchema = z.strictObject({
+  alpha: z.number().min(0).max(1).default(1).optional(),
+  colorSpace: z.literal('srgb').default('srgb').optional(),
+  components: z.array(z.number().min(0).max(1)).min(3).max(3),
+  hex: z
+    .string()
+    .regex(new RegExp('^#[0-9a-fA-F]{6}$'))
+    .nullable()
+    .default(null)
+    .optional(),
+});
+
+export type DtcgColorValue = z.infer<typeof dtcgColorValueSchema>;
+
+export const dtcgColorTokenSchema = z.strictObject({
+  $type: z.literal('color').default('color').optional(),
+  $value: dtcgColorValueSchema,
+});
+
+export type DtcgColorToken = z.infer<typeof dtcgColorTokenSchema>;
+
+export const dtcgPaletteSchema = z.strictObject({
+  accent: dtcgColorTokenSchema,
+  accentSoft: dtcgColorTokenSchema,
+  bg: dtcgColorTokenSchema,
+  bgElevated: dtcgColorTokenSchema,
+  hairline: dtcgColorTokenSchema,
+  ink: dtcgColorTokenSchema,
+  inkFaint: dtcgColorTokenSchema,
+  inkMuted: dtcgColorTokenSchema,
+  veil: dtcgColorTokenSchema,
+});
+
+export type DtcgPalette = z.infer<typeof dtcgPaletteSchema>;
+
+export const dtcgFontFamilyTokenSchema = z.strictObject({
+  $type: z.literal('fontFamily').default('fontFamily').optional(),
+  $value: z.string().min(1).max(64),
+});
+
+export type DtcgFontFamilyToken = z.infer<typeof dtcgFontFamilyTokenSchema>;
+
+export const dtcgFontsSchema = z.strictObject({
+  display: dtcgFontFamilyTokenSchema,
+  text: dtcgFontFamilyTokenSchema,
+});
+
+export type DtcgFonts = z.infer<typeof dtcgFontsSchema>;
+
+export const dtcgDimensionValueSchema = z.strictObject({
+  unit: z.enum(['px', 'rem']),
+  value: z.number(),
+});
+
+export type DtcgDimensionValue = z.infer<typeof dtcgDimensionValueSchema>;
+
+export const dtcgDimensionTokenSchema = z.strictObject({
+  $type: z.literal('dimension').default('dimension').optional(),
+  $value: dtcgDimensionValueSchema,
+});
+
+export type DtcgDimensionToken = z.infer<typeof dtcgDimensionTokenSchema>;
+
+export const dtcgSpaceScaleSchema = z.strictObject({
+  step1: dtcgDimensionTokenSchema,
+  step2: dtcgDimensionTokenSchema,
+  step3: dtcgDimensionTokenSchema,
+  step4: dtcgDimensionTokenSchema,
+  step5: dtcgDimensionTokenSchema,
+  step6: dtcgDimensionTokenSchema,
+  step7: dtcgDimensionTokenSchema,
+});
+
+export type DtcgSpaceScale = z.infer<typeof dtcgSpaceScaleSchema>;
+
+export const dtcgNumberTokenSchema = z.strictObject({
+  $type: z.literal('number').default('number').optional(),
+  $value: z.number(),
+});
+
+export type DtcgNumberToken = z.infer<typeof dtcgNumberTokenSchema>;
+
+export const dtcgFontWeightTokenSchema = z.strictObject({
+  $type: z.literal('fontWeight').default('fontWeight').optional(),
+  $value: z.int().min(1).max(1000),
+});
+
+export type DtcgFontWeightToken = z.infer<typeof dtcgFontWeightTokenSchema>;
+
+export const dtcgTypeRoleSchema = z.strictObject({
+  leading: dtcgNumberTokenSchema,
+  tracking: dtcgNumberTokenSchema,
+  weight: dtcgFontWeightTokenSchema,
+});
+
+export type DtcgTypeRole = z.infer<typeof dtcgTypeRoleSchema>;
+
+export const dtcgTypeScaleSchema = z.strictObject({
+  eyebrow: dtcgTypeRoleSchema,
+  hero: dtcgTypeRoleSchema,
+  lead: dtcgTypeRoleSchema,
+  muted: dtcgTypeRoleSchema,
+  normal: dtcgTypeRoleSchema,
+  section: dtcgTypeRoleSchema,
+  stat: dtcgTypeRoleSchema,
+});
+
+export type DtcgTypeScale = z.infer<typeof dtcgTypeScaleSchema>;
+
+export const dtcgVisualSchema = z.strictObject({ strength: dtcgNumberTokenSchema });
+
+export type DtcgVisual = z.infer<typeof dtcgVisualSchema>;
+
+export const dtcgTokensSchema = z.strictObject({
+  color: dtcgPaletteSchema,
+  font: dtcgFontsSchema,
+  space: dtcgSpaceScaleSchema,
+  type: dtcgTypeScaleSchema,
+  visual: dtcgVisualSchema,
+});
+
+export type DtcgTokens = z.infer<typeof dtcgTokensSchema>;
 
 export const artDirectionRecordSchema = z.strictObject({
   author: z.enum(['system', 'user']),
   extensions: artDirectionExtensionsSchema,
   id: z.string().min(1).max(64).regex(new RegExp('^[a-z][a-z0-9-]*$')),
   name: z.string().min(1).max(120),
-  tokens: z.record(z.string(), z.unknown()).optional(),
+  tokens: dtcgTokensSchema,
   version: z.int().min(1),
 });
 
 export type ArtDirectionRecord = z.infer<typeof artDirectionRecordSchema>;
+
+export const artDirectionRefSchema = z.strictObject({
+  id: z.string().min(1).max(64).regex(new RegExp('^[a-z][a-z0-9-]*$')),
+  version: z.int().min(1),
+});
+
+export type ArtDirectionRef = z.infer<typeof artDirectionRefSchema>;
 
 export const assetSchema = z.strictObject({
   alt: z.string().max(160).nullable().default(null).optional(),
@@ -295,7 +679,7 @@ export const sceneSchema = z.strictObject({
 export type Scene = z.infer<typeof sceneSchema>;
 
 export const experienceSchema = z.strictObject({
-  artDirection: z.enum(['cinematic-dark', 'editorial-light']),
+  artDirection: artDirectionRefSchema,
   brandId: z.string().min(1),
   id: z.string().min(1),
   meta: experienceMetaSchema,

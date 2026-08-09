@@ -23,16 +23,49 @@ which is worse than not claiming the standard at all.
 **`$extensions` keys use reverse-domain notation.**
 
 So the split is drawn where the spec actually draws it. The DTCG layer holds
-colours, the fixed `px` spacing scale, font families and weights, durations,
-easings and unitless numbers — real tokens a designer's tool can read. Fluid
-lengths, clamp triples, the layout->fit table, texture structure, image
-treatment, budgets and brand mapping all live under `$extensions`, because the
-spec has no concept of them and inventing one would be proposing a standard
-rather than using one.
+colours, the fixed `px` spacing scale, font families and weights, and the
+unitless numbers — real tokens a designer's tool can read. Fluid lengths, clamp
+triples, the layout->fit table, texture structure, image treatment, budgets and
+brand mapping all live under `$extensions`, because the spec has no concept of
+them and inventing one would be proposing a standard rather than using one.
 
 That is a smaller DTCG surface than the phase sketch implies, and it is the
 honest one. The win was never a full Figma round-trip — it is choosing a shape
 that does not have to be migrated later.
+
+## Why the fluid layer is typed here, and not an opaque blob
+
+The checkpoint that started this phase left `fluid` as `dict[str, object]`,
+reasoning that re-declaring `Rhythm`, `Texture` and `ImageTreatment` in Python
+would be a second definition of each and the drift would be silent. That was
+right while the TypeScript constants were still the source of truth. It stops
+being right at the step this phase ends on: the constants are deleted, the
+record *is* the definition, and there is nothing left to drift against.
+
+It is also what makes the switch possible at all. An opaque dict generates as
+`z.record(z.unknown())`, so the TypeScript that turns a record back into an
+`ArtDirection` would be casting rather than reading — one unchecked assertion
+sitting between the database and every published page. Typed, `from-record.ts`
+is a total mapping between two declared shapes, and a field added on either
+side is a compile error on the other. The drift the checkpoint feared is
+detected by the compiler instead of by a comment asking someone to be careful.
+
+Where the two languages still have to agree by hand — a `fontFamily` naming a
+family the TypeScript registry knows, a `defaultMotion` naming a vocabulary —
+the agreement is checked at the boundary and fails closed, and the equality
+fixture in `api/tests/test_art_direction_seed.py` is what proves the whole
+record still renders the design it was migrated from.
+
+## The DTCG document is a fixed record, not an open tree
+
+A designer's export carries groups nobody here named, and this model forbids
+them. That is deliberate for v2: there is no import path yet (user authoring is
+`docs/v2/art-direction-system.md` -> "User-authored art directions", late v2 at
+the earliest), and until there is, an open tree buys nothing and costs the type
+safety above. The moment an import path exists, the honest shape is a separate
+*imported document* model that this one is projected out of — a strict record
+being fed by a lenient parser, which is the same arrangement `Scene` already
+has with model output.
 """
 
 from typing import Annotated, Literal
@@ -46,15 +79,10 @@ from schema.base import Schema
 # tool's own extensions.
 EXTENSION_KEY = "com.d-design.v2"
 
-DtcgType = Literal[
-    "color",
-    "dimension",
-    "fontFamily",
-    "fontWeight",
-    "duration",
-    "cubicBezier",
-    "number",
-]
+
+# ---------------------------------------------------------------------------
+# DTCG token values
+# ---------------------------------------------------------------------------
 
 
 class DtcgColorValue(Schema):
@@ -63,10 +91,16 @@ class DtcgColorValue(Schema):
     `components` is authoritative and `hex` is the optional fallback — which is
     the right way round for us too: the linter's APCA and WCAG maths wants
     channels, and a hex string is a lossy serialization of them.
+
+    Components are 0-1 per the spec, *not* 0-255. `to-css-vars.ts` still emits
+    `rgb(r g b)` with 8-bit channels, so the scaling happens in one place on
+    each side and the equality fixture is what proves the two agree.
     """
 
     color_space: Literal["srgb"] = "srgb"
-    components: Annotated[list[float], Field(min_length=3, max_length=3)]
+    components: Annotated[
+        list[Annotated[float, Field(ge=0, le=1)]], Field(min_length=3, max_length=3)
+    ]
     alpha: float = Field(default=1.0, ge=0, le=1)
     hex: str | None = Field(default=None, pattern=r"^#[0-9a-fA-F]{6}$")
 
@@ -80,24 +114,322 @@ class DtcgDimensionValue(Schema):
     unit: Literal["px", "rem"]
 
 
-class DtcgDurationValue(Schema):
-    value: float = Field(ge=0)
-    unit: Literal["ms", "s"]
+# ---------------------------------------------------------------------------
+# DTCG tokens. One class per `$type` rather than one class with `value: object`,
+# because a token whose value is `object` is exactly the "any string" token
+# docs/v1/art-direction.md says will have to be redesigned — it just spells it
+# in a different language.
+#
+# `$type` and `$value` are the spec's names, reached through an alias because a
+# `$` cannot start a Python identifier. The wire format is the spec's, not ours.
+# ---------------------------------------------------------------------------
 
 
-class DtcgToken(Schema):
-    """One token. `$type` and `$value` are the spec's names, and Pydantic
-    reaches them through an alias because a `$` cannot start a Python
-    identifier — the wire format is the spec's, not ours."""
+class DtcgColorToken(Schema):
+    type: Literal["color"] = Field(default="color", alias="$type")
+    value: DtcgColorValue = Field(alias="$value")
 
-    type: DtcgType = Field(alias="$type")
-    value: object = Field(alias="$value")
-    description: str | None = Field(default=None, alias="$description")
+
+class DtcgDimensionToken(Schema):
+    type: Literal["dimension"] = Field(default="dimension", alias="$type")
+    value: DtcgDimensionValue = Field(alias="$value")
+
+
+class DtcgFontFamilyToken(Schema):
+    """The family *name*, which is what the spec means and what a designer's
+    tool round-trips. The id (`fraunces`) is the TypeScript registry's business;
+    resolving a name back to a registry entry is a lookup that fails closed, so
+    a token file naming an unvetted family is rejected rather than silently
+    falling back to a system font."""
+
+    type: Literal["fontFamily"] = Field(default="fontFamily", alias="$type")
+    value: str = Field(min_length=1, max_length=64, alias="$value")
+
+
+class DtcgFontWeightToken(Schema):
+    type: Literal["fontWeight"] = Field(default="fontWeight", alias="$type")
+    value: int = Field(ge=1, le=1000, alias="$value")
+
+
+class DtcgNumberToken(Schema):
+    type: Literal["number"] = Field(default="number", alias="$type")
+    value: float = Field(alias="$value")
+
+
+# ---------------------------------------------------------------------------
+# The DTCG groups.
+#
+# `duration` and `cubicBezier` are the two standard types this document does
+# not use, and their absence is not an oversight: motion is its own table and
+# its own axis from phase 02 (docs/v2/plan/02-motion-axis.md), so emitting a
+# duration here would be a second home for a number that lives there.
+# ---------------------------------------------------------------------------
+
+
+class DtcgPalette(Schema):
+    bg: DtcgColorToken
+    bg_elevated: DtcgColorToken
+    ink: DtcgColorToken
+    ink_muted: DtcgColorToken
+    ink_faint: DtcgColorToken
+    accent: DtcgColorToken
+    accent_soft: DtcgColorToken
+    veil: DtcgColorToken
+    hairline: DtcgColorToken
+
+
+class DtcgSpaceScale(Schema):
+    """Seven fixed `px` steps. Named rather than indexed because DTCG groups are
+    objects and an array is not a group — and named `step1..step7` rather than
+    `1..7` so the keys are identifiers in both languages.
+
+    Deliberately not semantic (`sm`, `md`): the same index means 8px in
+    `cinematic-dark` and 4px in `editorial-light`, so a semantic name would be
+    a claim about size that one of the two directions contradicts."""
+
+    step1: DtcgDimensionToken
+    step2: DtcgDimensionToken
+    step3: DtcgDimensionToken
+    step4: DtcgDimensionToken
+    step5: DtcgDimensionToken
+    step6: DtcgDimensionToken
+    step7: DtcgDimensionToken
+
+
+class DtcgFonts(Schema):
+    display: DtcgFontFamilyToken
+    text: DtcgFontFamilyToken
+
+
+class DtcgTypeRole(Schema):
+    """The part of a type role DTCG can express. The clamp triple that goes
+    with it is in `$extensions.fluid.type`, and the split is the `dimension`
+    unit restriction showing through — a `clamp(3.5rem, 8vw, 8rem)` is not a
+    dimension and pretending otherwise is the one thing this format will not
+    do."""
+
+    leading: DtcgNumberToken
+    tracking: DtcgNumberToken
+    weight: DtcgFontWeightToken
+
+
+class DtcgTypeScale(Schema):
+    hero: DtcgTypeRole
+    section: DtcgTypeRole
+    lead: DtcgTypeRole
+    normal: DtcgTypeRole
+    muted: DtcgTypeRole
+    eyebrow: DtcgTypeRole
+    stat: DtcgTypeRole
+
+
+class DtcgVisual(Schema):
+    strength: DtcgNumberToken
+
+
+class DtcgTokens(Schema):
+    """The DTCG primitive layer. Serialized on its own it is a token file:
+    every leaf carries `$type` and `$value`, every branch is a group.
+    `features/art_direction/dtcg.py` is what adds the `$extensions` block and
+    hands out the document."""
+
+    color: DtcgPalette
+    space: DtcgSpaceScale
+    font: DtcgFonts
+    type: DtcgTypeScale
+    visual: DtcgVisual
 
 
 # ---------------------------------------------------------------------------
 # The `$extensions` payload: everything DTCG has no concept of.
 # ---------------------------------------------------------------------------
+
+Unit = Literal["px", "rem", "ch", "vw", "vh", "svh", "%"]
+
+ColorRole = Literal[
+    "bg",
+    "bgElevated",
+    "ink",
+    "inkMuted",
+    "inkFaint",
+    "accent",
+    "accentSoft",
+    "veil",
+    "hairline",
+]
+
+FontSlot = Literal["display", "text"]
+
+
+class Length(Schema):
+    """A one-part CSS length. The unit set is wider than DTCG's on purpose —
+    `ch` is a measure, `svh` is a scene frame, `vw` is the middle of a clamp —
+    and being wider is exactly why this is not a `dimension` token."""
+
+    value: float
+    unit: Unit
+
+
+class ClampTriple(Schema):
+    """`clamp(min, preferred, max)`, each part carrying its own unit because
+    that is how the real values are written. A fixed size is the same value
+    three times — one format, one parser, no branch for the fixed case."""
+
+    min: Length
+    preferred: Length
+    max: Length
+
+
+class FluidTypeRole(Schema):
+    font: FontSlot
+    size: ClampTriple
+    case: Literal["uppercase"] | None = None
+    color: ColorRole | None = None
+
+
+class FluidTypeScale(Schema):
+    hero: FluidTypeRole
+    section: FluidTypeRole
+    lead: FluidTypeRole
+    normal: FluidTypeRole
+    muted: FluidTypeRole
+    eyebrow: FluidTypeRole
+    stat: FluidTypeRole
+
+
+SceneFit = Literal["viewport", "content"]
+ScenePlace = Literal["center", "start", "end"]
+
+
+class SceneFitTable(Schema):
+    """Layout -> whether the scene owns the frame.
+
+    A record with one field per layout rather than a map keyed by `Layout`, so
+    that adding a layout to the schema without answering for it here is a type
+    error on both sides — the same trick the TypeScript `Record<Layout, …>`
+    played. The field names carry the layout's own spelling as their alias,
+    because these are the values the AI writes.
+    """
+
+    full_bleed: SceneFit = Field(alias="full-bleed")
+    split_left: SceneFit = Field(alias="split-left")
+    split_right: SceneFit = Field(alias="split-right")
+    centered: SceneFit
+    stack: SceneFit
+    grid: SceneFit
+
+
+class FluidRhythm(Schema):
+    """Everything in `Rhythm` except the seven-step space scale, which is fixed
+    `px` and therefore lives in the DTCG layer."""
+
+    scene_padding_y: ClampTriple
+    scene_padding_x: ClampTriple
+    measure: Length
+    content_max: Length
+    fit: SceneFitTable
+    fit_min_block: Length
+    fit_place: ScenePlace
+    fit_scroll_margin: Length
+
+
+Density = Literal[1, 2, 3, 4]
+Steps = Literal[2, 3, 4]
+RuleWeight = Literal["hairline", "thin", "thick"]
+
+
+class TextureLayerBase(Schema):
+    intensity: float = Field(ge=0, le=1)
+    color: ColorRole
+    scale: Length
+    offset: Length
+
+
+class GrainLayer(TextureLayerBase):
+    kind: Literal["grain"]
+    density: Density
+
+
+class HalftoneLayer(TextureLayerBase):
+    kind: Literal["halftone"]
+    angle: float
+    steps: Steps
+
+
+class HatchLayer(TextureLayerBase):
+    kind: Literal["hatch"]
+    angle: float
+    cross: bool
+    density: Density
+
+
+class DitherLayer(TextureLayerBase):
+    kind: Literal["dither"]
+    steps: Steps
+
+
+class WeaveLayer(TextureLayerBase):
+    kind: Literal["weave"]
+    density: Density
+
+
+class RuleLayer(TextureLayerBase):
+    kind: Literal["rule"]
+    axis: Literal["block", "inline"]
+    weight: RuleWeight
+
+
+# Closed on purpose, and it stays closed: the renderer has one implementation
+# per kind and varies only intensity, so a seventh kind is a renderer change and
+# therefore a real cost, not a token edit.
+TextureLayer = Annotated[
+    GrainLayer | HalftoneLayer | HatchLayer | DitherLayer | WeaveLayer | RuleLayer,
+    Field(discriminator="kind"),
+]
+
+ImageTone = Literal["as-shot", "mono", "duotone", "posterize"]
+ImageFrame = Literal["none", "hairline", "block", "inset"]
+
+
+class Ratio(Schema):
+    """A crop this art direction will accept, as `w / h`. Applied with
+    `object-fit: cover` against a token `aspect-ratio`, never by re-encoding —
+    so switching art directions re-crops instead of reprocessing."""
+
+    w: int = Field(gt=0, le=100)
+    h: int = Field(gt=0, le=100)
+
+
+class ImageTreatment(Schema):
+    """The art direction consuming a photograph. Same principle as brand
+    colour — an uploaded image maps into the direction, it does not replace
+    it."""
+
+    tone: ImageTone
+    overlay: TextureLayer | None = None
+    frame: ImageFrame
+    edge: Length
+    veil: float = Field(ge=0, le=1)
+    ratios: list[Ratio] = Field(min_length=1, max_length=6)
+
+
+VisualBlend = Literal["screen", "multiply"]
+
+
+class ArtDirectionFluid(Schema):
+    """The half of the token set DTCG has no types for.
+
+    Named `fluid` for the reason it exists — the `dimension` unit restriction —
+    but it carries structure as well as lengths: a texture layer list and an
+    image treatment are not lengths, they are shapes the spec has no concept
+    of, and `$extensions` is the field that exists for exactly that.
+    """
+
+    type: FluidTypeScale
+    rhythm: FluidRhythm
+    texture: list[TextureLayer] = Field(max_length=8)
+    image: ImageTreatment
+    visual_blend: VisualBlend
 
 
 class ContentBudgets(Schema):
@@ -143,23 +475,39 @@ class BrandMapping(Schema):
 
 
 class ArtDirectionExtensions(Schema):
-    """The semantic layer, under one reverse-domain key.
-
-    `fluid` is the largest member and the one that exists because of the
-    `dimension` unit restriction: clamp triples, `ch` measures and `svh` frames
-    are the shape of a responsive type system and none of them are DTCG. Stored
-    as the already-typed objects `web` uses, so nothing is re-modelled on the
-    way through — a second model of a token is a second thing to keep in step.
-    """
+    """The semantic layer, under one reverse-domain key."""
 
     budgets: ContentBudgets
     brand_mapping: BrandMapping
-    default_motion: str = Field(min_length=1)
-    # Kept as opaque-but-validated structure: the authoritative types are the
-    # TypeScript ones the renderer reads, and re-declaring `Rhythm`, `Texture`
-    # and `ImageTreatment` here would be a second definition that drifts. Phase
-    # 03's linter is what walks inside them.
-    fluid: dict[str, object] = Field(default_factory=dict)
+    # A `motion_vocabularies` id. Not a `Literal`, for the same reason
+    # `ArtDirectionId` stops being one in this phase — the vocabularies are
+    # rows from phase 02 onward, and a Literal here would be a second list of
+    # them that goes stale silently. Resolution fails closed.
+    default_motion: str = Field(min_length=1, max_length=64)
+    fluid: ArtDirectionFluid
+
+
+# ---------------------------------------------------------------------------
+# The record, and the reference to it
+# ---------------------------------------------------------------------------
+
+_ID_PATTERN = r"^[a-z][a-z0-9-]*$"
+
+
+class ArtDirectionRef(Schema):
+    """What an `Experience` stores, and what replaces v1's `ArtDirectionId`.
+
+    Not a looser string than the `Literal` it replaces — a *stronger* check,
+    because it is validated against the store and therefore proves the version
+    exists too, which a Literal never could. The compile-time exhaustiveness
+    that a `Record<ArtDirectionId, …>` gave cannot survive a database read, and
+    pretending otherwise is worse than losing it deliberately: an unknown
+    reference is `not_found`, and the page that asked renders its designed
+    empty state rather than an unstyled tree.
+    """
+
+    id: str = Field(min_length=1, max_length=64, pattern=_ID_PATTERN)
+    version: int = Field(ge=1)
 
 
 class ArtDirectionRecord(Schema):
@@ -171,12 +519,13 @@ class ArtDirectionRecord(Schema):
     readable byte for byte.
     """
 
-    id: str = Field(min_length=1, max_length=64, pattern=r"^[a-z][a-z0-9-]*$")
+    id: str = Field(min_length=1, max_length=64, pattern=_ID_PATTERN)
     version: int = Field(ge=1)
     name: str = Field(min_length=1, max_length=120)
     author: Literal["system", "user"]
-    # The DTCG document: a nested group structure of `DtcgToken` leaves. Typed
-    # as a tree rather than a fixed record because that is what a token file
-    # *is*, and because a designer's export will carry groups we did not name.
-    tokens: dict[str, object] = Field(default_factory=dict)
+    tokens: DtcgTokens
     extensions: ArtDirectionExtensions
+
+    @property
+    def ref(self) -> ArtDirectionRef:
+        return ArtDirectionRef(id=self.id, version=self.version)

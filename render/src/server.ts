@@ -16,9 +16,9 @@
 
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 
-import type { ArtDirectionId } from '@/features/art-direction';
-import { ART_DIRECTION_IDS } from '@/features/art-direction';
-import { sceneSchema } from '@/schema';
+import type { ArtDirection, MotionVocabulary } from '@/features/art-direction';
+import { fromRecord } from '@/features/art-direction';
+import { artDirectionRecordSchema, sceneSchema } from '@/schema';
 
 import { withPage } from './browser';
 import { renderDocument } from './render-scene';
@@ -48,14 +48,6 @@ export function assertNoCredentials(env: NodeJS.ProcessEnv = process.env): void 
   }
 }
 
-/** The closed set the schema already declares — this service does not keep a
- * second list of which art directions exist. */
-function isArtDirectionId(value: unknown): value is ArtDirectionId {
-  return (
-    typeof value === 'string' && (ART_DIRECTION_IDS as readonly string[]).includes(value)
-  );
-}
-
 const MAX_BODY_BYTES = 2 * 1024 * 1024;
 const DEFAULT_VIEWPORT = { width: 1280, height: 800 };
 
@@ -75,24 +67,33 @@ async function readBody(req: IncomingMessage): Promise<string> {
 
 interface ScreenshotRequest {
   scenes: unknown;
-  artDirection?: unknown;
+  artDirection: unknown;
   reducedMotion?: unknown;
   viewport?: { width?: unknown; height?: unknown };
 }
 
 /** One parse, at entry, for everything crossing the process boundary — the
- * scene tree through Zod, and the art-direction id against the closed set the
- * schema already declares.
+ * scene tree and the art-direction record, both through the generated Zod
+ * validators.
  *
- * The id rather than a token object, and that is a security choice as much as
- * a convenience: a payload carrying raw tokens is a payload carrying CSS
- * values, which is the injection surface rule 13 exists for. When phase 01
- * brings user-authored art directions, `jobs` will have to send tokens — and
- * they must arrive through the same validator phase 03 builds, never as a
- * trusted blob. */
+ * **The payload carries tokens now, and that is the change phase 01 forced.**
+ * It used to carry an id checked against a closed set, which was the safer
+ * shape while art directions were code: a payload of raw tokens is a payload
+ * of CSS values, which is the injection surface rule 13 exists for. Art
+ * directions became database rows in v2 phase 01 and this service holds no
+ * credential — deliberately, because that is what makes running a browser next
+ * to it safe — so it cannot resolve an id and an id is no longer a reference
+ * to anything it can reach.
+ *
+ * What replaces the closed set is not trust. It is `artDirectionRecordSchema`,
+ * the same generated validator `web` parses the same bytes with, whose every
+ * leaf is a number or a closed union and which has no field a free-form CSS
+ * string could arrive in. Phase 03's linter runs on the parsed result, exactly
+ * as it will for a designer's uploaded token file. */
 function parseRequest(raw: string): {
   scenes: ReturnType<typeof sceneSchema.parse>[];
-  artDirection: ArtDirectionId;
+  artDirection: ArtDirection;
+  motion: MotionVocabulary;
   reducedMotion: boolean;
   viewport: { width: number; height: number };
 } {
@@ -103,10 +104,14 @@ function parseRequest(raw: string): {
   }
   const scenes = body.scenes.map((scene) => sceneSchema.parse(scene));
 
-  const artDirection = body.artDirection ?? ART_DIRECTION_IDS[0];
-  if (!isArtDirectionId(artDirection)) {
-    throw new Error(`unknown art direction: ${String(artDirection)}`);
-  }
+  // Required, with no default. A default art direction would be this service
+  // holding an opinion about how a page looks, which is the one thing it must
+  // not have — and a caller that forgot the field would get a screenshot of
+  // somebody else's design and no indication anything was wrong.
+  const record = artDirectionRecordSchema.parse(body.artDirection);
+  const resolved = fromRecord(record);
+  if (!resolved.ok)
+    throw new Error(`art direction did not resolve: ${resolved.error.code}`);
 
   const width = Number(body.viewport?.width ?? DEFAULT_VIEWPORT.width);
   const height = Number(body.viewport?.height ?? DEFAULT_VIEWPORT.height);
@@ -119,7 +124,8 @@ function parseRequest(raw: string): {
 
   return {
     scenes,
-    artDirection,
+    artDirection: resolved.value.artDirection,
+    motion: resolved.value.motion,
     reducedMotion: body.reducedMotion !== false,
     viewport: { width: clamp(width), height: clamp(height) },
   };
@@ -144,8 +150,8 @@ export interface SceneExtent {
 }
 
 export async function measure(raw: string): Promise<SceneExtent[]> {
-  const { scenes, artDirection, reducedMotion, viewport } = parseRequest(raw);
-  const html = renderDocument(scenes, artDirection, reducedMotion);
+  const { scenes, artDirection, motion, reducedMotion, viewport } = parseRequest(raw);
+  const html = renderDocument(scenes, artDirection, motion, reducedMotion);
   return withPage(viewport, async (page) => {
     await page.setContent(html, { waitUntil: 'domcontentloaded' });
     await page.evaluate(() => document.fonts.ready);
@@ -171,8 +177,8 @@ export async function measure(raw: string): Promise<SceneExtent[]> {
 }
 
 export async function screenshot(raw: string): Promise<Buffer> {
-  const { scenes, artDirection, reducedMotion, viewport } = parseRequest(raw);
-  const html = renderDocument(scenes, artDirection, reducedMotion);
+  const { scenes, artDirection, motion, reducedMotion, viewport } = parseRequest(raw);
+  const html = renderDocument(scenes, artDirection, motion, reducedMotion);
   return withPage(viewport, async (page) => {
     // `setContent` rather than a data: URL or a temp file — no navigation, no
     // origin, nothing on disk. `networkidle` would hang forever on a page that
@@ -201,7 +207,10 @@ export function describeFailure(error: unknown): string {
     const seen = issues
       .slice(0, 5)
       .map((i) => `${i.code ?? 'invalid'} at ${(i.path ?? []).join('.') || '(root)'}`);
-    return `scene tree failed validation: ${[...new Set(seen)].join('; ')}`;
+    // "payload", not "scene tree" — the art-direction record is parsed by the
+    // same validator since phase 01, and naming the wrong half of the body
+    // sends someone hunting through a scene tree that was fine.
+    return `payload failed validation: ${[...new Set(seen)].join('; ')}`;
   }
   // Our own messages are written in this file and name no user data.
   return error instanceof Error ? error.message.slice(0, 200) : 'render failed';
@@ -223,8 +232,20 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
   try {
     const body = await readBody(req);
     if (req.url === '/measure') {
+      // Measured first, then the head — never the other way round. Writing a
+      // 200 before the work that can fail means the `catch` below tries to
+      // write a second set of headers, which throws `ERR_HTTP_HEADERS_SENT`
+      // *outside* the promise and takes the whole process down: one malformed
+      // request is a denial of service on every tenant sharing the service.
+      //
+      // Found by sending a payload with no `artDirection` once phase 01 made
+      // the field required. The ordering was wrong before that too — any parse
+      // failure would have done it — it simply had no reachable trigger while
+      // the field had a default. `/screenshot` below already had it right,
+      // which is what the two lines looking different was telling us.
+      const extents = await measure(body);
       res.writeHead(200, { 'content-type': 'application/json' });
-      res.end(JSON.stringify(await measure(body)));
+      res.end(JSON.stringify(extents));
       return;
     }
     const png = await screenshot(body);

@@ -8,11 +8,7 @@
 
 import { useState } from 'react';
 
-import {
-  ART_DIRECTION_IDS,
-  resolveArtDirection,
-  type ArtDirectionId,
-} from '@/features/art-direction';
+import type { ResolvedRecord } from '@/features/art-direction';
 import { MotionToggle, useMotionPreference } from '@/features/present';
 import { SceneRenderer } from '@/features/renderer';
 import type { Experience } from '@/schema';
@@ -21,15 +17,22 @@ type FixtureName = 'minimal' | 'full' | 'hostile';
 
 export function PrimitivesHarness({
   experiences,
+  artDirections,
 }: {
   experiences: Record<FixtureName, Experience>;
+  /** Resolved on the server and handed down. This is a client component and
+   * art directions are rows since v2 phase 01, so there is nothing here to
+   * resolve them with — which is the boundary working, not a limitation. */
+  artDirections: ResolvedRecord[];
 }) {
   // The art-direction switch, and the reason this harness exists at all now:
   // the same fixture, the same eleven primitives, one string apart. If the two
   // do not look like different products here, art direction #2 failed and no
   // amount of token authoring fixes it (docs/v1/spec.md, Risk 4).
-  const [adId, setAdId] = useState<ArtDirectionId>('cinematic-dark');
-  const { artDirection, motion } = resolveArtDirection(adId);
+  const [adId, setAdId] = useState<string>(artDirections[0]?.artDirection.id ?? '');
+  const selected = artDirections.find((r) => r.artDirection.id === adId);
+  if (selected === undefined) throw new Error(`primitives: no art direction ${adId}`);
+  const { artDirection, motion } = selected;
   const { vocabulary, reduced, toggle } = useMotionPreference(motion);
   const [dir, setDir] = useState<'ltr' | 'rtl'>('ltr');
   const [fixture, setFixture] = useState<FixtureName>('full');
@@ -58,9 +61,9 @@ export function PrimitivesHarness({
           </button>
         ))}
         <span style={{ marginInlineStart: 'auto' }} />
-        {ART_DIRECTION_IDS.map((id) => (
-          <button key={id} onClick={() => setAdId(id)} disabled={adId === id}>
-            {id}
+        {artDirections.map(({ artDirection: ad }) => (
+          <button key={ad.id} onClick={() => setAdId(ad.id)} disabled={adId === ad.id}>
+            {ad.id}
           </button>
         ))}
         <button onClick={() => setDir(dir === 'ltr' ? 'rtl' : 'ltr')}>dir: {dir}</button>

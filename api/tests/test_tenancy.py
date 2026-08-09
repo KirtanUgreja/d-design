@@ -102,29 +102,48 @@ async def test_with_check_blocks_writing_a_row_owned_by_someone_else() -> None:
 
 # --- v2 phase 00: the token tables ------------------------------------------
 
+# `{}` for every jsonb group. These rows exist to be *seen or not seen*, and a
+# real token set would be several hundred lines of values that no assertion here
+# reads — `tests/test_art_direction_seed.py` is where the shape is checked.
+#
+# Written out twice rather than composed from a shared f-string: the two differ
+# by one column's value, and building SQL by interpolation here would be the
+# one pattern this file exists to argue against, even where every part is a
+# literal.
 SYSTEM_AD = text(
     "insert into art_directions "
-    "(id, version, name, author, tokens, budgets, brand_mapping, default_motion, owner_id) "
-    "values (:id, 1, :id, 'system', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, 'cinematic', null)"
+    "(id, version, name, author, tokens, budgets, brand_mapping, default_motion, "
+    "fluid, owner_id) "
+    "values (:id, 1, :id, 'system', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, "
+    "'cinematic', '{}'::jsonb, null)"
 )
 USER_AD = text(
     "insert into art_directions "
-    "(id, version, name, author, tokens, budgets, brand_mapping, default_motion, owner_id) "
-    "values (:id, 1, :id, 'user', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, 'cinematic', :owner)"
+    "(id, version, name, author, tokens, budgets, brand_mapping, default_motion, "
+    "fluid, owner_id) "
+    "values (:id, 1, :id, 'user', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, "
+    "'cinematic', '{}'::jsonb, :owner)"
 )
+
+# The three rows this fixture owns. Named, because migration 0011 seeds
+# `cinematic-dark` and `editorial-light` into the same table and a blanket
+# `delete from art_directions` would take them with it — leaving a database
+# where every page renders unstyled and nothing points at the test that did it.
+_TEST_ADS = ("system-one", "a-owns-this", "b-owns-this")
+_DELETE_TEST_ADS = text("delete from art_directions where id = any(:ids)")
 
 
 @pytest.fixture
 async def seeded_art_directions() -> AsyncIterator[None]:
     engine = create_async_engine(os.environ["MIGRATION_DATABASE_URL"])
     async with engine.begin() as conn:
-        await conn.execute(text("delete from art_directions"))
+        await conn.execute(_DELETE_TEST_ADS, {"ids": list(_TEST_ADS)})
         await conn.execute(SYSTEM_AD, {"id": "system-one"})
         await conn.execute(USER_AD, {"id": "a-owns-this", "owner": USER_A})
         await conn.execute(USER_AD, {"id": "b-owns-this", "owner": USER_B})
     yield
     async with engine.begin() as conn:
-        await conn.execute(text("delete from art_directions"))
+        await conn.execute(_DELETE_TEST_ADS, {"ids": list(_TEST_ADS)})
     await engine.dispose()
 
 
@@ -148,7 +167,10 @@ async def test_a_user_art_direction_is_readable_only_by_its_owner(
         visible = set(
             (await session.execute(text("select id from art_directions"))).scalars()
         )
-    assert visible == {"system-one", "a-owns-this"}
+    # A subset assertion rather than an equality one: the seeded system art
+    # directions are visible here too, and correctly so — that is the read
+    # policy working, not noise to be deleted around.
+    assert {"system-one", "a-owns-this"} <= visible
     assert "b-owns-this" not in visible
 
 

@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 
 import { AssetList, listAssets, uploadAsset } from '@/features/assets';
 import { BrandKitForm, loadBrand, saveBrand } from '@/features/brand';
+import type { ArtDirection } from '@/features/art-direction';
 import type { Asset, BrandKit } from '@/schema';
 
 /** What a brand kit looks like before anyone has set one. Not persisted until
@@ -31,7 +32,7 @@ const BLANK: BrandKit = {
   logoAssetId: null,
 };
 
-export function BrandScreen() {
+export function BrandScreen({ artDirections }: { artDirections: ArtDirection[] }) {
   const [kit, setKit] = useState<BrandKit>(BLANK);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [saving, setSaving] = useState(false);
@@ -74,6 +75,7 @@ export function BrandScreen() {
   return (
     <main className="min-h-screen space-y-10 bg-neutral-950 px-6 py-12 text-neutral-100">
       <BrandKitForm
+        artDirections={artDirections}
         kit={kit}
         onChange={setKit}
         onSave={() => void persist()}

@@ -6,7 +6,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 
-import { resolveArtDirection, type ArtDirectionId } from '@/features/art-direction';
+import type { ArtDirection, MotionVocabulary } from '@/features/art-direction';
 import {
   Canvas,
   ElementPrompt,
@@ -23,16 +23,20 @@ import { PublishBar } from './publish-bar';
 export function EditorScreen({
   experienceId,
   title,
-  artDirectionId,
+  artDirection,
+  motion,
   initialScenes,
   stored,
 }: {
   experienceId: string;
   title: string;
-  /** The experience's own art direction. What-you-edit-is-what-you-ship means
-   * the canvas renders the direction the artifact will publish under, not the
-   * one this component happens to import. */
-  artDirectionId: ArtDirectionId;
+  /** The experience's own art direction, already resolved. What-you-edit-is-
+   * what-you-ship means the canvas renders the direction the artifact will
+   * publish under, not the one this component happens to import — and since
+   * v2 phase 01 that direction is a database row, so it is resolved on the
+   * server and handed down rather than looked up here. */
+  artDirection: ArtDirection;
+  motion: MotionVocabulary;
   initialScenes: Scene[];
   /** False when this is the phase 01 fixture rather than a stored experience —
    * see the route. Publishing something `api` has never heard of cannot work,
@@ -114,8 +118,6 @@ export function EditorScreen({
     },
     [runEdit],
   );
-
-  const { artDirection, motion } = resolveArtDirection(artDirectionId);
 
   const [publishing, setPublishing] = useState(false);
   const [revealed, setRevealed] = useState(false);

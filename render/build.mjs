@@ -11,6 +11,7 @@
 // service import the renderer rather than copy it.
 
 import { build } from 'esbuild';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const webSrc = fileURLToPath(new URL('../web/src', import.meta.url));
@@ -28,10 +29,22 @@ await build({
   // own install path; bundling it would break both. React stays external for
   // the ordinary reason — one copy, resolved by Node.
   external: ['playwright', 'react', 'react-dom', 'react-dom/server'],
-  alias: { '@': webSrc },
-  // `server-only` is a build-time marker for Next; outside Next it is a module
-  // that throws on import. The renderer's data modules are not in this bundle,
-  // but anything that transitively touches the marker would be.
+  alias: {
+    '@': webSrc,
+    // `server-only` is a build-time marker for Next; outside Next it is a
+    // module that *throws on import*, and the package ships `empty.js` for
+    // exactly the environment this is — its own export map resolves to that
+    // file under the `react-server` condition.
+    //
+    // It became load-bearing in v2 phase 01. `art-direction.data.ts` reads the
+    // art-direction store and carries the marker like every other data module,
+    // and this bundle reaches the feature's index to get `fromRecord` and
+    // `toCssVars`. The marker's job is to stop a *client bundle* importing a
+    // data module; this service has no client bundle, and the module it guards
+    // is never called here — `render` receives validated tokens on the wire
+    // precisely because it holds no credential to read a store with.
+    'server-only': join(webSrc, '..', 'node_modules', 'server-only', 'empty.js'),
+  },
   define: { 'process.env.NODE_ENV': '"production"' },
   logLevel: 'info',
 });

@@ -13,7 +13,7 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, func, text
+from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, Text, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -84,6 +84,40 @@ class Experience(Base):
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ArtDirection(Base):
+    """`(id, version)`, and the version is part of the identity rather than an
+    audit column — a published page is pinned to one, so updating an art
+    direction inserts a row and the old one stays readable byte for byte.
+
+    `owner_id` is nullable and the nullability is load-bearing: `null` means a
+    system art direction, readable by everyone and writable through the tenant
+    wrapper by nobody. See migration 0008 for the two policies that make that
+    true, and why they are two rather than one.
+
+    One `jsonb` per token group, written and read whole. `fluid` is the group
+    migration 0008 could not name because the format did not exist yet; 0011
+    adds it beside the other three rather than folding all four into a single
+    `extensions` column, so a query that wants budgets does not have to walk
+    past a texture list to reach them.
+    """
+
+    __tablename__ = "art_directions"
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
+    author: Mapped[str] = mapped_column(Text)
+    tokens: Mapped[dict[str, object]] = mapped_column(JSONB)
+    budgets: Mapped[dict[str, object]] = mapped_column(JSONB)
+    brand_mapping: Mapped[dict[str, object]] = mapped_column(JSONB)
+    default_motion: Mapped[str] = mapped_column(Text)
+    fluid: Mapped[dict[str, object]] = mapped_column(JSONB)
+    owner_id: Mapped[UUID | None] = mapped_column(index=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
     )
 
 

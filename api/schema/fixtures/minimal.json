@@ -3,7 +3,7 @@
   "title": "Minimal Experience",
   "mode": "scroll",
   "brandId": "brand-1",
-  "artDirection": "cinematic-dark",
+  "artDirection": { "id": "cinematic-dark", "version": 1 },
   "scenes": [
     {
       "id": "s1",

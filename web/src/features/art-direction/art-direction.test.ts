@@ -7,18 +7,45 @@ import type { BrandKit } from '@/schema';
 
 import type { ArtDirection, Texture, TypeRoleKey } from './art-direction';
 import { FONT_REGISTRY, LAYOUTS, px } from './art-direction';
-import { CINEMATIC_DARK, TYPE_SCALE } from './cinematic-dark';
-import { EDITORIAL_LIGHT } from './editorial-light';
 import { contrastRatio, relativeLuminance } from './color';
+import { fromRecord } from './from-record';
 import {
   CINEMATIC_MOTION,
   EDITORIAL_MOTION,
   REDUCED_MOTION,
   staggerDelayMs,
 } from './motion-vocabulary';
-import { ART_DIRECTION_IDS, resolveArtDirection } from './resolve-art-direction';
 import { resolveBrand } from './resolve-brand';
+import { seededRecord, seededRecords } from './seeded-records';
 import { fromCssVars, toCssVars } from './to-css-vars';
+
+// The two art directions, resolved from the seeded records rather than
+// imported as constants — because as of v2 phase 01 there are no constants.
+// `seededRecords()` reads the checked-in fixture that
+// `api/features/art_direction/seed.py` generates and migration 0011 seeds the
+// database from, so what these tests assert about is what a page renders with.
+function resolved(id: string): ArtDirection {
+  const result = fromRecord(seededRecord(id));
+  if (!result.ok) throw new Error(`${id}: ${result.error.message}`);
+  return result.value.artDirection;
+}
+
+// Same directory the schema fixtures live in, reached the same way
+// `src/schema/schema.test.ts` reaches them.
+const FIXTURES = join(
+  import.meta.dirname,
+  '..',
+  '..',
+  '..',
+  '..',
+  'api',
+  'schema',
+  'fixtures',
+);
+
+const CINEMATIC_DARK = resolved('cinematic-dark');
+const EDITORIAL_LIGHT = resolved('editorial-light');
+const TYPE_SCALE = CINEMATIC_DARK.type;
 
 // ---------------------------------------------------------------------------
 // Tokens
@@ -55,9 +82,18 @@ describe('no token is typed as a bare string', () => {
         ? { [K in keyof T]: NoBareString<T[K]> }
         : T;
 
-  it('ArtDirection contains no bare-string leaf (compile-time)', () => {
-    const assertion: NoBareString<ArtDirection> = CINEMATIC_DARK;
-    expectTypeOf(assertion).toEqualTypeOf<NoBareString<ArtDirection>>();
+  // Every token group, and `id` is deliberately not one of them. It was a
+  // two-value literal union until v2 phase 01 and is now a `string`, because
+  // art directions are rows and a union cannot enumerate rows — but an id is a
+  // name, not a token: nothing reads it to decide how anything looks, and
+  // `to-css-vars.ts` never emits it. Excluding it here rather than weakening
+  // the check is what keeps the test saying what it says.
+  type Tokens = Omit<ArtDirection, 'id'>;
+
+  it('ArtDirection contains no bare-string leaf, id aside (compile-time)', () => {
+    const { id: _id, ...tokens } = CINEMATIC_DARK;
+    const assertion: NoBareString<Tokens> = tokens;
+    expectTypeOf(assertion).toEqualTypeOf<NoBareString<Tokens>>();
   });
 });
 
@@ -530,17 +566,100 @@ describe('editorial-light', () => {
   });
 });
 
-describe('resolveArtDirection', () => {
-  it('answers for every id the schema allows', () => {
-    for (const id of ART_DIRECTION_IDS) {
-      const resolved = resolveArtDirection(id);
-      expect(resolved.artDirection.id).toBe(id);
-      expect(resolved.motion.intents.reveal.durationMs).toBeGreaterThan(0);
+// ---------------------------------------------------------------------------
+// The v2 format, and the migration's only real assertion.
+//
+// "A format migration that changes a pixel has changed a design."
+// docs/v2/plan/01-ad-format.md -> Verify.
+// ---------------------------------------------------------------------------
+
+describe('the v2 record renders what the v1 constants rendered', () => {
+  // The CSS-variable maps the deleted `cinematic-dark.ts` and
+  // `editorial-light.ts` emitted, captured at the moment they were deleted.
+  //
+  // A snapshot rather than a live comparison, because the thing being compared
+  // against no longer exists — and that is the honest durable form of the
+  // claim. The alternative was keeping the constants around solely to be
+  // compared against, which is two sources of truth kept alive by a test.
+  const V1_CSS = JSON.parse(
+    readFileSync(join(FIXTURES, 'art_direction_css_v1.json'), 'utf8'),
+  ) as Record<string, Record<string, string>>;
+
+  for (const id of ['cinematic-dark', 'editorial-light']) {
+    it(`${id} emits byte-identical custom properties`, () => {
+      expect(toCssVars(resolved(id))).toEqual(V1_CSS[id]);
+    });
+  }
+});
+
+describe('fromRecord', () => {
+  it('resolves every seeded record, and pairs each with its own motion', () => {
+    const byId = new Map(
+      seededRecords().map((record) => {
+        const result = fromRecord(record);
+        if (!result.ok) throw new Error(`${record.id}: ${result.error.message}`);
+        return [record.id, result.value];
+      }),
+    );
+    expect(byId.get('cinematic-dark')?.motion).toBe(CINEMATIC_MOTION);
+    expect(byId.get('editorial-light')?.motion).toBe(EDITORIAL_MOTION);
+    for (const [id, resolvedRecord] of byId) {
+      expect(resolvedRecord.artDirection.id).toBe(id);
     }
   });
 
-  it('pairs each direction with its own motion, not a shared default', () => {
-    expect(resolveArtDirection('cinematic-dark').motion).toBe(CINEMATIC_MOTION);
-    expect(resolveArtDirection('editorial-light').motion).toBe(EDITORIAL_MOTION);
+  it('fails closed on a font family the registry does not have', () => {
+    // The control that keeps a free-text font family out of a stylesheet. A
+    // fallback here would publish a page in the wrong typeface and report
+    // success; a pass-through would be a CSS injection with a friendly label.
+    const record = seededRecord('cinematic-dark');
+    const forged = {
+      ...record,
+      tokens: {
+        ...record.tokens,
+        font: {
+          ...record.tokens.font,
+          display: { ...record.tokens.font.display, $value: 'Comic Sans MS' },
+        },
+      },
+    };
+    const result = fromRecord(forged);
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe('invalid_input');
+  });
+
+  it('fails closed on a motion vocabulary that names nothing', () => {
+    const record = seededRecord('editorial-light');
+    const result = fromRecord({
+      ...record,
+      extensions: { ...record.extensions, defaultMotion: 'interpretive-dance' },
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it('does not carry the optional hex fallback into the resolved colour', () => {
+    // `components` is authoritative and `hex` is the spec's optional fallback.
+    // Re-parsing the fallback would make a lossy serialization the source of a
+    // number the contrast maths depends on, so this proves the components are
+    // what is read: a record whose hex disagrees with its components resolves
+    // to the components.
+    const record = seededRecord('cinematic-dark');
+    const lying = {
+      ...record,
+      tokens: {
+        ...record.tokens,
+        color: {
+          ...record.tokens.color,
+          bg: {
+            ...record.tokens.color.bg,
+            $value: { ...record.tokens.color.bg.$value, hex: '#ffffff' },
+          },
+        },
+      },
+    };
+    const result = fromRecord(lying);
+    expect(result.ok).toBe(true);
+    if (result.ok)
+      expect(result.value.artDirection.color.bg).toEqual(CINEMATIC_DARK.color.bg);
   });
 });

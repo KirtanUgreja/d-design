@@ -4,11 +4,7 @@
 
 **Depends on:** [00](00-foundations.md) · **Blocks:** [02](02-motion-axis.md), [03](03-ad-linter.md), [04](04-three-art-directions.md) · **Spec step:** 1
 
-> **In progress. The format is defined; nothing has migrated yet.** Started 2026-08-09 and deliberately checkpointed part-way, because the bad state for this phase is a *half-migrated* token layer — every other phase reads it — and stopping at a boundary where nothing has moved is safe in a way stopping half-way through the move is not.
->
-> **Done:** `api/schema/art_direction.py` — the v2 record, registered in `EXPORTED`, Zod regenerated, gate green.
->
-> **Not started:** the DTCG converter, seeding both art directions, the equality proof, and the `resolveArtDirection` switch. Picking it up is the "Where to resume" section at the bottom, which is written for someone arriving cold.
+> **Done, 2026-08-09.** Both art directions are rows in `art_directions`, seeded by migration 0011, and the TypeScript constants are deleted. `cinematic-dark` and `editorial-light` each emit a **byte-identical** CSS-variable map to the one their v1 constants emitted — the migration's only real assertion, and it holds. What the phase found on the way is in "What actually happened" below the exit gate.
 
 ---
 
@@ -119,26 +115,26 @@ In v1 it is `Record<ArtDirectionId, …>`, which makes a missing art direction a
 
 **The format**
 
-- [ ] `cinematic-dark` and `editorial-light` both round-trip: record → `toCssVars` → `fromCssVars` → the same record. The v1 round-trip test extends rather than being replaced
-- [ ] Both render byte-identically to their v1 constants. **This is the migration's only real assertion** — a format migration that changes a pixel has changed a design
-- [ ] No token is typed as a bare `string`. The v1 type-level test walks the new record and still passes
-- [ ] The DTCG primitive layer validates against the published DTCG schema for its declared types
-- [ ] `$extensions` holds budgets, brand mapping and default motion, and the DTCG layer holds none of them
+- [x] `cinematic-dark` and `editorial-light` both round-trip: record → `toCssVars` → `fromCssVars` → the same record. The v1 round-trip test extends rather than being replaced
+- [x] Both render byte-identically to their v1 constants. **This is the migration's only real assertion** — a format migration that changes a pixel has changed a design. Both were identical on the first run
+- [x] No token is typed as a bare `string`. The v1 type-level test walks the new record and still passes — with `id` excluded, which is a name and not a token, and the exclusion is written down rather than the check weakened
+- [x] The DTCG primitive layer validates against the published DTCG schema for its declared types — one class per `$type`, so a token whose value does not match its type has no representation
+- [x] `$extensions` holds budgets, brand mapping and default motion, and the DTCG layer holds none of them — asserted by walking the emitted document, not by reading it
 
 **Persistence**
 
-- [ ] Inserting `cinematic-dark` v2 leaves v1 readable and unchanged
-- [ ] An experience pinned to `{cinematic-dark, 1}` still resolves after v2 exists
-- [ ] An unknown `{id, version}` returns `not_found`, and the page renders its empty state rather than throwing
+- [x] Inserting `cinematic-dark` v2 leaves v1 readable and unchanged — `(id, version)` is the key, and `find` puts both halves in the `where`. Looking up by id and taking the newest is v2 rule 15's failure mode arriving as a convenience
+- [x] An experience pinned to `{cinematic-dark, 1}` still resolves after v2 exists
+- [x] An unknown `{id, version}` returns `not_found`, and the page renders its empty state rather than throwing — 404 from the route, `notFound()` from the pages
 
 **Security** ([../../security/testing.md](../../security/testing.md))
 
-- [ ] A user cannot write a row with `owner_id is null` through the tenant wrapper. System art directions are seeded by migration, not by the API
-- [ ] An uploaded DTCG file gets one Zod parse at entry and is rejected on shape before anything reads a value from it
+- [x] A user cannot write a row with `owner_id is null` through the tenant wrapper. System art directions are seeded by migration, not by the API — the four `art_directions` tenancy tests from phase 00 cover it, and this phase kept them honest: their fixture used to `delete from art_directions` wholesale, which would now take the seeded rows with it
+- [x] An uploaded DTCG file gets one Zod parse at entry and is rejected on shape before anything reads a value from it — `from_document` parses whole or fails whole. There is no upload *route* yet, deliberately: a write path that exists before the feature does is an attack surface with no user
 
 **Human**
 
-- [ ] Put v1's `cinematic-dark` and the migrated one side by side on `/dev/primitives` and look. "Byte-identical CSS variables" and "looks the same" are different claims and only one of them is tested above
+- [x] Put v1's `cinematic-dark` and the migrated one side by side on `/dev/primitives` and look. "Byte-identical CSS variables" and "looks the same" are different claims and only one of them is tested above
 
 ---
 
@@ -178,25 +174,56 @@ That is a smaller DTCG surface than this phase's sketch implies. It is also the 
 
 ---
 
-## Where to resume
+## What was built
 
-Written for someone arriving with no memory of the session that started this.
-
-**1. The converter — `api/features/art_direction/dtcg.py`.** v1's TypeScript constants are the source values. The converter takes a palette/type/rhythm/texture set and emits the DTCG document plus the `$extensions` payload. There is no automated path from the TS constants to Python: they are hand-transcribed once, which is exactly why step 3 exists.
-
-**2. Seed both art directions — a migration, not a script.** `art_directions` already exists (0008) with `(id, version)` as the primary key and `owner_id is null` meaning system. Seeding runs as the migration role, which is the only way a system row can be written at all — the RLS policy makes `owner_id is null` unwritable through `as_user()`, deliberately.
-
-**3. The equality proof, and it is the phase's only real assertion.** *"A format migration that changes a pixel has changed a design."* The pattern this repo already uses for a cross-language invariant is one shared fixture with a test on each side — see `api/tests/test_visual_seed.py` and `renderer.test.ts` agreeing on FNV-1a. Do that here: the stored record and `toCssVars(CINEMATIC_DARK)` must emit an identical CSS-variable map, asserted from both languages against one fixture. Until that exists there are two sources of truth for the same tokens, which is the state this phase must not be left in.
-
-**4. Only then, the switch.** `resolveArtDirection` becomes a store read returning a `Result`, the TypeScript constants are deleted, and `ArtDirectionId` stops being a `Literal`. Note the consequence the phase file does not: **`render` resolves by id today and holds no credential**, so it cannot read the store — its payload has to become validated tokens. That is written up in [15](15-images.md)'s `/measure` and `/screenshot` notes and is the widest-blast-radius part of this phase.
+```
+api/schema/art_direction.py             the format. DTCG tokens + $extensions, both typed
+api/features/art_direction/
+  __init__.py                           load_art_direction, list_art_directions
+  art_direction_data.py                 SQLAlchemy, art_directions only
+  dtcg.py                               token constructors, and the interchange document
+  seed.py                               both art directions, transcribed from the v1 constants
+api/migrations/versions/0011_…          the `fluid` column, and the two system rows
+api/routes/art_directions.py            read-only. There is no POST
+web/src/features/art-direction/
+  from-record.ts                        record -> ArtDirection. The seam that replaced the constants
+  art-direction.data.ts                 the store read. server-only, returns a Result
+  seeded-records.ts                     the seed fixture off disk, for harnesses and tests
+  server.ts                             the server half of the public surface
+  (deleted) cinematic-dark.ts, editorial-light.ts, resolve-art-direction.ts
+```
 
 ---
 
 ## Exit gate
 
-- [ ] Both existing art directions live in the v2 format, in the database, and render identically to v1
-- [ ] The primitive layer is DTCG; budgets, brand mapping and default motion are in `$extensions`
-- [ ] `to-css-vars.ts` is still the only place a token becomes a string
-- [ ] Brand derivation happens in CSS via `color-mix` / relative OKLCH, not in JavaScript
-- [ ] `{ id, version }` resolves through the store, and an unknown reference fails closed
-- [ ] The gate is green
+- [x] Both existing art directions live in the v2 format, in the database, and render identically to v1 — asserted from both languages against `art_direction_css_v1.json`, and looked at on `/dev/primitives`
+- [x] The primitive layer is DTCG; budgets, brand mapping and default motion are in `$extensions`
+- [x] `to-css-vars.ts` is still the only place a token becomes a string — unchanged by this phase
+- [ ] **Not done — brand derivation is still JavaScript.** `resolveBrand`'s HSL walk is untouched. See below
+- [x] `{ id, version }` resolves through the store, and an unknown reference fails closed
+- [x] The gate is green
+
+---
+
+## What actually happened
+
+**The equality proof needed a different shape than the phase describes.** It asks for the record and `toCssVars(CINEMATIC_DARK)` to be compared — but step 4 deletes `CINEMATIC_DARK`, so the two halves of that assertion cannot both exist at the end of the phase. Keeping the constants alive purely to be compared against would be two sources of truth maintained by a test.
+
+So the comparison was made *at the moment of deletion* and pinned: `api/schema/fixtures/art_direction_css_v1.json` is the exact CSS-variable map each v1 constant emitted, generated from the files as they were, and `art-direction.test.ts` asserts the migrated records still emit it. Both directions came out identical on the first run, which was the useful outcome — the transcription had nowhere to hide.
+
+**The fluid layer had to be typed in Python after all.** The checkpoint commit that opened this phase left it as `dict[str, object]`, reasoning that re-declaring `Rhythm`, `Texture` and `ImageTreatment` would be a second definition that drifts. That was right while the TypeScript constants were the source of truth and stopped being right at the step that deletes them: there is nothing left to drift *against*, and an opaque dict generates as `z.record(z.unknown())`, which would have made `from-record.ts` a pile of unchecked casts between the database and every published page. Typed, it is a total mapping the compiler checks in both directions.
+
+**The art-direction feature needed two entry points, and the rule says one.** `docs/coderules/structure.md` allows one barrel per feature. The renderer is a client component and imports this feature's types and `toCssVars`; the store read is a data module carrying `import 'server-only'`, whose entire job is to be a build error inside a client bundle. One barrel exporting both makes that error fire on the renderer — the marker working exactly as designed, reporting that the surface is two things. The split is `index.ts` (pure) and `server.ts` (the reads), the lint rule gained a documented exception, and each half is still a single declared surface with nothing reachable around it.
+
+**`render` takes tokens now, and that is a real widening of its input.** It resolved an id against a closed set, which was the safer shape while art directions were code. It holds no credential — deliberately, because that is what makes running a browser next to it safe — so it cannot read the store and an id no longer references anything it can reach. What replaces the closed set is `artDirectionRecordSchema`: the same generated validator `web` parses the same bytes with, every leaf a number or a closed union, with no field a free-form CSS string can arrive in. Phase [03](03-ad-linter.md)'s linter runs on the parsed result, exactly as it will for a designer's uploaded token file.
+
+**One bug, found by the new required field.** `/measure` wrote its `200` header *before* awaiting the work that could fail, so a parse failure made the `catch` write a second set of headers — `ERR_HTTP_HEADERS_SENT`, thrown outside the promise, taking the whole process down. One malformed request was a denial of service on every tenant sharing the service. The ordering was wrong before this phase too; making `artDirection` required is simply what first gave it a reachable trigger. `/screenshot`, four lines below, already had it right.
+
+### Deferred, and named rather than quietly dropped
+
+**Brand derivation in CSS.** The phase asks for `color-mix()` and relative OKLCH to replace `resolveBrand`'s JavaScript. It is not done, and it does not belong in this phase: it changes what a brand colour *resolves to*, which is a design change, and this phase's one assertion is that no pixel moved. Doing both at once is two changes wearing one commit message — the same reason the v1 character caps became both directions' budgets unaltered.
+
+It is also cheaper after phase [07](07-reskin.md), which is where its real payoff is: swapping `--brand-primary` inside a View Transition with no JS pass. **Trigger: phase 07**, and the note belongs there.
+
+**A `contrastStrategy` that does anything.** The field is stored and defaults to `'auto'`; `resolveBrand` still picks its direction from the ground's own luminance and never reads the token. That is the correct behaviour today, and the field exists so an art direction can override it — the first one that wants to is phase [04](04-three-art-directions.md)'s `bold-brutalist`.
