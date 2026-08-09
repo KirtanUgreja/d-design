@@ -27,7 +27,7 @@ def _to_schema(row: ExperienceRow) -> Experience:
         title=row.title,
         mode=cast(Mode, row.mode),
         brand_id=row.brand_id,
-        art_direction=cast(ArtDirectionId, row.art_direction),
+        art_direction=cast(ArtDirectionId, publish_data.ad_id(row.art_direction)),
         scenes=row.scenes,  # type: ignore[arg-type]  # validated on the way in; re-validated here on the way out
         meta=ExperienceMeta(
             created_at=row.created_at.isoformat(),

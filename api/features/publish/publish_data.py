@@ -31,6 +31,39 @@ async def find_published_by_id(
     return (await session.execute(stmt)).scalar_one_or_none()
 
 
+# Everything that exists is version 1 until phase 01 starts inserting second
+# rows into `art_directions`. A literal rather than a lookup, deliberately:
+# a lookup here would be this module deciding which version an experience gets,
+# which is a product decision and belongs to the phase that adds the picker.
+_CURRENT_AD_VERSION = 1
+
+
+def ad_ref(art_direction: str) -> dict[str, object]:
+    """`ArtDirectionId` -> the stored reference."""
+    return {"id": art_direction, "version": _CURRENT_AD_VERSION}
+
+
+def ad_id(ref: dict[str, object]) -> str:
+    """The stored reference -> `ArtDirectionId`.
+
+    Raises rather than returning a `Result`: migration 0010 converted every
+    existing row and the column has been written through `ad_ref` ever since,
+    so a reference with no `id` is a bug in this process, not an expected
+    failure of an external boundary (rule 3).
+
+    An earlier draft also accepted a bare string, for a database restored from
+    a pre-0010 dump. mypy pointed out the branch was unreachable — the column
+    is typed as an object — and it was right in a way worth keeping: a dump
+    that old also predates the `motion_vocabulary` column, so it would fail
+    long before reaching here. Defensive code for a case that cannot arrive is
+    a comment that looks like a control.
+    """
+    value = ref.get("id")
+    if not isinstance(value, str):
+        raise ValueError(f"art_direction reference has no id: {ref!r}")
+    return value
+
+
 async def create(
     session: AsyncSession,
     *,
@@ -65,7 +98,7 @@ async def create(
         title=title,
         mode=mode,
         brand_id=brand_id,
-        art_direction=art_direction,
+        art_direction=ad_ref(art_direction),
         scenes=scenes,
     )
     session.add(row)
@@ -89,7 +122,7 @@ async def replace(
     row.title = title
     row.mode = mode
     row.brand_id = brand_id
-    row.art_direction = art_direction
+    row.art_direction = ad_ref(art_direction)
     row.scenes = scenes
     await session.flush()
     return row

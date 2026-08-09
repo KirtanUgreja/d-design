@@ -19,9 +19,13 @@ from db.tenant import as_user
 USER_A = "00000000-0000-4000-8000-00000000000a"
 USER_B = "00000000-0000-4000-8000-00000000000b"
 
+# `art_direction` is jsonb from migration 0010 — a bare `'cinematic-dark'` is
+# not valid JSON and the insert fails outright, which is the type change doing
+# its job rather than a test being fragile.
 INSERT = text(
     "insert into experiences (owner_id, title, mode, art_direction, scenes) "
-    "values (:owner, :title, 'scroll', 'cinematic-dark', '[]'::jsonb)"
+    "values (:owner, :title, 'scroll', "
+    '\'{"id": "cinematic-dark", "version": 1}\'::jsonb, \'[]\'::jsonb)'
 )
 
 
@@ -94,3 +98,109 @@ async def test_with_check_blocks_writing_a_row_owned_by_someone_else() -> None:
     with pytest.raises(DBAPIError):
         async with as_user(USER_A) as session:
             await session.execute(INSERT, {"owner": USER_B, "title": "smuggled"})
+
+
+# --- v2 phase 00: the token tables ------------------------------------------
+
+SYSTEM_AD = text(
+    "insert into art_directions "
+    "(id, version, name, author, tokens, budgets, brand_mapping, default_motion, owner_id) "
+    "values (:id, 1, :id, 'system', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, 'cinematic', null)"
+)
+USER_AD = text(
+    "insert into art_directions "
+    "(id, version, name, author, tokens, budgets, brand_mapping, default_motion, owner_id) "
+    "values (:id, 1, :id, 'user', '{}'::jsonb, '{}'::jsonb, '{}'::jsonb, 'cinematic', :owner)"
+)
+
+
+@pytest.fixture
+async def seeded_art_directions() -> AsyncIterator[None]:
+    engine = create_async_engine(os.environ["MIGRATION_DATABASE_URL"])
+    async with engine.begin() as conn:
+        await conn.execute(text("delete from art_directions"))
+        await conn.execute(SYSTEM_AD, {"id": "system-one"})
+        await conn.execute(USER_AD, {"id": "a-owns-this", "owner": USER_A})
+        await conn.execute(USER_AD, {"id": "b-owns-this", "owner": USER_B})
+    yield
+    async with engine.begin() as conn:
+        await conn.execute(text("delete from art_directions"))
+    await engine.dispose()
+
+
+async def test_a_system_art_direction_is_readable_by_everyone(
+    seeded_art_directions: None,
+) -> None:
+    """`owner_id is null` means system, and that nullability is the whole
+    mechanism — one column doing what a second table would otherwise do."""
+    for user in (USER_A, USER_B):
+        async with as_user(user) as session:
+            rows = (
+                await session.execute(text("select id from art_directions order by id"))
+            ).scalars()
+            assert "system-one" in set(rows)
+
+
+async def test_a_user_art_direction_is_readable_only_by_its_owner(
+    seeded_art_directions: None,
+) -> None:
+    async with as_user(USER_A) as session:
+        visible = set(
+            (await session.execute(text("select id from art_directions"))).scalars()
+        )
+    assert visible == {"system-one", "a-owns-this"}
+    assert "b-owns-this" not in visible
+
+
+async def test_a_tenant_cannot_write_a_system_art_direction(
+    seeded_art_directions: None,
+) -> None:
+    """The half that is easy to lose. Reading a system art direction is for
+    everybody; writing one is for nobody — a tenant that could insert
+    `owner_id = null` would be publishing an art direction to every other
+    account on the platform.
+
+    This is why the read and write policies are separate rather than one
+    `for all`: folding them together makes `with check` accept the `is null`
+    arm along with the read.
+    """
+    async with as_user(USER_A) as session:
+        with pytest.raises(DBAPIError):
+            await session.execute(SYSTEM_AD, {"id": "smuggled"})
+
+
+async def test_a_tenant_cannot_write_another_tenants_art_direction(
+    seeded_art_directions: None,
+) -> None:
+    async with as_user(USER_A) as session:
+        with pytest.raises(DBAPIError):
+            await session.execute(USER_AD, {"id": "forged", "owner": USER_B})
+
+
+async def test_snapshots_are_isolated_like_every_other_tenant_table(
+    two_owners: None,
+) -> None:
+    insert = text(
+        "insert into snapshots "
+        "(experience_id, owner_id, scenes, art_direction, motion_vocabulary, mode, trigger) "
+        "select id, owner_id, '[]'::jsonb, "
+        "'{\"id\": \"cinematic-dark\", \"version\": 1}'::jsonb, 'cinematic', 'scroll', 'edit' "
+        "from experiences where owner_id = :owner"
+    )
+    engine = create_async_engine(os.environ["MIGRATION_DATABASE_URL"])
+    async with engine.begin() as conn:
+        await conn.execute(text("delete from snapshots"))
+        await conn.execute(insert, {"owner": USER_A})
+        await conn.execute(insert, {"owner": USER_B})
+
+    async with as_user(USER_A) as session:
+        owners = set(
+            (
+                await session.execute(text("select owner_id::text from snapshots"))
+            ).scalars()
+        )
+    assert owners == {USER_A}
+
+    async with engine.begin() as conn:
+        await conn.execute(text("delete from snapshots"))
+    await engine.dispose()

@@ -10,7 +10,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 
 | # | Phase | Spec step | Status |
 |---|---|---|---|
-| 00 | [Foundations](00-foundations.md) | infra | not started |
+| 00 | [Foundations](00-foundations.md) | infra | **in progress** — migrations done (0008–0010); `render` service not built |
 | 01 | [AD format v2](01-ad-format.md) | 1 | not started |
 | 02 | [Motion as an axis](02-motion-axis.md) | 2 | not started |
 | 03 | [The AD linter](03-ad-linter.md) | 3 | not started |

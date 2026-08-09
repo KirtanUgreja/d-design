@@ -63,7 +63,13 @@ class Experience(Base):
     # column is unreachable as a real FK until a brands row exists to point
     # at. See migrations/versions/0002_brand_id_as_text.py.
     brand_id: Mapped[str | None] = mapped_column(String(64), default=None)
-    art_direction: Mapped[str] = mapped_column(String(64))
+    # `{"id": ..., "version": ...}` since migration 0010, not a bare name: a
+    # published page is pinned to one version of an art direction, and a
+    # reference that cannot say *which* makes v2 rule 15 unenforceable.
+    # `features/publish/publish_data.py` owns the mapping to and from the
+    # `ArtDirectionId` the rest of the app still speaks — lifting the version
+    # into the API surface is phase 01's job, not this column's.
+    art_direction: Mapped[dict[str, object]] = mapped_column(JSONB)
 
     # The scene tree is one column and is never normalized. It is always read
     # and written whole, Pydantic validates it rather than SQL, and normalizing

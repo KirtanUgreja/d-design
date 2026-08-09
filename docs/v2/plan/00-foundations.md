@@ -105,14 +105,15 @@ experiences         art_direction jsonb   -- {id, version}, was text
 
 **Migrations**
 
-- [ ] `alembic upgrade head` then `downgrade` then `upgrade` again, clean, against a database with existing v1 rows
-- [ ] Every v1 experience comes out with `{"id": "cinematic-dark", "version": 1}` or its editorial equivalent, and its `scenes` jsonb is byte-identical before and after
-- [ ] `scripts/checks/invariants.sh` still passes — in particular the Alembic auth-table filter, which now has three more migrations to be wrong about
+- [x] `alembic upgrade head` then `downgrade` then `upgrade` again, clean, against a database with existing v1 rows
+- [x] Every v1 experience comes out with `{"id": "cinematic-dark", "version": 1}`, and its `scenes` jsonb is byte-identical before and after
+- [x] `scripts/checks/invariants.sh` still passes — in particular the Alembic auth-table filter, which now has three more migrations to be wrong about
 
 **Security** ([../../security/testing.md](../../security/testing.md))
 
-- [ ] A second user cannot read another user's `art_directions` row, and *can* read every `owner_id is null` row. Exercised through `as_user()`, not raw SQL
-- [ ] A second user cannot read another user's `snapshots`
+- [x] A second user cannot read another user's `art_directions` row, and *can* read every `owner_id is null` row. Exercised through `as_user()`, not raw SQL
+- [x] A second user cannot read another user's `snapshots`
+- [x] **A tenant cannot *write* a system art direction.** Confirmed to fail with `InsufficientPrivilegeError` — the policy, not an incidental constraint
 - [ ] `render` is unreachable from the public network in the compose topology — it is called by `jobs`, not by a browser
 
 **Human**
@@ -134,10 +135,37 @@ experiences         art_direction jsonb   -- {id, version}, was text
 
 ## Exit gate
 
-- [ ] `docker compose up -d` brings up postgres, minio, and render
-- [ ] `render` returns a correct screenshot of a hand-written scene tree, and holds no credential
-- [ ] Four migrations up, down, and up again against v1 data with no content change
-- [ ] RLS proven on both new tables, including the system-AD read path
-- [ ] `@d-design/schema` is versioned and consumed by both `web` and `render`, through a workspace protocol and no registry
-- [ ] The whole of v2 still runs on `docker compose up` and a dev server, with no account on any external service. If this phase acquired one, it acquired the wrong thing
-- [ ] The gate is green
+- [ ] `docker compose up -d` brings up postgres, minio, and render — **`render` not built**
+- [ ] `render` returns a correct screenshot of a hand-written scene tree, and holds no credential — **not built**
+- [x] Migrations up, down, and up again against v1 data with no content change
+- [x] RLS proven on all three new tables, including the system-AD read path *and* the system-AD write refusal
+- [ ] `@d-design/schema` is versioned and consumed by both `web` and `render` — **waits on `render`**
+- [x] The whole of v2 still runs on `docker compose up` and a dev server, with no account on any external service
+- [x] The gate is green
+
+## Where this phase stands
+
+**The migrations are done; the `render` service is not.** They are two unlike things sharing a phase — one is database schema, the other exists because Python cannot server-side-render React — and the migrations are what [01](01-ad-format.md), [02](02-motion-axis.md) and [13](13-scene-fit.md)'s deferred overflow half are all waiting on. Splitting them lets that work start.
+
+Numbered 0008–0010 rather than the 0006–0008 this file predicted: v2 phases 14 and 15 landed first and took three numbers. A migration number is a position in a chain, not a name.
+
+### What the type change actually cost
+
+**`experiences.art_direction` going from `text` to `jsonb` broke nine tests, and that is the change working.** The column now holds `{"id": …, "version": 1}`, so every caller writing a bare `'cinematic-dark'` failed loudly at the boundary rather than storing something that would not parse later.
+
+The ripple was five files and stops at the data layer: `publish_data.ad_ref` / `ad_id` map between the stored reference and the `ArtDirectionId` the rest of the application still speaks. **Lifting the version into the API surface is [01](01-ad-format.md)'s job**, and keeping that boundary here is what stops phase 00 from quietly becoming phase 01.
+
+`_CURRENT_AD_VERSION` is a literal rather than a lookup, deliberately: a lookup would be the data module deciding which version an experience gets, which is a product decision belonging to the phase that adds the picker.
+
+**mypy caught defensive code for a case that cannot arrive.** `ad_id` also accepted a bare string, for a database restored from a pre-0010 dump. The branch was unreachable given the column's type — and correctly so, since such a dump also predates `motion_vocabulary` and would fail long before reaching it. Removed rather than widened: defensive code for an impossible case is a comment that looks like a control.
+
+### The policy decision worth keeping
+
+`art_directions` has **two** policies, not one `for all`:
+
+```sql
+read  using (owner_id is null or owner_id = current_setting('app.user_id')::uuid)
+write using/with check (owner_id = current_setting('app.user_id')::uuid)
+```
+
+Folding them into one would make `with check` accept the `is null` arm along with the read — and a tenant that can insert `owner_id = null` is a tenant publishing an art direction to every other account on the platform. Reading a system AD is for everybody; writing one is for nobody, and system rows are seeded by migration, which never runs through `as_user()`.
