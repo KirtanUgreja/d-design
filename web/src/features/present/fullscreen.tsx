@@ -74,7 +74,26 @@ export function PresentedExperience({
   }, []);
 
   return (
-    <div ref={containerRef}>
+    <div
+      ref={containerRef}
+      // Fullscreen makes this element the whole screen, and the UA gives it
+      // `overflow: visible` — so the scenes below the first overflow a box
+      // nothing can scroll. The document behind it cannot scroll either,
+      // because the fullscreen element is painted over it. The result was a
+      // presentation mode that showed scene one and had no way to reach scene
+      // two: arrow keys fired, `scrollIntoView` ran, and nothing moved.
+      //
+      // Found in the v1 acceptance run — "Fullscreen, navigate with arrow keys"
+      // is the checkbox, and Risk 3 in docs/v1/spec.md is why it is on the
+      // list: fullscreen plus keyboard nav is the minimum that keeps the word
+      // "presentation" honest. It had never been exercised end to end; the
+      // fullscreen call and the keydown handler were each fine on their own.
+      //
+      // A conditional inline style rather than a stylesheet rule on
+      // `:fullscreen`, because this is the interaction wrapper — modes live
+      // out here, and the renderer core stays pure (patterns.md rule 2).
+      style={isFullscreen ? { blockSize: '100%', overflowY: 'auto' } : undefined}
+    >
       <div
         style={{
           position: 'fixed',

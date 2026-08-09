@@ -58,3 +58,35 @@ test('reduced motion collapses reveal to opacity-only, no transform', async ({
   expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(transform);
   await expect(headline).toHaveCSS('opacity', '1');
 });
+
+// The `emphasize` half of the same claim, and the reason it exists: the test
+// above passes whether or not the reveal lands on the identity transform,
+// because `reveal`'s failure mode is `translateY(0)` — which is where it was
+// going anyway. `emphasize` animates scale, and its failure mode is `scale(0)`:
+// a 0×0 box, still in the layout, still at opacity 1, holding the content that
+// is now invisible. That shipped, and the acceptance run found it on the hero
+// headline of the first experience the product generated end to end.
+//
+// Asserted on the box rather than on the transform string, because the box is
+// what a reader loses. A transform assertion would have to enumerate the
+// matrices that are "fine", and the next wrong one would not be on the list.
+test('an emphasize block ends the reveal with a real box, not scale(0)', async ({
+  page,
+}) => {
+  await page.goto('/dev/primitives');
+
+  // The `full` fixture's two `motion: "emphasize"` blocks. Both, not one: the
+  // bug was in the shared wrapper, so a single sample proves less than it looks.
+  for (const text of ['THE PROBLEM', 'Start free']) {
+    const block = page.getByText(text, { exact: true }).first();
+    await block.scrollIntoViewIfNeeded();
+    await expect(block).toBeVisible();
+    // Past CINEMATIC_MOTION's 1100ms emphasize duration plus its stagger.
+    await page.waitForTimeout(1600);
+
+    const box = await block.boundingBox();
+    expect(box?.width ?? 0).toBeGreaterThan(0);
+    expect(box?.height ?? 0).toBeGreaterThan(0);
+    await expect(block).toHaveCSS('opacity', '1');
+  }
+});

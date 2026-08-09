@@ -30,7 +30,31 @@ interface RevealProps {
   blockId?: string;
 }
 
+/** The resting state as plain CSS, for the unarmed render — the one every
+ * process produces first, including the one with no JS. */
 const REST_STYLE = { opacity: 1, transform: 'none' } as const;
+
+/** The same resting state as a **Motion target**, which is a different thing
+ * and has to be written differently.
+ *
+ * Motion animates its own transform props (`scale`, `x`, `y`) numerically; the
+ * CSS `transform` shorthand is a string it cannot interpolate. Animating from
+ * `transform: 'scale(0.96)'` to `transform: 'none'` therefore does not land on
+ * the identity transform — it reads "none" as zero and lands on `scale(0)`,
+ * collapsing the element to a 0×0 box that is still in the layout and still
+ * has `opacity: 1`.
+ *
+ * Found in the v1 acceptance run, on the hero headline of the first experience
+ * the product ever generated end to end: it faded in and then vanished. Every
+ * block with `motion: 'emphasize'` did, in every process, including a
+ * published page — the worst class of bug this renderer can have, since the
+ * page looks fine until hydration finishes and then silently loses content.
+ *
+ * `reveal` survived the same mistake by luck: `translateY(Npx)` → "none"
+ * degrades to `translateY(0)`, which is where it was going anyway. That is
+ * also why nothing caught this — the reduced-motion e2e asserts on a `reveal`
+ * block, the one intent whose bug is invisible. */
+const REST_TARGET = { opacity: 1, scale: 1, y: 0 } as const;
 
 const noopSubscribe = () => () => {};
 
@@ -66,16 +90,20 @@ export function Reveal({ intent, vocabulary, delayMs, children, blockId }: Revea
     );
   }
 
+  // Motion's own transform props, never the CSS shorthand — see REST_TARGET.
+  // Both axes are named in both cases so the animation has a defined start and
+  // end for each: an unmentioned prop is not animated, which is how a stale
+  // transform from a previous intent would survive a re-render.
   const hidden =
     intent === 'emphasize'
-      ? { opacity: 0, transform: `scale(${def.scale})` }
-      : { opacity: 0, transform: `translateY(${def.distancePx}px)` };
+      ? { opacity: 0, scale: def.scale, y: 0 }
+      : { opacity: 0, scale: 1, y: def.distancePx };
 
   return (
     <motion.div
       data-block-id={blockId}
       initial={hidden}
-      whileInView={REST_STYLE}
+      whileInView={REST_TARGET}
       viewport={{ once: true, amount: vocabulary.triggerRatio }}
       transition={{
         duration: def.durationMs / 1000,
