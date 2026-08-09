@@ -193,15 +193,30 @@ export function DitherFade({ props }: { props: AbstractVisualProps }) {
   return (
     <Layer>
       {Array.from({ length: steps }, (_, band) => {
-        const density = (fromLeft ? steps - band : band + 1) as PATTERN.Density;
+        // 3, 2, 1, then nothing. Two things were wrong when this was reviewed
+        // over a photograph, and together they made it the v1 smudge in a new
+        // costume: the dense end ran to density 4 — Bayer level 13, so 81% of
+        // the frame was flat colour — and the sparse end was density 1 rather
+        // than empty, so a "dissolve" covered the whole image edge to edge. At
+        // `bold` the photo was barely visible underneath.
+        //
+        // A dissolve has to dissolve *to nothing*. The last band renders
+        // nothing at all, which is what makes it read as a fade rather than as
+        // a tint, and the ceiling comes down to level 9.
+        const step = fromLeft ? steps - 1 - band : band;
+        const density = (3 - step) as PATTERN.Density | 0;
+        if (density < 1) return null;
         const start = (band * 100) / steps;
         return (
           <Patch
             key={band}
-            mask={PATTERN.dither(PATTERN.DITHER_LEVEL[density])}
+            mask={PATTERN.dither(PATTERN.DITHER_LEVEL[density as PATTERN.Density])}
             scale={4}
             color={color}
-            opacity={visualOpacity(opacity)}
+            // Half of what the other generators take. This one covers the
+            // whole frame where they cover a shape, so the same opacity is a
+            // very different amount of paint.
+            opacity={visualOpacity(opacity * 0.5)}
             style={{
               insetBlock: 0,
               insetInlineStart: `${start}%`,

@@ -24,7 +24,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 11 | [Range: motion and compare](11-range.md) | 10, 11 | not started |
 | 12 | [Seven primitives](12-primitives.md) | 13 | not started |
 | 13 | [The scene as a stage](13-scene-fit.md) | delta | **in progress** — fit shell done; viewport overflow deferred to after [00](00-foundations.md) |
-| 14 | [Texture without gradient](14-texture-without-gradient.md) | delta | **in progress** — vocabulary and generators done; migration written but unverified (no Docker) |
+| 14 | [Texture without gradient](14-texture-without-gradient.md) | delta | **done** |
 | 15 | [Images that exist](15-images.md) | delta | not started |
 | 16 | [Charts](16-charts.md) | delta | not started |
 | 17 | [Composition](17-composition.md) | delta | not started |

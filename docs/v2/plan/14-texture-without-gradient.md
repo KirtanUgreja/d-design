@@ -223,10 +223,10 @@ Text over media conventionally uses a bottom-up gradient scrim. `--veil` is alre
 ## Exit gate
 
 - [x] Zero gradient functions and zero blurs under `renderer/`, enforced by grep, verified by breaking — eight probes, each caught
-- [x] Six texture kinds, all mask-driven, all token-coloured, reviewed on both grounds. **Over photography: not done** — `/dev/visuals` renders over an uploaded photo and there are no uploads without a running `api`
+- [x] Six texture kinds, all mask-driven, all token-coloured, reviewed on both grounds **and over a real uploaded photograph** — which found a sixth defect, below
 - [x] `glow` and `vignette` removed from the union; `cinematic-dark` re-authored and not merely stripped
 - [x] Six generators, deterministic, with `gradient-mesh.tsx` deleted
-- [ ] The migration maps every old generator id — **written, unverified.** Docker was not running, so no migration ran and no `api` test ran
+- [x] The migration maps every old generator id, verified against a seeded v1-shaped row: up, down, up, down, up. `grid-lines` untouched, downgrade exact, and body copy containing the words *orb*, *noise-veil* and *gradient-mesh* left alone — the safety claim the migration's docstring makes. 246 `api` tests pass
 - [x] The neon rules exist as effect bans in the renderer. Value bounds are [03](03-ad-linter.md)'s, as this phase always said
 - [x] Principle 5's banned list is stated to govern the artifact, in [../../design/principles.md](../../design/principles.md) itself
 - [x] The gate is green
@@ -238,6 +238,8 @@ Text over media conventionally uses a bottom-up gradient scrim. `--veil` is alre
 **`editorial-light`'s `rule` layer was deleted after looking at it.** A hairline every 32px across a whole scene reads as ruled notebook paper, and it was worse than the empty array v1 shipped. The error was a category one: in print a baseline grid is *invisible*, and a rule you can see is structural — under a running head, between columns. The kind stays in the vocabulary because `bold-brutalist` will want it, but what v1's note actually asked for is **furniture, not ground**, and [17](17-composition.md) already has `Furniture { rule, ruleWeight }` for it.
 
 **`invariants.sh` had a fail-open, and it disabled every check in the file.** Deleting `gradient-mesh.tsx` left it tracked-but-absent; `git ls-files` still listed it, `grep` exited 2 on the missing path, `xargs` turned that into 123, and `scan` reported "no match". Two brand-new checks passed silently against deliberate violations. **Anyone mid-refactor with an unstaged deletion was running no invariants at all, including the tenant wrapper.** `scan` now decides on output rather than exit code and skips absent files. A second instance of the same shape: `:(exclude)*.test.*` alongside a directory pathspec returns an *empty* file list, so every check written that way also passed unconditionally.
+
+**`dither-fade` was the v1 smudge in a new costume, and only the photograph showed it.** On the art direction's own ground it looked correct. Over a real image it laid a near-opaque field across the whole frame and washed the photo into flat haze — at `bold` the image was barely visible. Two values were wrong: the dense end ran to Bayer level 13, which is 81% flat colour, and the sparse end was density 1 rather than *empty*, so a "dissolve" covered the frame edge to edge. A dissolve has to dissolve to nothing. This is the same finding v1 recorded about `gradient-mesh` at medium and bold, reached by the same method, which is the argument for keeping this review in the phase rather than treating it as optional.
 
 **The documentation trap, for the third time.** Checks 7 and 9 fired on the comments explaining the rules they enforce, which check 6 had already solved once. It is now a `code_scan` helper that drops comment lines and test files, rather than a fourth bespoke regex.
 
