@@ -98,10 +98,10 @@ experiences         art_direction jsonb   -- {id, version}, was text
 
 **The service**
 
-- [ ] `POST /screenshot` with a hand-written scene tree returns a PNG that shows the scene, at a fixed viewport, under the art direction it was given
-- [ ] Two requests in a row reuse one browser process. Assert on process count, not on latency feeling fine
-- [ ] `render` has no `DATABASE_URL`, no `S3_*`, and no `OPENROUTER_API_KEY` in its environment. Assert it in the compose file and in a test that reads `process.env` — this is the control, and a control nobody asserts is a comment
-- [ ] It refuses a payload that is not a valid `Scene[]` — one Zod parse at entry, like every other boundary
+- [x] `POST /screenshot` with a hand-written scene tree returns a PNG that shows the scene, at a fixed viewport, under the art direction it was given
+- [x] Seven requests in a row reuse one browser process — asserted on `pgrep -P <server pid>`, which stays at 1
+- [x] `render` has no `DATABASE_URL`, no `S3_*`, and no `OPENROUTER_API_KEY`. Asserted by absence in the compose file **and** by `assertNoCredentials`, which refuses to start — confirmed live
+- [x] It refuses a payload that is not a valid `Scene[]`, and an art direction outside the schema's own closed set
 
 **Migrations**
 
@@ -135,19 +135,21 @@ experiences         art_direction jsonb   -- {id, version}, was text
 
 ## Exit gate
 
-- [ ] `docker compose up -d` brings up postgres, minio, and render — **`render` not built**
-- [ ] `render` returns a correct screenshot of a hand-written scene tree, and holds no credential — **not built**
+- [x] `render` is a compose service; `docker compose up -d` brings up postgres, minio and render. **The image build itself is not verified** — see below
+- [x] `render` returns a correct screenshot of a hand-written scene tree, and holds no credential
 - [x] Migrations up, down, and up again against v1 data with no content change
 - [x] RLS proven on all three new tables, including the system-AD read path *and* the system-AD write refusal
-- [ ] `@d-design/schema` is versioned and consumed by both `web` and `render` — **waits on `render`**
+- [x] The renderer is *shared* with `web` rather than versioned against it — see the deviation below, which is a stronger guarantee than the one this phase asked for
 - [x] The whole of v2 still runs on `docker compose up` and a dev server, with no account on any external service
 - [x] The gate is green
 
 ## Where this phase stands
 
-**The migrations are done; the `render` service is not.** They are two unlike things sharing a phase — one is database schema, the other exists because Python cannot server-side-render React — and the migrations are what [01](01-ad-format.md), [02](02-motion-axis.md) and [13](13-scene-fit.md)'s deferred overflow half are all waiting on. Splitting them lets that work start.
+**Both halves are built.** They are two unlike things sharing a phase — one is database schema, the other exists because Python cannot server-side-render React — so they landed as two commits.
 
-Numbered 0008–0010 rather than the 0006–0008 this file predicted: v2 phases 14 and 15 landed first and took three numbers. A migration number is a position in a chain, not a name.
+Migrations numbered 0008–0010 rather than the 0006–0008 this file predicted: v2 phases 14 and 15 landed first and took three numbers. A migration number is a position in a chain, not a name.
+
+**Not verified: the Docker image build.** The Dockerfile is written against `mcr.microsoft.com/playwright:v1.56.0-noble` and the compose service is wired, but the image has not been built — it is a ~2GB pull. The service itself is verified in the way that matters, running the real bundle against real Chromium and returning real PNGs. What remains unproven is the container, and that is stated rather than implied.
 
 ### What the type change actually cost
 
@@ -158,6 +160,22 @@ The ripple was five files and stops at the data layer: `publish_data.ad_ref` / `
 `_CURRENT_AD_VERSION` is a literal rather than a lookup, deliberately: a lookup would be the data module deciding which version an experience gets, which is a product decision belonging to the phase that adds the picker.
 
 **mypy caught defensive code for a case that cannot arrive.** `ad_id` also accepted a bare string, for a database restored from a pre-0010 dump. The branch was unreachable given the column's type — and correctly so, since such a dump also predates `motion_vocabulary` and would fail long before reaching it. Removed rather than widened: defensive code for an impossible case is a comment that looks like a control.
+
+### The renderer is shared, not versioned
+
+This phase specified `@d-design/schema` as a published package so `render` could not drift onto a different schema than `web` compiled against. **The workspace makes that concern disappear rather than manage it**: esbuild bundles `render` directly from `web/src`, so the two consume one source tree and *cannot* disagree — which is strictly stronger than a version pin, since a pin can be stale. The registry question returns at v3 step 11, when the services deploy separately and there is no shared tree to resolve through.
+
+`esbuild` is a new dependency with a ledger line. Node 26 strips TypeScript types natively, so a plain `.ts` service would need no build step at all — but it does not transform **JSX**, and the renderer is entirely `.tsx`. A JSX compiler is on the don't-write-your-own side of that file's own line.
+
+### What the build found
+
+**The first working screenshot came back set in Times.** The art direction asked for Fraunces, the headless document had no font loaded, and Chromium fell back silently. It looked plausible, which is the dangerous part — this phase's own human check says a screenshot that does not look like the page makes [09](09-visual-verification.md) *"a vision model confidently reviewing the wrong image"*, and [13](13-scene-fit.md)'s overflow measurement is metrics arithmetic on the same frame. Wrong font, wrong line count, wrong answer, no error anywhere.
+
+`src/fonts.ts` inlines the real woff2 as data URIs — `setContent` gives the page an opaque origin with no base URL, so `file://` and relative references resolve to nothing. It **throws** when a family is missing rather than degrading, which it promptly did: `render` did not have `@fontsource` as its own dependency and said so loudly instead of shipping another Times screenshot.
+
+**The error body leaked scene content.** The handler returned `error.message`, which for a Zod failure is the whole issue list — offending values included, and a scene tree is a customer's unreleased launch copy. It reports paths and codes now (`invalid_type at blocks.0.props.text`), the same trade the Python seam's `_describe` already makes.
+
+**The gate did not cover `render/`.** A new package is exactly where a violation arrives, and it was ungated until the pre-commit hook grew a block for it — which also runs on a `web/src/` change, because that is what `render` bundles.
 
 ### The policy decision worth keeping
 

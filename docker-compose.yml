@@ -57,6 +57,34 @@ services:
       mc mb --ignore-existing local/d-design &&
       echo bucket ready"
 
+  # v2 phase 00. The renderer plus Playwright, in one process, because Python
+  # cannot server-side-render React (docs/techstack/backend.md). A *language*
+  # boundary, not a security one — `render` is not the fetch worker and must
+  # never become it: a schema-validated scene tree carrying no presentational
+  # values is trusted input, where that container renders attackers' pages.
+  render:
+    build:
+      # The repo root, because the image needs `render/dist`, which is built
+      # from `web/src`. A `render/`-scoped context could not see the renderer
+      # it exists to run.
+      context: .
+      dockerfile: render/Dockerfile
+    # **No `environment:` block, and that absence is the control.** No
+    # DATABASE_URL, no S3 key, no model key — the trust split is the whole
+    # reason it is safe to run a browser next to this application, and
+    # `assertNoCredentials` refuses to start if one appears anyway.
+    #
+    # **No `ports:` either.** `jobs` calls this over the compose network; a
+    # browser-driving service reachable from the host is a browser-driving
+    # service reachable from anything on the host.
+    expose:
+      - '3200'
+    # Chromium's default /dev/shm is 64MB in a container and a large viewport
+    # exhausts it — the crash reads as a mysterious page close. The browser
+    # also passes `--disable-dev-shm-usage`; this is the other half.
+    shm_size: '512mb'
+    restart: unless-stopped
+
 volumes:
   pgdata:
   miniodata:

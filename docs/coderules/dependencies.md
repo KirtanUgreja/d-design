@@ -104,6 +104,24 @@ stripe — billing (v3) — never hand-roll payments.
   requires art direction #2's display face to differ from both #1's and our own
   chrome's, which is the constraint that stopped the font registry being
   global. Open license, self-hosted, same reason as above.
+esbuild (v2, phase 00) — bundles the `render` service, JSX included — Node 26
+  strips TypeScript types natively, so a plain .ts service would need no build
+  at all, but it does not transform JSX and the renderer is entirely .tsx. A
+  JSX/TS compiler is on the don't-write-your-own side of this file's own line.
+  It also resolves `@/` against web/src, which is what lets `render` import the
+  renderer rather than copy it — and one source tree is a stronger guarantee
+  against drift than the version pin phase 00 originally specified.
+playwright (v2, phase 00) — headless Chromium for the screenshot service —
+  already a devDependency in web for the e2e suite; this makes it a runtime
+  dependency of the one service whose job is driving a browser. Writing our own
+  is not a sentence anyone would finish.
+@fontsource/* in render (v2, phase 00) — the same four families web installs —
+  the screenshot document inlines the real woff2 as data URIs, because
+  `setContent` gives the page no base URL and a missing face falls back
+  silently to Times. A fallback face measures differently, which makes phase
+  09's critic review the wrong image and phase 13's overflow arithmetic wrong.
+  `render/src/fonts.ts` throws rather than degrading, so the duplicate
+  declaration cannot rot quietly.
 server-only (v1, phase 05) — the marker structure.md already mandates for
   every *.data.ts and anything holding a secret ("a client component
   importing it is a build-time error"). web/src/lib/storage.ts is the first

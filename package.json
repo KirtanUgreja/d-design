@@ -1,0 +1,9 @@
+{
+  "name": "d-design",
+  "private": true,
+  "description": "Workspace root. The two TypeScript packages are web and render; api is Python and is not part of this workspace.",
+  "scripts": {
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test"
+  }
+}
