@@ -84,6 +84,10 @@ Against the fetch worker:
   >
   > What Compose *can* prove, and should, is the half that is about your own services: from inside the fetch worker, `postgres`, `minio`, `api` and `jobs` are unresolvable and unreachable, while a public host is still reachable. That is a real assertion about a real boundary, it runs on a laptop, and it is what stops the worker quietly acquiring a route long before a subnet exists to forbid one.
 - **Chromium runs sandboxed**: assert the seccomp profile is applied and the process is not running with `--no-sandbox`, as non-root. A container that silently fell back to `--no-sandbox` looks identical from the outside
+
+  > **This row is about the fetch worker, and v2's `render` service deliberately does not satisfy it.** Worth stating here rather than leaving as an apparent gap: `render` runs Chromium with `chromiumSandbox: false`, because under Docker's default seccomp profile there is no usable sandbox to have — `clone(CLONE_NEWUSER)` is blocked and the SUID helper is no longer accepted, so the only routes are a custom seccomp profile or `seccomp=unconfined`. Giving up Docker's syscall filter to gain Chromium's is the right trade for hostile input and the wrong one for a service rendering our own schema-validated scene trees.
+  >
+  > The fetch worker has the opposite threat model and needs **both** layers. It must ship the seccomp profile rather than copy `render`'s launch options, and this assertion is how that gets caught. Found by building v2 phase 00's image and reading `/proc/*/cmdline` inside it — the flag was present while a code comment claimed it never would be.
 - Browser context is disposed after every fetch; a page that hangs is killed on timeout
 
 ### Web and content (v1+ / v2+)
