@@ -120,10 +120,29 @@ test('fullscreen, and arrow keys move between scenes', async ({ page }) => {
   expect(await secondSceneTop()).toBeGreaterThan(100);
 
   await page.keyboard.press('ArrowDown');
-  await expect.poll(secondSceneTop, { timeout: 3000 }).toBeLessThan(10);
+  // Not flush with the viewport top, and that is the fix rather than a
+  // regression. This asserted `< 10` until phase 13, which is the position
+  // that put the first line of every scene underneath the fixed control pill —
+  // `scrollIntoView` aligns the top edge, and the pill occupies that edge.
+  // `scroll-margin-block-start` (the art direction's `fitScrollMargin`, 4rem)
+  // offsets both this and the snap position with one declaration, so the
+  // landing spot is the scroll-margin box rather than the border box.
+  //
+  // Asserted as a band against the *pill*, not against the number 64: the
+  // claim is "the scene lands flush and the chrome is clear of it", and a
+  // literal would turn a token change into a test failure that says nothing.
+  const pillBottom = await page.evaluate(
+    () => document.querySelector('button')?.getBoundingClientRect().bottom ?? Number.NaN,
+  );
+  // Poll on the condition that *converges* — the scene arriving near the top.
+  // Polling on "below the pill" instead is satisfied by the pre-scroll state,
+  // where the scene sits a whole frame away, so it passes before the scroll
+  // has begun and the next assertion reads the old position.
+  await expect.poll(secondSceneTop, { timeout: 3000 }).toBeLessThan(120);
+  expect(await secondSceneTop()).toBeGreaterThan(pillBottom);
 
   await page.keyboard.press('ArrowUp');
-  await expect.poll(secondSceneTop, { timeout: 3000 }).toBeGreaterThan(100);
+  await expect.poll(secondSceneTop, { timeout: 3000 }).toBeGreaterThan(300);
 });
 
 test('it renders inside an iframe on a blank HTML page from another origin', async ({

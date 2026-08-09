@@ -199,7 +199,7 @@ Series labels, point labels, caption and source are copy, and they overflow unde
 
 - [ ] Chart strings are in `ContentBudgets` and overflow through the existing report
 - [ ] A chart in a `fit: viewport` scene from [13](13-scene-fit.md) sizes to the frame without overflowing it
-- [ ] Invariants check 7 passes. A chart is the most tempting place in the codebase to reintroduce a gradient fill
+- [ ] Invariants check 8 passes. A chart is the most tempting place in the codebase to reintroduce a gradient fill
 
 **Human**
 

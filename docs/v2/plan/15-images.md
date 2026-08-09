@@ -177,7 +177,7 @@ Three things this phase adds to it:
 **Treatment**
 
 - [ ] The same photograph under all three art directions produces three visibly different images, with no re-encode and no second asset row
-- [ ] Duotone uses blend modes and flat token colours. Invariants check 7 still passes — a duotone implemented with a gradient is the exact regression this ordering exists to catch
+- [ ] Duotone uses blend modes and flat token colours. Invariants check 8 still passes — a duotone implemented with a gradient is the exact regression this ordering exists to catch
 - [ ] Text over an image is legible under every treatment, at the AD's `veil`. This is an APCA check against the image's own mean luminance, not a guess
 - [ ] Crops come from the AD's `ratios` and change on reskin
 - [ ] An image next to an `AbstractVisual` in the same scene does not fight it. The `/dev/visuals` review page from v1 extends to cover this pairing

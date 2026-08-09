@@ -14,12 +14,15 @@ import type {
   ArtDirection,
   ClampTriple,
   FontSlot,
+  Layout,
   Length,
   Palette,
+  SceneFit,
+  ScenePlace,
   TypeRoleKey,
   Unit,
 } from './art-direction';
-import { FONT_REGISTRY } from './art-direction';
+import { FONT_REGISTRY, LAYOUTS } from './art-direction';
 import { type Color, toCssColor } from './color';
 
 const TYPE_ROLES: readonly TypeRoleKey[] = [
@@ -114,6 +117,32 @@ function typeEntries(
   return [...fontFamilies, ...roles];
 }
 
+// One variable per layout, so the renderer's read is a *name* lookup keyed by
+// something the AI wrote and never a branch on a token's value. The
+// `viewport`/`content` decision is resolved here because this is the file whose
+// job is turning tokens into strings; resolving it in `scene.tsx` would be a
+// second token->string path and the renderer deciding a scene's frame, which
+// is what rule 20 forbids.
+//
+// `auto` rather than `0` for content-height scenes: `min-block-size: auto` is
+// the initial value, so the declaration is inert rather than asserting a floor
+// of nothing.
+//
+// The indirection through `--scene-fit-min-block` is what keeps the round trip
+// lossless — six `100svh` values cannot tell you the token was `100svh` if
+// every layout happens to answer `content`.
+function fitEntries(rhythm: ArtDirection['rhythm']): [string, string][] {
+  return [
+    ['--scene-fit-min-block', lengthToCss(rhythm.fitMinBlock)],
+    ...LAYOUTS.map((layout): [string, string] => [
+      `--scene-min-block-${layout}`,
+      rhythm.fit[layout] === 'viewport' ? 'var(--scene-fit-min-block)' : 'auto',
+    ]),
+    ['--scene-place', rhythm.fitPlace],
+    ['--scene-scroll-margin', lengthToCss(rhythm.fitScrollMargin)],
+  ];
+}
+
 function rhythmEntries(rhythm: ArtDirection['rhythm']): [string, string][] {
   return [
     ...rhythm.space.map((s, i): [string, string] => [`--space-${i + 1}`, lengthToCss(s)]),
@@ -121,6 +150,7 @@ function rhythmEntries(rhythm: ArtDirection['rhythm']): [string, string][] {
     ['--scene-padding-x', clampToCss(rhythm.scenePaddingX)],
     ['--measure', lengthToCss(rhythm.measure)],
     ['--content-max', lengthToCss(rhythm.contentMax)],
+    ...fitEntries(rhythm),
   ];
 }
 
@@ -154,6 +184,17 @@ function requireVar(vars: Record<string, string>, name: string): string {
   const value = vars[name];
   if (value === undefined) throw new Error(`to-css-vars: missing ${name} in round-trip`);
   return value;
+}
+
+// A closed union on the way out, for the same reason `--visual-blend` gets one
+// below: the round trip is only lossless if it rejects a value the type does
+// not have rather than widening to `string`.
+function cssToScenePlace(css: string): ScenePlace {
+  const place = css.trim();
+  if (place !== 'center' && place !== 'start' && place !== 'end') {
+    throw new Error(`to-css-vars: not a scene place: ${css}`);
+  }
+  return place;
 }
 
 function cssToColor(css: string): Color {
@@ -224,6 +265,17 @@ export function fromCssVars(vars: Record<string, string>): Pick<
     scenePaddingX: cssToClamp(requireVar(vars, '--scene-padding-x')),
     measure: cssToLength(requireVar(vars, '--measure')),
     contentMax: cssToLength(requireVar(vars, '--content-max')),
+    fit: Object.fromEntries(
+      LAYOUTS.map((layout) => [
+        layout,
+        requireVar(vars, `--scene-min-block-${layout}`) === 'auto'
+          ? 'content'
+          : 'viewport',
+      ]),
+    ) as Record<Layout, SceneFit>,
+    fitMinBlock: cssToLength(requireVar(vars, '--scene-fit-min-block')),
+    fitPlace: cssToScenePlace(requireVar(vars, '--scene-place')),
+    fitScrollMargin: cssToLength(requireVar(vars, '--scene-scroll-margin')),
   };
 
   const texture: ArtDirection['texture'] = TEXTURE_KINDS.map((kind) => ({

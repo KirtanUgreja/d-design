@@ -2,10 +2,14 @@
 // docs/v1/scene-schema.md -> "Default region: content, or cells for grid, or
 // left for splits."
 
-import type { ArtDirection, MotionVocabulary } from '@/features/art-direction';
-import type { Block, Scene } from '@/schema';
+import type { ArtDirection, Layout, MotionVocabulary } from '@/features/art-direction';
+import type { Block } from '@/schema';
 
-export type Layout = Scene['layout'];
+// Re-exported, not re-declared. The art direction's `fit` table is keyed by
+// this union, so it has to live where the tokens are; a second
+// `Scene['layout']` here would be a second definition of the same thing and
+// the two would drift the first time the schema gained a layout.
+export type { Layout };
 export type Region = NonNullable<Block['region']>;
 
 const DEFAULT_REGION: Record<Layout, Region> = {

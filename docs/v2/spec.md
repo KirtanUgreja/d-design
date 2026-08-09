@@ -239,7 +239,7 @@ Step 9 sits after reskin deliberately. The loop needs something to look at and a
 | **Slides overflow** | Content that fits a scroll scene and not a slide is flagged, never silently clipped. |
 | **Primitives** | All 18 rendered under all 3 ADs. Visual judgment — 54 surfaces, and this is the real cost of v2. |
 | **Scene fit** | At most one scene boundary visible in a 100svh frame, across 5 golden experiences × 3 ADs. A scene taller than the frame **grows and stays readable** — assert `scrollHeight === clientHeight` on every section, and scroll a deliberately over-long scene by hand |
-| **No gradient, no bloom** | `scripts/checks/invariants.sh` checks 7 and 8, each verified by breaking it. Then the harder one: the stepped bloom must read as *more* deliberate than the mesh it replaced, not as the mesh with a bug |
+| **No gradient, no bloom** | `scripts/checks/invariants.sh` checks 8 and 9, each verified by breaking it. Then the harder one: the stepped bloom must read as *more* deliberate than the mesh it replaced, not as the mesh with a bug |
 | **Images** | An uploaded photograph renders. The same photograph under 3 ADs gives 3 visibly different images, no re-encode, no second asset row. `img-src 'self'` blocks a real remote URL. Zero CLS on a viewport-fit scene with a hero image |
 | **Generated imagery** | Exactly one call site — grep the provider name and find it only in `complete.py`. Cap fails closed. Prompt boundary asserted at the signature: no key messages, no proof points, no token values |
 | **Charts** | 5 marks × 3 ADs, distinguishable in **greyscale** and under deuteranopia. Bars start at zero and cannot be made not to. A model output inventing plausible numbers with no Brief proof point is **rejected in the build path** |

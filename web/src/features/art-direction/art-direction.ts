@@ -15,7 +15,7 @@
 // standard: color is channels, never a hex string; sizes are clamp triples of
 // `Length`, never a CSS string; fonts are registry ids, never family strings.
 
-import type { Block } from '@/schema';
+import type { Block, Scene } from '@/schema';
 
 import { type Color, parseHex } from './color';
 
@@ -42,7 +42,20 @@ export type TypeRoleKey = HeadlineEmphasis | BodyEmphasis | 'eyebrow' | 'stat';
 // one-part value with no clamping.
 // ---------------------------------------------------------------------------
 
-export type Unit = 'px' | 'rem' | 'ch' | 'vw' | 'vh' | '%';
+// `svh` is the *small* viewport height — the one measured with the mobile
+// browser chrome expanded. It is here rather than `vh` or `dvh` because a
+// scene is a stage, and a stage that resizes while the audience is looking at
+// it is not one: `vh` is the largest viewport and overflows by the height of
+// the URL bar on first paint, and `dvh` is correct at every instant and
+// therefore recalculates at every instant, moving snap points mid-scroll.
+// docs/v2/plan/13-scene-fit.md -> "100svh, and specifically not vh or dvh".
+//
+// ponytail: no `vh` fallback declaration before the `svh` one. The phase asked
+// for both so an engine that does not know the unit still gets a floor, and a
+// React inline style cannot carry a duplicate property — the ceiling is that a
+// browser predating 2023 gets no floor at all. Upgrade path: move the fit
+// shell's declarations to a stylesheet, where two can be written.
+export type Unit = 'px' | 'rem' | 'ch' | 'vw' | 'vh' | 'svh' | '%';
 
 export interface Length {
   value: number;
@@ -59,6 +72,7 @@ export const rem = (value: number): Length => ({ value, unit: 'rem' });
 export const px = (value: number): Length => ({ value, unit: 'px' });
 export const vw = (value: number): Length => ({ value, unit: 'vw' });
 export const ch = (value: number): Length => ({ value, unit: 'ch' });
+export const svh = (value: number): Length => ({ value, unit: 'svh' });
 
 export const fixed = (l: Length): ClampTriple => ({ min: l, preferred: l, max: l });
 
@@ -143,12 +157,72 @@ export interface TypeRole {
 // -inline/-block properties; the token itself is direction-agnostic.
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Scene fit — whether a scene owns the frame.
+//
+// The tempting shape is a `fit` field on `Scene`, and it is the wrong one: how
+// much of the frame a scene occupies is a presentational decision, and rule 7
+// says the AI does not get one. It is also wrong for reskin — a scene the model
+// pinned to `viewport` would stay pinned under an art direction whose whole
+// character is that proof scenes run long.
+//
+// So the art direction owns a lookup from something the AI *does* write. The AI
+// writes `layout`; the art direction turns that into a frame; nothing new
+// reaches the schema. `cinematic-dark` answers `viewport` for all six —
+// deep space, one beat per screen. `editorial-light` answers `content` for
+// `stack` and `grid`, because a printed spread that pads a spec table to full
+// height looks like a spec table with a bug. Two answers, one code path.
+//
+// docs/v2/plan/13-scene-fit.md, and rule 20 in docs/v2/plan/README.md.
+// ---------------------------------------------------------------------------
+
+/** The layout vocabulary the AI writes, derived from the schema rather than
+ * re-typed — `renderer/layouts/region.ts` re-exports this rather than
+ * declaring a second copy. */
+export type Layout = Scene['layout'];
+
+/** The same union as a value, for the places that have to iterate it — the
+ * emitter and its tests. Typed as `readonly Layout[]` so dropping an entry is
+ * caught the moment anything builds a `Record<Layout, …>` from it. */
+export const LAYOUTS: readonly Layout[] = [
+  'full-bleed',
+  'split-left',
+  'split-right',
+  'centered',
+  'stack',
+  'grid',
+];
+
+export type SceneFit = 'viewport' | 'content';
+
+/** Block-axis placement of a scene's content within its frame. A four-word
+ * hero in a full-height box placed at `start` is a headline stuck to the
+ * ceiling of an empty room; half the perceived quality of the fit shell is
+ * this token being `center`. It is a token and not a constant because
+ * `bold-brutalist` will want `end` — type jammed to the baseline is most of
+ * what that art direction is. */
+export type ScenePlace = 'center' | 'start' | 'end';
+
 export interface Rhythm {
   space: readonly [Length, Length, Length, Length, Length, Length, Length];
   scenePaddingY: ClampTriple;
   scenePaddingX: ClampTriple;
   measure: Length;
   contentMax: Length;
+  fit: Record<Layout, SceneFit>;
+  /** The floor a `viewport` scene gets — a floor, never a fixed height. A
+   * scene with more content than the frame grows and is reported; it is never
+   * clipped and never scrolls inside itself. Kept a token rather than a
+   * constant because an art direction that wants 90svh, with a deliberate
+   * sliver of the next scene showing, is making a legitimate choice. */
+  fitMinBlock: Length;
+  fitPlace: ScenePlace;
+  /** Clears the fixed present/motion control pill, which sits at the top of
+   * the same viewport `scrollIntoView` and scroll-snap align against. Without
+   * it the first line of every scene reached by arrow key lands underneath the
+   * chrome. A token because the chrome's height is not the renderer's
+   * business. */
+  fitScrollMargin: Length;
 }
 
 // ---------------------------------------------------------------------------

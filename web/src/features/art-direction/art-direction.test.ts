@@ -6,7 +6,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 import type { BrandKit } from '@/schema';
 
 import type { ArtDirection, TypeRoleKey } from './art-direction';
-import { FONT_REGISTRY } from './art-direction';
+import { FONT_REGISTRY, LAYOUTS } from './art-direction';
 import { CINEMATIC_DARK, TYPE_SCALE } from './cinematic-dark';
 import { EDITORIAL_LIGHT } from './editorial-light';
 import { contrastRatio, relativeLuminance } from './color';
@@ -80,12 +80,62 @@ describe('to-css-vars round-trips', () => {
     const vars = toCssVars(CINEMATIC_DARK);
     const names = Object.keys(vars).sort();
     // 9 color + 2 font-family + 7*4 type-role + 7 space + 4 rhythm + 3 texture
-    // + visual-blend + visual-strength
-    expect(names.length).toBe(9 + 2 + 7 * 4 + 7 + 4 + 3 + 2);
+    // + visual-blend + visual-strength + 9 fit (1 min-block + 6 per-layout
+    // + place + scroll-margin)
+    expect(names.length).toBe(9 + 2 + 7 * 4 + 7 + 4 + 3 + 2 + 9);
     expect(vars['--space-1']).toBe('8px');
     expect(vars['--space-7']).toBe('160px');
     expect(vars['--measure']).toBe('62ch');
     expect(vars['--content-max']).toBe('1280px');
+  });
+});
+
+describe('scene fit is the art direction answering, not the renderer deciding', () => {
+  it('resolves one variable per layout, so the renderer looks up rather than branches', () => {
+    const vars = toCssVars(CINEMATIC_DARK);
+    // Every layout, always emitted — a missing name would make the renderer's
+    // `var()` fall back to nothing and silently drop the floor.
+    for (const layout of LAYOUTS) {
+      expect(vars[`--scene-min-block-${layout}`]).toBeDefined();
+    }
+  });
+
+  it('cinematic-dark gives every layout the frame', () => {
+    const vars = toCssVars(CINEMATIC_DARK);
+    expect(vars['--scene-fit-min-block']).toBe('100svh');
+    for (const layout of LAYOUTS) {
+      expect(vars[`--scene-min-block-${layout}`]).toBe('var(--scene-fit-min-block)');
+    }
+    expect(vars['--scene-place']).toBe('center');
+  });
+
+  // The whole claim of this phase, as an assertion: two art directions give
+  // different answers about a scene's frame, and there is no second code path
+  // for the renderer to take. If this test and the one above both pass, `fit`
+  // is a token. `renderer/` is grepped for the units in the test below.
+  it('editorial-light lets document-shaped layouts run at content height', () => {
+    const vars = toCssVars(EDITORIAL_LIGHT);
+    expect(vars['--scene-min-block-stack']).toBe('auto');
+    expect(vars['--scene-min-block-grid']).toBe('auto');
+    expect(vars['--scene-min-block-full-bleed']).toBe('var(--scene-fit-min-block)');
+    expect(vars['--scene-min-block-centered']).toBe('var(--scene-fit-min-block)');
+    expect(vars['--scene-place']).toBe('start');
+  });
+
+  it('round-trips a fit table in which some layouts are content-height', () => {
+    // The lossy shape this guards against: reconstructing `fitMinBlock` by
+    // reading a per-layout value back. An art direction whose layouts all
+    // answered `content` would have nothing to read it from, so the length is
+    // emitted once in its own variable and the per-layout names point at it.
+    const parsed = fromCssVars(toCssVars(EDITORIAL_LIGHT));
+    expect(parsed.rhythm.fit).toEqual(EDITORIAL_LIGHT.rhythm.fit);
+    expect(parsed.rhythm.fitMinBlock).toEqual(EDITORIAL_LIGHT.rhythm.fitMinBlock);
+    expect(parsed.rhythm.fitPlace).toBe('start');
+  });
+
+  it('rejects a placement value the type does not have, rather than widening', () => {
+    const vars = { ...toCssVars(CINEMATIC_DARK), '--scene-place': 'middle' };
+    expect(() => fromCssVars(vars)).toThrow(/not a scene place/);
   });
 });
 

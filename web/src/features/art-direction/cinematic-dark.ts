@@ -17,7 +17,7 @@ import type {
   TypeRole,
   TypeRoleKey,
 } from './art-direction';
-import { ch, fixed, hex, px, rem, vw } from './art-direction';
+import { ch, fixed, hex, px, rem, svh, vw } from './art-direction';
 import { withAlpha } from './color';
 
 const BG = hex('#08090b');
@@ -101,6 +101,21 @@ export const CINEMATIC_RHYTHM: Rhythm = {
   scenePaddingX: { min: rem(1.5), preferred: vw(6), max: rem(8) },
   measure: ch(62),
   contentMax: px(1280),
+  // Every layout owns the frame. This is the direction the spec calls forgiving
+  // of sparse content, and the reason it is forgiving is that four words on a
+  // full black screen is the effect — the same four words at content height are
+  // a caption floating above the next scene's headline.
+  fit: {
+    'full-bleed': 'viewport',
+    'split-left': 'viewport',
+    'split-right': 'viewport',
+    centered: 'viewport',
+    stack: 'viewport',
+    grid: 'viewport',
+  },
+  fitMinBlock: svh(100),
+  fitPlace: 'center',
+  fitScrollMargin: rem(4),
 };
 
 export const CINEMATIC_TEXTURE: Texture = [

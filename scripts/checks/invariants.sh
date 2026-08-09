@@ -124,5 +124,49 @@ if scan -qiE "sandbox[[:space:]]*=[[:space:]]*[\"'][^\"']*allow-same-origin" -- 
   note "allow-same-origin appears in a sandbox attribute. With allow-scripts that is a same-origin iframe running generated code."
 fi
 
+# --- 7. A scene owns its frame ---------------------------------------------
+# NOTE ON THE PATHSPEC, because it is a trap this file is already carrying
+# elsewhere: `dir/**/*.tsx` matches only files at least one directory deep.
+# `renderer/scene.tsx` and `renderer/tokens.ts` are invisible to it, and the
+# first version of the snap check below passed while the violation sat in
+# `scene.tsx`. A bare directory prefix matches everything under it, so that is
+# what both checks here use. The `**` spellings in checks 1-6 have the same
+# hole — `api/**/*.py` does not see `api/main.py`.
+
+# v2 rule 20. Whether a scene fills the viewport is the art direction's lookup
+# from the layout the AI wrote — never a field the AI sets, and never a
+# constant in the renderer. This is the check that approximates it, because the
+# rule has no type to enforce it.
+#
+# The defect it exists for was real and shipped: `layouts/full-bleed.tsx`
+# hardcoded `minBlockSize: '100vh'`, which made one layout own the screen while
+# the other five were content-height, and did it in the unit that overflows by
+# the height of a mobile URL bar. Nothing caught it — the renderer tests assert
+# structure, and the structure was correct.
+#
+# Token *reads* are the point and must not fire, so this matches a quoted CSS
+# literal rather than the bare unit — a `var(--scene-min-block-…)` reference is
+# never one. Matching the word instead fired immediately on the comment in
+# full-bleed.tsx explaining why the constant was removed, which is the same
+# trap check 6 above already fell into once and the reason both are written
+# against the *value* and not the name. docs/v2/plan/13-scene-fit.md.
+if scan -nE "[\"'\`][[:space:]]*[0-9.]+(vh|dvh|lvh)[[:space:]]*[\"'\`]" -- \
+     'web/src/features/renderer/'; then
+  note "a literal viewport height in renderer/. A scene's frame is the art direction's fit token, not a constant here (rule 20)."
+fi
+
+# The two halves of scroll snapping, and the rule-6 split between them.
+# `scroll-snap-align` is a property of a scene and belongs to the renderer
+# core; `scroll-snap-type` is a property of a playback surface and belongs to
+# the wrapper. The core does not know it is inside one, and the moment it does,
+# it has an opinion about where it is running.
+# Anchored to the colon so it matches a *declaration* and not prose. scene.tsx
+# names the property in the comment explaining why it is not there, which is
+# the third time this file has had to learn that lesson.
+if scan -nE "(scrollSnapType|scroll-snap-type)[[:space:]]*:" -- \
+     'web/src/features/renderer/'; then
+  note "scroll-snap-type in renderer/. That is the scroll container's property, and the container lives in present/ (rule 6)."
+fi
+
 [ "$fail" -eq 0 ] || printf '\ninvariants failed — see docs/coderules/tooling.md\n' >&2
 exit "$fail"

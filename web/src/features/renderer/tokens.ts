@@ -7,7 +7,12 @@
 
 import type { CSSProperties } from 'react';
 
-import type { ArtDirection, Palette, TypeRoleKey } from '@/features/art-direction';
+import type {
+  ArtDirection,
+  Layout,
+  Palette,
+  TypeRoleKey,
+} from '@/features/art-direction';
 
 export const COLOR_VAR: Record<keyof Palette, string> = {
   bg: 'var(--bg)',
@@ -80,6 +85,23 @@ export const SCENE_PADDING_BLOCK = 'var(--scene-padding-y)';
 export const SCENE_PADDING_INLINE = 'var(--scene-padding-x)';
 export const MEASURE = 'var(--measure)';
 export const CONTENT_MAX = 'var(--content-max)';
+
+/** The frame a scene of this layout gets, as a variable *name* — the art
+ * direction already resolved `viewport`/`content` into a length or `auto` in
+ * `to-css-vars.ts`. Keyed by `layout`, which is something the AI writes, so
+ * this stays a lookup and never becomes a branch on a token's value (rule 20,
+ * docs/v2/plan/13-scene-fit.md). */
+export function sceneMinBlockVar(layout: Layout): string {
+  return `var(--scene-min-block-${layout})`;
+}
+
+/** The raw frame length, before the per-layout `viewport`/`content` answer is
+ * applied. Read directly only by things that are not scenes and have no
+ * content to be measured against — the `Slot` iframe is the one case. */
+export const SCENE_FIT_MIN_BLOCK = 'var(--scene-fit-min-block)';
+
+export const SCENE_PLACE = 'var(--scene-place)';
+export const SCENE_SCROLL_MARGIN = 'var(--scene-scroll-margin)';
 
 export function textureVar(kind: 'grain' | 'glow' | 'vignette'): string {
   return `var(--texture-${kind}-intensity)`;

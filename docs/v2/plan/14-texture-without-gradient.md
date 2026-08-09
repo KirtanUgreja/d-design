@@ -69,7 +69,7 @@ web/src/features/art-direction/
   cinematic-dark.ts       re-authored: the glow becomes a stepped dot bloom
 api/schema/scene.py       the generator Literal
 api/migrations/versions/  generator id migration
-scripts/checks/invariants.sh   checks 7 and 8
+scripts/checks/invariants.sh   checks 8 and 9
 ```
 
 ### 1. The mask carries the shape, the token carries the colour
@@ -176,7 +176,7 @@ Text over media conventionally uses a bottom-up gradient scrim. `--veil` is alre
 
 ## Verify
 
-**The gate** — green, plus invariants checks 7 and 8.
+**The gate** — green, plus invariants checks 8 and 9.
 
 **The ban**
 

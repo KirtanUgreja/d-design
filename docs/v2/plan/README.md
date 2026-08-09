@@ -23,7 +23,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 10 | [Slides mode](10-slides-mode.md) | 12 | not started |
 | 11 | [Range: motion and compare](11-range.md) | 10, 11 | not started |
 | 12 | [Seven primitives](12-primitives.md) | 13 | not started |
-| 13 | [The scene as a stage](13-scene-fit.md) | delta | not started |
+| 13 | [The scene as a stage](13-scene-fit.md) | delta | **in progress** — fit shell done; viewport overflow deferred to after [00](00-foundations.md) |
 | 14 | [Texture without gradient](14-texture-without-gradient.md) | delta | not started |
 | 15 | [Images that exist](15-images.md) | delta | not started |
 | 16 | [Charts](16-charts.md) | delta | not started |
@@ -97,8 +97,12 @@ The two that land after 04 do so for the opposite reason: [16](16-charts.md) and
 **Recommended build order**, which is the graph flattened:
 
 ```
-00 · 01 · 13 · 14 · 15 · 02 · 03 · 04 · 17 · 05 · 16 · 06 · 07 · 08 · 09 · 10 · 11 · 12
+13a · 00 · 01 · 13b · 14 · 15 · 02 · 03 · 04 · 17 · 05 · 16 · 06 · 07 · 08 · 09 · 10 · 11 · 12
 ```
+
+**[13](13-scene-fit.md) splits, and its first half went first.** The graph above shows 13 hanging off 01, which was drawn reflexively and is not true of the code: the fit shell is three `Rhythm` tokens, four CSS variables and two component edits, all in files that exist today. Only section 9 of that phase — viewport overflow reporting — needs a headless layout and therefore [00](00-foundations.md)'s `render` service. `13a` is the shell and is **done**; `13b` is the overflow half and waits.
+
+It was built out of order on purpose. The defect it fixes is the one visible in the generated output, and 00 and 01 deliver nothing anyone can look at. Nothing is built twice — 01's job is migrating v1's format into v2's, and three more tokens is that job. **Check the other arrows in this graph the same way before treating one as a cost**; at least one more of them is a reflex rather than a dependency.
 
 [17](17-composition.md) sits immediately after 04 because it is the phase that decides whether the three art directions look like three designs or three colour schemes, and that is a judgement best made while all three are still fresh and cheap to change.
 
@@ -133,8 +137,8 @@ The eleven non-negotiables from [../../coderules/README.md](../../coderules/READ
 15. **A published page never restyles itself.** The AD reference is `{ id, version }` and publishing pins it. Upgrading is opt-in, with a preview
 16. **The critic never acts.** The visual loop is a `for` with a literal limit of 1, its output stays inside a fixed schema, and its verdict triggers no tool call and no write ([../../techstack/ai-stack.md](../../techstack/ai-stack.md))
 17. **Nothing rewrites approved copy without being asked.** Overflow is flagged, visibly and deliberately annoyingly; shortening is one click and shows the proposed text first ([../transformations.md](../transformations.md))
-18. **No gradient, anywhere in the artifact.** No `linear-`, `radial-`, `conic-` or `repeating-*-gradient`, in the renderer, in a token value, or in a generated visual. Colour changes by dot, line, dither or hard edge. [../../design/principles.md](../../design/principles.md) principle 5 governs the artifact and not only our chrome, and [14](14-texture-without-gradient.md) is where that stops being an aspiration — `scripts/checks/invariants.sh` check 7
-19. **No neon, no bloom, no glow.** No `blur()`, no `backdrop-filter` as bloom, no chromatic `box-shadow` or `text-shadow` at any radius, no luminous edge. A hard offset shadow with zero blur is a print device and is allowed; the banned property is the blur. Saturation is bounded by value in the linter rather than by taste — invariants check 8
+18. **No gradient, anywhere in the artifact.** No `linear-`, `radial-`, `conic-` or `repeating-*-gradient`, in the renderer, in a token value, or in a generated visual. Colour changes by dot, line, dither or hard edge. [../../design/principles.md](../../design/principles.md) principle 5 governs the artifact and not only our chrome, and [14](14-texture-without-gradient.md) is where that stops being an aspiration — `scripts/checks/invariants.sh` check 8
+19. **No neon, no bloom, no glow.** No `blur()`, no `backdrop-filter` as bloom, no chromatic `box-shadow` or `text-shadow` at any radius, no luminous edge. A hard offset shadow with zero blur is a print device and is allowed; the banned property is the blur. Saturation is bounded by value in the linter rather than by taste — invariants check 9
 20. **A scene owns its frame.** Whether a scene fills the viewport is the art direction's lookup from the layout the AI wrote, never a field the AI sets and never a renderer constant ([13](13-scene-fit.md))
 21. **A number on a published page traces to something the user supplied.** A `Chart` whose points do not trace to a proof point in the approved Brief is rejected before storage, and `source` is a required field, not an optional one ([16](16-charts.md))
 

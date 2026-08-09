@@ -53,12 +53,18 @@ export function PresentedExperience({
       setIndex(clamped);
       const scene = scenes[clamped];
       if (scene) {
+        // Scroll-triggered movement is motion, and motion here is opt-out.
+        // This call was unconditionally `smooth` while the reveal animations
+        // honoured the preference — the half-wired state that reads as a bug
+        // to exactly the people the preference exists for (WCAG 2.3.3, and
+        // docs/v1/art-direction.md -> "Reduced motion is a design requirement
+        // here"). `reduced` covers the media query *and* the in-page toggle.
         document
           .getElementById(`scene-${scene.id}`)
-          ?.scrollIntoView({ behavior: 'smooth' });
+          ?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' });
       }
     },
-    [scenes],
+    [scenes, reduced],
   );
 
   useEffect(() => {
@@ -97,7 +103,37 @@ export function PresentedExperience({
       // A conditional inline style rather than a stylesheet rule on
       // `:fullscreen`, because this is the interaction wrapper — modes live
       // out here, and the renderer core stays pure (patterns.md rule 2).
-      style={isFullscreen ? { blockSize: '100%', overflowY: 'auto' } : undefined}
+      //
+      // `scroll-snap-type` is the container half of the snap pair whose scene
+      // half (`scroll-snap-align`) lives in the renderer core. It is here
+      // because snapping is a property of a *playback surface*, and the
+      // renderer does not know it is inside one — and this element is the
+      // scroll container only in fullscreen, so the declaration is scoped the
+      // same way the height fix is.
+      //
+      // `proximity`, not `mandatory`, and this is the line most likely to be
+      // "fixed" by someone who has not read this comment. Under `mandatory` a
+      // scene taller than the viewport becomes unreadable: the browser snaps
+      // to the top of that scene or the top of the next one, and the middle of
+      // a long scene cannot be held on screen. Scene heights here are not
+      // predictable — that is the entire premise of the overflow report — so
+      // `mandatory` is a promise the content cannot keep. Under `proximity` a
+      // short scene snaps cleanly and a long one simply does not, because you
+      // are never near a snap point while reading its middle. It degrades in
+      // the right direction with no measurement and no JavaScript.
+      //
+      // `overscroll-behavior: contain` stops scrolling past the last scene
+      // from chaining to the document painted behind the fullscreen element.
+      style={
+        isFullscreen
+          ? {
+              blockSize: '100%',
+              overflowY: 'auto',
+              scrollSnapType: 'y proximity',
+              overscrollBehavior: 'contain',
+            }
+          : undefined
+      }
     >
       <div
         style={{

@@ -89,7 +89,7 @@ The visual language of "AI product, built fast" is now instantly legible to exac
 | Dark mode chosen because it hides weak typography | Dark is a decision, not a hiding place |
 | Five consecutive centred sections at `max-w-3xl` | No rhythm, no hierarchy, no editing |
 
-Four of those rows are now automated for the artifact, and it is worth knowing which: gradients and gradient text are `invariants.sh` check 7, glow/bloom/glassmorphism-blur is check 8, and the consecutive-centred-sections row is four sequence constraints in the Director. The rest remain judgement, which is why the positive rule below is the one that actually does the work.
+Four of those rows are now automated for the artifact, and it is worth knowing which: gradients and gradient text are `invariants.sh` check 8, glow/bloom/glassmorphism-blur is check 9, and the consecutive-centred-sections row is four sequence constraints in the Director. The rest remain judgement, which is why the positive rule below is the one that actually does the work.
 
 **The positive rule that replaces the list:** every visual decision on our surfaces should be defensible in one sentence that isn't *"it looks modern"*. Type, spacing, and one restrained colour idea are enough to look expensive; that is the same bet [../techstack/frontend.md](../techstack/frontend.md) makes when it calls buying type the highest-leverage money in the product.
 

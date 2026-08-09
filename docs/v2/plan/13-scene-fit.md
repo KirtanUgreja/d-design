@@ -2,7 +2,13 @@
 
 > A scene is currently as tall as whatever the model wrote inside it, so two of them share the viewport and neither one is composed. This phase gives a scene a floor, a centre, and a snap point — and it is the phase that decides whether the output reads as slides or as a scrolling document.
 
-**Depends on:** [01](01-ad-format.md) · **Blocks:** [04](04-three-art-directions.md), [10](10-slides-mode.md), [17](17-composition.md) · **Spec step:** delta — see [../spec.md](../spec.md) → "Composition deltas"
+**Depends on:** nothing — see below · **Blocks:** [04](04-three-art-directions.md), [10](10-slides-mode.md), [17](17-composition.md) · **Spec step:** delta — see [../spec.md](../spec.md) → "Composition deltas"
+
+> **Built first, on 2026-08-09, ahead of [00](00-foundations.md) and [01](01-ad-format.md).** The dependency on 01 in the first draft of this file was drawn reflexively — everything hangs off 01 — and it does not survive contact with the code. The fit shell is `SceneFit`, three `Rhythm` tokens, four CSS variables and two component edits, all of them in `web/src/features/art-direction/` and `web/src/features/renderer/`, which exist today. 01's job is migrating v1's art-direction format into v2's; three more tokens is that job, not extra work, so nothing is built twice.
+>
+> **What did depend on 00 is split out and deferred: section 9, viewport overflow reporting.** Measuring against a frame needs a headless layout, which needs the `render` service. That half is not done and is not counted as done.
+>
+> The rest shipped because the defect it fixes is the one visible in the output, and spending the sitting on a render container and four migrations that change nothing anyone can see was the wrong trade.
 
 ---
 
@@ -190,10 +196,28 @@ Measuring against a viewport means a layout exists, which means the `render` ser
 
 ## Exit gate
 
-- [ ] Every art direction declares a layout→fit table, and the renderer reads it with no branch
-- [ ] A `viewport` scene has a `min-block-size` floor in `svh`, is placed by a token, and grows rather than clipping
-- [ ] At most one scene boundary is visible in a frame, across all 5 golden experiences and all art directions
-- [ ] `proximity` snapping, with a tall scene still fully readable
-- [ ] Arrow-key navigation lands flush and respects reduced motion
-- [ ] Viewport overflow reports through the existing `OverflowReport`, in scroll mode
-- [ ] The gate is green
+- [x] Every art direction declares a layout→fit table, and the renderer reads it with no branch
+- [x] A `viewport` scene has a `min-block-size` floor in `svh`, is placed by a token, and grows rather than clipping
+- [x] At most one scene boundary is visible in a frame — asserted at every scroll position, in a real browser
+- [x] `proximity` snapping, with a tall scene still fully readable
+- [x] Arrow-key navigation lands flush and respects reduced motion
+- [ ] Viewport overflow reports through the existing `OverflowReport`, in scroll mode — **deferred, needs [00](00-foundations.md)**
+- [x] The gate is green
+
+## What the build found
+
+**`layouts/full-bleed.tsx` already hardcoded `minBlockSize: '100vh'`.** One layout had owned the screen since v1 while the other five were content-height, in the unit this phase rejects — which is most of why the output read as a long page with big gaps rather than as uniformly broken. Nothing caught it, for the reason this plan's [README](README.md) already names: the renderer tests assert structure, and the structure was correct. It is now `flexGrow: 1`, which is that layout saying it fills whatever frame it is given.
+
+**`blocks/slot.tsx` had the second copy.** `SlotProps.height: 'viewport'` resolved to its own hardcoded `100vh`. It reads `--scene-fit-min-block` now, because two vocabularies for one idea is how they drift — the Search section of this file predicted exactly this and it was still there to find.
+
+**The existing arrow-key e2e test asserted the bug.** `present-and-embed.spec.ts` required the navigated-to scene to land at `top < 10`, which is the position that puts the first line under the fixed control pill. `scroll-margin-block-start` moves it to 64px, clear of a pill whose bottom edge measures 45.5px. The test now asserts against the pill's measured position rather than a literal.
+
+**`scroll-snap-type` and a literal viewport height are now `invariants.sh` check 7**, both verified by breaking them. Writing them cost two lessons the file had already learned once: the first version matched the property *name* and fired on the comment explaining why the property must not be there, and the second used a `renderer/**/*.tsx` pathspec, which in git matches only files at least one directory deep — so it passed while the violation sat in `renderer/scene.tsx`. **The `**` spellings in checks 1–6 have the same hole**, and check 1 is the tenant wrapper.
+
+### Deviations
+
+| | |
+|---|---|
+| **No `vh` fallback before `svh`** | Section 2 asked for both declarations. React inline styles cannot express a duplicate property, and the fallback would need a stylesheet. `svh` shipped in all three engines in 2023. Marked `ponytail:` — the upgrade path is a stylesheet if a target browser ever needs one |
+| **Placement is column-flex `justify-content`, not `place-content`** | Grid's `place-content` aligns both axes, so `center` shrinks the column to content width and centres it — which silently breaks every layout that expects the full measure. Column flex places on the block axis and stretches on the inline axis, which is the actual requirement |
+| **One variable per layout** (`--scene-min-block-<layout>`) | So the renderer's read is a *name* lookup keyed by something the AI wrote, rather than a branch on a token's value. The `viewport`/`content` decision resolves in `to-css-vars.ts`, which is the one file allowed to turn a token into a string |

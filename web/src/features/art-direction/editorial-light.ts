@@ -45,7 +45,7 @@ import type {
   TypeRole,
   TypeRoleKey,
 } from './art-direction';
-import { ch, fixed, hex, px, rem, vw } from './art-direction';
+import { ch, fixed, hex, px, rem, svh, vw } from './art-direction';
 import { withAlpha } from './color';
 
 // Cool white, not #fff: paper that is very slightly blue reads as bright,
@@ -162,6 +162,28 @@ export const EDITORIAL_RHYTHM: Rhythm = {
   // stage you look at.
   measure: ch(68),
   contentMax: px(1080),
+  // The table that makes the point. A printed spread pads a *plate* to the full
+  // page and lets a spec table end where the data ends — padding a six-row
+  // table to full height does not read as generous, it reads as a bug. So the
+  // frame-owning layouts own the frame and the document-shaped ones do not.
+  //
+  // Splits are `viewport` deliberately: a split is a plate and a column, and a
+  // half-height split is neither. That is a judgement, and the point of it
+  // being in this table is that changing it is a token edit.
+  fit: {
+    'full-bleed': 'viewport',
+    'split-left': 'viewport',
+    'split-right': 'viewport',
+    centered: 'viewport',
+    stack: 'content',
+    grid: 'content',
+  },
+  fitMinBlock: svh(100),
+  // Paper sets type from the top of the text block, not the optical middle of
+  // the page. The one place this direction disagrees with cinematic-dark about
+  // placement, and it is why the token exists.
+  fitPlace: 'start',
+  fitScrollMargin: rem(4),
 };
 
 /** Empty, and that is a real answer rather than a gap left unfilled. The

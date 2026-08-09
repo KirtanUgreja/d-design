@@ -2,6 +2,7 @@ import type { ArtDirection } from '@/features/art-direction';
 import { toCssVars } from '@/features/art-direction';
 
 import type { SlotProps } from './block-props';
+import { SCENE_FIT_MIN_BLOCK } from '../tokens';
 
 // security/content-and-web.md -> "The Slot sandbox". `allow-same-origin` must
 // never be added: with `allow-scripts` alone the frame has an opaque origin —
@@ -47,7 +48,13 @@ export function SlotBlock({
       style={{
         display: 'block',
         inlineSize: '100%',
-        blockSize: props.height === 'viewport' ? '100vh' : '400px',
+        // `SlotProps.height: 'viewport'` is the same word the scene-level fit
+        // table uses, so it resolves through the same token rather than a
+        // second hardcoded literal in a second unit — two vocabularies for one
+        // idea is how they drift. This is a `blockSize` and not a
+        // `minBlockSize` on purpose: an iframe has no content to be measured
+        // against, so it is given an exact box.
+        blockSize: props.height === 'viewport' ? SCENE_FIT_MIN_BLOCK : '400px',
         border: 'none',
       }}
     />
