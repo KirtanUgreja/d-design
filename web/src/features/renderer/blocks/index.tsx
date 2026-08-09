@@ -46,7 +46,7 @@ export function BlockRenderer({
     case 'cta':
       return <CtaBlock props={props} artDirection={artDirection} />;
     case 'abstract-visual':
-      return <AbstractVisualBlock props={props} artDirection={artDirection} />;
+      return <AbstractVisualBlock props={props} />;
     case 'slot':
       return <SlotBlock props={props} artDirection={artDirection} />;
   }

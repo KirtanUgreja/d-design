@@ -5,6 +5,8 @@ export type {
   ArtDirection,
   ArtDirectionId,
   ClampTriple,
+  ColorRole,
+  Density,
   FontFamilyId,
   FontSlot,
   FontWeight,
@@ -12,8 +14,10 @@ export type {
   Length,
   Palette,
   Rhythm,
+  RuleWeight,
   SceneFit,
   ScenePlace,
+  Steps,
   Texture,
   TextureLayer,
   TypeRole,
@@ -22,7 +26,7 @@ export type {
   VisualBlend,
   VisualStrength,
 } from './art-direction';
-export { FONT_REGISTRY } from './art-direction';
+export { COLOR_VAR, FONT_REGISTRY, LAYOUTS } from './art-direction';
 
 export { CINEMATIC_DARK } from './cinematic-dark';
 export { EDITORIAL_LIGHT } from './editorial-light';

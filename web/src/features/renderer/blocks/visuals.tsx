@@ -1,36 +1,38 @@
-// The four AbstractVisual generators that join `gradient-mesh`
-// (docs/v1/plan/11-visuals-and-slot.md). Rendered as code — CSS and SVG,
-// using art-direction colours — so they cost no assets, are always on brand,
-// and regenerate identically from a seed.
+// The six AbstractVisual generators (docs/v2/plan/14-texture-without-gradient.md,
+// replacing the five of docs/v1/plan/11-visuals-and-slot.md). Rendered as code
+// — CSS and SVG masks, using art-direction colours — so they cost no assets,
+// are always on brand, and regenerate identically from a seed.
 //
 // **This is what makes a sparse scene look designed rather than empty**, and
 // it is the cheapest visual quality in the product.
 //
-// Every one of them obeys the same three rules the phase doc sets: the seed is
-// the only variable input, no user string reaches the output, and each has to
-// survive sitting behind a real photograph without fighting it. That last one
-// is why they are all quiet by default and why `bold` tops out where it does —
-// an abstract visual that looks impressive alone and ruins a product shot is a
-// worse generator than a dull one.
+// Phase 14 rewrote the paint and left the determinism alone. Four of the five
+// v1 generators were built out of gradient functions and two of them also
+// carried a `blur()`, which is the artifact breaking principle 5 — the rule
+// was filed under `docs/design/` and read as being about our own chrome.
+// What replaces them is the same colours carried by dot, line, dither and
+// hard edge.
 //
-// **Every layer composites with `mix-blend-mode: screen`**, which is the single
-// change that made the photography review pass. Composited normally these are
-// paint: a warm gradient over a bright sky darkens it into a grey-brown smudge.
-// With `screen` the dark part of a layer is transparent and only the light
-// adds, so a generator reads as lighting rather than as graphics. Over the art
-// direction's own near-black background it is very nearly a no-op, so the
-// standalone case pays nothing for it.
+// Three properties survive unchanged and are the reason this file is safe:
+// the seed is the only variable input, no user string reaches the output, and
+// every generator has to survive sitting behind a real photograph without
+// fighting it. `visual-seed.ts` — one PRNG, one intensity scale — is untouched.
+//
+// **Colour is a token reference, never a resolved value.** v1 called
+// `toCssColor(palette.accent)` here, which turned a token into a string
+// outside the one file allowed to. These read `COLOR_VAR`, so the generators
+// no longer need the palette at all.
 
-import type { Color, Palette } from '@/features/art-direction';
-import { toCssColor } from '@/features/art-direction';
+import { COLOR_VAR, type ColorRole } from '@/features/art-direction';
 
 import type { AbstractVisualProps } from './block-props';
 import { INTENSITY, mulberry32, type Intensity } from './visual-seed';
+import * as PATTERN from '../texture/patterns';
 import { VISUAL_BLEND, visualOpacity } from '../tokens';
 
 /** Every generator paints inside the same absolutely-positioned, non-
  * interactive layer. `aria-hidden` because none of them carries meaning — a
- * screen reader announcing "decorative gradient" is noise. */
+ * screen reader announcing "decorative pattern" is noise. */
 function Layer({ children }: { children: React.ReactNode }) {
   return (
     <div
@@ -42,32 +44,243 @@ function Layer({ children }: { children: React.ReactNode }) {
   );
 }
 
-function accents(palette: Palette): Color[] {
-  return [palette.accent, palette.accentSoft, palette.bgElevated];
+/** The three roles a generator is allowed to paint with. Same set as v1, as
+ * references rather than values. */
+const ROLES: readonly ColorRole[] = ['accent', 'accentSoft', 'bgElevated'];
+
+const roleAt = (i: number): string => COLOR_VAR[ROLES[i % ROLES.length] ?? 'accent'];
+
+/** A masked patch of one colour. The single shape every generator below is
+ * built from — no generator writes a `background` other than a flat token
+ * colour, which is what makes the no-gradient rule hold by construction here
+ * rather than by review. */
+function Patch({
+  mask,
+  scale,
+  color,
+  opacity,
+  rotate,
+  style,
+}: {
+  mask: string;
+  scale: number;
+  color: string;
+  opacity: string;
+  rotate?: number;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        backgroundColor: color,
+        maskImage: mask,
+        WebkitMaskImage: mask,
+        maskRepeat: 'repeat',
+        WebkitMaskRepeat: 'repeat',
+        maskSize: `${scale}px ${scale}px`,
+        WebkitMaskSize: `${scale}px ${scale}px`,
+        opacity,
+        mixBlendMode: VISUAL_BLEND,
+        ...(rotate === undefined ? {} : { transform: `rotate(${rotate.toFixed(2)}deg)` }),
+        ...style,
+      }}
+    />
+  );
 }
 
-// --- particle-field --------------------------------------------------------
+// --- halftone-field (was gradient-mesh) -------------------------------------
 
-/** Scattered points of light. Reads as depth rather than as pattern, which is
- * what lets it sit behind a photograph — the eye takes it for lens bokeh and
- * stops looking. Counts scale well past the other generators because a
- * particle carries far less weight than a blob. */
-export function ParticleField({
-  props,
-  palette,
-}: {
-  props: AbstractVisualProps;
-  palette: Palette;
-}) {
+/** Stepped dot clusters, seeded. The direct replacement for the four blurred
+ * radial blobs, and the generator the phase doc singles out: a cluster is a
+ * hard-edged ellipse of dots at one density, so overlapping clusters build
+ * depth in discrete steps instead of a ramp. */
+export function HalftoneField({ props }: { props: AbstractVisualProps }) {
   const rand = mulberry32(props.seed);
   const { count, opacity } = INTENSITY[props.intensity];
-  const colors = accents(palette);
+  const clusters = Array.from({ length: count }, (_, i) => ({
+    left: 10 + rand() * 80,
+    top: 10 + rand() * 80,
+    size: 40 + rand() * 50,
+    // 1..3, never 4. At cluster size the densest band stops reading as a dot
+    // lattice and becomes a fill, which is a blob with extra steps.
+    density: (1 + Math.floor(rand() * 3)) as PATTERN.Density,
+    angle: rand() * 90,
+    color: roleAt(i),
+  }));
+
+  return (
+    <Layer>
+      {clusters.map((c, i) => (
+        <Patch
+          key={i}
+          mask={PATTERN.halftone(c.density)}
+          scale={4 + c.density}
+          color={c.color}
+          opacity={visualOpacity(opacity * 0.7)}
+          rotate={c.angle}
+          style={{
+            left: `${c.left}%`,
+            top: `${c.top}%`,
+            inlineSize: `${c.size}%`,
+            blockSize: `${c.size}%`,
+            clipPath: 'ellipse(50% 50% at 50% 50%)',
+            translate: '-50% -50%',
+          }}
+        />
+      ))}
+    </Layer>
+  );
+}
+
+// --- hatch-drift (was orb) --------------------------------------------------
+
+/** An engraved line field. `orb` was a two-stop radial gradient under a 40px
+ * blur — a light source, which is precisely the effect rule 19 bans. This
+ * reads as depth the way an engraving does: overlapping line panels at
+ * different angles and spacings, nothing luminous anywhere. */
+export function HatchDrift({ props }: { props: AbstractVisualProps }) {
+  const rand = mulberry32(props.seed);
+  const { count, opacity } = INTENSITY[props.intensity];
+  const panels = Array.from({ length: count }, (_, i) => ({
+    left: rand() * 60,
+    top: rand() * 55,
+    size: 45 + rand() * 45,
+    angle: -60 + rand() * 120,
+    spacing: 6 + rand() * 8,
+    density: (1 + Math.floor(rand() * 2)) as PATTERN.Density,
+    color: roleAt(i),
+  }));
+
+  return (
+    <Layer>
+      {panels.map((p, i) => (
+        <Patch
+          key={i}
+          mask={PATTERN.hatch(p.density, false)}
+          scale={p.spacing}
+          color={p.color}
+          opacity={visualOpacity(opacity * 0.8)}
+          rotate={p.angle}
+          style={{
+            left: `${p.left}%`,
+            top: `${p.top}%`,
+            inlineSize: `${p.size}%`,
+            blockSize: `${p.size}%`,
+          }}
+        />
+      ))}
+    </Layer>
+  );
+}
+
+// --- dither-fade (was noise-veil) -------------------------------------------
+
+/** A Bayer dissolve across the frame. `noise-veil` was a linear gradient with
+ * turbulence over it; this is the same idea done as ordered dithering, which
+ * is what a dissolve looks like when it is printed rather than composited.
+ *
+ * Bands are drawn as non-overlapping vertical strips because Bayer levels
+ * nest — stacking them yields the densest one everywhere, which is a flat
+ * field. The same reason `DitherVignette` uses rings. */
+export function DitherFade({ props }: { props: AbstractVisualProps }) {
+  const rand = mulberry32(props.seed);
+  const { opacity } = INTENSITY[props.intensity];
+  const steps = 4;
+  const fromLeft = rand() > 0.5;
+  const color = roleAt(Math.floor(rand() * ROLES.length));
+
+  return (
+    <Layer>
+      {Array.from({ length: steps }, (_, band) => {
+        const density = (fromLeft ? steps - band : band + 1) as PATTERN.Density;
+        const start = (band * 100) / steps;
+        return (
+          <Patch
+            key={band}
+            mask={PATTERN.dither(PATTERN.DITHER_LEVEL[density])}
+            scale={4}
+            color={color}
+            opacity={visualOpacity(opacity)}
+            style={{
+              insetBlock: 0,
+              insetInlineStart: `${start}%`,
+              inlineSize: `${100 / steps}%`,
+            }}
+          />
+        );
+      })}
+    </Layer>
+  );
+}
+
+// --- grid-lines (kept) ------------------------------------------------------
+
+/** An architectural grid. Kept from v1; its paint changed twice over.
+ *
+ * The grid itself was two `linear-gradient`s faking 1px rules, and its edge
+ * fade was a `radial-gradient` mask. The rules are now a cross-hatch mask, and
+ * the fade is a hard inset frame.
+ *
+ * ponytail: the v1 fade existed so the grid never draws a hard line across a
+ * photograph, and a hard frame is a different answer rather than a strictly
+ * better one. The ceiling is that over a busy image the frame edge may read as
+ * an artifact; the upgrade path is the stepped ring bands `DitherVignette`
+ * already implements. Left until the photography review says it is needed. */
+export function GridLines({ props }: { props: AbstractVisualProps }) {
+  const rand = mulberry32(props.seed);
+  const { count, opacity } = INTENSITY[props.intensity];
+  const spacing = 42 + Math.floor(rand() * 40);
+  const skew = -6 + rand() * 12;
+
+  return (
+    <Layer>
+      <div style={{ position: 'absolute', inset: 0, clipPath: 'inset(9%)' }}>
+        <Patch
+          mask={PATTERN.hatch(1, true)}
+          scale={spacing}
+          color={COLOR_VAR.accentSoft}
+          opacity={visualOpacity(opacity * 0.5)}
+          rotate={skew}
+          style={{ inset: '-25%' }}
+        />
+      </div>
+      {Array.from({ length: count }, (_, i) => (
+        // Solid hairlines, full height. v1 faded each one top and bottom with
+        // a linear gradient; a rule that stops is a rule that was drawn short.
+        <div
+          key={i}
+          style={{
+            position: 'absolute',
+            left: `${rand() * 100}%`,
+            insetBlock: 0,
+            inlineSize: '1px',
+            backgroundColor: COLOR_VAR.accent,
+            opacity: visualOpacity(opacity * 0.45),
+            mixBlendMode: VISUAL_BLEND,
+          }}
+        />
+      ))}
+    </Layer>
+  );
+}
+
+// --- particle-field (kept) --------------------------------------------------
+
+/** Scattered points. Audited rather than rewritten: dots were already dots,
+ * and the only change is that the `filter: blur(0.5px)` softening each one is
+ * gone. Half a pixel of blur is not a bloom by eye, but rule 19 bans the
+ * property rather than the radius on purpose — "a little blur" is how the
+ * effect returns, and a check that has to judge how much is not a check. */
+export function ParticleField({ props }: { props: AbstractVisualProps }) {
+  const rand = mulberry32(props.seed);
+  const { count, opacity } = INTENSITY[props.intensity];
   const particles = Array.from({ length: count * 18 }, (_, i) => ({
     left: rand() * 100,
     top: rand() * 100,
     size: 1 + rand() * 3,
     dim: 0.2 + rand() * 0.8,
-    color: colors[i % colors.length] ?? palette.accent,
+    color: roleAt(i),
   }));
 
   return (
@@ -82,9 +295,8 @@ export function ParticleField({
             inlineSize: `${p.size}px`,
             blockSize: `${p.size}px`,
             borderRadius: '50%',
-            background: toCssColor(p.color),
+            backgroundColor: p.color,
             opacity: visualOpacity(opacity * p.dim),
-            filter: 'blur(0.5px)',
             mixBlendMode: VISUAL_BLEND,
           }}
         />
@@ -93,157 +305,55 @@ export function ParticleField({
   );
 }
 
-// --- grid-lines ------------------------------------------------------------
+// --- block-collage (new) ----------------------------------------------------
 
-/** An architectural grid, faded at the edges. The most structural of the five
- * and the one most likely to fight a photograph, so it is masked to the centre
- * and never reaches full strength at the frame. */
-export function GridLines({
-  props,
-  palette,
-}: {
-  props: AbstractVisualProps;
-  palette: Palette;
-}) {
+/** Hard-edged colour blocks, riso-offset. The sixth generator, and the one
+ * that exists to prove the vocabulary gained range rather than merely losing
+ * gradients: every other generator is a field of small marks, and this one is
+ * composition at scale.
+ *
+ * Each block is drawn twice — once in one token colour, once in another,
+ * nudged by a few pixels. That is misregistration, and it is the whole effect;
+ * there is no third mechanism and no blur anywhere in it. */
+export function BlockCollage({ props }: { props: AbstractVisualProps }) {
   const rand = mulberry32(props.seed);
   const { count, opacity } = INTENSITY[props.intensity];
-  const spacing = 42 + Math.floor(rand() * 40);
-  const skew = -6 + rand() * 12;
-  const line = toCssColor(palette.accentSoft);
+  const blocks = Array.from({ length: count + 1 }, (_, i) => ({
+    left: rand() * 70,
+    top: rand() * 65,
+    width: 18 + rand() * 40,
+    height: 12 + rand() * 38,
+    offset: 3 + rand() * 6,
+    angle: -3 + rand() * 6,
+    color: roleAt(i),
+    shadow: roleAt(i + 1),
+  }));
 
   return (
     <Layer>
-      <div
-        style={{
-          position: 'absolute',
-          inset: '-25%',
-          transform: `rotate(${skew.toFixed(2)}deg)`,
-          backgroundImage: `linear-gradient(to right, ${line} 1px, transparent 1px), linear-gradient(to bottom, ${line} 1px, transparent 1px)`,
-          backgroundSize: `${spacing}px ${spacing}px`,
-          opacity: visualOpacity(opacity * 0.5),
-          mixBlendMode: VISUAL_BLEND,
-          // Fades the grid out before it reaches any edge, so it never draws a
-          // hard line across a photograph behind it.
-          maskImage: 'radial-gradient(ellipse at center, black 20%, transparent 75%)',
-          WebkitMaskImage:
-            'radial-gradient(ellipse at center, black 20%, transparent 75%)',
-        }}
-      />
-      {Array.from({ length: count }, (_, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            left: `${rand() * 100}%`,
-            top: 0,
-            bottom: 0,
-            inlineSize: '1px',
-            background: `linear-gradient(to bottom, transparent, ${toCssColor(palette.accent)}, transparent)`,
-            opacity: visualOpacity(opacity * 0.6),
-            mixBlendMode: VISUAL_BLEND,
-          }}
-        />
-      ))}
-    </Layer>
-  );
-}
-
-// --- orb -------------------------------------------------------------------
-
-/** One light source, off centre. The quietest generator and the safest behind
- * photography — a single soft falloff reads as lighting rather than as
- * graphics, which is exactly what a product shot wants behind it. */
-export function Orb({
-  props,
-  palette,
-}: {
-  props: AbstractVisualProps;
-  palette: Palette;
-}) {
-  const rand = mulberry32(props.seed);
-  const { opacity } = INTENSITY[props.intensity];
-  const left = 20 + rand() * 60;
-  const top = 15 + rand() * 50;
-  const size = 55 + rand() * 45;
-
-  return (
-    <Layer>
-      <div
-        style={{
-          position: 'absolute',
-          left: `${left}%`,
-          top: `${top}%`,
-          inlineSize: `${size}%`,
-          blockSize: `${size}%`,
-          transform: 'translate(-50%, -50%)',
-          borderRadius: '50%',
-          background: `radial-gradient(circle, ${toCssColor(palette.accent)} 0%, ${toCssColor(palette.accentSoft)} 35%, transparent 70%)`,
-          opacity: visualOpacity(opacity),
-          filter: 'blur(40px)',
-          mixBlendMode: VISUAL_BLEND,
-        }}
-      />
-      {/* A faint rim, so the orb has an edge to catch rather than dissolving
-          entirely into the background at low intensity. */}
-      <div
-        style={{
-          position: 'absolute',
-          left: `${left}%`,
-          top: `${top}%`,
-          inlineSize: `${size * 0.55}%`,
-          blockSize: `${size * 0.55}%`,
-          transform: 'translate(-50%, -50%)',
-          borderRadius: '50%',
-          border: `1px solid ${toCssColor(palette.accentSoft)}`,
-          opacity: visualOpacity(opacity * 0.35),
-          filter: 'blur(1px)',
-          mixBlendMode: VISUAL_BLEND,
-        }}
-      />
-    </Layer>
-  );
-}
-
-// --- noise-veil ------------------------------------------------------------
-
-/** Turbulence over a wash of accent. The scene already lays a fixed grain over
- * everything (`scene.tsx`); this is the *seeded, per-block* version — a
- * different `baseFrequency` and a tint, so the two do not simply double up.
- *
- * The SVG is a `data:` URI with no user input in it: the only interpolated
- * value is a number this file computed. */
-export function NoiseVeil({
-  props,
-  palette,
-}: {
-  props: AbstractVisualProps;
-  palette: Palette;
-}) {
-  const rand = mulberry32(props.seed);
-  const { opacity } = INTENSITY[props.intensity];
-  const frequency = (0.35 + rand() * 0.5).toFixed(2);
-  const angle = Math.floor(rand() * 360);
-
-  return (
-    <Layer>
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `linear-gradient(${angle}deg, ${toCssColor(palette.accentSoft)} 0%, transparent 60%)`,
-          opacity: visualOpacity(opacity * 0.8),
-          mixBlendMode: VISUAL_BLEND,
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='${frequency}' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23v)'/%3E%3C/svg%3E")`,
-          opacity: visualOpacity(opacity * 0.35),
-          mixBlendMode: 'overlay',
-        }}
-      />
+      {blocks.flatMap((b, i) =>
+        // The misregistered plate first, so the main one sits over it.
+        [
+          { key: `${i}-off`, color: b.shadow, dx: b.offset, dy: b.offset, o: 0.7 },
+          { key: `${i}`, color: b.color, dx: 0, dy: 0, o: 1 },
+        ].map((plate) => (
+          <div
+            key={plate.key}
+            style={{
+              position: 'absolute',
+              left: `${b.left}%`,
+              top: `${b.top}%`,
+              inlineSize: `${b.width}%`,
+              blockSize: `${b.height}%`,
+              backgroundColor: plate.color,
+              translate: `${plate.dx}px ${plate.dy}px`,
+              rotate: `${b.angle.toFixed(2)}deg`,
+              opacity: visualOpacity(opacity * 0.55 * plate.o),
+              mixBlendMode: VISUAL_BLEND,
+            }}
+          />
+        )),
+      )}
     </Layer>
   );
 }

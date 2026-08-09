@@ -6,48 +6,42 @@ import type { ArtDirection, MotionVocabulary } from '@/features/art-direction';
 import type { Scene as SceneData } from '@/schema';
 
 import { groupByRegion, SceneLayout } from './layouts';
+import { TextureLayerView } from './texture/texture-layer';
 import {
   SCENE_PADDING_BLOCK,
   SCENE_PADDING_INLINE,
   SCENE_PLACE,
   SCENE_SCROLL_MARGIN,
   sceneMinBlockVar,
-  textureVar,
 } from './tokens';
 
+/** The art direction's layer list, in order. It used to be three hardcoded
+ * `<div>`s — a radial-gradient glow, a radial-gradient vignette, and a grain —
+ * which meant the texture *vocabulary* lived in the renderer and only its
+ * opacities were tokens. Two of those three were gradients, and the glow was a
+ * coloured bloom behind every hero: the artifact breaking our own principle 5,
+ * which had been read as governing the chrome because of where it was filed.
+ *
+ * Now the renderer knows how to paint a kind and nothing about which kinds a
+ * scene gets. docs/v2/plan/14-texture-without-gradient.md. */
 function Texture({ artDirection }: { artDirection: ArtDirection }) {
-  const hasTexture = artDirection.texture.length > 0;
-  if (!hasTexture) return null;
+  if (artDirection.texture.length === 0) return null;
   return (
     <div
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}
+      style={{
+        position: 'absolute',
+        inset: 0,
+        pointerEvents: 'none',
+        overflow: 'hidden',
+      }}
       aria-hidden="true"
     >
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `radial-gradient(ellipse at 50% 0%, var(--accent-soft), transparent 60%)`,
-          opacity: textureVar('glow'),
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: `radial-gradient(ellipse at center, transparent 40%, var(--bg) 100%)`,
-          opacity: textureVar('vignette'),
-        }}
-      />
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-          opacity: textureVar('grain'),
-        }}
-      />
+      {artDirection.texture.map((layer, index) => (
+        // Index as key: the list is a fixed, ordered composition from a token
+        // file, not a collection that reorders. Position *is* the identity —
+        // it is also what addresses the layer's custom properties.
+        <TextureLayerView key={index} layer={layer} index={index} />
+      ))}
     </div>
   );
 }

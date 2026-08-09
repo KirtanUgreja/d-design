@@ -61,7 +61,7 @@ def _scene(scene_id: str, seed: int) -> Scene:
                     "region": "bg",
                     "props": {
                         "type": "abstract-visual",
-                        "generator": "orb",
+                        "generator": "hatch-drift",
                         "intensity": "medium",
                         "seed": seed,
                     },

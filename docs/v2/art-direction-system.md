@@ -140,9 +140,13 @@ Light ground, serif display against a grotesque text face, tight columnar grid, 
 --ink-muted    rgba(22,23,26,0.60)
 --hairline     rgba(22,23,26,0.12)
 budgets.headline  80         roomier type, longer headlines work
-texture           weave + rule — v1 took the empty array because the only
-                  three kinds all assumed a dark ground. Phase 14 gives it
-                  two that read on paper, so "none" stops being the answer
+texture           weave — v1 took the empty array because the only three
+                  kinds all assumed a dark ground. Phase 14 gives it one that
+                  reads on paper, so "none" stops being the answer.
+                  `rule` was authored here too and removed after looking at
+                  it: a hairline every 32px across a whole scene is ruled
+                  notebook paper, not a spread. A visible rule is furniture,
+                  not ground — it belongs to `Furniture` in phase 17
 ```
 
 Chosen as AD #2 precisely because it is hostile to `cinematic-dark`'s assumptions: light instead of dark, serif instead of sans, restraint instead of atmosphere, no texture at all. Anything shared between these two is genuinely universal.

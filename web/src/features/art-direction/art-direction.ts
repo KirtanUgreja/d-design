@@ -237,10 +237,61 @@ export interface Rhythm {
 // finds this vocabulary too small: the gap is real, it was not paid for here.
 // ---------------------------------------------------------------------------
 
-export interface TextureLayer {
-  kind: 'grain' | 'glow' | 'vignette';
+/** A palette entry by name. A texture layer references a colour, it never
+ * carries one — which is what lets the pattern itself be a colourless mask
+ * (`renderer/texture/patterns.ts`) and keeps rule 13 intact. */
+export type ColorRole = keyof Palette;
+
+/** Role -> the custom property `to-css-vars.ts` emits it as. Canonical here
+ * rather than in `renderer/tokens.ts`, which re-exports it: the emitter and
+ * the renderer have to agree on these names, and two copies of an agreement
+ * is the shape of a drift. */
+export const COLOR_VAR: Record<ColorRole, string> = {
+  bg: 'var(--bg)',
+  bgElevated: 'var(--bg-elevated)',
+  ink: 'var(--ink)',
+  inkMuted: 'var(--ink-muted)',
+  inkFaint: 'var(--ink-faint)',
+  accent: 'var(--accent)',
+  accentSoft: 'var(--accent-soft)',
+  veil: 'var(--veil)',
+  hairline: 'var(--hairline)',
+};
+
+/** How dense a mark is within its tile. Structural, not a token value: it is
+ * the knob a *stepped* kind moves between bands. */
+export type Density = 1 | 2 | 3 | 4;
+
+/** 2 to 4 discrete bands with hard boundaries. The aesthetic rule that keeps
+ * the vocabulary honest — a halftone that fades by continuously shrinking its
+ * dots is a gradient with extra work. */
+export type Steps = 2 | 3 | 4;
+
+export type RuleWeight = 'hairline' | 'thin' | 'thick';
+
+interface TextureBase {
   intensity: number; // 0-1
+  color: ColorRole;
+  /** Tile size. Every kind interprets it — dot pitch, hatch spacing, rule
+   * spacing. The phase doc gives `rule` no scale; it needs one, because
+   * spacing has to come from somewhere and a constant here would be our
+   * choice for every art direction. */
+  scale: Length;
+  /** Riso misregistration. Two layers of the same kind in two token colours,
+   * one of them nudged, composited with the AD's `visualBlend` — colour,
+   * texture and depth out of the layer list with no third mechanism. `px(0)`
+   * is no offset, which is what every layer that is not half of a riso pair
+   * uses. */
+  offset: Length;
 }
+
+export type TextureLayer =
+  | (TextureBase & { kind: 'grain'; density: Density })
+  | (TextureBase & { kind: 'halftone'; angle: number; steps: Steps })
+  | (TextureBase & { kind: 'hatch'; angle: number; cross: boolean; density: Density })
+  | (TextureBase & { kind: 'dither'; steps: Steps })
+  | (TextureBase & { kind: 'weave'; density: Density })
+  | (TextureBase & { kind: 'rule'; axis: 'block' | 'inline'; weight: RuleWeight });
 
 export type Texture = readonly TextureLayer[];
 

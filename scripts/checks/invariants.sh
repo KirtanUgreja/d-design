@@ -18,11 +18,57 @@ note() { printf '  ✗ %s\n' "$1" >&2; fail=1; }
 # Only our own code. `git ls-files` is exact where an --exclude-dir list is a
 # guess that grows a hole the first time a vendored directory is renamed.
 mine() { git ls-files -- "$@"; }
+# Success means "found something", decided by whether there was output — not by
+# the pipeline's exit code.
+#
+# The exit-code version of this failed open, which in a file of security checks
+# is the bug rather than a bug. `git ls-files` lists a file that has been
+# deleted but not yet staged; grep exits 2 on the missing path; xargs turns any
+# child failure into 123; `scan` reported "no match" and the check passed. So
+# every invariant here — including the tenant wrapper — was silently disabled
+# for anyone mid-refactor with an unstaged deletion. Found in v2 phase 14, by
+# deleting `gradient-mesh.tsx` and watching two brand-new checks go quiet.
+#
+# Filtering to files that still exist fixes the cause; returning on output
+# fixes the class, because xargs batching means the exit code was never a
+# reliable answer to "did anything match" in the first place.
 scan() { # scan <grep-args...> -- <pathspec...>
   local args=() ; while [ "$1" != "--" ]; do args+=("$1"); shift; done; shift
-  local files ; files=$(mine "$@") || return 1
+  local files out
+  files=$(mine "$@") || return 1
   [ -n "$files" ] || return 1
-  printf '%s\n' "$files" | tr '\n' '\0' | xargs -0 grep "${args[@]}" 2>/dev/null
+  out=$(printf '%s\n' "$files" \
+        | while IFS= read -r f; do [ -e "$f" ] && printf '%s\0' "$f"; done \
+        | xargs -0 grep "${args[@]}" 2>/dev/null)
+  [ -n "$out" ] || return 1
+  printf '%s\n' "$out"
+}
+
+# `scan`, minus lines that are comments. Requires -n so there is a `file:line:`
+# prefix to anchor against.
+#
+# This exists because three checks in this file have now fired on the comment
+# explaining the rule they enforce — check 6 solved it once by matching an
+# assignment instead of a word, and checks 7 and 9 walked straight back into
+# it. A rule worth enforcing is a rule worth writing down next to the code, and
+# a checker that punishes you for writing it down is one people delete.
+#
+# Test files are dropped for the other half of the same problem: a test that
+# asserts a construct never ships has to name the construct.
+#
+# Both filters are applied to `scan`'s *output* rather than to its pathspec.
+# `:(exclude)*.test.*` alongside a directory pathspec returns an empty file
+# list in this repo — every check using it passed unconditionally, which is the
+# same fail-open shape as the bug above and was found the same way, by breaking
+# a check and watching nothing happen.
+code_scan() { # code_scan <grep-args...> -- <pathspec...>
+  local out
+  out=$(scan "$@") || return 1
+  out=$(printf '%s\n' "$out" \
+        | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)' \
+        | grep -vE '^[^:]*\.(test|spec)\.[a-z]+:')
+  [ -n "$out" ] || return 1
+  printf '%s\n' "$out"
 }
 
 # --- 1. The tenant wrapper ------------------------------------------------
@@ -150,7 +196,7 @@ fi
 # full-bleed.tsx explaining why the constant was removed, which is the same
 # trap check 6 above already fell into once and the reason both are written
 # against the *value* and not the name. docs/v2/plan/13-scene-fit.md.
-if scan -nE "[\"'\`][[:space:]]*[0-9.]+(vh|dvh|lvh)[[:space:]]*[\"'\`]" -- \
+if code_scan -nE "[\"'\`][[:space:]]*[0-9.]+(vh|dvh|lvh)[[:space:]]*[\"'\`]" -- \
      'web/src/features/renderer/'; then
   note "a literal viewport height in renderer/. A scene's frame is the art direction's fit token, not a constant here (rule 20)."
 fi
@@ -166,6 +212,41 @@ fi
 if scan -nE "(scrollSnapType|scroll-snap-type)[[:space:]]*:" -- \
      'web/src/features/renderer/'; then
   note "scroll-snap-type in renderer/. That is the scroll container's property, and the container lives in present/ (rule 6)."
+fi
+
+# --- 8. No gradient, anywhere in the artifact -------------------------------
+# v2 rule 18, and the reason it is a grep rather than guidance: the rule
+# already existed. docs/design/principles.md principle 5 bans gradients
+# outright, and it was filed under docs/design/ where everyone read it as being
+# about our own chrome — so the artifact carried a coloured bloom behind every
+# hero for the whole of v1 while the principle sat there indicting it.
+#
+# A component test would not have caught it. Every renderer test passed the
+# entire time, because they assert structure and the structure was correct.
+#
+# Colour changes by dot, line, dither or hard edge. The vocabulary that
+# replaces the ramps is web/src/features/renderer/texture/patterns.ts.
+if code_scan -nE "(linear|radial|conic)-gradient\(|repeating-(linear|radial|conic)-gradient\(" -- \
+     'web/src/features/renderer/' 'web/src/features/art-direction/'; then
+  note "a gradient function in the artifact layer. Colour changes by dot, line, dither or hard edge (rule 18)."
+fi
+
+# --- 9. No neon, no bloom, no glow ------------------------------------------
+# v2 rule 19. Written as a *property* ban rather than as taste guidance,
+# because the version that bans "too much glow" requires someone to judge how
+# much, and a check that needs a judgement is a check that gets argued with.
+#
+# A hard offset shadow with zero blur is a print device and is allowed — which
+# is why the banned thing is the blur, not the shadow. Matching `blur(` covers
+# `filter` and `backdrop-filter` in one; the shadow properties are matched by
+# name because any chromatic shadow at any radius is the effect.
+#
+# Saturation is bounded by *value* rather than by grep, in the linter — phase
+# 03. A saturated colour is not neon; a saturated colour that appears to emit
+# light is, and that is a value judgement a grep cannot make.
+if code_scan -nE "blur\(|boxShadow|textShadow|dropShadow|box-shadow|text-shadow" -- \
+     'web/src/features/renderer/'; then
+  note "a blur or a shadow in renderer/. Neon is a lighting effect: the banned property is the blur (rule 19)."
 fi
 
 [ "$fail" -eq 0 ] || printf '\ninvariants failed — see docs/coderules/tooling.md\n' >&2

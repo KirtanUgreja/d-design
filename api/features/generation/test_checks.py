@@ -309,7 +309,7 @@ def test_an_abstract_visual_carries_no_presentational_value() -> None:
                     "region": "bg",
                     "props": {
                         "type": "abstract-visual",
-                        "generator": "noise-veil",
+                        "generator": "dither-fade",
                         "intensity": "bold",
                         "seed": 2147483647,
                     },

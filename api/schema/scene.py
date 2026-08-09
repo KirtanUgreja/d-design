@@ -203,8 +203,18 @@ class AbstractVisualProps(Schema):
     designed rather than empty."""
 
     type: Literal["abstract-visual"]
+    # Renamed in v2 phase 14. `gradient-mesh`, `orb` and `noise-veil` were named
+    # for techniques the artifact no longer uses — the first two were built out
+    # of radial gradients under a blur and the third out of a linear one. The
+    # ids are a published value, so the rename is a migration
+    # (0006_generator_ids) and not an edit.
     generator: Literal[
-        "gradient-mesh", "particle-field", "grid-lines", "orb", "noise-veil"
+        "halftone-field",
+        "particle-field",
+        "grid-lines",
+        "hatch-drift",
+        "dither-fade",
+        "block-collage",
     ]
     seed: int = Field(ge=0, le=2**31 - 1)
     intensity: Literal["subtle", "medium", "bold"]

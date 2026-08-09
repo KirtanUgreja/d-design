@@ -223,13 +223,14 @@ describe('seedFromId', () => {
   });
 });
 
-describe('the five AbstractVisual generators', () => {
+describe('the six AbstractVisual generators', () => {
   const GENERATORS = [
-    'gradient-mesh',
+    'halftone-field',
     'particle-field',
     'grid-lines',
-    'orb',
-    'noise-veil',
+    'hatch-drift',
+    'dither-fade',
+    'block-collage',
   ] as const;
   const INTENSITIES = ['subtle', 'medium', 'bold'] as const;
 
@@ -237,12 +238,36 @@ describe('the five AbstractVisual generators', () => {
     return renderToStaticMarkup(
       createElement(AbstractVisualBlock, {
         props: { type: 'abstract-visual', generator, intensity, seed },
-        artDirection: CINEMATIC_DARK,
       } as never),
     );
   }
 
-  it('all five render at all three intensities', () => {
+  // The ban, asserted against rendered output rather than against source. A
+  // generator could import a clean pattern and still compose a ramp out of it;
+  // this is what says it did not. docs/v2/plan/14-texture-without-gradient.md.
+  it('emits no gradient and no blur, at any intensity', () => {
+    for (const generator of GENERATORS) {
+      for (const intensity of INTENSITIES) {
+        const html = visual(generator, intensity);
+        expect(html, `${generator}/${intensity}`).not.toMatch(/gradient\(/);
+        expect(html, `${generator}/${intensity}`).not.toMatch(/blur\(/);
+        expect(html, `${generator}/${intensity}`).not.toMatch(/box-shadow|text-shadow/);
+      }
+    }
+  });
+
+  // Colour reaches a generator as `var(--accent)`, never as a resolved value.
+  // v1 called `toCssColor(palette.accent)` in this layer, which is a token
+  // becoming a string outside the one file allowed to do it.
+  it('paints only token references, never a resolved colour', () => {
+    for (const generator of GENERATORS) {
+      const html = visual(generator, 'bold');
+      expect(html, generator).not.toMatch(/rgb\(/);
+      expect(html, generator).not.toMatch(/#[0-9a-fA-F]{3,8}/);
+    }
+  });
+
+  it('all six render at all three intensities', () => {
     for (const generator of GENERATORS) {
       for (const intensity of INTENSITIES) {
         const html = visual(generator, intensity);

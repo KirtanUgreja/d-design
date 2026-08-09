@@ -7,24 +7,15 @@
 
 import type { CSSProperties } from 'react';
 
-import type {
-  ArtDirection,
-  Layout,
-  Palette,
-  TypeRoleKey,
-} from '@/features/art-direction';
+import type { ArtDirection, Layout, TypeRoleKey } from '@/features/art-direction';
+import { COLOR_VAR } from '@/features/art-direction';
 
-export const COLOR_VAR: Record<keyof Palette, string> = {
-  bg: 'var(--bg)',
-  bgElevated: 'var(--bg-elevated)',
-  ink: 'var(--ink)',
-  inkMuted: 'var(--ink-muted)',
-  inkFaint: 'var(--ink-faint)',
-  accent: 'var(--accent)',
-  accentSoft: 'var(--accent-soft)',
-  veil: 'var(--veil)',
-  hairline: 'var(--hairline)',
-};
+// Re-exported, not re-declared. `to-css-vars.ts` emits these names and this
+// file reads them, so the two have to agree — and an agreement kept in two
+// places is a drift waiting for the first renamed property. It moved next to
+// `Palette` in phase 14, when the texture layers needed the same mapping to
+// turn a colour *role* into a variable reference.
+export { COLOR_VAR };
 
 export interface TypeStyle {
   fontFamily: string;
@@ -103,6 +94,13 @@ export const SCENE_FIT_MIN_BLOCK = 'var(--scene-fit-min-block)';
 export const SCENE_PLACE = 'var(--scene-place)';
 export const SCENE_SCROLL_MARGIN = 'var(--scene-scroll-margin)';
 
-export function textureVar(kind: 'grain' | 'glow' | 'vignette'): string {
-  return `var(--texture-${kind}-intensity)`;
+/** A texture layer's value, by position in the art direction's layer list.
+ *
+ * Indexed rather than keyed by kind, because two layers of the same kind is
+ * the arrangement riso misregistration is made of, and `--texture-halftone-*`
+ * cannot hold two of them. Field names are the ones `to-css-vars.ts` emits;
+ * which fields exist depends on the kind, which is why the caller is a
+ * component that already switched on it. */
+export function textureVar(index: number, field: string): string {
+  return `var(--texture-${index}-${field})`;
 }

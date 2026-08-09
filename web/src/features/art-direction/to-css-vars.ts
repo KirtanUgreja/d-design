@@ -13,16 +13,21 @@
 import type {
   ArtDirection,
   ClampTriple,
+  ColorRole,
+  Density,
   FontSlot,
   Layout,
   Length,
   Palette,
+  RuleWeight,
   SceneFit,
   ScenePlace,
+  Steps,
+  TextureLayer,
   TypeRoleKey,
   Unit,
 } from './art-direction';
-import { FONT_REGISTRY, LAYOUTS } from './art-direction';
+import { COLOR_VAR, FONT_REGISTRY, LAYOUTS } from './art-direction';
 import { type Color, toCssColor } from './color';
 
 const TYPE_ROLES: readonly TypeRoleKey[] = [
@@ -154,13 +159,50 @@ function rhythmEntries(rhythm: ArtDirection['rhythm']): [string, string][] {
   ];
 }
 
-const TEXTURE_KINDS = ['grain', 'glow', 'vignette'] as const;
-
+// Texture is emitted **by index**, not by kind. Two layers of the same kind is
+// not an edge case here — it is how riso misregistration works (same pattern,
+// two token colours, one nudged), so a `--texture-<kind>-*` namespace would
+// collide on the one arrangement the vocabulary is built to allow.
+//
+// Only the fields a kind actually has are emitted. The alternative — a uniform
+// ten fields per layer with inert defaults — is 30-plus custom properties on
+// every scene root to say almost nothing, and it makes the parse ambiguous
+// about which fields were meaningful.
 function textureEntries(texture: ArtDirection['texture']): [string, string][] {
-  return TEXTURE_KINDS.map((kind): [string, string] => {
-    const layer = texture.find((l) => l.kind === kind);
-    return [`--texture-${kind}-intensity`, String(layer?.intensity ?? 0)];
+  const entries: [string, string][] = [['--texture-count', String(texture.length)]];
+  texture.forEach((layer, i) => {
+    const v = (field: string, value: string): void => {
+      entries.push([`--texture-${i}-${field}`, value]);
+    };
+    v('kind', layer.kind);
+    v('opacity', String(layer.intensity));
+    v('color', COLOR_VAR[layer.color]);
+    v('scale', lengthToCss(layer.scale));
+    v('offset', lengthToCss(layer.offset));
+    switch (layer.kind) {
+      case 'grain':
+      case 'weave':
+        v('density', String(layer.density));
+        break;
+      case 'halftone':
+        v('angle', `${layer.angle}deg`);
+        v('steps', String(layer.steps));
+        break;
+      case 'hatch':
+        v('angle', `${layer.angle}deg`);
+        v('cross', layer.cross ? '1' : '0');
+        v('density', String(layer.density));
+        break;
+      case 'dither':
+        v('steps', String(layer.steps));
+        break;
+      case 'rule':
+        v('axis', layer.axis);
+        v('weight', layer.weight);
+        break;
+    }
   });
+  return entries;
 }
 
 export function toCssVars(ad: ArtDirection): Record<string, string> {
@@ -186,9 +228,55 @@ function requireVar(vars: Record<string, string>, name: string): string {
   return value;
 }
 
-// A closed union on the way out, for the same reason `--visual-blend` gets one
-// below: the round trip is only lossless if it rejects a value the type does
-// not have rather than widening to `string`.
+// Every one of these is a closed union on the way out, for the reason
+// `--visual-blend` already had one: the round trip is only lossless if it
+// rejects a value the type does not have rather than widening to `string`.
+// Texture is where that matters most now — `glow` and `vignette` were removed
+// from the union, and parsing that tolerated an unknown kind is how a removed
+// kind survives in stored data and quietly comes back.
+
+const COLOR_ROLE_BY_VAR = new Map<string, ColorRole>(
+  (Object.entries(COLOR_VAR) as [ColorRole, string][]).map(([role, v]) => [v, role]),
+);
+
+function cssToColorRole(css: string): ColorRole {
+  const role = COLOR_ROLE_BY_VAR.get(css.trim());
+  if (role === undefined) throw new Error(`to-css-vars: not a colour role: ${css}`);
+  return role;
+}
+
+function cssToDensity(css: string): Density {
+  const n = Number.parseInt(css.trim(), 10);
+  if (n !== 1 && n !== 2 && n !== 3 && n !== 4) {
+    throw new Error(`to-css-vars: not a density: ${css}`);
+  }
+  return n;
+}
+
+function cssToSteps(css: string): Steps {
+  const n = Number.parseInt(css.trim(), 10);
+  if (n !== 2 && n !== 3 && n !== 4) {
+    throw new Error(`to-css-vars: not a step count: ${css}`);
+  }
+  return n;
+}
+
+function cssToAxis(css: string): 'block' | 'inline' {
+  const axis = css.trim();
+  if (axis !== 'block' && axis !== 'inline') {
+    throw new Error(`to-css-vars: not an axis: ${css}`);
+  }
+  return axis;
+}
+
+function cssToRuleWeight(css: string): RuleWeight {
+  const weight = css.trim();
+  if (weight !== 'hairline' && weight !== 'thin' && weight !== 'thick') {
+    throw new Error(`to-css-vars: not a rule weight: ${css}`);
+  }
+  return weight;
+}
+
 function cssToScenePlace(css: string): ScenePlace {
   const place = css.trim();
   if (place !== 'center' && place !== 'start' && place !== 'end') {
@@ -278,10 +366,48 @@ export function fromCssVars(vars: Record<string, string>): Pick<
     fitScrollMargin: cssToLength(requireVar(vars, '--scene-scroll-margin')),
   };
 
-  const texture: ArtDirection['texture'] = TEXTURE_KINDS.map((kind) => ({
-    kind,
-    intensity: Number.parseFloat(requireVar(vars, `--texture-${kind}-intensity`)),
-  })).filter((l) => l.intensity > 0);
+  const texture: ArtDirection['texture'] = Array.from(
+    { length: Number.parseInt(requireVar(vars, '--texture-count'), 10) },
+    (_, i): TextureLayer => {
+      const f = (field: string): string => requireVar(vars, `--texture-${i}-${field}`);
+      const base = {
+        intensity: Number.parseFloat(f('opacity')),
+        color: cssToColorRole(f('color')),
+        scale: cssToLength(f('scale')),
+        offset: cssToLength(f('offset')),
+      };
+      const density = (): Density => cssToDensity(f('density'));
+      const steps = (): Steps => cssToSteps(f('steps'));
+      const angle = (): number => Number.parseFloat(f('angle'));
+      switch (f('kind')) {
+        case 'grain':
+          return { ...base, kind: 'grain', density: density() };
+        case 'weave':
+          return { ...base, kind: 'weave', density: density() };
+        case 'halftone':
+          return { ...base, kind: 'halftone', angle: angle(), steps: steps() };
+        case 'hatch':
+          return {
+            ...base,
+            kind: 'hatch',
+            angle: angle(),
+            cross: f('cross') === '1',
+            density: density(),
+          };
+        case 'dither':
+          return { ...base, kind: 'dither', steps: steps() };
+        case 'rule':
+          return {
+            ...base,
+            kind: 'rule',
+            axis: cssToAxis(f('axis')),
+            weight: cssToRuleWeight(f('weight')),
+          };
+        default:
+          throw new Error(`to-css-vars: not a texture kind: ${f('kind')}`);
+      }
+    },
+  );
 
   // A closed union on the way out too — the round-trip is only lossless if it
   // rejects a value the type does not have, rather than widening to `string`.

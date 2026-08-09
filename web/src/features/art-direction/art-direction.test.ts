@@ -5,8 +5,8 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { BrandKit } from '@/schema';
 
-import type { ArtDirection, TypeRoleKey } from './art-direction';
-import { FONT_REGISTRY, LAYOUTS } from './art-direction';
+import type { ArtDirection, Texture, TypeRoleKey } from './art-direction';
+import { FONT_REGISTRY, LAYOUTS, px } from './art-direction';
 import { CINEMATIC_DARK, TYPE_SCALE } from './cinematic-dark';
 import { EDITORIAL_LIGHT } from './editorial-light';
 import { contrastRatio, relativeLuminance } from './color';
@@ -79,14 +79,129 @@ describe('to-css-vars round-trips', () => {
   it('emits every value phase 02 extracted, and nothing that was not used', () => {
     const vars = toCssVars(CINEMATIC_DARK);
     const names = Object.keys(vars).sort();
-    // 9 color + 2 font-family + 7*4 type-role + 7 space + 4 rhythm + 3 texture
+    // 9 color + 2 font-family + 7*4 type-role + 7 space + 4 rhythm
     // + visual-blend + visual-strength + 9 fit (1 min-block + 6 per-layout
-    // + place + scroll-margin)
-    expect(names.length).toBe(9 + 2 + 7 * 4 + 7 + 4 + 3 + 2 + 9);
+    // + place + scroll-margin) + texture: 1 count + 3 layers, each 5 common
+    // fields (kind, opacity, color, scale, offset) plus its own — halftone
+    // angle+steps, dither steps, grain density.
+    expect(names.length).toBe(9 + 2 + 7 * 4 + 7 + 4 + 2 + 9 + (1 + 3 * 5 + 2 + 1 + 1));
     expect(vars['--space-1']).toBe('8px');
     expect(vars['--space-7']).toBe('160px');
     expect(vars['--measure']).toBe('62ch');
     expect(vars['--content-max']).toBe('1280px');
+  });
+});
+
+describe('texture carries colour by pattern, never by ramp', () => {
+  // Every kind, including the two no shipped direction uses yet. A vocabulary
+  // whose unused half has never been round-tripped is a vocabulary with two
+  // members that work and four that compile.
+  const ALL_KINDS: Texture = [
+    {
+      kind: 'grain',
+      intensity: 0.05,
+      color: 'ink',
+      scale: px(64),
+      offset: px(0),
+      density: 2,
+    },
+    {
+      kind: 'halftone',
+      intensity: 0.5,
+      color: 'accentSoft',
+      scale: px(11),
+      offset: px(0),
+      angle: 15,
+      steps: 3,
+    },
+    {
+      kind: 'hatch',
+      intensity: 0.3,
+      color: 'ink',
+      scale: px(8),
+      offset: px(0),
+      angle: 45,
+      cross: true,
+      density: 2,
+    },
+    {
+      kind: 'dither',
+      intensity: 0.8,
+      color: 'bg',
+      scale: px(3),
+      offset: px(0),
+      steps: 4,
+    },
+    {
+      kind: 'weave',
+      intensity: 0.1,
+      color: 'ink',
+      scale: px(7),
+      offset: px(0),
+      density: 3,
+    },
+    {
+      kind: 'rule',
+      intensity: 0.14,
+      color: 'ink',
+      scale: px(32),
+      // Riso misregistration: the same kind, a second colour, nudged. It falls
+      // out of the layer list rather than needing a mechanism, which is the
+      // sign the layer list is the right shape.
+      offset: px(2),
+      axis: 'inline',
+      weight: 'thick',
+    },
+  ];
+
+  const withTexture = (texture: Texture): ArtDirection => ({
+    ...CINEMATIC_DARK,
+    texture,
+  });
+
+  it('round-trips all six kinds with their own fields', () => {
+    const parsed = fromCssVars(toCssVars(withTexture(ALL_KINDS)));
+    expect(parsed.texture).toEqual(ALL_KINDS);
+  });
+
+  it('round-trips two layers of the same kind, which is what riso needs', () => {
+    const riso: Texture = [
+      {
+        kind: 'weave',
+        intensity: 0.2,
+        color: 'accent',
+        scale: px(7),
+        offset: px(0),
+        density: 2,
+      },
+      {
+        kind: 'weave',
+        intensity: 0.2,
+        color: 'ink',
+        scale: px(7),
+        offset: px(2),
+        density: 2,
+      },
+    ];
+    const parsed = fromCssVars(toCssVars(withTexture(riso)));
+    // Indexed emission, not keyed by kind — keyed would collapse these to one.
+    expect(parsed.texture).toEqual(riso);
+  });
+
+  it('rejects a texture kind the union no longer has', () => {
+    const vars = { ...toCssVars(CINEMATIC_DARK), '--texture-0-kind': 'glow' };
+    // `glow` and `vignette` were removed rather than deprecated. Parsing that
+    // tolerated an unknown kind is how a removed kind survives in stored data
+    // and quietly comes back.
+    expect(() => fromCssVars(vars)).toThrow(/not a texture kind/);
+  });
+
+  it('emits no gradient function in any token value', () => {
+    for (const ad of [CINEMATIC_DARK, EDITORIAL_LIGHT, withTexture(ALL_KINDS)]) {
+      for (const [name, value] of Object.entries(toCssVars(ad))) {
+        expect(value, `${name} carries a gradient`).not.toMatch(/gradient\(/);
+      }
+    }
   });
 });
 
@@ -327,12 +442,28 @@ describe('the motion vocabulary is data', () => {
 describe('editorial-light', () => {
   const BOTH = [CINEMATIC_DARK, EDITORIAL_LIGHT];
 
-  it('emits exactly the same variable names as cinematic-dark', () => {
+  it('emits exactly the same variable names as cinematic-dark, texture aside', () => {
     // Totality. A missing `--type-lead-size` does not throw anywhere — the
     // block asks for `var(--type-lead-size)`, gets nothing, and inherits.
-    expect(Object.keys(toCssVars(EDITORIAL_LIGHT)).sort()).toEqual(
-      Object.keys(toCssVars(CINEMATIC_DARK)).sort(),
-    );
+    //
+    // `--texture-*` is exempt from phase 14, and the exemption is structural
+    // rather than a concession. Every other variable is read unconditionally,
+    // so a direction that omits one is a direction with a hole. A texture
+    // variable is read only inside the branch for that layer's *kind* — a
+    // `weave` layer never asks for an angle — and the emitter switches on the
+    // same discriminant the renderer does. Requiring name-set equality here
+    // would force every direction to emit every field of every kind it does
+    // not use.
+    //
+    // What replaces it is stronger, not weaker: the round trip below reads
+    // back exactly the fields the kind declares and throws on a missing one,
+    // and the all-six-kinds test asserts it for kinds no shipped direction
+    // uses yet.
+    const withoutTexture = (ad: ArtDirection) =>
+      Object.keys(toCssVars(ad))
+        .filter((name) => !name.startsWith('--texture-'))
+        .sort();
+    expect(withoutTexture(EDITORIAL_LIGHT)).toEqual(withoutTexture(CINEMATIC_DARK));
   });
 
   it('round-trips through the CSS-variable format like any other direction', () => {

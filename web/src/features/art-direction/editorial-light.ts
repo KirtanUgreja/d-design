@@ -186,15 +186,41 @@ export const EDITORIAL_RHYTHM: Rhythm = {
   fitScrollMargin: rem(4),
 };
 
-/** Empty, and that is a real answer rather than a gap left unfilled. The
- * texture vocabulary is grain/glow/vignette — three effects that all assume a
- * dark ground and a light source. On white, every one of them is dirt.
+/** This was `[]` in v1, with a comment saying the empty array was a real
+ * answer because grain/glow/vignette all assume a dark ground and a light
+ * source, and on white every one of them is dirt. That was true, and it also
+ * recorded the gap: *"what this direction wants instead is hairline rules"*,
+ * declined because a fourth kind was a renderer change.
  *
- * What this direction wants instead is hairline rules, and it gets them from
- * `--hairline` where the renderer already draws borders. A fourth texture kind
- * would be a renderer change, which is exactly the cost this exercise is
- * measuring, so it was not taken. Noted in `art-direction.ts`. */
-export const EDITORIAL_TEXTURE: Texture = [];
+ * Phase 14 paid that cost, so the gap gets filled with what the note asked
+ * for. Weave is the tooth of uncoated stock and is the quietest kind in the
+ * vocabulary; the rules are the baseline grid showing through. Neither one
+ * assumes a light source, which is the property the v1 three all lacked. */
+export const EDITORIAL_TEXTURE: Texture = [
+  {
+    kind: 'weave',
+    intensity: 0.06,
+    color: 'ink',
+    scale: px(7),
+    offset: px(0),
+    density: 2,
+  },
+];
+
+/* Weave only — and the `rule` layer that was here got deleted after looking at
+ * it, which is the review this phase says is the one most likely to be skipped.
+ *
+ * A hairline `rule` every 32px across the whole scene does not read as a
+ * printed spread. It reads as **ruled notebook paper**, and it was worse than
+ * the empty array v1 shipped. The mistake was a category error rather than a
+ * value: in print a baseline grid is *invisible*, and a rule you can see is
+ * structural — under a running head, between columns, closing a section.
+ *
+ * So the kind stays in the vocabulary (`bold-brutalist` will want inline rules,
+ * and they had to exist before an art direction could ask for them), but the
+ * thing v1's note actually wanted is furniture, not ground. That is
+ * `Furniture { rule, ruleWeight }` in phase 17, which already has the fields
+ * for it — the gap was real and this was the wrong place to close it. */
 
 export const EDITORIAL_LIGHT: ArtDirection = {
   id: 'editorial-light',

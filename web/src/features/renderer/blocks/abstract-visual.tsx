@@ -1,31 +1,37 @@
-import type { ArtDirection } from '@/features/art-direction';
-
 import type { AbstractVisualProps } from './block-props';
-import { GradientMesh } from './gradient-mesh';
-import { GridLines, NoiseVeil, Orb, ParticleField } from './visuals';
+import {
+  BlockCollage,
+  DitherFade,
+  GridLines,
+  HalftoneField,
+  HatchDrift,
+  ParticleField,
+} from './visuals';
 
-// All five generators, as of phase 11 (docs/v1/plan/11-visuals-and-slot.md).
+// All six generators, as of v2 phase 14 (docs/v2/plan/14-texture-without-gradient.md).
 // A switch rather than a lookup table because each component's props type is
-// checked at the call site this way, and there are five of them, forever —
-// "a sixth generator" is in that phase's Skipped list with a trigger.
-export function AbstractVisualBlock({
-  props,
-  artDirection,
-}: {
-  props: AbstractVisualProps;
-  artDirection: ArtDirection;
-}) {
-  const palette = artDirection.color;
+// checked at the call site this way.
+//
+// The trigger v1 set for a sixth generator was "a real need"; the need was
+// that five generators all rendered fields of small marks and none of them
+// composed at scale, which is what `block-collage` is for.
+//
+// No `artDirection` parameter any more. The generators used to take a palette
+// so they could call `toCssColor` on it; they read `COLOR_VAR` now, so colour
+// stays a token reference and this component has nothing to forward.
+export function AbstractVisualBlock({ props }: { props: AbstractVisualProps }) {
   switch (props.generator) {
-    case 'gradient-mesh':
-      return <GradientMesh props={props} palette={palette} />;
+    case 'halftone-field':
+      return <HalftoneField props={props} />;
     case 'particle-field':
-      return <ParticleField props={props} palette={palette} />;
+      return <ParticleField props={props} />;
     case 'grid-lines':
-      return <GridLines props={props} palette={palette} />;
-    case 'orb':
-      return <Orb props={props} palette={palette} />;
-    case 'noise-veil':
-      return <NoiseVeil props={props} palette={palette} />;
+      return <GridLines props={props} />;
+    case 'hatch-drift':
+      return <HatchDrift props={props} />;
+    case 'dither-fade':
+      return <DitherFade props={props} />;
+    case 'block-collage':
+      return <BlockCollage props={props} />;
   }
 }

@@ -8,11 +8,12 @@ import { z } from 'zod';
 
 export const abstractVisualPropsSchema = z.strictObject({
   generator: z.enum([
-    'gradient-mesh',
+    'halftone-field',
     'particle-field',
     'grid-lines',
-    'orb',
-    'noise-veil',
+    'hatch-drift',
+    'dither-fade',
+    'block-collage',
   ]),
   intensity: z.enum(['subtle', 'medium', 'bold']),
   seed: z.int().min(0).max(2147483647),

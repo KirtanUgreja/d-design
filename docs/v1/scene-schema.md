@@ -139,6 +139,9 @@ before publishing. The editor surfaces it; do not drop the field.
 
 ```ts
 AbstractVisual {
+  // Renamed in v2 phase 14 to halftone-field | particle-field | grid-lines |
+  // hatch-drift | dither-fade | block-collage. Three of these were named for
+  // gradient techniques the artifact no longer uses; migration 0006 maps them.
   generator: 'gradient-mesh' | 'particle-field' | 'grid-lines' | 'orb' | 'noise-veil';
   seed: number;
   intensity: 'subtle' | 'medium' | 'bold';

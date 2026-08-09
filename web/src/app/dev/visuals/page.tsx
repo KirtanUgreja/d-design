@@ -22,11 +22,12 @@ import { CINEMATIC_DARK, toCssVars } from '@/features/art-direction';
 import { AbstractVisualBlock } from '@/features/renderer';
 
 const GENERATORS = [
-  'gradient-mesh',
+  'halftone-field',
   'particle-field',
   'grid-lines',
-  'orb',
-  'noise-veil',
+  'hatch-drift',
+  'dither-fade',
+  'block-collage',
 ] as const;
 const INTENSITIES = ['subtle', 'medium', 'bold'] as const;
 
@@ -72,7 +73,6 @@ function Cell({
     >
       <AbstractVisualBlock
         props={{ type: 'abstract-visual', generator, intensity, seed: 20260809 }}
-        artDirection={CINEMATIC_DARK}
       />
       <span
         style={{

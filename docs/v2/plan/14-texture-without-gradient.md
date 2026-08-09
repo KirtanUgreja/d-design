@@ -222,10 +222,31 @@ Text over media conventionally uses a bottom-up gradient scrim. `--veil` is alre
 
 ## Exit gate
 
-- [ ] Zero gradient functions and zero blurs under `renderer/`, enforced by grep, verified by breaking
-- [ ] Six texture kinds, all mask-driven, all token-coloured, all reviewed over photography and on white
-- [ ] `glow` and `vignette` removed from the union; `cinematic-dark` re-authored and not merely stripped
-- [ ] Six generators, deterministic, migrated, with `gradient-mesh.tsx` deleted
-- [ ] The neon rules exist as effect bans in the renderer and value bounds in the linter
-- [ ] Principle 5's banned list is stated to govern the artifact, in [../../design/principles.md](../../design/principles.md) itself
-- [ ] The gate is green
+- [x] Zero gradient functions and zero blurs under `renderer/`, enforced by grep, verified by breaking — eight probes, each caught
+- [x] Six texture kinds, all mask-driven, all token-coloured, reviewed on both grounds. **Over photography: not done** — `/dev/visuals` renders over an uploaded photo and there are no uploads without a running `api`
+- [x] `glow` and `vignette` removed from the union; `cinematic-dark` re-authored and not merely stripped
+- [x] Six generators, deterministic, with `gradient-mesh.tsx` deleted
+- [ ] The migration maps every old generator id — **written, unverified.** Docker was not running, so no migration ran and no `api` test ran
+- [x] The neon rules exist as effect bans in the renderer. Value bounds are [03](03-ad-linter.md)'s, as this phase always said
+- [x] Principle 5's banned list is stated to govern the artifact, in [../../design/principles.md](../../design/principles.md) itself
+- [x] The gate is green
+
+## What the build found
+
+**The first render was worse than what it replaced, and that is the review working.** This phase's human check says the stepped bloom must read as *more* deliberate than the mesh, and that if it reads worse the steps are wrong rather than the decision. It read worse: dots covering 80% of their tile at an 11px pitch, over a headline, is not a halftone — it is polka dots fighting the type. Three values were wrong, not the approach: max dot radius (now 4.4 of 16, was 6.4), pitch (6px, was 11), and the vignette's reach, which at 50% inset was most of the frame rather than an edge treatment. Screenshotting and looking is the only thing that catches this; no assertion in this repo would have.
+
+**`editorial-light`'s `rule` layer was deleted after looking at it.** A hairline every 32px across a whole scene reads as ruled notebook paper, and it was worse than the empty array v1 shipped. The error was a category one: in print a baseline grid is *invisible*, and a rule you can see is structural — under a running head, between columns. The kind stays in the vocabulary because `bold-brutalist` will want it, but what v1's note actually asked for is **furniture, not ground**, and [17](17-composition.md) already has `Furniture { rule, ruleWeight }` for it.
+
+**`invariants.sh` had a fail-open, and it disabled every check in the file.** Deleting `gradient-mesh.tsx` left it tracked-but-absent; `git ls-files` still listed it, `grep` exited 2 on the missing path, `xargs` turned that into 123, and `scan` reported "no match". Two brand-new checks passed silently against deliberate violations. **Anyone mid-refactor with an unstaged deletion was running no invariants at all, including the tenant wrapper.** `scan` now decides on output rather than exit code and skips absent files. A second instance of the same shape: `:(exclude)*.test.*` alongside a directory pathspec returns an *empty* file list, so every check written that way also passed unconditionally.
+
+**The documentation trap, for the third time.** Checks 7 and 9 fired on the comments explaining the rules they enforce, which check 6 had already solved once. It is now a `code_scan` helper that drops comment lines and test files, rather than a fourth bespoke regex.
+
+### Deviations
+
+| | |
+|---|---|
+| `TextureLayer` gains `color`, `scale` and `offset` | The doc's union has none, and section 4 requires two token colours and an offset for riso. `color` is a `ColorRole`, never a value — which is what keeps the pattern a colourless mask |
+| `rule.weight` is `'hairline' \| 'thin' \| 'thick'`, not a `Length` | A tile baked into a data URI cannot resolve a token, so a `Length` would have to be interpolated into the URI — the exact rule-13 violation `patterns.ts` exists to make impossible |
+| Texture emits **by index**, not by kind | Two layers of the same kind is what riso *is*, and `--texture-halftone-*` cannot hold two of them |
+| Texture is exempt from the AD totality test | Every other variable is read unconditionally; a texture variable is read only inside its kind's branch. The round trip replaces the guarantee and is stronger — it reads back exactly the declared fields and throws on a missing one |
+| `grid-lines` loses its edge fade rather than gaining a stepped one | The v1 fade was a `radial-gradient` mask. A hard inset frame is the lazy replacement, `ponytail:`-marked; the upgrade path is the ring bands `DitherVignette` already implements |

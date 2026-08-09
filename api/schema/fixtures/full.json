@@ -15,7 +15,7 @@
           "region": "bg",
           "props": {
             "type": "abstract-visual",
-            "generator": "gradient-mesh",
+            "generator": "halftone-field",
             "seed": 7,
             "intensity": "bold"
           },

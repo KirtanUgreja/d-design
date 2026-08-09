@@ -118,10 +118,40 @@ export const CINEMATIC_RHYTHM: Rhythm = {
   fitScrollMargin: rem(4),
 };
 
+/** Re-authored, not stripped. The v1 version was `grain + glow + vignette`,
+ * and two of those three were radial gradients — the glow a coloured bloom
+ * behind every hero, which is the single most on-the-nose violation of
+ * principle 5 the artifact contained.
+ *
+ * The bloom becomes a **three-step dot field**: dense dots at the light
+ * source, a middle band, a sparse band, hard boundaries between them. On a
+ * black stage that reads as light with a printed grain, and it is
+ * unmistakably not a mesh. The vignette becomes a **dithered edge** — a Bayer
+ * dissolve inward from the frame in three bands, which is the classic
+ * non-gradient vignette and looks like a choice, which the radial one never
+ * did. Grain survives in character and is a mask now, so it takes its colour
+ * from a token like everything else. */
 export const CINEMATIC_TEXTURE: Texture = [
-  { kind: 'grain', intensity: 0.04 },
-  { kind: 'glow', intensity: 1 },
-  { kind: 'vignette', intensity: 1 },
+  {
+    kind: 'halftone',
+    intensity: 0.28,
+    color: 'accentSoft',
+    scale: px(6),
+    offset: px(0),
+    // Off-orthogonal on purpose. A dot lattice at 0 or 45 degrees reads as a
+    // grid or a check; the classic print screen angles avoid both.
+    angle: 15,
+    steps: 3,
+  },
+  { kind: 'dither', intensity: 0.55, color: 'bg', scale: px(3), offset: px(0), steps: 3 },
+  {
+    kind: 'grain',
+    intensity: 0.05,
+    color: 'ink',
+    scale: px(64),
+    offset: px(0),
+    density: 2,
+  },
 ];
 
 export const CINEMATIC_DARK: ArtDirection = {
