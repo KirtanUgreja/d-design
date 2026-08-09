@@ -12,11 +12,12 @@ import 'server-only';
 
 import { z } from 'zod';
 
-import { loadArtDirection } from '@/features/art-direction/server';
+import { loadArtDirection, loadMotion } from '@/features/art-direction/server';
 import { err, ok, type Result } from '@/lib/result';
 import { deleteArtifact, readArtifact, writeArtifact } from '@/lib/storage';
 import {
   artDirectionRecordSchema,
+  motionVocabularyRecordSchema,
   experienceSchema,
   sceneSchema,
   type Experience,
@@ -39,6 +40,11 @@ const publishedArtifactSchema = z.strictObject({
   // answer.
   artDirectionRef: experienceSchema.shape.artDirection,
   artDirection: artDirectionRecordSchema,
+  // Frozen by the same rule and for the same reason. Motion is styling, so a
+  // page that resolved its vocabulary at serve time would restyle itself the
+  // day someone published a new version of one — and the whole point of the
+  // artifact is that `/p/[id]` is a disk read with nothing else in it.
+  motionVocabulary: motionVocabularyRecordSchema,
   scenes: z.array(sceneSchema),
   publishedAt: z.string(),
 });
@@ -123,14 +129,23 @@ export async function publishExperience(id: string): Promise<Result<void>> {
   // resolved fails rather than shipping a page with no tokens — rule 10's
   // reasoning applied to publishing: anything that could produce an unstyled
   // page for a customer's audience fails closed.
-  const resolved = await loadArtDirection(experience.artDirection);
+  // Two axes, resolved together only because publishing needs both. A publish
+  // whose art direction or vocabulary cannot be resolved fails rather than
+  // shipping a page missing half its styling — rule 10's reasoning applied to
+  // publishing.
+  const [resolved, motion] = await Promise.all([
+    loadArtDirection(experience.artDirection),
+    loadMotion(experience.motionVocabulary),
+  ]);
   if (!resolved.ok) return resolved;
+  if (!motion.ok) return motion;
 
   const artifact: PublishedArtifact = {
     title: experience.title,
     mode: experience.mode,
     artDirectionRef: experience.artDirection,
     artDirection: resolved.value.record,
+    motionVocabulary: motion.value.record,
     scenes: experience.scenes,
     publishedAt: new Date().toISOString(),
   };

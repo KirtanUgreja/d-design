@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { seededRecord } from '@/features/art-direction/server';
+import { seededMotionRecord, seededRecord } from '@/features/art-direction/server';
 import { deleteArtifact, readArtifact, writeArtifact } from '@/lib/storage';
 import { experienceSchema } from '@/schema';
 
@@ -19,6 +19,9 @@ import {
 // the tokens rather than a reference, which is what makes a published page
 // unable to restyle itself (v2 rule 15).
 const AD_RECORD = seededRecord('cinematic-dark');
+// The other axis. Publishing resolves both and freezes both, because motion is
+// styling and a published page never restyles itself.
+const MOTION_RECORD = seededMotionRecord('cinematic-slow');
 
 const MINIMAL_EXPERIENCE = {
   id: 'exp-1',
@@ -26,6 +29,7 @@ const MINIMAL_EXPERIENCE = {
   mode: 'scroll',
   brandId: 'brand-1',
   artDirection: { id: 'cinematic-dark', version: 1 },
+  motionVocabulary: { id: 'cinematic-slow' },
   scenes: [
     {
       id: 's1',
@@ -93,17 +97,24 @@ describe('publish/unpublish', () => {
         new Response(JSON.stringify(MINIMAL_EXPERIENCE), { status: 200 }),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify(AD_RECORD), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify(MOTION_RECORD), { status: 200 }))
       .mockResolvedValueOnce(new Response('{}', { status: 200 }));
     globalThis.fetch = fetchMock as unknown as typeof fetch;
 
     const result = await publishExperience(id);
     expect(result.ok).toBe(true);
-    // Three: read the experience, resolve its art direction, mark published.
-    expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(String(fetchMock.mock.calls[1]?.[0])).toContain(
-      '/art-directions/cinematic-dark/1',
+    // Four: read the experience, resolve each of its two axes, mark published.
+    expect(fetchMock).toHaveBeenCalledTimes(4);
+    const urls = fetchMock.mock.calls.map((call) => String(call[0]));
+    // The two resolutions are concurrent, so their order is not a fact worth
+    // asserting — that they both happened, and against the right ids, is.
+    expect(urls).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('/art-directions/cinematic-dark/1'),
+        expect.stringContaining('/motion-vocabularies/cinematic-slow'),
+      ]),
     );
-    expect(String(fetchMock.mock.calls[2]?.[0])).toContain(`/experiences/${id}/publish`);
+    expect(urls[3]).toContain(`/experiences/${id}/publish`);
 
     const artifact = await readPublishedArtifact(id);
     expect(artifact.ok).toBe(true);
@@ -143,6 +154,7 @@ describe('publish/unpublish', () => {
       mode: 'scroll',
       artDirectionRef: { id: 'cinematic-dark', version: 1 },
       artDirection: AD_RECORD,
+      motionVocabulary: MOTION_RECORD,
       scenes: [],
       publishedAt: new Date().toISOString(),
     });
@@ -203,6 +215,7 @@ describe('saveScenes', () => {
       mode: 'scroll',
       brandId: 'brand-1',
       artDirection: { id: 'cinematic-dark', version: 1 },
+      motionVocabulary: { id: 'cinematic-slow' },
     });
   });
 

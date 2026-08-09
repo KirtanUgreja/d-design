@@ -23,21 +23,23 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { artDirectionRecordSchema, type ArtDirectionRecord } from '@/schema';
+import {
+  artDirectionRecordSchema,
+  motionVocabularyRecordSchema,
+  type ArtDirectionRecord,
+  type MotionVocabularyRecord,
+} from '@/schema';
 
+import { fromMotionRecord } from './from-motion-record';
 import { fromRecord, type ResolvedRecord } from './from-record';
+import type { MotionVocabulary } from './motion-vocabulary';
 
 // `process.cwd()` is `web/` under `next dev`, `next build` and Vitest alike —
 // `import.meta.dirname` is not populated in Turbopack's SSR bundle, which
 // `src/app/dev/primitives/page.tsx` already found the hard way.
-const FIXTURE = join(
-  process.cwd(),
-  '..',
-  'api',
-  'schema',
-  'fixtures',
-  'art_directions.json',
-);
+const FIXTURES = join(process.cwd(), '..', 'api', 'schema', 'fixtures');
+const FIXTURE = join(FIXTURES, 'art_directions.json');
+const MOTION_FIXTURE = join(FIXTURES, 'motion_vocabularies.json');
 
 /** Parsed, not cast. The fixture crosses a language boundary, so it gets the
  * same one parse at entry that the API response does — and a fixture that
@@ -74,4 +76,32 @@ export function seededArtDirection(id: string): ResolvedRecord {
  * of them iterate. */
 export function seededArtDirections(): ResolvedRecord[] {
   return seededRecords().map((record) => seededArtDirection(record.id));
+}
+
+// ---------------------------------------------------------------------------
+// Motion, the other axis. Same arrangement, same warning: not a fallback.
+// ---------------------------------------------------------------------------
+
+export function seededMotionRecords(): MotionVocabularyRecord[] {
+  return motionVocabularyRecordSchema
+    .array()
+    .parse(JSON.parse(readFileSync(MOTION_FIXTURE, 'utf8')));
+}
+
+export function seededMotionRecord(id: string): MotionVocabularyRecord {
+  const found = seededMotionRecords().find((record) => record.id === id);
+  if (found === undefined) throw new Error(`seeded-records: no motion vocabulary ${id}`);
+  return found;
+}
+
+/** A seeded vocabulary, resolved to the two the wrapper chooses between.
+ *
+ * Throws rather than returning a `Result`, for the reason `seededArtDirection`
+ * does: a checked-in fixture that will not resolve is a bug in this repository
+ * and one `api/tests/test_motion_seed.py` would already have caught. */
+export function seededMotion(id: string): {
+  full: MotionVocabulary;
+  reduced: MotionVocabulary;
+} {
+  return fromMotionRecord(seededMotionRecord(id));
 }

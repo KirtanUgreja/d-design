@@ -23,7 +23,13 @@
 //     free-text font family reaching a stylesheet, which docs/v1/plan/
 //     10-brand-and-uploads.md calls the most natural-looking free-text token in
 //     the system and the one that most easily carries a payload.
-//   * a motion vocabulary id that names no vocabulary.
+//
+// **This does not resolve motion, and that absence is v2 phase 02.** It used to
+// return a vocabulary alongside the tokens, which was v1's code table wearing a
+// different name — an art direction that hands you its motion is an art
+// direction you cannot pick motion independently of. `extensions.defaultMotion`
+// survives as what a *new* experience inherits; from then on the experience
+// carries its own reference and `from-motion-record.ts` resolves it.
 //
 // Nothing here reads the environment, and nothing here is async. It runs in the
 // three processes the renderer runs in and behaves identically in all of them
@@ -47,8 +53,6 @@ import type {
 } from './art-direction';
 import { FONT_REGISTRY } from './art-direction';
 import type { Color } from './color';
-import { CINEMATIC_MOTION, EDITORIAL_MOTION, REDUCED_MOTION } from './motion-vocabulary';
-import type { MotionVocabulary } from './motion-vocabulary';
 
 // DTCG carries colour channels in 0-1; `Color` is 8-bit because that is what
 // `rgb()` takes and what the WCAG maths in `color.ts` was written against. The
@@ -119,18 +123,6 @@ const TYPE_ROLES: readonly TypeRoleKey[] = [
   'eyebrow',
   'stat',
 ];
-
-/** The stored vocabularies, until phase 02 makes motion its own table read.
- *
- * `defaultMotion` is already a stored string rather than a `Literal`, so this
- * lookup is where an unknown one is caught — and it is a `Map` rather than a
- * `switch` so that phase 02 replaces a data structure instead of unpicking a
- * branch. `REDUCED_MOTION` is deliberately not in here: it is not a choice an
- * art direction gets to make, it is the wrapper reading the environment. */
-const MOTION_BY_ID = new Map<string, MotionVocabulary>([
-  ['cinematic', CINEMATIC_MOTION],
-  ['editorial', EDITORIAL_MOTION],
-]);
 
 function toLength(length: Fluid['rhythm']['measure']): Length {
   return { value: length.value, unit: length.unit };
@@ -270,15 +262,15 @@ export interface ResolvedRecord {
    * freezes this into the artifact; the renderer never looks at it. */
   record: ArtDirectionRecord;
   artDirection: ArtDirection;
-  motion: MotionVocabulary;
 }
 
 /** A record -> the two objects the renderer takes.
  *
- * A `Result`, because both failures it can hit are a stored value naming
- * something this build does not have — a font family, a motion vocabulary —
- * and that is a legitimate state of a system where the two are deployed
- * separately, not a bug in this process. The caller renders its empty state.
+ * A `Result`, because the failure it can hit is a stored value naming
+ * something this build does not have — a font family the registry never
+ * self-hosted — and that is a legitimate state of a system where the store and
+ * the bundle are deployed separately, not a bug in this process. The caller
+ * renders its empty state.
  *
  * The `throw`s inside the helpers above are the other half of that line: a
  * colour token with two components, or a weight the registry never self-hosted,
@@ -302,11 +294,6 @@ export function fromRecord(record: ArtDirectionRecord): Result<ResolvedRecord> {
     throw new Error('from-record: a font slot went unfilled with no error raised');
   }
 
-  const motion = MOTION_BY_ID.get(record.extensions.defaultMotion);
-  if (motion === undefined) {
-    return err('invalid_input', `${record.id}: unknown motion vocabulary`);
-  }
-
   const fluid = record.extensions.fluid;
   return ok({
     record,
@@ -321,8 +308,5 @@ export function fromRecord(record: ArtDirectionRecord): Result<ResolvedRecord> {
       visualBlend: fluid.visualBlend,
       visualStrength: record.tokens.visual.strength.$value,
     },
-    motion,
   });
 }
-
-export { REDUCED_MOTION };

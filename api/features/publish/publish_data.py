@@ -17,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from db.models import Experience
 from schema.art_direction import ArtDirectionRef
+from schema.motion import MotionVocabularyRef
 
 
 async def find_by_id(session: AsyncSession, experience_id: UUID) -> Experience | None:
@@ -64,6 +65,7 @@ async def create(
     mode: str,
     brand_id: str | None,
     art_direction: ArtDirectionRef,
+    motion_vocabulary: MotionVocabularyRef,
     scenes: list[dict[str, object]],
 ) -> Experience:
     """`experience_id` is the caller's proposal, and `None` means "you pick" —
@@ -90,6 +92,7 @@ async def create(
         mode=mode,
         brand_id=brand_id,
         art_direction=ad_ref(art_direction),
+        motion_vocabulary=motion_vocabulary.id,
         scenes=scenes,
     )
     session.add(row)
@@ -105,6 +108,7 @@ async def replace(
     mode: str,
     brand_id: str | None,
     art_direction: ArtDirectionRef,
+    motion_vocabulary: MotionVocabularyRef,
     scenes: list[dict[str, object]],
 ) -> Experience:
     """A full replace, not a patch — `BlockPatch` (one block, editor-scoped) is
@@ -114,6 +118,7 @@ async def replace(
     row.mode = mode
     row.brand_id = brand_id
     row.art_direction = ad_ref(art_direction)
+    row.motion_vocabulary = motion_vocabulary.id
     row.scenes = scenes
     await session.flush()
     return row

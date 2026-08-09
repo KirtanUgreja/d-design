@@ -14,7 +14,7 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import type { ArtDirection, MotionVocabulary } from '@/features/art-direction';
-import { REDUCED_MOTION, toCssVars } from '@/features/art-direction';
+import { toCssVars } from '@/features/art-direction';
 import { SceneRenderer } from '@/features/renderer';
 import type { Scene } from '@/schema';
 
@@ -38,18 +38,23 @@ export function renderDocument(
   // `server.ts` parses it with the same generated validator it parses scenes
   // with, and by the time it reaches here it is as validated as the tree is.
   artDirection: ArtDirection,
-  motion: MotionVocabulary,
+  // Both vocabularies, and the choice between them made here rather than by the
+  // caller. `reducedMotion` defaults true for a screenshot because a reveal
+  // caught mid-flight is a half-faded scene, and a critic reviewing one is
+  // reviewing a frame no human will ever see.
+  //
+  // The reduced half used to be `REDUCED_MOTION`, one global constant. Since v2
+  // phase 02 each vocabulary declares its own duration and the floor is built
+  // from it, so this service takes the pair rather than importing a fallback —
+  // and there is no shape in which the one it is handed could move.
+  motion: { full: MotionVocabulary; reduced: MotionVocabulary },
   reducedMotion: boolean,
 ): string {
-  // `REDUCED_MOTION` is the art-direction layer's own answer rather than a
-  // zeroed copy assembled here. It is the default for a screenshot because a
-  // reveal caught mid-flight is a half-faded scene, and a critic reviewing one
-  // is reviewing a frame no human will ever see.
   const body = renderToStaticMarkup(
     <SceneRenderer
       scenes={scenes}
       artDirection={artDirection}
-      motion={reducedMotion ? REDUCED_MOTION : motion}
+      motion={reducedMotion ? motion.reduced : motion.full}
     />,
   );
 

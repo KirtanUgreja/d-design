@@ -17,8 +17,12 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 
 import type { ArtDirection, MotionVocabulary } from '@/features/art-direction';
-import { fromRecord } from '@/features/art-direction';
-import { artDirectionRecordSchema, sceneSchema } from '@/schema';
+import { fromMotionRecord, fromRecord } from '@/features/art-direction';
+import {
+  artDirectionRecordSchema,
+  motionVocabularyRecordSchema,
+  sceneSchema,
+} from '@/schema';
 
 import { withPage } from './browser';
 import { renderDocument } from './render-scene';
@@ -68,6 +72,7 @@ async function readBody(req: IncomingMessage): Promise<string> {
 interface ScreenshotRequest {
   scenes: unknown;
   artDirection: unknown;
+  motionVocabulary: unknown;
   reducedMotion?: unknown;
   viewport?: { width?: unknown; height?: unknown };
 }
@@ -93,7 +98,7 @@ interface ScreenshotRequest {
 function parseRequest(raw: string): {
   scenes: ReturnType<typeof sceneSchema.parse>[];
   artDirection: ArtDirection;
-  motion: MotionVocabulary;
+  motion: { full: MotionVocabulary; reduced: MotionVocabulary };
   reducedMotion: boolean;
   viewport: { width: number; height: number };
 } {
@@ -113,6 +118,13 @@ function parseRequest(raw: string): {
   if (!resolved.ok)
     throw new Error(`art direction did not resolve: ${resolved.error.code}`);
 
+  // The second axis, on the wire for the same reason as the first: motion is a
+  // row now and this service holds no credential to read one with. Required
+  // too — a default vocabulary would be this service deciding how a page moves.
+  const motion = fromMotionRecord(
+    motionVocabularyRecordSchema.parse(body.motionVocabulary),
+  );
+
   const width = Number(body.viewport?.width ?? DEFAULT_VIEWPORT.width);
   const height = Number(body.viewport?.height ?? DEFAULT_VIEWPORT.height);
   if (!Number.isFinite(width) || !Number.isFinite(height)) {
@@ -125,7 +137,7 @@ function parseRequest(raw: string): {
   return {
     scenes,
     artDirection: resolved.value.artDirection,
-    motion: resolved.value.motion,
+    motion,
     reducedMotion: body.reducedMotion !== false,
     viewport: { width: clamp(width), height: clamp(height) },
   };

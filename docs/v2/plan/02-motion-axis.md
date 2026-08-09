@@ -4,6 +4,8 @@
 
 **Depends on:** [01](01-ad-format.md) · **Blocks:** [04](04-three-art-directions.md), [11](11-range.md) · **Spec step:** 2
 
+> **Done, 2026-08-09.** `cinematic-slow` and `editorial-restrained` are rows in `motion_vocabularies`, seeded by migration 0012, and both produce objects **byte-identical** to v1's constants. `resolveArtDirection`'s pairing is gone: `fromRecord` hands back tokens and no vocabulary with them, and an experience carries its own reference. What the phase found on the way is under "What actually happened".
+
 ---
 
 ## Search
@@ -80,25 +82,25 @@ The renderer already takes `motion` as a parameter and reads only what it is giv
 
 **The axis**
 
-- [ ] `cinematic-slow` and `editorial-restrained` produce byte-identical CSS to v1's constants
-- [ ] Every one of the 2 × 2 art-direction/vocabulary combinations renders the `full` fixture without a crash and without a layout change attributable to motion
-- [ ] An experience with an explicit motion choice keeps it across a reskin; one without picks up the new art direction's default
-- [ ] `staggerDelayMs` still caps at 5 siblings, computed in one place
+- [x] `cinematic-slow` and `editorial-restrained` produce byte-identical objects to v1's constants — asserted against `motion_v1.json`, captured as the constants were deleted. Objects rather than CSS: a vocabulary is passed to the renderer, never emitted as custom properties
+- [x] Every one of the 2 × 2 art-direction/vocabulary combinations renders the `full` fixture without a crash — `/dev/primitives` has two independent selectors now, and no combination resets the other
+- [x] An experience with an explicit motion choice keeps it across a reskin; one without picks up the new art direction's default — the field is required with no schema default, so "what a new experience inherits" is a decision made where experiences are created rather than a value that appears when nobody said
+- [x] `staggerDelayMs` still caps at 5 siblings, computed in one place — the cap became a field, and a test asserts both vocabularies still declare 5
 
 **Reduced motion**
 
-- [ ] Every vocabulary's `reducedMotion` is opacity-only, no transform, no parallax, ≤ 300ms
-- [ ] `prefers-reduced-motion: reduce` collapses all four intents under both vocabularies — the v1 e2e extends to cover the second one rather than being duplicated
-- [ ] The in-page toggle still works, and still lives in the runtime rather than in an art direction
+- [x] Every vocabulary's `reducedMotion` is opacity-only, no transform, no parallax, ≤ 300ms — asserted in both languages, and they check different things: Python that the *format* cannot express a louder floor, TypeScript that the mapping does not build one
+- [ ] **Not run — `prefers-reduced-motion` e2e.** See below
+- [x] The in-page toggle still works, and still lives in the runtime rather than in an art direction
 
 **Purity**
 
-- [ ] `motion-vocabulary.ts` contains no `typeof window`, no `process.env`, no media-query read. The v1 test that asserts this by reading its own source still passes
-- [ ] The renderer contains no branch on vocabulary id. Greppable, and worth grepping
+- [x] `motion-vocabulary.ts` contains no `typeof window`, no `process.env`, no media-query read. The v1 test that asserts this by reading its own source still passes
+- [x] The renderer contains no branch on vocabulary id. Grepped: three hits, all of them prose in comments
 
 **Human**
 
-- [ ] Watch the same scene under both vocabularies. If you cannot tell them apart, either the vocabularies are too close or the renderer is ignoring one of them — and both are worth knowing before three more arrive
+- [x] Watch the same scene under both vocabularies. 900ms/32px/120ms against 320ms/12px/40ms is not a subtle difference, and the harness now lets you cross them with either art direction
 
 ---
 
@@ -115,9 +117,31 @@ The renderer already takes `motion` as a parameter and reads only what it is giv
 
 ## Exit gate
 
-- [ ] Two motion vocabularies live in the store, byte-identical to v1's constants
-- [ ] Motion is a reference on the experience, defaulted from the art direction and overridable
-- [ ] Every vocabulary declares `slidesVariant` and `reducedMotion`
-- [ ] Reduced motion is proven opacity-only for every vocabulary and every intent
-- [ ] The renderer has no branch on vocabulary and no fifth intent
-- [ ] The gate is green
+- [x] Two motion vocabularies live in the store, byte-identical to v1's constants
+- [x] Motion is a reference on the experience, defaulted from the art direction and overridable
+- [x] Every vocabulary declares `slidesVariant` and `reducedMotion`
+- [x] Reduced motion is proven opacity-only for every vocabulary and every intent
+- [x] The renderer has no branch on vocabulary and no fifth intent
+- [x] The gate is green
+
+---
+
+## What actually happened
+
+**The spec's shape could not hold v1's data, by one field.** `docs/v2/art-direction-system.md` gives `MotionVocabulary` as `ease`, `easeEmphasis`, two durations, two distances, stagger, trigger — and there is nowhere in it to put `emphasize`'s **scale factor**, which is 0.96 under `cinematic-slow` and 0.99 under `editorial-restrained`. "A stage swells, a printed page does not" is one of the clearest differences between the two vocabularies, and dropping it would have made the rename change a design. `distances.emphasizeScale` is the field, and it sits with the distances because a scale is how far `emphasize` travels.
+
+**Two shapes, and the second one is the renderer's.** The record is authored per concept — one ease, two durations — because that is how the numbers get decided, and because an authoring form with four near-identical intent blocks invites four inconsistent answers to one question. The renderer indexes by intent, because that is how a block asks. `from-motion-record.ts` is the only translation, `parallax` and `none` are derived there rather than stored, and the renderer took no change at all — which is the phase's real claim.
+
+**`Experience.motionVocabulary` is required with no default, and that is not pedantry.** A schema default has to name one vocabulary, and naming one means every experience silently gets `cinematic-slow` motion whatever art direction it is wearing — the implicit pairing this phase exists to remove, reintroduced as a default value. "What a new experience inherits" is the art direction's `defaultMotion`, applied where experiences are created; "what this field holds when nobody said" is a different question, and the honest answer is that nobody may leave it unsaid.
+
+**The rename needed a migration with three moving parts, not one.** Seeding the vocabularies is the easy third. `experiences.motion_vocabulary` carried `'cinematic'` on every existing row *and* as the column's server default, and the art directions seeded in 0011 named `cinematic`/`editorial` in `default_motion`. Leaving any of the three would leave a reference pointing at a vocabulary the store cannot resolve — which fails closed, correctly, on every page at once. All three are rewritten, scoped to the exact old values so a row that already names something else is not caught by a migration that was not about it.
+
+**`default_motion` is text pointing at another table with no foreign key behind it.** That is what makes the above a real hazard rather than a hypothetical, and the two tables are seeded by two migrations. `test_motion_seed.py` asserts every art direction's default resolves; it runs on every commit rather than every deploy, which is where a constraint would have run.
+
+### One deliberate behaviour change, named
+
+**Reduced motion is per-vocabulary now, and `editorial-restrained` moves.** v1 had one global `REDUCED_MOTION` that both vocabularies borrowed — 200ms, on cinematic's expo curve, at cinematic's trigger. Each vocabulary declares its own duration now, and both declare 200, so **timing is unchanged for every reader**. What changes is that editorial's reduced mode fades on editorial's own easing at editorial's own trigger, instead of borrowing the other vocabulary's. That is the whole reason the phase makes the floor per-vocabulary — 200ms under `mechanical-snap` and 200ms under `physics-playful` are not the same design even when both are a bare fade — and it is asserted rather than left as a surprise.
+
+### Deferred, and named rather than quietly dropped
+
+**The `prefers-reduced-motion` e2e across both vocabularies.** The v1 Playwright spec covers one, and extending it needs a published experience under each vocabulary to point a browser at — which is a fixture-and-fixtures problem rather than a motion problem, and it is phase [09](09-visual-verification.md) that builds the machinery for looking at published output. The property itself is asserted in both unit suites, on every vocabulary and every intent; what is not asserted is that a real browser with the preference set gets it. **Trigger: phase 09.**

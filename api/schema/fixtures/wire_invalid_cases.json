@@ -8,6 +8,7 @@
       "mode": "scroll",
       "brandId": "brand-1",
       "artDirection": { "id": "cinematic-dark", "version": 1 },
+      "motionVocabulary": { "id": "cinematic-slow" },
       "scenes": [
         {
           "id": "s1",
@@ -72,6 +73,7 @@
       "mode": "scroll",
       "brandId": "brand-1",
       "artDirection": { "id": "cinematic-dark", "version": 1 },
+      "motionVocabulary": { "id": "cinematic-slow" },
       "scenes": [
         {
           "id": "s1",
@@ -119,6 +121,7 @@
       "mode": "scroll",
       "brandId": "brand-1",
       "artDirection": { "id": "cinematic-dark", "version": 1 },
+      "motionVocabulary": { "id": "cinematic-slow" },
       "scenes": [
         {
           "id": "s1",
@@ -188,6 +191,7 @@
       "mode": "scroll",
       "brandId": "brand-1",
       "artDirection": { "id": "cinematic-dark", "version": 1 },
+      "motionVocabulary": { "id": "cinematic-slow" },
       "scenes": [
         {
           "id": "s1",
@@ -243,6 +247,7 @@
       "mode": "scroll",
       "brandId": "brand-1",
       "artDirection": { "id": "cinematic-dark", "version": 1 },
+      "motionVocabulary": { "id": "cinematic-slow" },
       "scenes": [
         {
           "id": "s1",

@@ -18,6 +18,7 @@ from pydantic import Field, model_validator
 from lib.result import Result, err, ok
 from schema.art_direction import ArtDirectionRef
 from schema.base import Schema
+from schema.motion import MotionVocabularyRef
 from schema.scene import Mode, Scene
 
 
@@ -92,6 +93,27 @@ class Experience(Schema):
     mode: Mode
     brand_id: str = Field(min_length=1)
     art_direction: ArtDirectionRef
+    # **Motion is its own axis from v2 phase 02**, not a consequence of the art
+    # direction. `resolveArtDirection` paired one vocabulary to each direction in
+    # a code table, so choosing a look chose the motion with it; this field is
+    # the difference between three art directions and twelve combinations.
+    #
+    # Not optional, and it has no "inherit" value. Every experience has *some*
+    # motion — the question is only whether it was chosen or inherited — and a
+    # nullable field would push a "no vocabulary set" branch into the renderer,
+    # which is a mode by another name (migration 0010 makes the same argument
+    # about the column). The art direction's `defaultMotion` is what fills it at
+    # creation; from then on the experience owns it, which is what stops a
+    # reskin silently discarding someone's choice.
+    #
+    # Required, with no default. A schema default would have to name one
+    # vocabulary, and naming one means every experience silently gets
+    # `cinematic-slow` motion whatever art direction it is wearing — which is
+    # the pairing this phase exists to stop being implicit. "What a new
+    # experience inherits" is the art direction's `defaultMotion`, applied where
+    # experiences are created, and that is a different question from "what does
+    # this field hold when nobody said".
+    motion_vocabulary: MotionVocabularyRef
     scenes: list[Scene] = Field(min_length=3, max_length=12)
     meta: ExperienceMeta
 

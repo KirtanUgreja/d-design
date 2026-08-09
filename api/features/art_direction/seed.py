@@ -197,7 +197,7 @@ CINEMATIC_DARK = ArtDirectionRecord(
         # a brand colour behind a full-bleed hero is not this direction — that
         # is what `bold-brutalist` is for, and the field exists so it can say so.
         brand_mapping=BrandMapping(),
-        default_motion="cinematic",
+        default_motion="cinematic-slow",
         fluid=ArtDirectionFluid(
             type=FluidTypeScale(
                 hero=FluidTypeRole(
@@ -352,7 +352,7 @@ EDITORIAL_LIGHT = ArtDirectionRecord(
     extensions=ArtDirectionExtensions(
         budgets=_V1_BUDGETS,
         brand_mapping=BrandMapping(),
-        default_motion="editorial",
+        default_motion="editorial-restrained",
         fluid=ArtDirectionFluid(
             type=FluidTypeScale(
                 hero=FluidTypeRole(

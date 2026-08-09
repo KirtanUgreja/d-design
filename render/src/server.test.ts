@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { seededArtDirection } from '@/features/art-direction/server';
+import { seededArtDirection, seededMotion } from '@/features/art-direction/server';
 
 import { assertNoCredentials, describeFailure } from './server';
 import { renderDocument } from './render-scene';
@@ -10,6 +10,10 @@ import { renderDocument } from './render-scene';
 // are database rows and this process holds no credential to read them with.
 const dark = seededArtDirection('cinematic-dark');
 const light = seededArtDirection('editorial-light');
+// The second axis, which this service also receives on the wire rather than
+// resolving: it holds no credential and the store is not reachable from here.
+const slow = seededMotion('cinematic-slow');
+const restrained = seededMotion('editorial-restrained');
 
 // The control that justifies running a browser in this service at all
 // (docs/techstack/backend.md — the trust split). Asserted in code as well as in
@@ -45,7 +49,7 @@ describe('the document it renders', () => {
   };
 
   it('is the renderer web ships, not a copy', () => {
-    const html = renderDocument([scene], dark.artDirection, dark.motion, true);
+    const html = renderDocument([scene], dark.artDirection, slow, true);
     // The scene anchor and the fit shell are the renderer's own output; if this
     // file ever grew its own markup, these would be the first things to drift.
     expect(html).toContain('id="scene-one"');
@@ -56,21 +60,21 @@ describe('the document it renders', () => {
     // The first working screenshot came back set in Times. A fallback face
     // looks plausible and measures differently, which makes phase 09 a vision
     // model reviewing the wrong image and phase 13's overflow arithmetic wrong.
-    const html = renderDocument([scene], dark.artDirection, dark.motion, true);
+    const html = renderDocument([scene], dark.artDirection, slow, true);
     expect(html).toContain("font-family:'Fraunces'");
     expect(html).toContain('data:font/woff2;base64,');
   });
 
   it('carries the art direction as custom properties, from the one emitter', () => {
-    const darkHtml = renderDocument([scene], dark.artDirection, dark.motion, true);
-    const lightHtml = renderDocument([scene], light.artDirection, light.motion, true);
+    const darkHtml = renderDocument([scene], dark.artDirection, slow, true);
+    const lightHtml = renderDocument([scene], light.artDirection, restrained, true);
     expect(darkHtml).toContain('--bg:');
     // Two art directions, one code path — the same claim the browser path makes.
     expect(darkHtml).not.toBe(lightHtml);
   });
 
   it('emits no gradient, in the service as in the browser', () => {
-    expect(renderDocument([scene], dark.artDirection, dark.motion, true)).not.toMatch(
+    expect(renderDocument([scene], dark.artDirection, slow, true)).not.toMatch(
       /gradient\(/,
     );
   });

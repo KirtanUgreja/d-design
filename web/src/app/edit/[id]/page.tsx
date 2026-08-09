@@ -18,7 +18,7 @@ import { join } from 'node:path';
 
 import { notFound } from 'next/navigation';
 
-import { loadArtDirection } from '@/features/art-direction/server';
+import { loadArtDirection, loadMotion } from '@/features/art-direction/server';
 import { readExperience } from '@/features/publish';
 import { experienceSchema } from '@/schema';
 
@@ -43,15 +43,25 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
   // inconvenience: what-you-edit-is-what-you-ship means the canvas renders the
   // direction the artifact will publish under, and that is a fact the server
   // establishes once instead of something the browser re-derives.
-  const resolved = await loadArtDirection(experience.artDirection);
-  if (!resolved.ok) notFound();
+  // Two reads, because they are two axes. Resolved together here only because
+  // this page needs both; nothing in the store joins them, and the day the
+  // editor offers a motion picker it changes one of these calls and not the
+  // other.
+  const [resolved, motion] = await Promise.all([
+    loadArtDirection(experience.artDirection),
+    loadMotion(experience.motionVocabulary),
+  ]);
+  if (!resolved.ok || !motion.ok) notFound();
 
   return (
     <EditorScreen
       experienceId={id}
       title={experience.title}
       artDirection={resolved.value.artDirection}
-      motion={resolved.value.motion}
+      // The full vocabulary. The editor canvas is a working surface rather
+      // than a presentation, and the reduced floor belongs to the reader of a
+      // published page — `PresentedExperience` is where the swap lives.
+      motion={motion.value.full}
       initialScenes={experience.scenes}
       stored={loaded.ok}
     />

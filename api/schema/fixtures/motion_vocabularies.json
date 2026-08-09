@@ -1,0 +1,78 @@
+[
+  {
+    "distances": {
+      "emphasizeScale": 0.96,
+      "parallaxFactor": 80,
+      "revealY": 32
+    },
+    "durations": {
+      "emphasize": 1100,
+      "reveal": 900
+    },
+    "ease": [
+      0.16,
+      1.0,
+      0.3,
+      1.0
+    ],
+    "easeEmphasis": [
+      0.22,
+      1.0,
+      0.36,
+      1.0
+    ],
+    "id": "cinematic-slow",
+    "name": "Cinematic Slow",
+    "reducedMotion": {
+      "duration": 200
+    },
+    "slidesVariant": {
+      "durations": {
+        "emphasize": 700,
+        "reveal": 600
+      }
+    },
+    "stagger": 120,
+    "staggerCap": 5,
+    "trigger": 0.25,
+    "version": 1
+  },
+  {
+    "distances": {
+      "emphasizeScale": 0.99,
+      "parallaxFactor": 24,
+      "revealY": 12
+    },
+    "durations": {
+      "emphasize": 360,
+      "reveal": 320
+    },
+    "ease": [
+      0.32,
+      0.72,
+      0.0,
+      1.0
+    ],
+    "easeEmphasis": [
+      0.32,
+      0.72,
+      0.0,
+      1.0
+    ],
+    "id": "editorial-restrained",
+    "name": "Editorial Restrained",
+    "reducedMotion": {
+      "duration": 200
+    },
+    "slidesVariant": {
+      "durations": {
+        "emphasize": 240,
+        "reveal": 220
+      }
+    },
+    "stagger": 40,
+    "staggerCap": 5,
+    "trigger": 0.4,
+    "version": 1
+  }
+]

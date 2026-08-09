@@ -74,12 +74,13 @@ export type {
   MotionIntentDef,
   MotionVocabulary,
 } from './motion-vocabulary';
-export {
-  CINEMATIC_MOTION,
-  EDITORIAL_MOTION,
-  REDUCED_MOTION,
-  staggerDelayMs,
-} from './motion-vocabulary';
+export { staggerDelayMs } from './motion-vocabulary';
+
+// A stored vocabulary -> the two the wrapper chooses between. Motion is its own
+// axis from v2 phase 02: `fromRecord` above hands back tokens and no longer
+// hands back a vocabulary with them, because an art direction that comes with
+// its motion is one you cannot pick motion independently of.
+export { fromMotionRecord } from './from-motion-record';
 
 export type { ResolvedPalette } from './resolve-brand';
 export { resolveBrand } from './resolve-brand';

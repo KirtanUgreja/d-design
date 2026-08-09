@@ -11,7 +11,7 @@
 
 import { notFound } from 'next/navigation';
 
-import { fromRecord } from '@/features/art-direction';
+import { fromMotionRecord, fromRecord } from '@/features/art-direction';
 import { PresentedExperience } from '@/features/present';
 import { readPublishedArtifact } from '@/features/publish';
 
@@ -35,7 +35,11 @@ export default async function PublishedPage({
   // tokens would be strictly worse than serving nothing.
   const resolved = fromRecord(artifact.value.artDirection);
   if (!resolved.ok) notFound();
-  const { artDirection, motion } = resolved.value;
+  const { artDirection } = resolved.value;
+  // The vocabulary is frozen in the artifact beside the tokens, for the same
+  // reason and by the same rule: a published page never restyles itself, and
+  // motion is styling. Two records, two axes, one disk read.
+  const motion = fromMotionRecord(artifact.value.motionVocabulary);
   return (
     <PresentedExperience
       scenes={artifact.value.scenes}

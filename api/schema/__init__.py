@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from schema.art_direction import ArtDirectionRecord, BrandMapping, ContentBudgets
 from schema.brief import Brief, InterviewStep, Question
 from schema.experience import Asset, BrandKit, Experience
+from schema.motion import MotionVocabularyRecord, MotionVocabularyRef
 from schema.outline import Outline
 from schema.overflow import BlockExtent, OverflowReport, SceneOverflow
 from schema.patch import BlockPatch, EditResult
@@ -43,6 +44,11 @@ EXPORTED: dict[str, type[BaseModel]] = {
     "ArtDirectionRecord": ArtDirectionRecord,
     "ContentBudgets": ContentBudgets,
     "BrandMapping": BrandMapping,
+    # Motion is its own axis from phase 02, so its record is its own export
+    # rather than a `$def` reached through the art direction. `web` builds the
+    # renderer's vocabulary from it and `render` receives one on the wire.
+    "MotionVocabularyRecord": MotionVocabularyRecord,
+    "MotionVocabularyRef": MotionVocabularyRef,
     # `OverflowReport` pulls the other two in as `$defs`; all three are listed
     # because the banner renders a `SceneOverflow` on its own and a shape web
     # imports by name should be a row here rather than reached through another
@@ -64,6 +70,8 @@ __all__ = [
     "EditResult",
     "Experience",
     "InterviewStep",
+    "MotionVocabularyRecord",
+    "MotionVocabularyRef",
     "Outline",
     "Question",
     "Scene",

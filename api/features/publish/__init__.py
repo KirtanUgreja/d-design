@@ -14,6 +14,7 @@ from db.tenant import as_user
 from features.publish import publish_data
 from lib.result import Result, err, ok
 from schema.experience import Experience, ExperienceMeta
+from schema.motion import MotionVocabularyRef
 from schema.scene import Mode
 
 
@@ -28,6 +29,7 @@ def _to_schema(row: ExperienceRow) -> Experience:
         mode=cast(Mode, row.mode),
         brand_id=row.brand_id,
         art_direction=publish_data.ad_ref_from_row(row.art_direction),
+        motion_vocabulary=MotionVocabularyRef(id=row.motion_vocabulary),
         scenes=row.scenes,  # type: ignore[arg-type]  # validated on the way in; re-validated here on the way out
         meta=ExperienceMeta(
             created_at=row.created_at.isoformat(),
@@ -62,6 +64,7 @@ async def create_experience(user_id: str, experience: Experience) -> Result[Expe
             mode=experience.mode,
             brand_id=experience.brand_id,
             art_direction=experience.art_direction,
+            motion_vocabulary=experience.motion_vocabulary,
             scenes=[s.model_dump(by_alias=True) for s in experience.scenes],
         )
         return ok(_to_schema(row))
@@ -97,6 +100,7 @@ async def replace_experience(
             mode=experience.mode,
             brand_id=experience.brand_id,
             art_direction=experience.art_direction,
+            motion_vocabulary=experience.motion_vocabulary,
             scenes=[s.model_dump(by_alias=True) for s in experience.scenes],
         )
         return ok(_to_schema(row))

@@ -24,6 +24,7 @@ from pydantic import TypeAdapter, ValidationError
 from config import config
 from lib.result import Result, err, ok
 from schema.art_direction import ArtDirectionRecord
+from schema.motion import MotionVocabularyRecord
 from schema.overflow import BlockExtent, OverflowReport, SceneOverflow
 from schema.scene import Scene
 
@@ -51,6 +52,7 @@ async def measure_overflow(
     *,
     scenes: list[Scene],
     art_direction: ArtDirectionRecord,
+    motion_vocabulary: MotionVocabularyRecord,
     viewport_height: int,
     viewport_width: int = 1280,
 ) -> Result[OverflowReport]:
@@ -66,6 +68,10 @@ async def measure_overflow(
         "artDirection": art_direction.model_dump(
             mode="json", by_alias=True, exclude_none=True
         ),
+        # The second axis. `render` resolves neither and holds no credential to;
+        # both travel as validated records and are parsed there by the same
+        # generated validators.
+        "motionVocabulary": motion_vocabulary.model_dump(mode="json", by_alias=True),
         "viewport": {"width": viewport_width, "height": viewport_height},
     }
 

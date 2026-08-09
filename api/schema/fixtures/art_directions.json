@@ -16,7 +16,7 @@
         "quote": 200,
         "stat": 12
       },
-      "defaultMotion": "cinematic",
+      "defaultMotion": "cinematic-slow",
       "fluid": {
         "image": {
           "edge": {
@@ -587,7 +587,7 @@
         "quote": 200,
         "stat": 12
       },
-      "defaultMotion": "editorial",
+      "defaultMotion": "editorial-restrained",
       "fluid": {
         "image": {
           "edge": {

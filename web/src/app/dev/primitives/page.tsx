@@ -9,7 +9,11 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { seededArtDirections } from '@/features/art-direction/server';
+import {
+  seededArtDirections,
+  seededMotion,
+  seededMotionRecords,
+} from '@/features/art-direction/server';
 import { experienceSchema } from '@/schema';
 
 import { PrimitivesHarness } from './primitives-harness';
@@ -33,7 +37,16 @@ export default function PrimitivesPage() {
   // to look at tokens with nothing else running, and requiring `api` to be up
   // to see a type scale would be the wrong trade for the one page whose whole
   // job is judging the token layer.
+  const motionVocabularies = seededMotionRecords().map((record) => ({
+    id: record.id,
+    ...seededMotion(record.id),
+  }));
+
   return (
-    <PrimitivesHarness experiences={experiences} artDirections={seededArtDirections()} />
+    <PrimitivesHarness
+      experiences={experiences}
+      artDirections={seededArtDirections()}
+      motionVocabularies={motionVocabularies}
+    />
   );
 }

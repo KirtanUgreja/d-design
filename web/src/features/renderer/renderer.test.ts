@@ -14,8 +14,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
-import { CINEMATIC_MOTION, REDUCED_MOTION } from '@/features/art-direction';
-import { seededArtDirection } from '@/features/art-direction/server';
+import { seededArtDirection, seededMotion } from '@/features/art-direction/server';
 import { experienceSchema, sceneSchema } from '@/schema';
 
 import { AbstractVisualBlock } from './blocks/abstract-visual';
@@ -28,6 +27,12 @@ import { SceneRenderer } from './scene-renderer';
 // with. The renderer takes an `ArtDirection` object either way, which is the
 // point: the token layer moved and the renderer took no change.
 const CINEMATIC_DARK = seededArtDirection('cinematic-dark').artDirection;
+
+// Resolved from the seeded vocabulary and named for what it is. The renderer
+// takes a `MotionVocabulary` object either way — which is the phase's claim:
+// motion became its own axis and the renderer took no change.
+const { full: CINEMATIC_MOTION, reduced: REDUCED_MOTION } =
+  seededMotion('cinematic-slow');
 
 const FIXTURES = join(process.cwd(), '..', 'api', 'schema', 'fixtures');
 const readFixture = (name: string) =>

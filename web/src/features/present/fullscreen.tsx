@@ -30,10 +30,16 @@ export function PresentedExperience({
 }: {
   scenes: Scene[];
   artDirection: ArtDirection;
-  /** The art direction's own full-motion vocabulary. The reduced-motion swap
+  /** The experience's own vocabulary, and its reduced floor. Both, because the
+   * swap between them is an environment read and the renderer core may not make
+   * one — and *the experience's*, not the art direction's, since v2 phase 02:
+   * motion is a thing you choose, so an art direction no longer arrives with
+   * one attached.
+   *
+   * The reduced-motion swap
    * happens below, in this wrapper, because it is the only layer allowed to
    * read the environment (patterns.md rule 6). */
-  motion: MotionVocabulary;
+  motion: { full: MotionVocabulary; reduced: MotionVocabulary };
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);

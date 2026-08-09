@@ -37,4 +37,11 @@ export {
   artDirectionRefSchema,
   type ArtDirectionRef,
   type ContentBudgets,
+  // Motion, its own axis since v2 phase 02. The record is what
+  // `fromMotionRecord` turns into the two vocabularies the wrapper chooses
+  // between; the ref is what an `Experience` carries.
+  motionVocabularyRecordSchema,
+  type MotionVocabularyRecord,
+  motionVocabularyRefSchema,
+  type MotionVocabularyRef,
 } from './generated/schema';

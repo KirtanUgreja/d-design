@@ -21,6 +21,10 @@ export { listArtDirections, loadArtDirection } from './art-direction.data';
 export {
   seededArtDirection,
   seededArtDirections,
+  seededMotion,
+  seededMotionRecord,
+  seededMotionRecords,
   seededRecord,
   seededRecords,
 } from './seeded-records';
+export { listMotionVocabularies, loadMotion } from './motion.data';

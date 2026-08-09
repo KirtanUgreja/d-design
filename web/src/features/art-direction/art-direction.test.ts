@@ -9,14 +9,15 @@ import type { ArtDirection, Texture, TypeRoleKey } from './art-direction';
 import { FONT_REGISTRY, LAYOUTS, px } from './art-direction';
 import { contrastRatio, relativeLuminance, toCssColor } from './color';
 import { fromRecord } from './from-record';
-import {
-  CINEMATIC_MOTION,
-  EDITORIAL_MOTION,
-  REDUCED_MOTION,
-  staggerDelayMs,
-} from './motion-vocabulary';
+import { staggerDelayMs } from './motion-vocabulary';
 import { resolveBrand } from './resolve-brand';
-import { seededRecord, seededRecords } from './seeded-records';
+import { fromMotionRecord } from './from-motion-record';
+import {
+  seededMotionRecord,
+  seededMotionRecords,
+  seededRecord,
+  seededRecords,
+} from './seeded-records';
 import { brandCssVars, fromCssVars, toCssVars } from './to-css-vars';
 
 // The two art directions, resolved from the seeded records rather than
@@ -46,6 +47,14 @@ const FIXTURES = join(
 const CINEMATIC_DARK = resolved('cinematic-dark');
 const EDITORIAL_LIGHT = resolved('editorial-light');
 const TYPE_SCALE = CINEMATIC_DARK.type;
+
+// The vocabularies, resolved from their seeded records — as of v2 phase 02
+// there are no constants for these either, and no art direction hands one out.
+const CINEMATIC_MOTION = fromMotionRecord(seededMotionRecord('cinematic-slow')).full;
+const EDITORIAL_MOTION = fromMotionRecord(
+  seededMotionRecord('editorial-restrained'),
+).full;
+const REDUCED_MOTION = fromMotionRecord(seededMotionRecord('cinematic-slow')).reduced;
 
 // ---------------------------------------------------------------------------
 // Tokens
@@ -472,31 +481,98 @@ function brandWith(primary: string): BrandKit {
 // Motion
 // ---------------------------------------------------------------------------
 
-describe('REDUCED_MOTION', () => {
-  it('is opacity-only, 200ms or less, no transform, for every intent that moves', () => {
-    for (const intent of ['reveal', 'emphasize', 'parallax'] as const) {
-      const def = REDUCED_MOTION.intents[intent];
-      expect(def.durationMs).toBeLessThanOrEqual(200);
-      expect(def.distancePx).toBe(0);
-      expect(def.scale).toBe(1);
+describe('reduced motion is a floor, and every vocabulary has one', () => {
+  // Per-vocabulary since v2 phase 02, where it was one global constant before.
+  // The check has to run over all of them now, which is the point: a fifth
+  // vocabulary that shipped a reduced mode with travel in it is exactly what
+  // this catches, and a single-constant test could not have.
+  it('is opacity-only, no transform, no parallax, for every vocabulary', () => {
+    for (const record of seededMotionRecords()) {
+      const { reduced } = fromMotionRecord(record);
+      for (const intent of ['reveal', 'emphasize', 'parallax'] as const) {
+        const def = reduced.intents[intent];
+        expect(def.durationMs, `${record.id}/${intent}`).toBeLessThanOrEqual(300);
+        expect(def.distancePx, `${record.id}/${intent}`).toBe(0);
+        expect(def.scale, `${record.id}/${intent}`).toBe(1);
+      }
+      // A sequence is a movement, and the floor has none.
+      expect(reduced.staggerMs, record.id).toBe(0);
     }
   });
 
-  it('none stays instant in both vocabularies', () => {
-    expect(CINEMATIC_MOTION.intents.none.durationMs).toBe(0);
-    expect(REDUCED_MOTION.intents.none.durationMs).toBe(0);
+  it('never turns `none` into something that animates', () => {
+    // `none` means the author said this does not move, and reduced motion is
+    // not an instruction to start.
+    for (const record of seededMotionRecords()) {
+      const { full, reduced } = fromMotionRecord(record);
+      expect(full.intents.none.durationMs, record.id).toBe(0);
+      expect(reduced.intents.none.durationMs, record.id).toBe(0);
+    }
   });
 });
 
 describe('staggerDelayMs', () => {
-  it('caps at 5 siblings', () => {
-    const atCap = staggerDelayMs(CINEMATIC_MOTION, 5);
-    expect(staggerDelayMs(CINEMATIC_MOTION, 6)).toBe(atCap);
+  it("caps at the vocabulary's own cap", () => {
+    const cap = CINEMATIC_MOTION.staggerCap;
+    const atCap = staggerDelayMs(CINEMATIC_MOTION, cap);
+    expect(staggerDelayMs(CINEMATIC_MOTION, cap + 1)).toBe(atCap);
     expect(staggerDelayMs(CINEMATIC_MOTION, 100)).toBe(atCap);
+  });
+
+  it('still caps at 5 siblings, which is what both vocabularies declare', () => {
+    // A module constant in v1 and a field now. The value did not change, and
+    // this is the assertion that would have noticed if it had.
+    for (const record of seededMotionRecords()) {
+      expect(record.staggerCap, record.id).toBe(5);
+    }
   });
 
   it('is linear in index below the cap', () => {
     expect(staggerDelayMs(CINEMATIC_MOTION, 2)).toBe(CINEMATIC_MOTION.staggerMs * 2);
+  });
+});
+
+describe('the v2 vocabularies are what v1 authored', () => {
+  // The same claim, and the same shape of proof, as the art directions above:
+  // the objects v1's constants held, captured as they were deleted. A rename
+  // that also retuned the motion would be two changes wearing one commit
+  // message, and this is what makes that impossible to do by accident.
+  const V1_MOTION = JSON.parse(
+    readFileSync(join(FIXTURES, 'motion_v1.json'), 'utf8'),
+  ) as Record<string, unknown>;
+
+  it.each([
+    ['cinematic-slow', CINEMATIC_MOTION],
+    ['editorial-restrained', EDITORIAL_MOTION],
+  ])('%s is byte-identical to its v1 constant', (id, vocabulary) => {
+    // `staggerCap` was a module constant in v1 and is a field now, so it is not
+    // in the captured object — compared against 5 separately, above.
+    const { staggerCap: _cap, ...rest } = vocabulary;
+    expect(rest).toEqual(V1_MOTION[id]);
+  });
+
+  it("reduced motion keeps v1 timing and gains the vocabulary's own curve", () => {
+    // The one deliberate difference. v1 had a single global REDUCED_MOTION that
+    // both vocabularies borrowed, easing on cinematic's curve; each declares its
+    // own duration now — unchanged at 200ms — and fades on its own easing at
+    // its own trigger, because those are properties of the vocabulary rather
+    // than of the floor.
+    const v1Reduced = V1_MOTION.reduced as {
+      intents: { reveal: { durationMs: number } };
+    };
+    const editorialReduced = fromMotionRecord(
+      seededMotionRecord('editorial-restrained'),
+    ).reduced;
+
+    expect(editorialReduced.intents.reveal.durationMs).toBe(
+      v1Reduced.intents.reveal.durationMs,
+    );
+    expect(editorialReduced.intents.reveal.ease).toEqual(
+      EDITORIAL_MOTION.intents.reveal.ease,
+    );
+    expect(editorialReduced.intents.reveal.ease).not.toEqual(
+      REDUCED_MOTION.intents.reveal.ease,
+    );
   });
 });
 
@@ -640,7 +716,7 @@ describe('the v2 record renders what the v1 constants rendered', () => {
 });
 
 describe('fromRecord', () => {
-  it('resolves every seeded record, and pairs each with its own motion', () => {
+  it('resolves every seeded record', () => {
     const byId = new Map(
       seededRecords().map((record) => {
         const result = fromRecord(record);
@@ -648,10 +724,32 @@ describe('fromRecord', () => {
         return [record.id, result.value];
       }),
     );
-    expect(byId.get('cinematic-dark')?.motion).toBe(CINEMATIC_MOTION);
-    expect(byId.get('editorial-light')?.motion).toBe(EDITORIAL_MOTION);
     for (const [id, resolvedRecord] of byId) {
       expect(resolvedRecord.artDirection.id).toBe(id);
+    }
+  });
+
+  it('hands back no motion at all — that is the axis, and it is separate', () => {
+    // v1's `resolveArtDirection` returned `{artDirection, motion}`, which is a
+    // code table by another name: an art direction that comes with its motion
+    // is one you cannot pick motion independently of. `defaultMotion` survives
+    // as what a *new* experience inherits, and nothing resolves it at render
+    // time.
+    const resolvedRecord = fromRecord(seededRecord('cinematic-dark'));
+    expect(resolvedRecord.ok).toBe(true);
+    if (!resolvedRecord.ok) return;
+    expect(Object.keys(resolvedRecord.value).sort()).toEqual(['artDirection', 'record']);
+  });
+
+  it('every art direction names a motion vocabulary that exists', () => {
+    // The default is a string crossing a table boundary with no foreign key
+    // behind it — `default_motion` is text, and `motion_vocabularies` is a
+    // different table. This is what stands in for the constraint, and it is
+    // what would have caught the ids being renamed in one place and not the
+    // other.
+    const known = new Set(seededMotionRecords().map((record) => record.id));
+    for (const record of seededRecords()) {
+      expect(known, record.id).toContain(record.extensions.defaultMotion);
     }
   });
 
@@ -673,15 +771,6 @@ describe('fromRecord', () => {
     const result = fromRecord(forged);
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error.code).toBe('invalid_input');
-  });
-
-  it('fails closed on a motion vocabulary that names nothing', () => {
-    const record = seededRecord('editorial-light');
-    const result = fromRecord({
-      ...record,
-      extensions: { ...record.extensions, defaultMotion: 'interpretive-dance' },
-    });
-    expect(result.ok).toBe(false);
   });
 
   it('does not carry the optional hex fallback into the resolved colour', () => {

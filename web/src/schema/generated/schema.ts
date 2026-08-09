@@ -661,6 +661,12 @@ export const experienceMetaSchema = z.strictObject({
 
 export type ExperienceMeta = z.infer<typeof experienceMetaSchema>;
 
+export const motionVocabularyRefSchema = z.strictObject({
+  id: z.string().min(1).max(64).regex(new RegExp('^[a-z][a-z0-9-]*$')),
+});
+
+export type MotionVocabularyRef = z.infer<typeof motionVocabularyRefSchema>;
+
 export const sceneSchema = z.strictObject({
   blocks: z.array(blockSchema).min(1).max(8),
   id: z.string().min(1),
@@ -684,6 +690,7 @@ export const experienceSchema = z.strictObject({
   id: z.string().min(1),
   meta: experienceMetaSchema,
   mode: z.enum(['scroll', 'slides']),
+  motionVocabulary: motionVocabularyRefSchema,
   scenes: z.array(sceneSchema).min(3).max(12),
   title: z.string().min(1).max(200),
 });
@@ -705,6 +712,46 @@ export const interviewStepSchema = z.strictObject({
 });
 
 export type InterviewStep = z.infer<typeof interviewStepSchema>;
+
+export const motionDistancesSchema = z.strictObject({
+  emphasizeScale: z.number().max(1).gt(0),
+  parallaxFactor: z.int().min(0).max(400),
+  revealY: z.int().min(0).max(200),
+});
+
+export type MotionDistances = z.infer<typeof motionDistancesSchema>;
+
+export const motionDurationsSchema = z.strictObject({
+  emphasize: z.int().min(0).max(5000),
+  reveal: z.int().min(0).max(5000),
+});
+
+export type MotionDurations = z.infer<typeof motionDurationsSchema>;
+
+export const reducedMotionSchema = z.strictObject({ duration: z.int().min(0).max(300) });
+
+export type ReducedMotion = z.infer<typeof reducedMotionSchema>;
+
+export const slidesVariantSchema = z.strictObject({ durations: motionDurationsSchema });
+
+export type SlidesVariant = z.infer<typeof slidesVariantSchema>;
+
+export const motionVocabularyRecordSchema = z.strictObject({
+  distances: motionDistancesSchema,
+  durations: motionDurationsSchema,
+  ease: z.array(z.number()).min(4).max(4),
+  easeEmphasis: z.array(z.number()).min(4).max(4),
+  id: z.string().min(1).max(64).regex(new RegExp('^[a-z][a-z0-9-]*$')),
+  name: z.string().min(1).max(120),
+  reducedMotion: reducedMotionSchema,
+  slidesVariant: slidesVariantSchema,
+  stagger: z.int().min(0).max(500),
+  staggerCap: z.int().min(0).max(20),
+  trigger: z.number().min(0).max(1),
+  version: z.int().min(1),
+});
+
+export type MotionVocabularyRecord = z.infer<typeof motionVocabularyRecordSchema>;
 
 export const outlineSceneSchema = z.strictObject({
   beat: z.string().min(1).max(200),

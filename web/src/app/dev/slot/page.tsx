@@ -16,8 +16,7 @@
 // is the layering the whole Slot design rests on.
 
 import { SceneRenderer } from '@/features/renderer';
-import { REDUCED_MOTION } from '@/features/art-direction';
-import { seededArtDirection } from '@/features/art-direction/server';
+import { seededArtDirection, seededMotion } from '@/features/art-direction/server';
 import { sceneSchema } from '@/schema';
 
 // The marker goes first, and every probe is wrapped. Found the hard way: in an
@@ -68,7 +67,9 @@ export default function HostileSlotPage() {
     <SceneRenderer
       scenes={[SCENE]}
       artDirection={seededArtDirection('cinematic-dark').artDirection}
-      motion={REDUCED_MOTION}
+      // The reduced floor: this harness is about what the sandbox contains,
+      // and motion would only be something moving while you read the markup.
+      motion={seededMotion('cinematic-slow').reduced}
     />
   );
 }

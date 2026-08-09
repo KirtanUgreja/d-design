@@ -70,6 +70,14 @@ class Experience(Base):
     # `ArtDirectionId` the rest of the app still speaks — lifting the version
     # into the API surface is phase 01's job, not this column's.
     art_direction: Mapped[dict[str, object]] = mapped_column(JSONB)
+    # An id with no version, unlike `art_direction` above, and the asymmetry is
+    # deliberate: an art direction is user-editable from late v2, so a reference
+    # has to say *which* version or a published page restyles itself when its
+    # author edits it. Motion vocabularies are system rows — this table has no
+    # `owner_id` column to make them otherwise — so a new version is a migration,
+    # and a published page freezes the resolved vocabulary in its artifact
+    # regardless. See `schema/motion.py` -> `MotionVocabularyRef`.
+    motion_vocabulary: Mapped[str] = mapped_column(Text)
 
     # The scene tree is one column and is never normalized. It is always read
     # and written whole, Pydantic validates it rather than SQL, and normalizing
@@ -116,6 +124,30 @@ class ArtDirection(Base):
     default_motion: Mapped[str] = mapped_column(Text)
     fluid: Mapped[dict[str, object]] = mapped_column(JSONB)
     owner_id: Mapped[UUID | None] = mapped_column(index=True, default=None)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class MotionVocabulary(Base):
+    """`(id, version)`, and no `owner_id` at all.
+
+    Migration 0008 gave this table a read-only policy for everyone and no write
+    policy, because every row is a system row. User-authored motion is not a v2
+    feature, and a nullable owner column with only ever one value in it teaches
+    the next reader the wrong thing — it gains one when it needs one, which is a
+    migration and a policy change together.
+
+    One `tokens` column rather than a column per field: the shape's source of
+    truth is Pydantic and spreading it across columns would be a second
+    definition to keep in step. Read and written whole.
+    """
+
+    __tablename__ = "motion_vocabularies"
+
+    id: Mapped[str] = mapped_column(Text, primary_key=True)
+    version: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tokens: Mapped[dict[str, object]] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

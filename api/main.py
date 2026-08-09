@@ -17,6 +17,7 @@ from routes.experiences import router as experiences_router
 from routes.generation import router as generation_router
 from routes.health import router as health_router
 from routes.intake import router as intake_router
+from routes.motion import router as motion_router
 
 app = FastAPI(title="d-design api", docs_url=None, redoc_url=None)
 
@@ -56,3 +57,4 @@ app.include_router(assets_router)
 app.include_router(asset_by_id_router)
 app.include_router(brand_router)
 app.include_router(art_directions_router)
+app.include_router(motion_router)
