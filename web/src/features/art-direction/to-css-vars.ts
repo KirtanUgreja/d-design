@@ -231,6 +231,41 @@ function layerEntries(
   });
 }
 
+/** The brand overlay: the custom properties that change when a brand kit is
+ * applied on top of an art direction.
+ *
+ * **Derived in CSS, not in JavaScript** (docs/v2/plan/01-ad-format.md ->
+ * "Derive the palette in CSS"). `--accent-soft` is written as a `color-mix()`
+ * against `var(--accent)` rather than computed here, so overriding one variable
+ * carries every dependent with it — which is what makes phase 07's reskin a
+ * variable swap inside a View Transition rather than a JS pass that has to run
+ * between two frames.
+ *
+ * **The mix ratio comes from the art direction, not from this file.** It is the
+ * alpha the direction already declared on its own `accentSoft` token — 12% on
+ * `cinematic-dark`, 10% on `editorial-light`, and they mean different things
+ * ("a glow" against "a wash behind a pull quote"). Hardcoding either would be
+ * this emitter making a decision the token layer already made.
+ *
+ * OKLCH rather than sRGB for the mix: it is perceptually uniform, so a brand's
+ * hue survives the operation instead of drifting the way an HSL or sRGB blend
+ * makes it. The contrast correction that produced `accent` still happens in
+ * `resolveBrand`, and has to — "lighten until 4.5:1" is a measurement, and CSS
+ * cannot measure.
+ *
+ * `--accent-hover` is in the phase's sketch and is deliberately not emitted:
+ * no block reads it. `cta.tsx` uses `var(--accent)` as a background and the
+ * artifact has no hover state to token. A token nothing reads is dead weight
+ * that looks like coverage — the emitter gains it the day a component needs it.
+ */
+export function brandCssVars(ad: ArtDirection, accent: Color): Record<string, string> {
+  const softness = Math.round(ad.color.accentSoft.a * 100);
+  return {
+    '--accent': toCssColor(accent),
+    '--accent-soft': `color-mix(in oklch, var(--accent) ${String(softness)}%, transparent)`,
+  };
+}
+
 export function toCssVars(ad: ArtDirection): Record<string, string> {
   return Object.fromEntries([
     ...colorEntries(ad.color),

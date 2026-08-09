@@ -7,7 +7,7 @@ import type { BrandKit } from '@/schema';
 
 import type { ArtDirection, Texture, TypeRoleKey } from './art-direction';
 import { FONT_REGISTRY, LAYOUTS, px } from './art-direction';
-import { contrastRatio, relativeLuminance } from './color';
+import { contrastRatio, relativeLuminance, toCssColor } from './color';
 import { fromRecord } from './from-record';
 import {
   CINEMATIC_MOTION,
@@ -17,7 +17,7 @@ import {
 } from './motion-vocabulary';
 import { resolveBrand } from './resolve-brand';
 import { seededRecord, seededRecords } from './seeded-records';
-import { fromCssVars, toCssVars } from './to-css-vars';
+import { brandCssVars, fromCssVars, toCssVars } from './to-css-vars';
 
 // The two art directions, resolved from the seeded records rather than
 // imported as constants — because as of v2 phase 01 there are no constants.
@@ -394,11 +394,58 @@ describe('resolveBrand', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('leaves --bg near-black regardless of the brand', () => {
+  it('has no way to change the ground, whatever the brand', () => {
+    // "Brand colours map into semantic roles, they do not replace them"
+    // asserted structurally rather than by comparison: `resolveBrand` returns
+    // an accent and the accent it was given, and there is no `bg` on the type
+    // for a brand to reach. It used to return the whole palette with one field
+    // swapped, which made this a value assertion — and hid a real bug, since
+    // `accentSoft` came back as the art direction's own hue.
     const pastel = resolveBrand(brandWith('#ffd6e8'), CINEMATIC_DARK);
     expect(pastel.ok).toBe(true);
     if (!pastel.ok) return;
-    expect(pastel.value.bg).toEqual(CINEMATIC_DARK.color.bg);
+    expect(Object.keys(pastel.value).sort()).toEqual(['accent', 'accentRaw']);
+  });
+});
+
+describe('the brand overlay derives in CSS, not in JavaScript', () => {
+  // The point of the whole arrangement: one variable is overridden and every
+  // token that depends on it follows, with no JS pass — which is what phase 07
+  // needs inside a View Transition.
+  it('writes accent-soft as a mix of var(--accent), not as a computed colour', () => {
+    const resolved = resolveBrand(brandWith('#1a2b4c'), CINEMATIC_DARK);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) return;
+
+    const vars = brandCssVars(CINEMATIC_DARK, resolved.value.accent);
+    expect(vars['--accent']).toBe(toCssColor(resolved.value.accent));
+    expect(vars['--accent-soft']).toContain('var(--accent)');
+    expect(vars['--accent-soft']).toContain('in oklch');
+  });
+
+  it('takes the mix ratio from the art direction, never from the emitter', () => {
+    // 12% on cinematic-dark, 10% on editorial-light — the alpha each direction
+    // already declared on its own `accentSoft` token. They mean different
+    // things (a glow, versus a wash behind a pull quote), so a constant here
+    // would be this file overruling the token layer.
+    const accent = CINEMATIC_DARK.color.accent;
+    expect(brandCssVars(CINEMATIC_DARK, accent)['--accent-soft']).toContain('12%');
+    expect(brandCssVars(EDITORIAL_LIGHT, accent)['--accent-soft']).toContain('10%');
+  });
+
+  it('overrides only the two variables a brand owns', () => {
+    // A brand maps into semantic roles; it does not get to restyle the page.
+    // An overlay that grew a third key would be a brand reaching past its role,
+    // and this is the assertion that notices.
+    const keys = Object.keys(brandCssVars(CINEMATIC_DARK, CINEMATIC_DARK.color.accent));
+    expect(keys.sort()).toEqual(['--accent', '--accent-soft']);
+  });
+
+  it("leaves the art direction's own emission untouched", () => {
+    // The overlay is a separate map applied on top, so an experience with no
+    // brand renders exactly what it rendered before — which is what keeps the
+    // byte-identical proof above meaningful.
+    expect(toCssVars(CINEMATIC_DARK)['--accent-soft']).toBe('rgb(244 183 64 / 12%)');
   });
 });
 

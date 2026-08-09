@@ -7,7 +7,7 @@
 import type { BrandKit } from '@/schema';
 import { err, ok, type Result } from '@/lib/result';
 
-import type { ArtDirection, Palette } from './art-direction';
+import type { ArtDirection } from './art-direction';
 import {
   contrastRatio,
   darken,
@@ -39,20 +39,30 @@ function awayFromGround(bg: Color): (c: Color, steps: number) => Color {
   return relativeLuminance(bg) > 0.18 ? darken : lighten;
 }
 
-export interface ResolvedPalette extends Palette {
+export interface ResolvedPalette {
+  /** The brand's primary, corrected until it clears 4.5:1 against the ground.
+   * Text-safe by construction. */
+  accent: Color;
   /** The brand's own primary, unmodified. Non-text surfaces only — a fill, a
    * glow source — never text, which is exactly why `accent` above exists as
    * the corrected value and this exists alongside it rather than in place of it. */
-  accentRaw: Palette['accent'];
+  accentRaw: Color;
 }
 
 /**
  * Contrast is enforced, not hoped for. If `brand.primary` fails 4.5:1
- * against `--bg`, lighten it until it passes and keep the original for
- * non-text surfaces only. A brand color that cannot reach 4.5:1 by
- * lightening returns a `Result` failure rather than a best effort —
- * anything that could ship unreadable text fails closed
- * (docs/coderules/patterns.md rule 5).
+ * against `--bg`, move it away from the ground until it passes and keep the
+ * original for non-text surfaces only. A brand color that cannot reach 4.5:1
+ * returns a `Result` failure rather than a best effort — anything that could
+ * ship unreadable text fails closed (docs/coderules/patterns.md rule 5).
+ *
+ * **Two values, not a palette.** This used to return the whole `Palette` with
+ * one field replaced, which was a palette derived in JavaScript — and it had a
+ * bug hiding in it: `accentSoft` came through as the art direction's own, so a
+ * brand applied to `cinematic-dark` got amber wash under a red accent. What
+ * JavaScript has to do here is the *measurement*, because "move it until it
+ * clears 4.5:1" cannot be expressed in CSS. Everything downstream of the
+ * corrected value is a derivation, and derivations belong in `brandCssVars`.
  */
 export function resolveBrand(brand: BrandKit, ad: ArtDirection): Result<ResolvedPalette> {
   const parsed = parseHex(brand.primary);
@@ -63,7 +73,7 @@ export function resolveBrand(brand: BrandKit, ad: ArtDirection): Result<Resolved
   let candidate = raw;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     if (contrastRatio(candidate, ad.color.bg, ad.color.bg) >= MIN_CONTRAST) {
-      return ok({ ...ad.color, accent: candidate, accentRaw: raw });
+      return ok({ accent: candidate, accentRaw: raw });
     }
     candidate = away(raw, STEP * (attempt + 1));
   }

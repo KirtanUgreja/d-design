@@ -200,7 +200,7 @@ web/src/features/art-direction/
 - [x] Both existing art directions live in the v2 format, in the database, and render identically to v1 — asserted from both languages against `art_direction_css_v1.json`, and looked at on `/dev/primitives`
 - [x] The primitive layer is DTCG; budgets, brand mapping and default motion are in `$extensions`
 - [x] `to-css-vars.ts` is still the only place a token becomes a string — unchanged by this phase
-- [ ] **Not done — brand derivation is still JavaScript.** `resolveBrand`'s HSL walk is untouched. See below
+- [x] Brand derivation happens in CSS via `color-mix` in OKLCH, not in JavaScript — `brandCssVars`, an overlay applied on top of `toCssVars`. The contrast *correction* stays in JS and has to: "move it until it clears 4.5:1" is a measurement, and CSS cannot measure
 - [x] `{ id, version }` resolves through the store, and an unknown reference fails closed
 - [x] The gate is green
 
@@ -220,10 +220,19 @@ So the comparison was made *at the moment of deletion* and pinned: `api/schema/f
 
 **One bug, found by the new required field.** `/measure` wrote its `200` header *before* awaiting the work that could fail, so a parse failure made the `catch` write a second set of headers — `ERR_HTTP_HEADERS_SENT`, thrown outside the promise, taking the whole process down. One malformed request was a denial of service on every tenant sharing the service. The ordering was wrong before this phase too; making `artDirection` required is simply what first gave it a reachable trigger. `/screenshot`, four lines below, already had it right.
 
+**Brand derivation moved to CSS, and found a bug on the way.** `resolveBrand` returned the whole `Palette` with one field replaced — a palette derived in JavaScript, and one with a defect hiding in it: `accentSoft` came through as the *art direction's* own, so a brand applied to `cinematic-dark` would have rendered a red accent over an amber wash. It now returns the two values JavaScript actually has to compute, and `brandCssVars` emits the derivation:
+
+```css
+--accent:      rgb(26 43 76);                                  /* corrected, measured */
+--accent-soft: color-mix(in oklch, var(--accent) 12%, transparent);
+```
+
+Two things about that mix are deliberate. **The ratio is the art direction's**, read off the alpha each direction already declared on its own `accentSoft` token — 12% on `cinematic-dark`, 10% on `editorial-light`, and they mean different things ("a glow" against "a wash behind a pull quote"). A constant in the emitter would be this layer overruling the token layer. **And it is an overlay, not a replacement**: `toCssVars` emits exactly what it emitted before, so an experience with no brand renders byte-for-byte what it rendered in v1 and the proof above stays meaningful.
+
+`--accent-hover` is in the phase's sketch and is deliberately not emitted. No block reads it — `cta.tsx` uses `var(--accent)` as a background and the artifact has no hover state to token — and a token nothing reads is dead weight that looks like coverage.
+
 ### Deferred, and named rather than quietly dropped
 
-**Brand derivation in CSS.** The phase asks for `color-mix()` and relative OKLCH to replace `resolveBrand`'s JavaScript. It is not done, and it does not belong in this phase: it changes what a brand colour *resolves to*, which is a design change, and this phase's one assertion is that no pixel moved. Doing both at once is two changes wearing one commit message — the same reason the v1 character caps became both directions' budgets unaltered.
-
-It is also cheaper after phase [07](07-reskin.md), which is where its real payoff is: swapping `--brand-primary` inside a View Transition with no JS pass. **Trigger: phase 07**, and the note belongs there.
+**Applying the brand to a published page.** The overlay exists and every consumer already reads it through `var(--accent-soft)`; what does not exist is a render path that merges it, because v1 never applied a brand kit to output at all — the kit is stored and previewed, and the contrast notice is advisory. Wiring it changes what published pages look like, which is a product decision belonging to the phase that owns the brand's arrival on the page. **Trigger: phase [07](07-reskin.md)**, whose View Transition is the reason the derivation is CSS in the first place.
 
 **A `contrastStrategy` that does anything.** The field is stored and defaults to `'auto'`; `resolveBrand` still picks its direction from the ground's own luminance and never reads the token. That is the correct behaviour today, and the field exists so an art direction can override it — the first one that wants to is phase [04](04-three-art-directions.md)'s `bold-brutalist`.

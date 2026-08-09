@@ -84,4 +84,8 @@ export {
 export type { ResolvedPalette } from './resolve-brand';
 export { resolveBrand } from './resolve-brand';
 
-export { toCssVars } from './to-css-vars';
+// `brandCssVars` is the overlay applied on top of `toCssVars` when a brand kit
+// exists — two maps, merged by the caller, so an experience with no brand
+// renders exactly the art direction. Both live in the one file where a token
+// becomes a string.
+export { brandCssVars, toCssVars } from './to-css-vars';
