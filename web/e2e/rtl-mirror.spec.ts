@@ -43,21 +43,45 @@ test('split-left column order visually reverses under dir=rtl', async ({ page })
   expect(rtlX).toBeGreaterThan(viewportWidth / 2);
 });
 
-test('reduced motion collapses reveal to opacity-only, no transform', async ({
-  page,
-}) => {
-  await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.goto('/dev/primitives');
-  await expect(page.getByRole('button', { name: /^motion:/ })).toHaveText(
-    'motion: reduced',
-  );
+// Both vocabularies, not one, since v2 phase 02 made reduced motion a
+// per-vocabulary field instead of a single global constant. The unit suites
+// assert the *floor* — opacity-only, no transform, no parallax, for every
+// vocabulary and every intent — and they assert it about the objects. This is
+// the only place a real browser with the preference actually set says the same
+// thing about a rendered page, which is a different claim: a vocabulary could
+// be perfect and the wrapper could still hand the renderer the wrong one.
+//
+// Parameterized over the harness's own motion selector rather than over a list
+// written here, so a third vocabulary is covered by existing code the day it
+// lands — and a vocabulary the harness cannot reach is one nobody can see.
+for (const vocabulary of ['cinematic-slow', 'editorial-restrained']) {
+  test(`reduced motion collapses reveal to opacity-only under ${vocabulary}`, async ({
+    page,
+  }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/dev/primitives');
+    await expect(page.getByRole('button', { name: 'full', exact: true })).toBeDisabled();
 
-  const headline = page.getByText('Launch with confidence');
-  await page.waitForTimeout(300); // past REDUCED_MOTION's 200ms reveal
-  const transform = await headline.evaluate((el) => getComputedStyle(el).transform);
-  expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(transform);
-  await expect(headline).toHaveCSS('opacity', '1');
-});
+    // The harness disables the button for whatever is selected, so clicking is
+    // conditional and the assertion afterwards is the real one: this vocabulary
+    // is the active one, however it got there.
+    const selector = page.getByRole('button', { name: vocabulary, exact: true });
+    if (await selector.isEnabled()) await selector.click();
+    await expect(selector).toBeDisabled();
+
+    await expect(page.getByRole('button', { name: /^motion:/ })).toHaveText(
+      'motion: reduced',
+    );
+
+    const headline = page.getByText('Launch with confidence');
+    // Past the longest reduced duration any vocabulary may declare (300ms), so
+    // the wait does not have to know which one is selected.
+    await page.waitForTimeout(400);
+    const transform = await headline.evaluate((el) => getComputedStyle(el).transform);
+    expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(transform);
+    await expect(headline).toHaveCSS('opacity', '1');
+  });
+}
 
 // The `emphasize` half of the same claim, and the reason it exists: the test
 // above passes whether or not the reveal lands on the identity transform,

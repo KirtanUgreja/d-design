@@ -90,7 +90,7 @@ The renderer already takes `motion` as a parameter and reads only what it is giv
 **Reduced motion**
 
 - [x] Every vocabulary's `reducedMotion` is opacity-only, no transform, no parallax, ≤ 300ms — asserted in both languages, and they check different things: Python that the *format* cannot express a louder floor, TypeScript that the mapping does not build one
-- [ ] **Not run — `prefers-reduced-motion` e2e.** See below
+- [x] `prefers-reduced-motion: reduce` collapses the reveal under **both** vocabularies — the v1 spec is parameterized over the harness's own motion selector rather than duplicated, so a third vocabulary is covered by existing code the day it lands
 - [x] The in-page toggle still works, and still lives in the runtime rather than in an art direction
 
 **Purity**
@@ -142,6 +142,8 @@ The renderer already takes `motion` as a parameter and reads only what it is giv
 
 **Reduced motion is per-vocabulary now, and `editorial-restrained` moves.** v1 had one global `REDUCED_MOTION` that both vocabularies borrowed — 200ms, on cinematic's expo curve, at cinematic's trigger. Each vocabulary declares its own duration now, and both declare 200, so **timing is unchanged for every reader**. What changes is that editorial's reduced mode fades on editorial's own easing at editorial's own trigger, instead of borrowing the other vocabulary's. That is the whole reason the phase makes the floor per-vocabulary — 200ms under `mechanical-snap` and 200ms under `physics-playful` are not the same design even when both are a bare fade — and it is asserted rather than left as a surprise.
 
-### Deferred, and named rather than quietly dropped
+### The e2e was deferred once, wrongly, and then done
 
-**The `prefers-reduced-motion` e2e across both vocabularies.** The v1 Playwright spec covers one, and extending it needs a published experience under each vocabulary to point a browser at — which is a fixture-and-fixtures problem rather than a motion problem, and it is phase [09](09-visual-verification.md) that builds the machinery for looking at published output. The property itself is asserted in both unit suites, on every vocabulary and every intent; what is not asserted is that a real browser with the preference set gets it. **Trigger: phase 09.**
+It was written up as needing a published experience under each vocabulary — a fixture problem for phase [09](09-visual-verification.md). That was wrong: the v1 spec already runs against `/dev/primitives`, and this phase gave that harness a motion selector, so the extension was a loop and a click. Worth recording as a deferral that did not survive being looked at twice.
+
+What the browser adds over the unit suites is a different claim, not a louder one. They assert the *floor* — opacity-only, no transform, no parallax, every vocabulary, every intent — about the objects. The e2e asserts that a real browser with the preference set gets one of those objects: a vocabulary could be perfect and the wrapper could still hand the renderer the wrong one.
