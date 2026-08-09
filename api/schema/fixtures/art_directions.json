@@ -1097,5 +1097,564 @@
       }
     },
     "version": 1
+  },
+  {
+    "author": "system",
+    "extensions": {
+      "brandMapping": {
+        "accentRole": "bg",
+        "allowBrandBackground": true,
+        "contrastStrategy": "auto",
+        "logoTreatment": "mono"
+      },
+      "budgets": {
+        "body": 180,
+        "eyebrow": 20,
+        "headline": 34,
+        "listItem": 60,
+        "quote": 140,
+        "stat": 8
+      },
+      "defaultMotion": "cinematic-slow",
+      "fluid": {
+        "image": {
+          "edge": {
+            "unit": "px",
+            "value": 0.0
+          },
+          "frame": "block",
+          "overlay": {
+            "angle": 45.0,
+            "color": "ink",
+            "intensity": 0.35,
+            "kind": "halftone",
+            "offset": {
+              "unit": "px",
+              "value": 0.0
+            },
+            "scale": {
+              "unit": "px",
+              "value": 8.0
+            },
+            "steps": 2
+          },
+          "ratios": [
+            {
+              "h": 1,
+              "w": 1
+            },
+            {
+              "h": 3,
+              "w": 4
+            }
+          ],
+          "tone": "posterize",
+          "veil": 0.2
+        },
+        "rhythm": {
+          "contentMax": {
+            "unit": "px",
+            "value": 1440.0
+          },
+          "fit": {
+            "centered": "viewport",
+            "full-bleed": "viewport",
+            "grid": "viewport",
+            "split-left": "viewport",
+            "split-right": "viewport",
+            "stack": "viewport"
+          },
+          "fitMinBlock": {
+            "unit": "svh",
+            "value": 100.0
+          },
+          "fitPlace": "end",
+          "fitScrollMargin": {
+            "unit": "rem",
+            "value": 4.0
+          },
+          "measure": {
+            "unit": "ch",
+            "value": 54.0
+          },
+          "scenePaddingX": {
+            "max": {
+              "unit": "rem",
+              "value": 4.0
+            },
+            "min": {
+              "unit": "rem",
+              "value": 1.0
+            },
+            "preferred": {
+              "unit": "vw",
+              "value": 3.0
+            }
+          },
+          "scenePaddingY": {
+            "max": {
+              "unit": "rem",
+              "value": 6.0
+            },
+            "min": {
+              "unit": "rem",
+              "value": 3.0
+            },
+            "preferred": {
+              "unit": "vw",
+              "value": 7.0
+            }
+          }
+        },
+        "texture": [
+          {
+            "angle": 45.0,
+            "color": "accent",
+            "intensity": 0.3,
+            "kind": "halftone",
+            "offset": {
+              "unit": "px",
+              "value": 0.0
+            },
+            "scale": {
+              "unit": "px",
+              "value": 10.0
+            },
+            "steps": 2
+          },
+          {
+            "angle": 45.0,
+            "color": "ink",
+            "intensity": 0.26,
+            "kind": "halftone",
+            "offset": {
+              "unit": "px",
+              "value": 3.0
+            },
+            "scale": {
+              "unit": "px",
+              "value": 10.0
+            },
+            "steps": 2
+          }
+        ],
+        "type": {
+          "eyebrow": {
+            "case": "uppercase",
+            "color": "ink",
+            "font": "text",
+            "size": {
+              "max": {
+                "unit": "rem",
+                "value": 0.8125
+              },
+              "min": {
+                "unit": "rem",
+                "value": 0.8125
+              },
+              "preferred": {
+                "unit": "rem",
+                "value": 0.8125
+              }
+            }
+          },
+          "hero": {
+            "font": "display",
+            "size": {
+              "max": {
+                "unit": "rem",
+                "value": 12.0
+              },
+              "min": {
+                "unit": "rem",
+                "value": 4.0
+              },
+              "preferred": {
+                "unit": "vw",
+                "value": 10.0
+              }
+            }
+          },
+          "lead": {
+            "font": "text",
+            "size": {
+              "max": {
+                "unit": "rem",
+                "value": 1.75
+              },
+              "min": {
+                "unit": "rem",
+                "value": 1.375
+              },
+              "preferred": {
+                "unit": "vw",
+                "value": 2.2
+              }
+            }
+          },
+          "muted": {
+            "color": "inkMuted",
+            "font": "text",
+            "size": {
+              "max": {
+                "unit": "rem",
+                "value": 1.0625
+              },
+              "min": {
+                "unit": "rem",
+                "value": 1.0625
+              },
+              "preferred": {
+                "unit": "rem",
+                "value": 1.0625
+              }
+            }
+          },
+          "normal": {
+            "font": "text",
+            "size": {
+              "max": {
+                "unit": "rem",
+                "value": 1.0625
+              },
+              "min": {
+                "unit": "rem",
+                "value": 1.0625
+              },
+              "preferred": {
+                "unit": "rem",
+                "value": 1.0625
+              }
+            }
+          },
+          "section": {
+            "font": "display",
+            "size": {
+              "max": {
+                "unit": "rem",
+                "value": 4.5
+              },
+              "min": {
+                "unit": "rem",
+                "value": 2.5
+              },
+              "preferred": {
+                "unit": "vw",
+                "value": 5.5
+              }
+            }
+          },
+          "stat": {
+            "font": "display",
+            "size": {
+              "max": {
+                "unit": "rem",
+                "value": 12.0
+              },
+              "min": {
+                "unit": "rem",
+                "value": 3.5
+              },
+              "preferred": {
+                "unit": "vw",
+                "value": 10.0
+              }
+            }
+          }
+        },
+        "visualBlend": "multiply"
+      }
+    },
+    "id": "bold-brutalist",
+    "name": "Bold Brutalist",
+    "tokens": {
+      "color": {
+        "accent": {
+          "$type": "color",
+          "$value": {
+            "alpha": 1.0,
+            "colorSpace": "srgb",
+            "components": [
+              0.43137254901960786,
+              0.0392156862745098,
+              0.0
+            ],
+            "hex": "#6e0a00"
+          }
+        },
+        "accentSoft": {
+          "$type": "color",
+          "$value": {
+            "alpha": 0.15,
+            "colorSpace": "srgb",
+            "components": [
+              0.43137254901960786,
+              0.0392156862745098,
+              0.0
+            ],
+            "hex": "#6e0a00"
+          }
+        },
+        "bg": {
+          "$type": "color",
+          "$value": {
+            "alpha": 1.0,
+            "colorSpace": "srgb",
+            "components": [
+              0.9490196078431372,
+              0.8980392156862745,
+              0.20784313725490197
+            ],
+            "hex": "#f2e535"
+          }
+        },
+        "bgElevated": {
+          "$type": "color",
+          "$value": {
+            "alpha": 1.0,
+            "colorSpace": "srgb",
+            "components": [
+              1.0,
+              1.0,
+              1.0
+            ],
+            "hex": "#ffffff"
+          }
+        },
+        "hairline": {
+          "$type": "color",
+          "$value": {
+            "alpha": 1.0,
+            "colorSpace": "srgb",
+            "components": [
+              0.043137254901960784,
+              0.043137254901960784,
+              0.043137254901960784
+            ],
+            "hex": "#0b0b0b"
+          }
+        },
+        "ink": {
+          "$type": "color",
+          "$value": {
+            "alpha": 1.0,
+            "colorSpace": "srgb",
+            "components": [
+              0.043137254901960784,
+              0.043137254901960784,
+              0.043137254901960784
+            ],
+            "hex": "#0b0b0b"
+          }
+        },
+        "inkFaint": {
+          "$type": "color",
+          "$value": {
+            "alpha": 0.62,
+            "colorSpace": "srgb",
+            "components": [
+              0.043137254901960784,
+              0.043137254901960784,
+              0.043137254901960784
+            ],
+            "hex": "#0b0b0b"
+          }
+        },
+        "inkMuted": {
+          "$type": "color",
+          "$value": {
+            "alpha": 0.88,
+            "colorSpace": "srgb",
+            "components": [
+              0.043137254901960784,
+              0.043137254901960784,
+              0.043137254901960784
+            ],
+            "hex": "#0b0b0b"
+          }
+        },
+        "veil": {
+          "$type": "color",
+          "$value": {
+            "alpha": 0.82,
+            "colorSpace": "srgb",
+            "components": [
+              0.9490196078431372,
+              0.8980392156862745,
+              0.20784313725490197
+            ],
+            "hex": "#f2e535"
+          }
+        }
+      },
+      "font": {
+        "display": {
+          "$type": "fontFamily",
+          "$value": "Syne"
+        },
+        "text": {
+          "$type": "fontFamily",
+          "$value": "Space Grotesk"
+        }
+      },
+      "space": {
+        "step1": {
+          "$type": "dimension",
+          "$value": {
+            "unit": "px",
+            "value": 6.0
+          }
+        },
+        "step2": {
+          "$type": "dimension",
+          "$value": {
+            "unit": "px",
+            "value": 11.0
+          }
+        },
+        "step3": {
+          "$type": "dimension",
+          "$value": {
+            "unit": "px",
+            "value": 20.0
+          }
+        },
+        "step4": {
+          "$type": "dimension",
+          "$value": {
+            "unit": "px",
+            "value": 34.0
+          }
+        },
+        "step5": {
+          "$type": "dimension",
+          "$value": {
+            "unit": "px",
+            "value": 56.0
+          }
+        },
+        "step6": {
+          "$type": "dimension",
+          "$value": {
+            "unit": "px",
+            "value": 92.0
+          }
+        },
+        "step7": {
+          "$type": "dimension",
+          "$value": {
+            "unit": "px",
+            "value": 150.0
+          }
+        }
+      },
+      "type": {
+        "eyebrow": {
+          "leading": {
+            "$type": "number",
+            "$value": 1.2
+          },
+          "tracking": {
+            "$type": "number",
+            "$value": 0.08
+          },
+          "weight": {
+            "$type": "fontWeight",
+            "$value": 700
+          }
+        },
+        "hero": {
+          "leading": {
+            "$type": "number",
+            "$value": 0.86
+          },
+          "tracking": {
+            "$type": "number",
+            "$value": -0.05
+          },
+          "weight": {
+            "$type": "fontWeight",
+            "$value": 800
+          }
+        },
+        "lead": {
+          "leading": {
+            "$type": "number",
+            "$value": 1.4
+          },
+          "tracking": {
+            "$type": "number",
+            "$value": -0.01
+          },
+          "weight": {
+            "$type": "fontWeight",
+            "$value": 500
+          }
+        },
+        "muted": {
+          "leading": {
+            "$type": "number",
+            "$value": 1.45
+          },
+          "tracking": {
+            "$type": "number",
+            "$value": 0.0
+          },
+          "weight": {
+            "$type": "fontWeight",
+            "$value": 400
+          }
+        },
+        "normal": {
+          "leading": {
+            "$type": "number",
+            "$value": 1.45
+          },
+          "tracking": {
+            "$type": "number",
+            "$value": 0.0
+          },
+          "weight": {
+            "$type": "fontWeight",
+            "$value": 400
+          }
+        },
+        "section": {
+          "leading": {
+            "$type": "number",
+            "$value": 0.95
+          },
+          "tracking": {
+            "$type": "number",
+            "$value": -0.04
+          },
+          "weight": {
+            "$type": "fontWeight",
+            "$value": 800
+          }
+        },
+        "stat": {
+          "leading": {
+            "$type": "number",
+            "$value": 0.9
+          },
+          "tracking": {
+            "$type": "number",
+            "$value": -0.05
+          },
+          "weight": {
+            "$type": "fontWeight",
+            "$value": 800
+          }
+        }
+      },
+      "visual": {
+        "strength": {
+          "$type": "number",
+          "$value": 0.6
+        }
+      }
+    },
+    "version": 1
   }
 ]

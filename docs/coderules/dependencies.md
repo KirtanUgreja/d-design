@@ -104,6 +104,19 @@ stripe — billing (v3) — never hand-roll payments.
   requires art direction #2's display face to differ from both #1's and our own
   chrome's, which is the constraint that stopped the font registry being
   global. Open license, self-hosted, same reason as above.
+@fontsource/syne, @fontsource/space-grotesk (v2, phase 04) — the same decision
+  a third time, for `bold-brutalist`. Syne is here for one reason and it is a
+  weight: it is the only registered family that self-hosts above 600, and
+  `clamp(4rem, 12vw, 14rem)` set at 500 is a large thin headline rather than a
+  brutalist one. Both OFL-1.1, both different families from the four already
+  registered and from our own chrome's, which is the same brand.md constraint
+  that stopped the font registry being global in v1.
+  **These two are what made `weights` per-family.** The registry had carried
+  `[400, 500, 600]` for every entry, which read as a property of the registry
+  and was in fact a property of four families that happened to want the same
+  three. Syne ships one weight here and Space Grotesk three, so a published
+  page pays for the faces it sets rather than for the shape of the first two
+  art directions.
 esbuild (v2, phase 00) — bundles the `render` service, JSX included — Node 26
   strips TypeScript types natively, so a plain .ts service would need no build
   at all, but it does not transform JSX and the renderer is entirely .tsx. A
@@ -115,7 +128,8 @@ playwright (v2, phase 00) — headless Chromium for the screenshot service —
   already a devDependency in web for the e2e suite; this makes it a runtime
   dependency of the one service whose job is driving a browser. Writing our own
   is not a sentence anyone would finish.
-@fontsource/* in render (v2, phase 00) — the same four families web installs —
+@fontsource/* in render (v2, phase 00; six families since phase 04) — the same
+  families web installs —
   the screenshot document inlines the real woff2 as data URIs, because
   `setContent` gives the page no base URL and a missing face falls back
   silently to Times. A fallback face measures differently, which makes phase

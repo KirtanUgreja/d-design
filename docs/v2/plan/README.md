@@ -14,7 +14,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 01 | [AD format v2](01-ad-format.md) | 1 | **done** |
 | 02 | [Motion as an axis](02-motion-axis.md) | 2 | **done** |
 | 03 | [The AD linter](03-ad-linter.md) | 3 | **done** |
-| 04 | [Three art directions](04-three-art-directions.md) | 4, 5 | not started |
+| 04 | [Three art directions](04-three-art-directions.md) | 4, 5 | **done** |
 | 05 | [Budgets in the pipeline](05-budgets-in-the-pipeline.md) | pipeline delta | not started |
 | 06 | [Version history](06-version-history.md) | 6 | not started |
 | 07 | [Reskin](07-reskin.md) | 7 | not started |
@@ -113,6 +113,8 @@ It was built out of order on purpose. The defect it fixes is the one visible in 
 Not "renders without crashing". Without a **branch** — no `mode`, no `if (artDirection.id === …)`, no second layout path. A token read is fine and expected; that is the distinction v1's AD #2 exercise established and phase 04 is where it gets its real test, because `bold-brutalist` is the art direction designed to break things.
 
 If it needs a branch, the format is wrong. Stop and fix the format. That is cheaper at phase 04 than at any later point in the product's life, and it is the entire reason three art directions are hand-authored before a single user-authored one exists.
+
+**It did not need a branch.** [04](04-three-art-directions.md) is done and `bold-brutalist` renders all eleven primitives with no `mode`, no id comparison and no second layout path. Four values turned out to be one instance's held globally — a font-weight list, a brand-mapping default set, a type-scale bound measuring the wrong quantity, and a texture layer that had been painting *above* the content since phase 14 without either existing art direction being loud enough to show it. Every one became a token read or a fix, none became a conditional. Phase 07 is unblocked.
 
 ## How to read a phase file
 

@@ -146,12 +146,18 @@ texture           weave — v1 took the empty array because the only three
                   `rule` was authored here too and removed after looking at
                   it: a hairline every 32px across a whole scene is ruled
                   notebook paper, not a spread. A visible rule is furniture,
-                  not ground — it belongs to `Furniture` in phase 17
+                  not ground — it belongs to `Furniture` in phase 17.
+                  **`bold-brutalist` reached the same conclusion independently**
+                  in phase 04, at full ink, where the bars and the letterforms
+                  merged into one shape. Two of three art directions rejecting
+                  a texture kind is an argument for `rule` leaving the union
 ```
 
 Chosen as AD #2 precisely because it is hostile to `cinematic-dark`'s assumptions: light instead of dark, serif instead of sans, restraint instead of atmosphere, no texture at all. Anything shared between these two is genuinely universal.
 
 ### `bold-brutalist` — the stress test
+
+> **Built in [plan/04](plan/04-three-art-directions.md), and four of the values below moved.** The ground is a process yellow `#f2e535` rather than being brand-only — an art direction has to be itself before a brand kit arrives, and yellow is the one saturated hue light enough to take near-black type at Lc 88. `type.hero` is `clamp(4rem, 10vw, 12rem)` and not `12vw/14rem`, because Syne measures 0.864 em per character and the sketched size broke words. `texture` lost its `rule` layer for the same reason `editorial-light` did — see below. `defaultMotion` points at `cinematic-slow` with a `ponytail:` until [11](plan/11-range.md). The character description is accurate; treat the numbers as superseded.
 
 Oversized type, hard color blocks, zero gradients, thick rules, mechanical snap motion, extreme contrast.
 
@@ -252,7 +258,7 @@ Any AD from a control panel — and later from AI derivation — can produce unr
 | **Text contrast — perceptual gate** | body `Lc ≥ 75`; large display `Lc ≥ 60`; incidental/disabled `Lc ≥ 45` | APCA |
 | Accent contrast | both of the above, wherever accent carries text | both |
 | Type scale monotonic | `hero > section > lead > normal ≥ muted > eyebrow` | — |
-| Scale range | `hero / normal` between 2.5 and 8 | — |
+| Scale range | `hero / normal` between 2.5 and 14, **and** `ratio x budgets.headline` under 520 | — |
 | Line height | display ≥ 0.85; body between 1.4 and 1.8 | — |
 | Measure | between 45ch and 80ch | — |
 | Spacing scale | strictly increasing, adjacent ratios between 1.2 and 2.0 | — |

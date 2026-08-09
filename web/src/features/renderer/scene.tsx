@@ -33,6 +33,20 @@ function Texture({ artDirection }: { artDirection: ArtDirection }) {
         inset: 0,
         pointerEvents: 'none',
         overflow: 'hidden',
+        // **Ground, and it took a third art direction to notice it was not.**
+        // A positioned element paints above its non-positioned siblings, and
+        // the scene's content is in normal flow — so this layer has been on
+        // *top* of the type since phase 14 built it. Nothing showed, because
+        // the two art directions that existed set their loudest layer at 0.55
+        // and 0.06 opacity: a film over the text is invisible when the film is
+        // a film. `bold-brutalist` sets a `rule` layer at intensity 1 in full
+        // ink, and it drew opaque black bars straight through the headline.
+        //
+        // Negative z-index puts it behind the flow, and `isolation: isolate` on
+        // the section is what keeps "behind" from meaning "behind the page" —
+        // without a stacking context there, this would escape the scene and
+        // paint under the ground it is supposed to sit on.
+        zIndex: -1,
       }}
       aria-hidden="true"
     >
@@ -92,6 +106,9 @@ export function Scene({
       id={`scene-${scene.id}`}
       style={{
         position: 'relative',
+        // Bounds the texture layer's negative z-index to this scene. See the
+        // note in `Texture` — the two are one fix and neither works alone.
+        isolation: 'isolate',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: SCENE_PLACE,

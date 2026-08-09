@@ -117,12 +117,35 @@ def test_no_dtcg_dimension_carries_a_unit_the_spec_forbids(
             assert value["unit"] in ("px", "rem"), f"{group_name}.{path}"
 
 
-def test_both_art_directions_keep_the_v1_character_caps() -> None:
-    """The migration changes no behaviour, budgets included. They differ for the
-    first time in phase 04, where a direction with a much larger display face
-    has an actual reason to."""
-    budgets = [record.extensions.budgets for record in SYSTEM_ART_DIRECTIONS]
-    assert all(b == budgets[0] for b in budgets)
+def test_the_migrated_art_directions_keep_the_v1_character_caps() -> None:
+    """Phase 01 carried the v1 caps across unchanged, and phase 04 is the first
+    divergence — which the previous version of this test named as its own end
+    date rather than being surprised by.
+
+    The assertion is still worth having and is now the more interesting one. It
+    was "all budgets are equal", which was a statement about a migration; it is
+    now "the two directions that were *migrated* are still equal, and the one
+    that was authored is not". The first half is what stops a later edit
+    smuggling a behaviour change into the two records whose whole promise was
+    that nothing moved. The second half is what stops `ContentBudgets` quietly
+    reverting to a product-wide constant — which is what it was in v1, and what
+    docs/v2/art-direction-system.md calls the honest crack in the thesis.
+    """
+    migrated = [
+        record.extensions.budgets
+        for record in SYSTEM_ART_DIRECTIONS
+        if record.id in ("cinematic-dark", "editorial-light")
+    ]
+    assert len(migrated) == 2
+    assert migrated[0] == migrated[1]
+
+    brutalist = next(r for r in SYSTEM_ART_DIRECTIONS if r.id == "bold-brutalist")
+    assert brutalist.extensions.budgets != migrated[0]
+    # 34, and the specific number matters: it is what pays for a hero running
+    # 13x body size (`HEADLINE_SET_WIDTH` in lint.py). A budget loosened here
+    # without the type scale coming down fails the linter, which is the coupling
+    # being enforced rather than described.
+    assert brutalist.extensions.budgets.headline == 34
 
 
 def _leaves(node: object, prefix: str = "") -> list[tuple[str, dict[str, object]]]:

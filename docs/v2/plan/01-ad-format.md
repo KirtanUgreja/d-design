@@ -195,6 +195,20 @@ web/src/features/art-direction/
 
 ---
 
+---
+
+## What phase 04 changed about this format
+
+The plan budgets for a format refactor between art direction #2 and #3 and says to treat needing one as the process working ([README](README.md) → "The one hard gate"). Three things moved, all recorded here because this is the file that owns the format.
+
+**`BrandMapping`'s four fields lost their defaults and are now required.** They were `accent_role='accent'`, `allow_brand_background=False`, `logo_treatment='mono'`, `contrast_strategy='auto'` — fine while nothing read the group, and a problem the moment something did. A Pydantic default generates into `z.enum(…).default(…).optional()`, so `from-record.ts` would have had to write the same default a second time, in another language, on the group that decides whether a customer's brand colour becomes a page's ground. Three constructor calls bought a total wire form.
+
+**`brandMapping` reaches `ArtDirection`.** Phase 01 stored it and nothing read it; `brandCssVars` now looks up `accentRole` to decide which custom properties a brand overlay owns, and `resolveBrand` reads `contrastStrategy`. The deferral recorded here — *"a `contrastStrategy` that does anything"* — is closed, though not the way it was predicted: `bold-brutalist` does not override it. See [04](04-three-art-directions.md).
+
+**Font weights became per-family.** `FONT_REGISTRY`'s `weights` had been `[400, 500, 600]` on every row, which read as a property of the registry and was a property of four families that happened to want the same three. Syne self-hosts one weight here and Space Grotesk three.
+
+Nothing else moved. The DTCG split, the typed fluid layer, the `{id, version}` reference and the `$extensions` boundary all held an art direction they were not extracted from, which is the thing this phase was betting on.
+
 ## Exit gate
 
 - [x] Both existing art directions live in the v2 format, in the database, and render identically to v1 — asserted from both languages against `art_direction_css_v1.json`, and looked at on `/dev/primitives`

@@ -23,6 +23,14 @@ nothing in `api` has ever inserted into `art_directions` — 0008 created it for
 this phase to fill. If this statement fails on some environment, that
 environment has a row nobody wrote through code, and failing loudly is right.
 
+**This revision writes however many art directions `seed.py` currently holds,
+which is three since v2 phase 04 and was two when this was written.** The title
+above is left as it was because a revision message is a record of what happened,
+not a live description — but the behaviour is worth stating here, because it is
+the reason 0014 is an upsert rather than an insert: a database created after
+phase 04 gets `bold-brutalist` from *this* migration, and a database migrated
+before it does not. Any revision seeding this table has to be correct for both.
+
 **The values come from `features/art_direction/seed.py`**, validated as
 `ArtDirectionRecord` before the insert. A migration that writes jsonb by hand is
 a migration that can write a shape the model cannot read back, and the row would

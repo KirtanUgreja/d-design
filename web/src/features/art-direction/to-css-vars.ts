@@ -29,6 +29,7 @@ import type {
 } from './art-direction';
 import { COLOR_VAR, FONT_REGISTRY, LAYOUTS } from './art-direction';
 import { type Color, toCssColor } from './color';
+import type { ResolvedPalette } from './resolve-brand';
 
 const TYPE_ROLES: readonly TypeRoleKey[] = [
   'hero',
@@ -241,29 +242,67 @@ function layerEntries(
  * variable swap inside a View Transition rather than a JS pass that has to run
  * between two frames.
  *
- * **The mix ratio comes from the art direction, not from this file.** It is the
- * alpha the direction already declared on its own `accentSoft` token — 12% on
- * `cinematic-dark`, 10% on `editorial-light`, and they mean different things
- * ("a glow" against "a wash behind a pull quote"). Hardcoding either would be
- * this emitter making a decision the token layer already made.
- *
  * OKLCH rather than sRGB for the mix: it is perceptually uniform, so a brand's
  * hue survives the operation instead of drifting the way an HSL or sRGB blend
  * makes it. The contrast correction that produced `accent` still happens in
- * `resolveBrand`, and has to — "lighten until 4.5:1" is a measurement, and CSS
+ * `resolveBrand`, and has to — "clear both gates" is a measurement, and CSS
  * cannot measure.
  *
  * `--accent-hover` is in the phase's sketch and is deliberately not emitted:
  * no block reads it. `cta.tsx` uses `var(--accent)` as a background and the
  * artifact has no hover state to token. A token nothing reads is dead weight
  * that looks like coverage — the emitter gains it the day a component needs it.
+ *
+ * **Which variables it overrides is the art direction's `accentRole`**, and
+ * that lookup is what phase 04 added. A brand kit applied to `cinematic-dark`
+ * replaces an accent; applied to `bold-brutalist` it replaces the *ground*, and
+ * every role that was authored as a proportion of the ground has to follow it
+ * — which is precisely what deriving in CSS buys. `--veil` is the art
+ * direction's own ground at its own declared alpha, so overriding one variable
+ * carries it, and the emitter never learns what colour anything ended up.
+ *
+ * A `switch` on a token value, in the file whose job is turning tokens into
+ * strings. Rule 12 forbids a branch in the *renderer*, and the renderer is
+ * downstream of this reading `var(--bg)` exactly as it always did — it cannot
+ * tell whether a brand kit was applied, which is the property that matters.
  */
-export function brandCssVars(ad: ArtDirection, accent: Color): Record<string, string> {
-  const softness = Math.round(ad.color.accentSoft.a * 100);
-  return {
-    '--accent': toCssColor(accent),
-    '--accent-soft': `color-mix(in oklch, var(--accent) ${String(softness)}%, transparent)`,
-  };
+export function brandCssVars(
+  ad: ArtDirection,
+  resolved: ResolvedPalette,
+): Record<string, string> {
+  // Alpha -> a mix percentage against the same variable the token referenced.
+  // The ratio is the art direction's, never this file's: 12% on
+  // `cinematic-dark` and 10% on `editorial-light` mean different things ("a
+  // glow" against "a wash behind a pull quote"), and hardcoding either would be
+  // the emitter making a decision the token layer already made.
+  const pct = (a: number): string => String(Math.round(a * 100));
+  const mix = (source: string, a: number): string =>
+    `color-mix(in oklch, var(${source}) ${pct(a)}%, transparent)`;
+
+  switch (ad.brandMapping.accentRole) {
+    case 'bg': {
+      if (resolved.ground === null) return {};
+      return {
+        '--bg': toCssColor(resolved.ground),
+        '--veil': mix('--bg', ad.color.veil.a),
+      };
+    }
+    case 'ink': {
+      if (resolved.accent === null) return {};
+      return {
+        '--ink': toCssColor(resolved.accent),
+        '--ink-muted': mix('--ink', ad.color.inkMuted.a),
+        '--ink-faint': mix('--ink', ad.color.inkFaint.a),
+      };
+    }
+    case 'accent': {
+      if (resolved.accent === null) return {};
+      return {
+        '--accent': toCssColor(resolved.accent),
+        '--accent-soft': mix('--accent', ad.color.accentSoft.a),
+      };
+    }
+  }
 }
 
 export function toCssVars(ad: ArtDirection): Record<string, string> {

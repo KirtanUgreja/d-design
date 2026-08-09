@@ -196,3 +196,13 @@ Font families deserve the emphasis. A family name is the most natural-looking fr
 **Live linting in the browser.** The rules live in `api` and the phase already lists this as later work. Nothing here blocks it, and the important half — that the server never trusts the client's verdict — is true by construction, since there is no client path to a save.
 
 **The ground-cycle rule's inverted-scene half.** `bg` and `bgElevated` are both checked, which is every ground that exists today. Inverted scenes arrive in phase [17](17-composition.md), and the check extends by adding a ground to the list rather than by growing a rule.
+
+---
+
+## Amended by phase 04
+
+**The type-scale ceiling was wrong and art direction #3 is what showed it.** It was a flat `hero / normal <= 8`, and it rejected `bold-brutalist` at 11.3x. The ceiling's own message named what it protected against — a headline that orphans the body text under it — which is not a property of the ratio but of how much text is set at that size. The bound is now on the product `ratio x budgets.headline` (a headline's set width in body-ems, capped at 520), with an absolute ratio ceiling of 14 as a backstop. It is **stricter** than what it replaced in at least one case the flat ceiling allowed. Full reasoning and the three art directions' numbers are in [04](04-three-art-directions.md).
+
+**Two rules were added, both because a brand kit can now reach the ground.** `BRAND_BACKGROUND_NOT_ALLOWED` refuses the one contradiction `BrandMapping`'s fields can express between them, and `lint_art_direction_with_brand` is the second entry point this phase's "an AD is lintable on its own" turned out to need — an art direction *plus a brand* is a different object, and for `bold-brutalist` every contrast pair is measured against a colour that does not exist until a customer attaches a kit.
+
+**APCA now has a second implementation, in TypeScript.** `resolveBrand` corrected brand colours against WCAG alone, which is half of rule 14 on art directions the other half exists to judge. The shared fixture table pins the two implementations and carries **signed** Lc values, because a port that dropped the sign would pass a ratio-only table and be wrong about every dark art direction.

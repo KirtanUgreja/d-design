@@ -15,10 +15,23 @@
  * missing line. `art-direction.test.ts` asserts the weights match; nothing can
  * assert the import exists, so it is the one thing to check by eye.
  *
- * ponytail: imported globally, and it is now four families where it was two —
- * a published page downloads every art direction's fonts to use one of them.
- * Fine at four; the fix when it is not is to scope the import to the artifact's
- * own direction at publish time. Trigger: art direction #3. */
+ * ponytail: imported globally — a published page downloads every art
+ * direction's fonts to use one of them.
+ *
+ * **The trigger on this note was "art direction #3", and #3 has arrived.** It
+ * did not force the fix, and the reason is worth recording rather than silently
+ * resetting the trigger: the count that matters is *files*, not families, and
+ * `bold-brutalist` added five where four families had cost twelve. Weights are
+ * self-hosted per family now (`FONT_REGISTRY`), so Syne ships the one weight it
+ * is authored at instead of the three every earlier family took by default.
+ * Six families, seventeen files.
+ *
+ * The real fix is still owed and still the same: scope the import to the
+ * artifact's own direction at publish time, which needs the publish pipeline to
+ * know its art direction — it does, since phase 01 freezes the resolved record
+ * into the artifact. New trigger, and it is a size rather than a count: the
+ * first art direction that pushes this over ~20 files, or v3's user authoring,
+ * where the set stops being knowable at build time at all. */
 
 /* cinematic-dark */
 @import '@fontsource/fraunces/400.css';
@@ -35,3 +48,10 @@
 @import '@fontsource/archivo/400.css';
 @import '@fontsource/archivo/500.css';
 @import '@fontsource/archivo/600.css';
+
+/* bold-brutalist. Syne carries the display roles at one weight — 800 is the
+ * whole reason this family is registered — and Space Grotesk the text ones. */
+@import '@fontsource/syne/800.css';
+@import '@fontsource/space-grotesk/400.css';
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/700.css';

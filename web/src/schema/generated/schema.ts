@@ -23,10 +23,10 @@ export const abstractVisualPropsSchema = z.strictObject({
 export type AbstractVisualProps = z.infer<typeof abstractVisualPropsSchema>;
 
 export const brandMappingSchema = z.strictObject({
-  accentRole: z.enum(['accent', 'bg', 'ink']).default('accent').optional(),
-  allowBrandBackground: z.boolean().default(false).optional(),
-  contrastStrategy: z.enum(['lighten', 'darken', 'auto']).default('auto').optional(),
-  logoTreatment: z.enum(['mono', 'full-color']).default('mono').optional(),
+  accentRole: z.enum(['accent', 'bg', 'ink']),
+  allowBrandBackground: z.boolean(),
+  contrastStrategy: z.enum(['lighten', 'darken', 'auto']),
+  logoTreatment: z.enum(['mono', 'full-color']),
 });
 
 export type BrandMapping = z.infer<typeof brandMappingSchema>;
@@ -342,7 +342,7 @@ export type DtcgPalette = z.infer<typeof dtcgPaletteSchema>;
 
 export const dtcgFontFamilyTokenSchema = z.strictObject({
   $type: z.literal('fontFamily').default('fontFamily').optional(),
-  $value: z.enum(['Fraunces', 'Inter', 'Newsreader', 'Archivo']),
+  $value: z.enum(['Fraunces', 'Inter', 'Newsreader', 'Archivo', 'Syne', 'Space Grotesk']),
 });
 
 export type DtcgFontFamilyToken = z.infer<typeof dtcgFontFamilyTokenSchema>;

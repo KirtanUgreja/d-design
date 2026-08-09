@@ -80,6 +80,87 @@ export function contrastRatio(a: Color, b: Color, bg: Color): number {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
+// ---------------------------------------------------------------------------
+// APCA
+//
+// **APCA-W3 revision 0.1.9 (beta, 2022-07-03), constants from `SA98G`** — the
+// same revision `api/features/art_direction/lint_contrast.py` pins, because two
+// implementations of a moving draft are only one implementation if they name
+// the same revision. `art-direction.test.ts` and `test_lint.py` share a fixture
+// table that fails if the two ever disagree, which is the treatment
+// `contrastRatio` already has for the same reason.
+//
+// **Why this is duplicated at all**, rather than `resolveBrand` asking `api`:
+// this runs inside the renderer, which is pure and synchronous and runs in three
+// processes (rule 6). A brand correction that needs a network round trip is a
+// brand correction that fails when `api` is slow, and "fails" there means either
+// a page with no accent or a page with an unchecked one.
+//
+// It exists because `resolveBrand` corrects until a colour passes, and until v2
+// phase 04 the only thing it could measure was WCAG 2 — so it corrected a brand
+// colour until the polarity-blind standard was satisfied and then stopped, on
+// art directions whose entire premise is a dark ground. Rule 14 says both gates
+// are hard failures; a resolver that could only see one of them was enforcing
+// half of it.
+const MAIN_TRC = 2.4;
+const RCO = 0.2126729;
+const GCO = 0.7151522;
+const BCO = 0.072175;
+const NORM_BG = 0.56;
+const NORM_TXT = 0.57;
+const REV_TXT = 0.62;
+const REV_BG = 0.65;
+const BLK_THRS = 0.022;
+const BLK_CLMP = 1.414;
+const SCALE_BOW = 1.14;
+const SCALE_WOB = 1.14;
+const LO_BOW_OFFSET = 0.027;
+const LO_WOB_OFFSET = 0.027;
+const DELTA_Y_MIN = 0.0005;
+const LO_CLIP = 0.1;
+
+/** APCA uses a simple 2.4 power curve, not the piecewise sRGB one above. That
+ * is not an approximation of `srgbToLinear` — it is a different transfer
+ * function, and mixing them up is the classic way to get an APCA
+ * implementation that is subtly wrong everywhere. */
+function apcaY(c: Color): number {
+  return (
+    RCO * (c.r / 255) ** MAIN_TRC +
+    GCO * (c.g / 255) ** MAIN_TRC +
+    BCO * (c.b / 255) ** MAIN_TRC
+  );
+}
+
+/** The soft clamp near black, and the reason APCA can judge a dark art
+ * direction when WCAG 2 structurally cannot: WCAG's ratio is dominated by its
+ * `+0.05` term down there, which is what makes every near-black ground score
+ * alike. */
+function softClamp(y: number): number {
+  return y > BLK_THRS ? y : y + (BLK_THRS - y) ** BLK_CLMP;
+}
+
+/** Lightness contrast `Lc`, signed by polarity: positive is dark text on a
+ * light ground, negative is light text on a dark one. Callers compare the
+ * absolute value — the threshold is about legibility and the sign is about
+ * which way round the design is — but the sign is returned rather than
+ * discarded, because throwing it away makes a polarity-aware metric behave like
+ * a polarity-blind one. */
+export function apcaLc(text: Color, background: Color): number {
+  const textY = softClamp(apcaY(text.a < 1 ? composite(text, background) : text));
+  const bgY = softClamp(
+    apcaY(background.a < 1 ? composite(background, background) : background),
+  );
+
+  if (Math.abs(bgY - textY) < DELTA_Y_MIN) return 0;
+
+  if (bgY > textY) {
+    const sapc = (bgY ** NORM_BG - textY ** NORM_TXT) * SCALE_BOW;
+    return (sapc < LO_CLIP ? 0 : sapc - LO_BOW_OFFSET) * 100;
+  }
+  const sapc = (bgY ** REV_BG - textY ** REV_TXT) * SCALE_WOB;
+  return (sapc > -LO_CLIP ? 0 : sapc + LO_WOB_OFFSET) * 100;
+}
+
 function rgbToHsl(c: Color): { h: number; s: number; l: number } {
   const r = c.r / 255;
   const g = c.g / 255;

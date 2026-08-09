@@ -22,6 +22,12 @@ importers:
       '@fontsource/newsreader':
         specifier: ^5.3.0
         version: 5.3.0
+      '@fontsource/space-grotesk':
+        specifier: ^5.3.0
+        version: 5.3.0
+      '@fontsource/syne':
+        specifier: ^5.3.0
+        version: 5.3.0
       playwright:
         specifier: ^1.62.1
         version: 1.62.1
@@ -66,6 +72,12 @@ importers:
         specifier: 5.3.0
         version: 5.3.0
       '@fontsource/newsreader':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/space-grotesk':
+        specifier: 5.3.0
+        version: 5.3.0
+      '@fontsource/syne':
         specifier: 5.3.0
         version: 5.3.0
       motion:
@@ -423,6 +435,12 @@ packages:
 
   '@fontsource/newsreader@5.3.0':
     resolution: {integrity: sha512-AFR6ZKY89GNL+9qBI2P2+66NhD5bhOj/v6fsLnFYLM4E0JnMB1yKb+Ro8cA64i1hwAWoBfTq5CHJGWH1toLDkw==}
+
+  '@fontsource/space-grotesk@5.3.0':
+    resolution: {integrity: sha512-ksnGizDPXIDuvqcTYTSrmZ+evx9sDlS8rp7+42BQ7wU+spt3twEoXfbJz672C+5CLg6VeUQwRy5RXshWb67LcQ==}
+
+  '@fontsource/syne@5.3.0':
+    resolution: {integrity: sha512-kRWNVsrdYw+08I4EM1SYPe2JovdTzUI0kMVALVRsKmjRdkrVoun1qddSlDAglz5J9LbgUpJSkWmw6BYnmKdGuw==}
 
   '@humanfs/core@0.19.2':
     resolution: {integrity: sha512-UhXNm+CFMWcbChXywFwkmhqjs3PRCmcSa/hfBgLIb7oQ5HNb1wS0icWsGtSAUNgefHeI+eBrA8I1fxmbHsGdvA==}
@@ -2946,6 +2964,10 @@ snapshots:
   '@fontsource/inter@5.3.0': {}
 
   '@fontsource/newsreader@5.3.0': {}
+
+  '@fontsource/space-grotesk@5.3.0': {}
+
+  '@fontsource/syne@5.3.0': {}
 
   '@humanfs/core@0.19.2':
     dependencies:

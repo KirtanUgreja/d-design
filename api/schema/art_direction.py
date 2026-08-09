@@ -159,7 +159,15 @@ class DtcgDimensionToken(Schema):
 # This is a *narrowing* of the DTCG spec, which lets a `fontFamily` be any
 # string. We are consuming the format rather than defining it, and a consumer
 # may be stricter than what it reads — the document we emit is still valid DTCG.
-FontFamilyName = Literal["Fraunces", "Inter", "Newsreader", "Archivo"]
+# `Syne` and `Space Grotesk` arrive with `bold-brutalist` in phase 04. Both are
+# OFL-1.1 on Fontsource, which is the redistribution constraint rather than a
+# taste one — these are served to our customers' audiences, not to visitors of
+# our own site. Syne is the only one of the six that self-hosts a weight above
+# 600, and that is why it is here: `clamp(4rem, 12vw, 14rem)` at weight 500 is
+# not a brutalist headline, it is a large thin one.
+FontFamilyName = Literal[
+    "Fraunces", "Inter", "Newsreader", "Archivo", "Syne", "Space Grotesk"
+]
 
 VETTED_FONT_FAMILIES: frozenset[str] = frozenset(get_args(FontFamilyName))
 
@@ -486,19 +494,34 @@ class BrandMapping(Schema):
 
     A marketer choosing an art direction is choosing that art direction.
     `cinematic-dark` maps a brand colour to accents and stays dark;
-    `bold-brutalist` may make it a full-bleed ground, which is the only reason
+    `bold-brutalist` makes it a full-bleed ground, which is the only reason
     `allow_brand_background` is a field rather than a constant.
+
+    **Every field is required, and none of them had been until phase 04.** They
+    carried defaults, which was fine while nothing read them and became a
+    problem the moment something did: a Pydantic default generates into
+    `z.enum(...).default(...).optional()`, so the value would have had to be
+    written a second time in `from-record.ts` to fill the `undefined` — the same
+    default in two languages, drifting silently, on the group that decides
+    whether a customer's brand colour becomes a page's ground.
+
+    Requiring them costs three constructor calls in `seed.py` and makes the wire
+    form total, which is what lets the TypeScript boundary be a mapping rather
+    than a mapping plus a set of guesses. It also reads better: an art direction
+    *declaring* how it consumes a brand is the whole idea, and a declaration you
+    can omit is a default wearing the word.
     """
 
-    accent_role: Literal["accent", "bg", "ink"] = "accent"
-    allow_brand_background: bool = False
-    logo_treatment: Literal["mono", "full-color"] = "mono"
-    # `auto` is not in the art-direction-system sketch and is the default here
-    # for a reason v1 already found: `resolveBrand` picks its correction
-    # direction from the ground's own luminance, which is strictly better than
-    # an art direction declaring one and being wrong about it. The explicit
-    # values stay for a direction that genuinely wants to override.
-    contrast_strategy: Literal["lighten", "darken", "auto"] = "auto"
+    accent_role: Literal["accent", "bg", "ink"]
+    allow_brand_background: bool
+    logo_treatment: Literal["mono", "full-color"]
+    # `auto` is not in the art-direction-system sketch and is what both v1
+    # directions choose, for a reason v1 already found: `resolveBrand` picks its
+    # correction direction from the ground's own luminance, which is strictly
+    # better than an art direction declaring one and being wrong about it. The
+    # explicit values are for a ground whose luminance sits near the crossover,
+    # where the computation has no good answer and a designer does.
+    contrast_strategy: Literal["lighten", "darken", "auto"]
 
 
 class ArtDirectionExtensions(Schema):

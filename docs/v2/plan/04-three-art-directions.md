@@ -124,10 +124,93 @@ The v1 exercise found four values held globally because "global" and "cinematic-
 
 ## Exit gate
 
-- [ ] Three art directions in the store, all passing the linter, all at version 1
-- [ ] `bold-brutalist` renders every primitive with no renderer branch
-- [ ] Every value the phase moved out of the renderer is a token the renderer reads generically
-- [ ] `bold-brutalist` under a hostile brand kit either passes both contrast gates or is refused legibly
-- [ ] `editorial-light` is distinguishable from our own chrome by a stranger
-- [ ] Any format refactor this phase forced is recorded in [01](01-ad-format.md)'s file and reflected in the seeds
-- [ ] The gate is green
+- [x] Three art directions in the store, all passing the linter, all at version 1
+- [x] `bold-brutalist` renders every primitive with no renderer branch
+- [x] Every value the phase moved out of the renderer is a token the renderer reads generically
+- [x] `bold-brutalist` under a hostile brand kit either passes both contrast gates or is refused legibly
+- [x] `editorial-light` is distinguishable from our own chrome by a stranger
+- [x] Any format refactor this phase forced is recorded in [01](01-ad-format.md)'s file and reflected in the seeds
+- [x] The gate is green
+
+---
+
+## What actually happened
+
+**The hard gate held: `bold-brutalist` renders all eleven primitives with no branch added to the renderer.** No `mode`, no `if (artDirection.id === …)`, no second layout path. Two renderer-adjacent things changed and neither is a conditional — one was a hardcoded weight list becoming a token, the other was a genuine layering bug. Both are below.
+
+### The format was wrong in four places, and the third art direction is what said so
+
+Each one is the same shape: **a value the system held globally because it had only ever had one instance of the thing it described.** The plan predicted this and said to treat finding them as the process working ([README](README.md) → "the values a system holds globally").
+
+| What was global | What it actually was | Where |
+|---|---|---|
+| `REGISTERED_WEIGHTS = [400, 500, 600]` | A property of a *font*, not of the registry. It read as "the weights we self-host" and was really "the weights the first four families happened to want" | `from-record.ts` |
+| `BrandMapping`'s four defaults | A stored group nothing read. The moment something did, each default became a value living in two languages | `schema/art_direction.py` |
+| The type-scale ceiling of `8.0` | A bound on the wrong quantity — see below | `lint.py` |
+| Texture painting above content | Never noticed, because both existing directions' loudest layer is a translucent film | `renderer/scene.tsx` |
+
+**Syne self-hosts one weight and Space Grotesk three.** `clamp(4rem, 10vw, 12rem)` at weight 500 is a large thin headline, not a brutalist one, so art direction #3 needed 800 — and the module constant that had been correct for four families rejected it. Weights are now per-family, which also means a published page pays for the faces it sets rather than for the shape of the first two art directions.
+
+**`brandMapping` lost its defaults entirely.** A Pydantic default generates into `z.enum(…).default(…).optional()`, so filling the `undefined` in TypeScript would have put the same default in two languages — on the group that decides whether a customer's brand colour becomes a page's ground. Requiring all four fields cost three constructor calls and made the boundary a total mapping. An art direction *declaring* how it consumes a brand is the whole idea, and a declaration you can omit is a default wearing the word.
+
+### The linter rule that was measuring the wrong thing
+
+`bold-brutalist` runs `hero` at 11.3× body and the flat ceiling was 8.0. The ceiling's own message said what it was protecting against — *"the headline orphans the body text under it"* — and that is not a property of the ratio. It is a property of how much text is set at that size.
+
+| | hero/normal | headline budget | product |
+|---|---|---|---|
+| `editorial-light` | 4.50 | 60 | 270 |
+| `cinematic-dark` | 7.53 | 60 | 452 |
+| `bold-brutalist` | 11.29 | 34 | 384 |
+
+So the bound moved onto the product: **a headline's set width in body-ems**, capped at 520, with the ratio keeping an absolute ceiling of 14 as a backstop so a tiny budget cannot buy an unbounded scale. Two of those three numbers were authored before the rule existed and neither was tuned to it.
+
+**It is stricter than what it replaced, not looser.** 8× body against the 80-character budget [../art-direction-system.md](../art-direction-system.md) sketches for `editorial-light` is 640 and is now refused, where the flat ceiling waved it through. The rule was not relaxed to admit a fashionable art direction; it was pointed at the quantity it had always been trying to measure. A large ratio is not a defect on its own — it is a defect *unpaid for*, and `budgets.headline: 34` is what pays for it.
+
+### The texture layer had been painting on top of the type since phase 14
+
+`<Texture>` is `position: absolute` and a scene's content is in normal flow, and a positioned element paints above its non-positioned siblings. So the ground has been in front of the content for two phases. Nothing showed it, because `cinematic-dark`'s loudest layer is 0.55 opacity and `editorial-light`'s is 0.06 — a film over text is invisible when the film is a film.
+
+`bold-brutalist` set a `rule` layer at intensity 1 in full ink and drew opaque black bars through the headline. Fixed with `z-index: -1` on the layer and `isolation: isolate` on the scene, which are one fix: without the stacking context, "behind" would have meant behind the page.
+
+**This is the most valuable thing the phase produced**, and it is worth naming why it took a third art direction. It is a presentational defect, and every quality mechanism this product has — the schema, the linter, the invariants script, the renderer tests — verifies *structure*. The structure was correct the whole time. That is the same pattern [README](README.md) records for the four defects phases 13–17 exist to fix, recurring exactly where it said it would.
+
+### What the art direction cost that no token can express
+
+**Syne 800 measures 0.864 em per character.** Nearly twice a normal sans. At the sketched `12vw` the word "confidence" did not fit one line at 1440px and broke mid-word, leaving a single orphaned "e" — an aggressive break is a legitimate brutalist device, a one-letter orphan reads as a bug. The hero came down to `clamp(4rem, 10vw, 12rem)`.
+
+Nothing in the format could have predicted it: the linter measures size and budget and cannot know how wide a glyph is. A per-face average advance width is a real token to add the day a fourth family arrives; fitting a constant to one observation is not.
+
+**The `rule` texture kind was authored here and removed after looking at it** — a rule tiled across a whole scene is ruled paper, not structure, and at full ink under a black headline the bars and the letterforms merged into one shape. That is the *same conclusion* `editorial-light` reached in v1 and that [../art-direction-system.md](../art-direction-system.md) already records: **a visible rule is furniture, not ground.** Two of three art directions independently rejecting a texture kind is an argument for `rule` leaving the union and arriving in [17](17-composition.md)'s `Furniture`, where it can be placed once instead of tiled. Noted there rather than acted on here, because removing a kind is a renderer change.
+
+### The brand-as-ground path, and the number that makes phase 17 urgent
+
+`accentRole: 'bg'` is real: a brand kit applied to `bold-brutalist` replaces the page ground at full strength, uncorrected, and `--veil` follows it through a `color-mix()` against `var(--bg)` rather than being recomputed in JavaScript. **An art direction plus a brand is a second thing that has to be lintable**, and `lint_art_direction_with_brand` is it — the art direction's ink against a ground that does not exist until a customer attaches a kit, plus the CTA pair, which is the one that is easy to forget because a CTA label *is* `bg`-coloured text.
+
+Hostile kits are refused with a message written for the person who chose the colour. But the honest number is this:
+
+> **`bold-brutalist` accepts about 2% of the sRGB cube.** Neutrals lighter than `#d8d8d8` pass; a mid-grey, a corporate navy and an oxide red are all refused.
+
+That is a correct consequence of what the art direction *is* — near-black type set directly on your colour — and the exit gate allows a legible refusal. It is also close to useless for a real customer, and the fix is not a better refusal message. It is [17](17-composition.md)'s `groundCycle`: an inverted palette lets a dark brand take white type instead, roughly doubling the range. That was a stylistic argument for phase 17 before this phase and it is a measured one now.
+
+### `contrastStrategy` is read, and phase 01's prediction about it was wrong
+
+Phase 01 deferred the field with "the first one that wants to override is phase 04's `bold-brutalist`". It does not. `bold-brutalist` corrects nothing — the brand goes to the ground at full strength, which is the entire offer — so it has no direction to declare and takes `auto` like the other two.
+
+The field is genuinely read now: `resolveBrand` honours `lighten`/`darken` over the luminance computation, and the test proves it by forcing the *wrong* direction and watching the resolver obey rather than second-guess. `auto` stays better than a declaration for almost every ground; the override exists for a ground sitting near the 0.18 crossover, where the computation has no good answer and a designer does.
+
+### APCA crossed the language boundary, and confirmed phase 03 by accident
+
+`resolveBrand` corrected brand colours until they cleared **WCAG only** — on art directions whose whole premise is a dark ground, which is precisely the standard [../art-direction-system.md](../art-direction-system.md) says cannot judge them. Rule 14 says both gates are hard; the resolver was enforcing half of it. `apcaLc` now lives in `color.ts` alongside the `contrastRatio` that was already duplicated for the same reason, pinned to `lint_contrast.py` by a shared fixture table that now carries **signed** Lc values — a port that dropped the sign would pass a ratio-only table and be wrong about every dark art direction.
+
+It produced one nice piece of evidence. A test fixture had asserted that `#f4b740` passed through uncorrected. That is `cinematic-dark`'s *old* accent, the one phase 03's linter rejected by hand at Lc 70.6. With both gates in the loop the resolver corrects it unprompted and lands on `#f6c667` — within a hair of the `#fcca6d` a person arrived at independently.
+
+### The CTA pair failed a third time
+
+`bold-brutalist`'s accent was authored at `#b81400` and the linter refused it at Lc 66.7 against 75, while WCAG saw 5.11:1 and was content. That is now three art directions out of three where the pair that failed is `bg`-coloured text on an `accent` fill — the one pair no type role describes, and the only place in the system where the ground colour becomes the text. It is not a coincidence and it deserves to be the first thing checked when a fourth art direction is authored.
+
+### Two things I could not test the way I first wrote them
+
+**The CTA-against-a-brand-ground check is unreachable on the shipped art direction.** Its accent is a deep oxide red at OKLCH L 0.34, so any brand light enough to pass the *ground* check contrasts with it easily — the ground check strictly dominates. My first test asserted only that "button fill" appeared in some finding, which passed while both checks were failing together and would have kept passing if the check were deleted. It now lightens the accent to isolate the case.
+
+**The `/dev/primitives` verification was nearly done against a stale server.** `pkill -f "next start"` never matches, because the process renames itself to `next-server`; the page served a six-minute-old build showing the pre-adjustment hero size, and I was one step from concluding the fixture pipeline was broken. Worth knowing for every later phase that verifies in a browser: check the build timestamp against the process start time, not the HTTP status.

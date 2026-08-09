@@ -7,7 +7,7 @@ import { artDirectionRecordSchema, type BrandKit } from '@/schema';
 
 import type { ArtDirection, Palette, Texture, TypeRoleKey } from './art-direction';
 import { FONT_REGISTRY, LAYOUTS, px } from './art-direction';
-import { contrastRatio, relativeLuminance, toCssColor } from './color';
+import { apcaLc, contrastRatio, relativeLuminance, toCssColor } from './color';
 import { fromRecord } from './from-record';
 import { staggerDelayMs } from './motion-vocabulary';
 import { resolveBrand } from './resolve-brand';
@@ -46,6 +46,7 @@ const FIXTURES = join(
 
 const CINEMATIC_DARK = resolved('cinematic-dark');
 const EDITORIAL_LIGHT = resolved('editorial-light');
+const BOLD_BRUTALIST = resolved('bold-brutalist');
 const TYPE_SCALE = CINEMATIC_DARK.type;
 
 // The vocabularies, resolved from their seeded records — as of v2 phase 02
@@ -338,11 +339,31 @@ describe('the two phase-02 corrections are the values that shipped', () => {
 // ---------------------------------------------------------------------------
 
 describe('resolveBrand', () => {
-  it('passes an already-compliant primary through unlightened', () => {
-    const result = resolveBrand(brandWith('#f4b740'), CINEMATIC_DARK);
+  it('passes an already-compliant primary through uncorrected', () => {
+    const result = resolveBrand(brandWith('#fcca6d'), CINEMATIC_DARK);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.value.accent).toEqual(result.value.accentRaw);
+  });
+
+  // The fixture above used to be `#f4b740`, and swapping it is a finding rather
+  // than a test fix. That is `cinematic-dark`'s *old* accent — the one phase
+  // 03's linter rejected for scoring Lc 70.6 against a required 75 while
+  // clearing WCAG 2.2 at 11:1. This test asserted it passed through
+  // untouched, which was true of a resolver that could only see the ratio.
+  //
+  // With both gates in the loop the resolver corrects it unprompted, and lands
+  // on #f6c667 — within a hair of the #fcca6d a person arrived at by hand in
+  // phase 03. Two independent routes to nearly the same colour is the strongest
+  // evidence available that the gate is measuring something real.
+  it('corrects the accent phase 03 had to fix by hand, unprompted', () => {
+    const result = resolveBrand(brandWith('#f4b740'), CINEMATIC_DARK);
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.value.accent === null) return;
+    expect(result.value.accent).not.toEqual(result.value.accentRaw);
+    expect(
+      Math.abs(apcaLc(result.value.accent, CINEMATIC_DARK.color.bg)),
+    ).toBeGreaterThanOrEqual(75);
   });
 
   it('lightens a primary that fails 4.5:1 until it passes', () => {
@@ -350,6 +371,7 @@ describe('resolveBrand', () => {
     const result = resolveBrand(brandWith('#1a2b4c'), CINEMATIC_DARK);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
+    if (result.value.accent === null) throw new Error('expected a corrected accent');
     expect(
       contrastRatio(
         result.value.accent,
@@ -380,6 +402,7 @@ describe('resolveBrand', () => {
     const result = resolveBrand(brandWith('#e8e8e0'), EDITORIAL_LIGHT);
     expect(result.ok).toBe(true);
     if (!result.ok) return;
+    if (result.value.accent === null) throw new Error('expected a corrected accent');
     expect(
       contrastRatio(
         result.value.accent,
@@ -403,17 +426,86 @@ describe('resolveBrand', () => {
     expect(result.ok).toBe(false);
   });
 
-  it('has no way to change the ground, whatever the brand', () => {
-    // "Brand colours map into semantic roles, they do not replace them"
-    // asserted structurally rather than by comparison: `resolveBrand` returns
-    // an accent and the accent it was given, and there is no `bg` on the type
-    // for a brand to reach. It used to return the whole palette with one field
-    // swapped, which made this a value assertion — and hid a real bug, since
-    // `accentSoft` came back as the art direction's own hue.
+  // This assertion used to read "has no way to change the ground, whatever the
+  // brand", and phase 04 is where that stopped being true — so it is rewritten
+  // rather than deleted, because the thing it was protecting still needs
+  // protecting and the new shape of it is the interesting part.
+  //
+  // What was actually being asserted was "a brand cannot reach the ground",
+  // which was a true statement about two art directions and was mistaken for a
+  // rule. `bold-brutalist` puts the brand on the ground deliberately. The rule
+  // underneath — "brand colours map into semantic roles, they do not replace
+  // them" — survives intact, and is now that the brand reaches the ground **only
+  // where the art direction declared it may**.
+  it('reaches the ground only where the art direction declared it may', () => {
     const pastel = resolveBrand(brandWith('#ffd6e8'), CINEMATIC_DARK);
     expect(pastel.ok).toBe(true);
     if (!pastel.ok) return;
-    expect(Object.keys(pastel.value).sort()).toEqual(['accent', 'accentRaw']);
+    expect(pastel.value.ground).toBeNull();
+    expect(pastel.value.accent).not.toBeNull();
+
+    const brutal = resolveBrand(brandWith('#ffd6e8'), BOLD_BRUTALIST);
+    expect(brutal.ok).toBe(true);
+    if (!brutal.ok) return;
+    expect(brutal.value.ground).toEqual({ r: 0xff, g: 0xd6, b: 0xe8, a: 1 });
+    // And nothing corrected it. "Your colour at full strength" is the offer.
+    expect(brutal.value.ground).toEqual(brutal.value.accentRaw);
+  });
+
+  it("refuses a brand ground the art direction's own type cannot sit on", () => {
+    // The exit-gate case: a hostile kit against the one art direction that
+    // takes the brand as its page. `bold-brutalist` sets near-black type
+    // directly on it, so a mid-grey and a corporate navy are both refused —
+    // and the refusal is what the gate asks for, not a failure to build it.
+    for (const hostile of ['#808080', '#12234a', '#b8402a']) {
+      const result = resolveBrand(brandWith(hostile), BOLD_BRUTALIST);
+      expect(result.ok, `${hostile} should be refused`).toBe(false);
+      if (result.ok) continue;
+      // Written for the person who chose the colour. It names what the art
+      // direction does, why this colour cannot, and the two ways out.
+      expect(result.error.message).toContain('near-black type');
+      expect(result.error.message).toContain('lighter');
+    }
+  });
+
+  it('applies both gates, not only the legal floor', () => {
+    // The reason `apcaLc` is in `color.ts` at all. This brand colour clears
+    // WCAG 2.2 AA against cinematic-dark's ground and is perceptually muddy on
+    // it — exactly the disagreement rule 14 exists for. Before phase 04 the
+    // resolver measured only the ratio, so it would have stopped correcting
+    // here and shipped it.
+    const result = resolveBrand(brandWith('#6b6b52'), CINEMATIC_DARK);
+    expect(result.ok).toBe(true);
+    if (!result.ok || result.value.accent === null) return;
+    const bg = CINEMATIC_DARK.color.bg;
+    expect(contrastRatio(result.value.accent, bg, bg)).toBeGreaterThanOrEqual(4.5);
+    expect(Math.abs(apcaLc(result.value.accent, bg))).toBeGreaterThanOrEqual(75);
+  });
+
+  it('lets contrastStrategy override the luminance guess', () => {
+    // The field phase 01 stored and nothing read. `auto` computes the direction
+    // from the ground's luminance, which is better than a declaration almost
+    // everywhere — so this proves the override by forcing the *wrong* direction
+    // and watching the resolver go the way it was told rather than the way it
+    // would have chosen.
+    const forced: ArtDirection = {
+      ...EDITORIAL_LIGHT,
+      brandMapping: { ...EDITORIAL_LIGHT.brandMapping, contrastStrategy: 'lighten' },
+    };
+    const auto = resolveBrand(brandWith('#e8e8e0'), EDITORIAL_LIGHT);
+    const lightened = resolveBrand(brandWith('#e8e8e0'), forced);
+
+    expect(auto.ok).toBe(true);
+    if (!auto.ok || auto.value.accent === null) return;
+    // `auto` darkens on a light ground, which is the v1 finding.
+    expect(relativeLuminance(auto.value.accent)).toBeLessThan(
+      relativeLuminance(auto.value.accentRaw),
+    );
+    // Told to lighten against a near-white ground, it lightens — and then
+    // cannot reach the gates, which is the correct outcome of being told to
+    // walk toward the background. The declaration is honoured, not
+    // second-guessed.
+    expect(lightened.ok).toBe(false);
   });
 });
 
@@ -421,12 +513,21 @@ describe('the brand overlay derives in CSS, not in JavaScript', () => {
   // The point of the whole arrangement: one variable is overridden and every
   // token that depends on it follows, with no JS pass — which is what phase 07
   // needs inside a View Transition.
+  /** The overlay for a brand this art direction accepts. Throws rather than
+   * returning a Result: a fixture colour the resolver refuses is a broken test,
+   * not an expected failure. */
+  function overlay(ad: ArtDirection, primary: string): Record<string, string> {
+    const result = resolveBrand(brandWith(primary), ad);
+    if (!result.ok) throw new Error(`${ad.id}/${primary}: ${result.error.message}`);
+    return brandCssVars(ad, result.value);
+  }
+
   it('writes accent-soft as a mix of var(--accent), not as a computed colour', () => {
     const resolved = resolveBrand(brandWith('#1a2b4c'), CINEMATIC_DARK);
     expect(resolved.ok).toBe(true);
-    if (!resolved.ok) return;
+    if (!resolved.ok || resolved.value.accent === null) return;
 
-    const vars = brandCssVars(CINEMATIC_DARK, resolved.value.accent);
+    const vars = brandCssVars(CINEMATIC_DARK, resolved.value);
     expect(vars['--accent']).toBe(toCssColor(resolved.value.accent));
     expect(vars['--accent-soft']).toContain('var(--accent)');
     expect(vars['--accent-soft']).toContain('in oklch');
@@ -437,17 +538,37 @@ describe('the brand overlay derives in CSS, not in JavaScript', () => {
     // already declared on its own `accentSoft` token. They mean different
     // things (a glow, versus a wash behind a pull quote), so a constant here
     // would be this file overruling the token layer.
-    const accent = CINEMATIC_DARK.color.accent;
-    expect(brandCssVars(CINEMATIC_DARK, accent)['--accent-soft']).toContain('12%');
-    expect(brandCssVars(EDITORIAL_LIGHT, accent)['--accent-soft']).toContain('10%');
+    expect(overlay(CINEMATIC_DARK, '#1a2b4c')['--accent-soft']).toContain('12%');
+    expect(overlay(EDITORIAL_LIGHT, '#1a2b4c')['--accent-soft']).toContain('10%');
   });
 
-  it('overrides only the two variables a brand owns', () => {
+  it('overrides only the variables the art direction gave the brand', () => {
     // A brand maps into semantic roles; it does not get to restyle the page.
-    // An overlay that grew a third key would be a brand reaching past its role,
-    // and this is the assertion that notices.
-    const keys = Object.keys(brandCssVars(CINEMATIC_DARK, CINEMATIC_DARK.color.accent));
-    expect(keys.sort()).toEqual(['--accent', '--accent-soft']);
+    // An overlay that grew a key would be a brand reaching past its role, and
+    // this is the assertion that notices.
+    //
+    // Which keys those are is the art direction's `accentRole`, which is the
+    // whole of what phase 04 added here. Two art directions gave the brand an
+    // accent and the third gives it the ground — and the *count* stays small in
+    // both cases, which is the property worth protecting.
+    expect(Object.keys(overlay(CINEMATIC_DARK, '#1a2b4c')).sort()).toEqual([
+      '--accent',
+      '--accent-soft',
+    ]);
+    expect(Object.keys(overlay(BOLD_BRUTALIST, '#ffd6e8')).sort()).toEqual([
+      '--bg',
+      '--veil',
+    ]);
+  });
+
+  it("carries the ground's dependents in CSS when the ground is the brand", () => {
+    // The reason deriving in CSS is load-bearing rather than tidy. `--veil` is
+    // the art direction's own ground at its own declared alpha; when the ground
+    // becomes a customer's colour, the veil has to follow it — and it does,
+    // because it was never a computed colour in the first place.
+    const vars = overlay(BOLD_BRUTALIST, '#ffd6e8');
+    expect(vars['--bg']).toBe('rgb(255 214 232)');
+    expect(vars['--veil']).toBe('color-mix(in oklch, var(--bg) 82%, transparent)');
   });
 
   it("leaves the art direction's own emission untouched", () => {
@@ -861,22 +982,38 @@ describe('contrast agrees with the linter across the language boundary', () => {
   // Two implementations of one algorithm is a duplication. The honest way to
   // carry one is to make drift fail rather than to hope, which is the same
   // treatment `seedFromId` already gets.
-  const FIXTURES: [string, keyof Palette, number][] = [
-    ['cinematic-dark', 'ink', 18.1226],
-    ['cinematic-dark', 'inkMuted', 13.0187],
-    ['cinematic-dark', 'inkFaint', 4.9409],
-    ['cinematic-dark', 'accent', 13.0978],
-    ['editorial-light', 'ink', 18.3965],
-    ['editorial-light', 'inkMuted', 6.9943],
-    ['editorial-light', 'inkFaint', 4.1428],
-    ['editorial-light', 'accent', 7.7501],
+  const FIXTURES: [string, keyof Palette, number, number][] = [
+    // **The Lc column carries its sign**, and that is the column that proves
+    // the boundary is crossed by the thing we care about. WCAG's ratio is
+    // polarity-blind: `cinematic-dark` and `editorial-light` both score ~18:1
+    // for full ink and the number cannot tell you one is white-on-black. The Lc
+    // values are -100.6 and +103.5. A port that dropped the sign, or swapped
+    // the two branches of the transfer function, would still pass a ratio-only
+    // table and would be wrong about every dark art direction.
+    ['cinematic-dark', 'ink', 18.1226, -100.5802],
+    ['cinematic-dark', 'inkMuted', 13.0187, -78.4442],
+    ['cinematic-dark', 'inkFaint', 4.9409, -33.9427],
+    ['cinematic-dark', 'accent', 13.0978, -78.9501],
+    ['editorial-light', 'ink', 18.3965, 103.4859],
+    ['editorial-light', 'inkMuted', 6.9943, 83.0809],
+    ['editorial-light', 'inkFaint', 4.1428, 67.5481],
+    ['editorial-light', 'accent', 7.7501, 84.3561],
+    ['bold-brutalist', 'ink', 15.0287, 88.2312],
+    ['bold-brutalist', 'inkMuted', 11.7961, 84.7988],
+    ['bold-brutalist', 'inkFaint', 5.1078, 65.3753],
+    ['bold-brutalist', 'accent', 9.3966, 78.7104],
   ];
 
-  it.each(FIXTURES)('%s %s is %f:1 against its own ground', (id, role, expected) => {
-    const ad = resolved(id);
-    const ratio = contrastRatio(ad.color[role], ad.color.bg, ad.color.bg);
-    expect(Number(ratio.toFixed(4))).toBe(expected);
-  });
+  it.each(FIXTURES)(
+    '%s %s is %f:1 and Lc %f against its own ground',
+    (id, role, ratio, lc) => {
+      const ad = resolved(id);
+      expect(
+        Number(contrastRatio(ad.color[role], ad.color.bg, ad.color.bg).toFixed(4)),
+      ).toBe(ratio);
+      expect(Number(apcaLc(ad.color[role], ad.color.bg).toFixed(4))).toBe(lc);
+    },
+  );
 });
 
 describe('a token becomes CSS only as its re-serialized form', () => {

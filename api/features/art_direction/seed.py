@@ -216,7 +216,12 @@ CINEMATIC_DARK = ArtDirectionRecord(
         # Accents, and it stays dark. `allow_brand_background` is false because
         # a brand colour behind a full-bleed hero is not this direction — that
         # is what `bold-brutalist` is for, and the field exists so it can say so.
-        brand_mapping=BrandMapping(),
+        brand_mapping=BrandMapping(
+            accent_role="accent",
+            allow_brand_background=False,
+            logo_treatment="mono",
+            contrast_strategy="auto",
+        ),
         default_motion="cinematic-slow",
         fluid=ArtDirectionFluid(
             type=FluidTypeScale(
@@ -381,7 +386,15 @@ EDITORIAL_LIGHT = ArtDirectionRecord(
     ),
     extensions=ArtDirectionExtensions(
         budgets=_V1_BUDGETS,
-        brand_mapping=BrandMapping(),
+        # The same four answers as `cinematic-dark`, written out rather than
+        # defaulted since phase 04. Two art directions agreeing is not a default,
+        # it is two art directions agreeing.
+        brand_mapping=BrandMapping(
+            accent_role="accent",
+            allow_brand_background=False,
+            logo_treatment="mono",
+            contrast_strategy="auto",
+        ),
         default_motion="editorial-restrained",
         fluid=ArtDirectionFluid(
             type=FluidTypeScale(
@@ -453,12 +466,300 @@ EDITORIAL_LIGHT = ArtDirectionRecord(
 )
 
 
+# ---------------------------------------------------------------------------
+# bold-brutalist — the one that breaks things
+#
+# The first art direction authored *into* this format rather than migrated into
+# it, and the first judged by the linter while it was being written rather than
+# after. Both of those change what it cost: nothing here was chosen and then
+# checked, so the values below are already the ones that pass.
+#
+# **Its ground is a colour, not a neutral**, and that is the whole character.
+# The other two answer "what surface is this page printed on" with black and
+# with white; this one answers with ink. It is also what makes `accentRole:
+# 'bg'` real — a brand kit does not tint this direction, it *replaces* the
+# ground, and the page becomes the customer's colour at full strength.
+#
+# Process yellow rather than a violet or a magenta, and not only because
+# principle 5 bans those: yellow is the one saturated hue with enough luminance
+# to take near-black type at Lc 90+, which is what lets this direction be loud
+# and legible at the same time. A saturated blue ground would have forced light
+# ink and turned this into cinematic-dark with the contrast turned up.
+# ---------------------------------------------------------------------------
+
+_BRUTALIST_BG = "#f2e535"
+_BRUTALIST_INK = "#0b0b0b"
+# Authored at #b81400 and darkened by the linter before this file was ever
+# committed — the third CTA-on-accent failure in three art directions, and by
+# now a pattern rather than a coincidence. That pair is `bg`-coloured text on
+# an `accent` fill, which is the one pair no type role describes and the only
+# place in the system where the ground colour becomes the *text*. WCAG saw
+# 5.11:1 and was content; APCA saw Lc 66.7 against 75.
+#
+# Deep oxide rather than a signal red, and that is what the measurement pushed
+# it to: the yellow label needs the fill dark enough to sit on. It happens to be
+# the right answer for the design too — yellow over deep red is a riso
+# overprint, and a bright red would have been a second signal colour arguing
+# with the ground.
+_BRUTALIST_ACCENT = "#6e0a00"
+
+BOLD_BRUTALIST = ArtDirectionRecord(
+    id="bold-brutalist",
+    version=1,
+    name="Bold Brutalist",
+    author="system",
+    tokens=DtcgTokens(
+        color=DtcgPalette(
+            bg=srgb(_BRUTALIST_BG),
+            # A hard white block, not a lifted surface. `bgElevated` means "the
+            # other ground" rather than "the ground plus 6% white" — on a
+            # coloured ground there is no elevation to express, and a yellow
+            # nudged toward white is the muddy in-between this direction exists
+            # to refuse.
+            bg_elevated=srgb("#ffffff"),
+            ink=srgb(_BRUTALIST_INK),
+            # 0.88, and on a *light* ground the alpha actually works — which is
+            # the other half of phase 03's finding rather than a contradiction
+            # of it. The reason opacity failed as hierarchy on `cinematic-dark`
+            # is that near-black leaves no room beneath full ink; a near-white
+            # or a light-coloured ground leaves most of the range. Muted body
+            # text here is Lc 90+, where cinematic-dark's was 48 at 0.62.
+            ink_muted=srgb(_BRUTALIST_INK, 0.88),
+            ink_faint=srgb(_BRUTALIST_INK, 0.62),
+            accent=srgb(_BRUTALIST_ACCENT),
+            accent_soft=srgb(_BRUTALIST_ACCENT, 0.15),
+            veil=srgb(_BRUTALIST_BG, 0.82),
+            # Full-strength ink, where the other two directions set 10% and 16%.
+            # A rule in this direction is a black bar; its *weight* is the
+            # `rule` texture layer's `thick`, not a washed-out colour. The role
+            # is called `hairline` because that is what the other two use it
+            # for, and a colour role named after one direction's use of it is
+            # the naming mistake `DtcgSpaceScale` already refused to make.
+            hairline=srgb(_BRUTALIST_INK),
+        ),
+        # Dense, and its own ratio rather than a halving of somebody else's:
+        # roughly 1.65x per step where cinematic-dark runs 1.5-1.7 and
+        # editorial-light runs 1.5-2.0. Tighter at the bottom, because
+        # brutalist spacing is either nothing or a lot and the small steps are
+        # the ones that have to disappear.
+        space=DtcgSpaceScale(
+            step1=px(6),
+            step2=px(11),
+            step3=px(20),
+            step4=px(34),
+            step5=px(56),
+            step6=px(92),
+            step7=px(150),
+        ),
+        font=DtcgFonts(display=family("Syne"), text=family("Space Grotesk")),
+        type=DtcgTypeScale(
+            # 0.86 leading against a floor of 0.85. Deliberately near the bound:
+            # at 14rem the line gap *is* the composition, and a headline whose
+            # second line does not lock into the first is not this direction.
+            hero=DtcgTypeRole(
+                leading=number(0.86), tracking=number(-0.05), weight=weight(800)
+            ),
+            section=DtcgTypeRole(
+                leading=number(0.95), tracking=number(-0.04), weight=weight(800)
+            ),
+            lead=DtcgTypeRole(
+                leading=number(1.4), tracking=number(-0.01), weight=weight(500)
+            ),
+            normal=DtcgTypeRole(
+                leading=number(1.45), tracking=number(0), weight=weight(400)
+            ),
+            muted=DtcgTypeRole(
+                leading=number(1.45), tracking=number(0), weight=weight(400)
+            ),
+            eyebrow=DtcgTypeRole(
+                leading=number(1.2), tracking=number(0.08), weight=weight(700)
+            ),
+            stat=DtcgTypeRole(
+                leading=number(0.9), tracking=number(-0.05), weight=weight(800)
+            ),
+        ),
+        visual=DtcgVisual(strength=number(0.6)),
+    ),
+    extensions=ArtDirectionExtensions(
+        budgets=ContentBudgets(
+            eyebrow=20,
+            # 34, and it is the number the type scale is *paid for* with. See
+            # the two-tier scale-range rule in `lint.py`: this direction may run
+            # hero at 13x body precisely because it also commits to a headline
+            # that fits at that size. The budget is not a limitation here, it is
+            # the consideration for the licence.
+            headline=34,
+            body=180,
+            quote=140,
+            stat=8,
+            list_item=60,
+        ),
+        # The reason `allow_brand_background` is a field and not a constant.
+        # `accent_role='bg'` moves the brand to the ground at full strength —
+        # uncorrected, because a corrected brand ground is a brand colour this
+        # direction decided it knew better than, which is the opposite of what
+        # this direction offers.
+        #
+        # `contrast_strategy` stays `auto`: nothing here is corrected toward
+        # anything, so there is no direction to declare. Phase 01 predicted this
+        # would be the art direction that overrode it and it is not — see
+        # docs/v2/plan/04-three-art-directions.md.
+        brand_mapping=BrandMapping(
+            accent_role="bg",
+            allow_brand_background=True,
+            logo_treatment="mono",
+            contrast_strategy="auto",
+        ),
+        # ponytail: `mechanical-snap` is what this direction is actually for —
+        # 220ms, hard cubic, no parallax (docs/v2/art-direction-system.md). It
+        # is phase 11's build, and a seed naming a vocabulary that does not
+        # exist is a broken foreign key wearing a design decision. Points at
+        # `cinematic-slow` until then, which is wrong in character and correct
+        # in referential integrity. Trigger: phase 11.
+        default_motion="cinematic-slow",
+        fluid=ArtDirectionFluid(
+            type=FluidTypeScale(
+                # The sketch says `clamp(4rem, 12vw, 14rem)` and this is
+                # `10vw, 12rem`, which is a real deviation and worth its
+                # reasoning: the sketch was written before this direction had a
+                # typeface, and **Syne is a wide face.** At 12vw the word
+                # "confidence" in the `full` fixture did not fit one line at
+                # 1440px and broke mid-word, leaving a single orphaned "e" on
+                # the line below. An aggressive break is a legitimate brutalist
+                # device; a one-letter orphan reads as a bug, which is the
+                # failure mode docs/v2/plan/04-three-art-directions.md names as
+                # the one no automated check can catch.
+                #
+                # A token nobody has is what would have predicted it — the
+                # linter measures size and budget and cannot know how wide a
+                # glyph is. Recorded rather than tokenised: a per-face average
+                # advance width is a real thing to add the day a fourth family
+                # arrives, and inventing it for one data point would be fitting
+                # a constant to a single observation.
+                hero=FluidTypeRole(
+                    font="display", size=_clamp(_rem(4), _vw(10), _rem(12))
+                ),
+                section=FluidTypeRole(
+                    font="display", size=_clamp(_rem(2.5), _vw(5.5), _rem(4.5))
+                ),
+                lead=FluidTypeRole(
+                    font="text", size=_clamp(_rem(1.375), _vw(2.2), _rem(1.75))
+                ),
+                normal=FluidTypeRole(font="text", size=_fixed(_rem(1.0625))),
+                muted=FluidTypeRole(
+                    font="text", size=_fixed(_rem(1.0625)), color="inkMuted"
+                ),
+                # `ink`, where editorial-light's eyebrow is `accent`. An eyebrow
+                # in this direction is a black label, and its quiet comes from
+                # being small, uppercase and tracked rather than from a colour.
+                eyebrow=FluidTypeRole(
+                    font="text",
+                    size=_fixed(_rem(0.8125)),
+                    case="uppercase",
+                    color="ink",
+                ),
+                stat=FluidTypeRole(
+                    font="display", size=_clamp(_rem(3.5), _vw(10), _rem(12))
+                ),
+            ),
+            rhythm=FluidRhythm(
+                # Half of cinematic-dark's, as the sketch asks. Density here is
+                # not economy — the type is enormous, so the padding has to give
+                # way or there is no room for a headline at all.
+                scene_padding_y=_clamp(_rem(3), _vw(7), _rem(6)),
+                scene_padding_x=_clamp(_rem(1), _vw(3), _rem(4)),
+                measure=_ch(54),
+                content_max=_px(1440),
+                # Every layout owns the frame, like cinematic-dark — but placed
+                # at `end` rather than `center`. Type jammed to the baseline
+                # with the empty room above it is most of what this direction
+                # is, and it is the first use of a token authored in phase 13
+                # for exactly this direction.
+                fit=_fit(
+                    full_bleed="viewport",
+                    split_left="viewport",
+                    split_right="viewport",
+                    centered="viewport",
+                    stack="viewport",
+                    grid="viewport",
+                ),
+                fit_min_block=_svh(100),
+                fit_place="end",
+                fit_scroll_margin=_rem(4),
+            ),
+            # Riso misregistration: the same halftone twice, in two token
+            # colours, one nudged 3px. This is the arrangement the texture list
+            # was made indexed rather than keyed-by-kind to allow, and this is
+            # the first art direction that actually uses it.
+            #
+            # "Halftone at full strength" in the sketch is read as `steps=2` —
+            # the hardest banding the vocabulary offers — and not as
+            # `intensity=1`. A 100%-opacity dot screen behind body copy is not a
+            # strong art direction, it is unreadable text, and the linter cannot
+            # see it because the linter measures flat colours.
+            texture=[
+                HalftoneLayer(
+                    kind="halftone",
+                    intensity=0.3,
+                    color="accent",
+                    scale=_px(10),
+                    offset=_px(0),
+                    angle=45,
+                    steps=2,
+                ),
+                HalftoneLayer(
+                    kind="halftone",
+                    intensity=0.26,
+                    color="ink",
+                    scale=_px(10),
+                    offset=_px(3),
+                    angle=45,
+                    steps=2,
+                ),
+                # A third layer — `rule`, block axis, thick, full-strength ink —
+                # was authored here and removed after looking at it, which is
+                # the same conclusion `editorial-light` reached in v1 and the
+                # same one recorded in docs/v2/art-direction-system.md: a rule
+                # repeated across a whole scene is ruled paper, not structure.
+                # At full ink under a black headline it was worse than that, the
+                # bars and the letterforms merging into one shape.
+                #
+                # **A visible rule is furniture, not ground.** It belongs to
+                # phase 17's `Furniture` group, where it can be placed once
+                # rather than tiled. That this art direction rediscovered a
+                # finding the docs already held is the argument for `rule`
+                # leaving the texture union altogether — noted there rather than
+                # acted on here, because removing a kind is a renderer change.
+            ],
+            image=ImageTreatment(
+                tone="posterize",
+                overlay=HalftoneLayer(
+                    kind="halftone",
+                    intensity=0.35,
+                    color="ink",
+                    scale=_px(8),
+                    offset=_px(0),
+                    angle=45,
+                    steps=2,
+                ),
+                frame="block",
+                edge=_px(0),
+                veil=0.2,
+                ratios=[Ratio(w=1, h=1), Ratio(w=4, h=3)],
+            ),
+            visual_blend="multiply",
+        ),
+    ),
+)
+
+
 # Keyed by `(id, version)`, which is the primary key in migration 0008 and
 # therefore the only identity these have. The migration iterates this; nothing
 # else decides which system art directions exist.
 SYSTEM_ART_DIRECTIONS: tuple[ArtDirectionRecord, ...] = (
     CINEMATIC_DARK,
     EDITORIAL_LIGHT,
+    BOLD_BRUTALIST,
 )
 
 

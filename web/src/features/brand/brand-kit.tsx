@@ -212,16 +212,37 @@ function ContrastNoticeFor({
   const ground = relativeLuminance(artDirection.color.bg) > 0.5 ? 'light' : 'dark';
 
   if (!resolved.ok) {
+    // The resolver's own message, not a sentence rewritten here. An art
+    // direction that takes the brand as its *ground* fails for a different
+    // reason than one that takes it as an accent — "too dark for near-black
+    // type set directly on it" is not "cannot be made legible on a dark
+    // background", and phase 04's exit gate asks for a refusal a marketer can
+    // act on rather than one that is merely truthful.
     return (
       <p className="rounded-md border border-amber-900/60 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
-        <b className="font-medium">{id}</b> — that colour cannot be made legible on a{' '}
-        {ground} background. Pick another primary; we would rather say so than ship text
-        nobody can read.
+        <b className="font-medium">{id}</b> — {resolved.error.message} We would rather say
+        so than ship text nobody can read.
       </p>
     );
   }
 
-  const { accent, accentRaw } = resolved.value;
+  const { accent, accentRaw, ground: brandGround } = resolved.value;
+
+  // The art direction took the brand as its page ground and did not correct it,
+  // which is the whole offer of `accentRole: 'bg'` — there is no "we adjusted
+  // your colour" to report, because we did not.
+  if (brandGround !== null) {
+    return (
+      <p className="text-xs text-neutral-500">
+        <b className="font-medium text-neutral-400">{id}</b> — your colour becomes the
+        page, at full strength. Nothing was adjusted.
+      </p>
+    );
+  }
+
+  if (accent === null) {
+    throw new Error(`brand-kit: ${id} resolved to neither an accent nor a ground`);
+  }
   // Compared as rendered values, not by reference. `resolveBrand` happens to
   // return the very same object when no correction was needed, so `===` would
   // work today — and would silently stop working the day it returns a copy.

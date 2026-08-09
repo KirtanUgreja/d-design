@@ -123,17 +123,36 @@ export interface Palette {
  * resolves to a system fallback. Two edits is the right amount of friction for
  * a decision that changes every published page.
  *
+ * `weights` is **what we self-host, not what the family ships.** Syne publishes
+ * 400-800 and Space Grotesk 300-700; the rows below carry the weights an art
+ * direction actually authors, because every entry here is a file every reader
+ * of every published page downloads. Wanting one more is a deliberate two-line
+ * change and not an accident.
+ *
  * Open licences only, and that is a redistribution rule rather than a taste
  * one: these are served to our customers' audiences, not to visitors of our
- * own site (docs/techstack/frontend.md). */
+ * own site (docs/techstack/frontend.md). All six are OFL-1.1. */
 export const FONT_REGISTRY = {
   fraunces: { family: 'Fraunces', weights: [400, 500, 600] as const },
   inter: { family: 'Inter', weights: [400, 500, 600] as const },
   newsreader: { family: 'Newsreader', weights: [400, 500, 600] as const },
   archivo: { family: 'Archivo', weights: [400, 500, 600] as const },
+  // `bold-brutalist`, and the reason the four rows above stopped being able to
+  // share one weight list. Syne is the only registered family that self-hosts
+  // above 600 — `clamp(4rem, 12vw, 14rem)` at 500 is not a brutalist headline,
+  // it is a large thin one — and 800 is the only weight it is asked for.
+  syne: { family: 'Syne', weights: [800] as const },
+  'space-grotesk': { family: 'Space Grotesk', weights: [400, 500, 700] as const },
 } as const;
 
 export type FontFamilyId = keyof typeof FONT_REGISTRY;
+
+/** The weights one family self-hosts. A `readonly number[]` rather than the
+ * family's own literal tuple, because callers hold a `FontFamilyId` that is not
+ * statically known — the family comes from a database row. */
+export function registeredWeights(id: FontFamilyId): readonly number[] {
+  return FONT_REGISTRY[id].weights;
+}
 
 /** The two slots a type scale may reference. A `TypeRole` picks a slot, an
  * art direction binds each slot to a family — so no role anywhere names a
@@ -375,6 +394,41 @@ export type VisualBlend = 'screen' | 'multiply';
 export type VisualStrength = number;
 
 // ---------------------------------------------------------------------------
+// Brand mapping — how this art direction consumes a brand kit, never the
+// reverse. A marketer choosing an art direction is choosing that art direction.
+//
+// Stored since v2 phase 01 and **read by nothing until phase 04**, which is why
+// it is on `ArtDirection` only now: `cinematic-dark` and `editorial-light` both
+// take every default, so the whole group was indistinguishable from the
+// hardcoded behaviour `resolveBrand` already had. `bold-brutalist` is the first
+// art direction to disagree with a default, and disagreeing is what turns a
+// stored field into a read one.
+// ---------------------------------------------------------------------------
+
+/** Where `brand.primary` lands. `accent` and `ink` are foreground roles and are
+ * corrected against the ground; `bg` replaces the ground itself and is the one
+ * that needs `allowBrandBackground`. */
+export type AccentRole = 'accent' | 'bg' | 'ink';
+
+/** Which way "away from the ground" is, when a brand colour has to move to
+ * clear contrast. `auto` computes it from the ground's own luminance, which is
+ * what v1 found to be better than an art direction asserting one — the explicit
+ * values exist for a ground whose luminance sits near the crossover, where the
+ * computation has no good answer and the designer does. */
+export type ContrastStrategy = 'lighten' | 'darken' | 'auto';
+
+export interface BrandMapping {
+  accentRole: AccentRole;
+  /** May the brand colour become the page ground? False everywhere except
+   * `bold-brutalist`, and this field exists because of that one art direction —
+   * a brand colour behind a full-bleed hero is not a setting, it is a different
+   * design. */
+  allowBrandBackground: boolean;
+  logoTreatment: 'mono' | 'full-color';
+  contrastStrategy: ContrastStrategy;
+}
+
+// ---------------------------------------------------------------------------
 // The art direction
 // ---------------------------------------------------------------------------
 
@@ -396,4 +450,5 @@ export interface ArtDirection {
   image: ImageTreatment;
   visualBlend: VisualBlend;
   visualStrength: VisualStrength;
+  brandMapping: BrandMapping;
 }

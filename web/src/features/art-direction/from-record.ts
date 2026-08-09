@@ -43,6 +43,7 @@ import type {
   ClampTriple,
   FontFamilyId,
   FontSlot,
+  FontWeight,
   ImageTreatment,
   Length,
   Palette,
@@ -51,7 +52,7 @@ import type {
   TypeRole,
   TypeRoleKey,
 } from './art-direction';
-import { FONT_REGISTRY } from './art-direction';
+import { FONT_REGISTRY, registeredWeights } from './art-direction';
 import type { Color } from './color';
 
 // DTCG carries colour channels in 0-1; `Color` is 8-bit because that is what
@@ -139,16 +140,26 @@ function toClamp(size: Fluid['type']['hero']['size']): ClampTriple {
 function toTypeScale(
   fluid: Fluid['type'],
   dtcg: Tokens['type'],
+  fonts: Record<FontSlot, FontFamilyId>,
 ): Record<TypeRoleKey, TypeRole> {
   const entries = TYPE_ROLES.map((role): [TypeRoleKey, TypeRole] => {
     const f = fluid[role];
     const d = dtcg[role];
     // `weight` is a DTCG `fontWeight`, so the schema types it as any integer
-    // 1-1000 — which is what the spec allows and wider than the three weights
-    // the registry actually self-hosts. Narrowed here rather than trusted: a
-    // token asking for 300 would render as a synthesized face, which looks
-    // like a font bug and is a data bug.
-    const weight = d.weight.$value;
+    // 1-1000 — which is what the spec allows and wider than the weights the
+    // registry actually self-hosts. Narrowed here rather than trusted: a token
+    // asking for a weight we do not ship renders as a synthesized face, which
+    // looks like a font bug and is a data bug.
+    //
+    // **Narrowed against the role's own family, which it was not until v2 phase
+    // 04.** This read `REGISTERED_WEIGHTS = [400, 500, 600]`, a module constant
+    // — correct only for as long as every registered family self-hosted the
+    // same three weights, which was true only because the registry had been
+    // filled by art directions that all wanted the same three. `bold-brutalist`
+    // asks Syne for 800 and would have been rejected by a list describing a
+    // different family. A weight is a fact about a *font*, and this is the
+    // fourth value in this layer to turn out to be one art direction's held
+    // globally (docs/v2/plan/README.md).
     return [
       role,
       {
@@ -156,7 +167,7 @@ function toTypeScale(
         size: toClamp(f.size),
         leading: d.leading.$value,
         tracking: d.tracking.$value,
-        weight: narrowWeight(weight),
+        weight: narrowWeight(d.weight.$value, fonts[f.font]),
         ...(f.case ? { case: f.case } : {}),
         ...(f.color ? { color: f.color } : {}),
       },
@@ -165,15 +176,17 @@ function toTypeScale(
   return Object.fromEntries(entries) as Record<TypeRoleKey, TypeRole>;
 }
 
-const REGISTERED_WEIGHTS = [400, 500, 600] as const;
-type RegisteredWeight = (typeof REGISTERED_WEIGHTS)[number];
-
-function narrowWeight(weight: number): RegisteredWeight {
-  const found = REGISTERED_WEIGHTS.find((w) => w === weight);
+function narrowWeight(weight: number, family: FontFamilyId): FontWeight {
+  const found = registeredWeights(family).find((w) => w === weight);
   if (found === undefined) {
-    throw new Error(`from-record: no self-hosted face at weight ${String(weight)}`);
+    throw new Error(
+      `from-record: ${family} has no self-hosted face at weight ${String(weight)}`,
+    );
   }
-  return found;
+  // `registeredWeights` widens to `readonly number[]` because the family is not
+  // statically known here; the union it came from is the registry's, so the
+  // found value is one of its members by construction.
+  return found as FontWeight;
 }
 
 function toRhythm(fluid: Fluid['rhythm'], space: Tokens['space']): Rhythm {
@@ -301,12 +314,24 @@ export function fromRecord(record: ArtDirectionRecord): Result<ResolvedRecord> {
       id: record.id,
       color: toPalette(record.tokens.color),
       fonts: { display, text },
-      type: toTypeScale(fluid.type, record.tokens.type),
+      type: toTypeScale(fluid.type, record.tokens.type, { display, text }),
       rhythm: toRhythm(fluid.rhythm, record.tokens.space),
       texture: toTexture(fluid.texture),
       image: toImage(fluid.image),
       visualBlend: fluid.visualBlend,
       visualStrength: record.tokens.visual.strength.$value,
+      // Spelled out rather than spread, for the reason the fit table is: the
+      // two shapes are declared independently and writing the fields is what
+      // makes adding one a compile error on both sides. Every field is required
+      // on the record since phase 04, so there is nothing to default here — the
+      // point of that change was that a default filled in on this side is a
+      // second copy of a decision made on the other.
+      brandMapping: {
+        accentRole: record.extensions.brandMapping.accentRole,
+        allowBrandBackground: record.extensions.brandMapping.allowBrandBackground,
+        logoTreatment: record.extensions.brandMapping.logoTreatment,
+        contrastStrategy: record.extensions.brandMapping.contrastStrategy,
+      },
     },
   });
 }

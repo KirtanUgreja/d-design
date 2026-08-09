@@ -12,7 +12,11 @@ its designed empty state rather than a scene tree with no tokens at all.
 from db.tenant import as_user
 from features.art_direction import art_direction_data
 from features.art_direction.dtcg import from_document, to_document
-from features.art_direction.lint import lint_art_direction, lint_motion_vocabulary
+from features.art_direction.lint import (
+    lint_art_direction,
+    lint_art_direction_with_brand,
+    lint_motion_vocabulary,
+)
 from lib.result import Result, err, ok
 from schema.art_direction import ArtDirectionRecord, ArtDirectionRef
 
@@ -38,6 +42,7 @@ async def list_art_directions(user_id: str) -> list[ArtDirectionRecord]:
 __all__ = [
     "from_document",
     "lint_art_direction",
+    "lint_art_direction_with_brand",
     "lint_motion_vocabulary",
     "list_art_directions",
     "load_art_direction",

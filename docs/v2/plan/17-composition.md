@@ -4,6 +4,13 @@
 
 **Depends on:** [04](04-three-art-directions.md), [13](13-scene-fit.md), [14](14-texture-without-gradient.md), [15](15-images.md) · **Blocks:** [09](09-visual-verification.md) · **Spec step:** delta — see [../spec.md](../spec.md) → "Composition deltas"
 
+> **Phase 04 handed this phase two things, one of them measured.**
+>
+> **`groundCycle` is what makes `bold-brutalist` usable.** That art direction takes a brand kit as its page ground and sets near-black type on it, so it accepts colours lighter than about `#d8d8d8` and refuses everything else — **roughly 2% of the sRGB cube**, which includes most corporate navies and every mid-grey. The refusal is legible and correct, and it is not a product. An inverted palette lets a dark brand take white type, which is the same mechanism the cycle already needs for alternate scenes. This was a stylistic argument before phase 04 and is a measured one now.
+>
+> **`rule` should probably become furniture and leave the texture union.** Both `editorial-light` (v1) and `bold-brutalist` (phase 04) authored a `rule` layer and removed it after looking at it, independently, for the same reason: a rule tiled across a whole scene is ruled paper, not structure. A visible rule wants placing once, which is what `Furniture` is for. Removing a kind is a renderer change, so it belongs to this phase rather than to the one that found it twice.
+
+
 ---
 
 ## What is left after the other four phases

@@ -15,8 +15,12 @@ the rules it was written for while still passing.
 import pytest
 from pydantic import ValidationError
 
-from features.art_direction.dtcg import from_document, to_document
-from features.art_direction.lint import lint_art_direction, lint_motion_vocabulary
+from features.art_direction.dtcg import from_document, srgb, to_document
+from features.art_direction.lint import (
+    lint_art_direction,
+    lint_art_direction_with_brand,
+    lint_motion_vocabulary,
+)
 from features.art_direction.lint_contrast import (
     Rgb,
     apca_lc,
@@ -265,6 +269,163 @@ def test_a_saturated_light_colour_on_a_dark_ground_is_rejected() -> None:
     assert "SATURATION_BLOOMS_ON_DARK_GROUND" in _rules(lint_art_direction(neon))
 
 
+# ---------------------------------------------------------------------------
+# The rule art direction #3 rewrote, and the one it added
+# ---------------------------------------------------------------------------
+
+
+def test_a_large_type_scale_is_allowed_when_the_budget_pays_for_it() -> None:
+    """The bound `bold-brutalist` found, from the other side.
+
+    The ceiling on `hero / normal` was a flat 8.0, chosen when there were two
+    art directions — and it rejected this one at 13.18x. That was the rule
+    mistaking a value it had only ever seen under two designs for a universal
+    one, which is the failure docs/v2/plan/README.md predicts by name.
+
+    What the ceiling was protecting against is in its own message: a headline
+    that orphans the body text under it. That is not a property of the ratio, it
+    is a property of how much text is set at that size. So the bound moved onto
+    the product of the two, and this is the assertion that a large ratio is fine
+    *when it is paid for*.
+    """
+    brutalist = next(r for r in SYSTEM_ART_DIRECTIONS if r.id == "bold-brutalist")
+    ratio = (
+        brutalist.extensions.fluid.type.hero.size.max.value
+        / brutalist.extensions.fluid.type.normal.size.max.value
+    )
+    assert ratio > 8.0, "the fixture must exceed the ceiling this rule replaced"
+    assert lint_art_direction(brutalist).ok
+
+
+def test_the_same_type_scale_is_refused_when_the_budget_does_not() -> None:
+    """And the half that makes the rule a gate rather than a licence.
+
+    Same art direction, same enormous type, a headline budget that does not pay
+    for it. **This case is stricter than the flat ceiling was**, not looser:
+    8x body against the 80-character budget docs/v2/art-direction-system.md
+    sketches for `editorial-light` is 640 body-ems and is now refused, where the
+    old rule waved it through. The bound was not relaxed to admit a fashionable
+    art direction.
+    """
+    brutalist = next(r for r in SYSTEM_ART_DIRECTIONS if r.id == "bold-brutalist")
+    loosened = brutalist.model_copy(deep=True)
+    loosened.extensions.budgets.headline = 80
+    assert "HEADLINE_SET_WIDTH" in _rules(lint_art_direction(loosened))
+
+
+def test_a_tiny_budget_does_not_buy_an_unbounded_type_scale() -> None:
+    """The backstop the product bound needs. Without an absolute ceiling, a
+    20-character budget would licence a hero at 26x body — a rule that can be
+    satisfied by making the headline shorter forever is not a rule."""
+    brutalist = next(r for r in SYSTEM_ART_DIRECTIONS if r.id == "bold-brutalist")
+    absurd = brutalist.model_copy(deep=True)
+    absurd.extensions.budgets.headline = 20
+    absurd.extensions.fluid.type.hero.size.max.value = 30.0
+    assert "TYPE_SCALE_RANGE" in _rules(lint_art_direction(absurd))
+
+
+def test_a_brand_ground_that_is_not_allowed_is_a_contradiction() -> None:
+    """Two individually-valid fields that cannot both be right.
+
+    Refused rather than resolved toward either half: picking one would mean
+    guessing whether a customer's colour is supposed to become their whole page.
+    """
+    brutalist = next(r for r in SYSTEM_ART_DIRECTIONS if r.id == "bold-brutalist")
+    contradictory = brutalist.model_copy(deep=True)
+    contradictory.extensions.brand_mapping.allow_brand_background = False
+    assert "BRAND_BACKGROUND_NOT_ALLOWED" in _rules(lint_art_direction(contradictory))
+
+
+# ---------------------------------------------------------------------------
+# An art direction plus a brand is a second thing that must also be lintable
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "primary",
+    ["#808080", "#12234a", "#b8402a", "#6e0a00"],
+    ids=["mid-grey", "corporate-navy", "oxide-red", "its-own-accent"],
+)
+def test_a_brand_ground_too_dark_for_the_art_directions_type_is_refused(
+    primary: str,
+) -> None:
+    """The exit-gate case, and the answer is a refusal rather than a rescue.
+
+    `bold-brutalist` sets near-black type directly on the brand colour at full
+    strength — uncorrected, because a corrected brand ground is a brand colour
+    the art direction decided it knew better than, which is the opposite of what
+    it offers. So a dark brand is refused, and the refusal is the deliverable.
+
+    The `its-own-accent` case is the sharp one: the art direction's own oxide
+    red is a colour it is happy to *print with* and cannot be *printed on*.
+    """
+    brutalist = next(r for r in SYSTEM_ART_DIRECTIONS if r.id == "bold-brutalist")
+    report = lint_art_direction_with_brand(brutalist, primary)
+    assert not report.ok
+    assert _rules(report) <= {"CONTRAST_BELOW_WCAG_AA", "CONTRAST_BELOW_APCA"}
+
+
+@pytest.mark.parametrize(
+    "primary", ["#ffd6e8", "#39ff14", "#f2e535"], ids=["pastel", "neon", "signal"]
+)
+def test_a_light_brand_ground_is_accepted_at_full_strength(primary: str) -> None:
+    brutalist = next(r for r in SYSTEM_ART_DIRECTIONS if r.id == "bold-brutalist")
+    assert lint_art_direction_with_brand(brutalist, primary).ok
+
+
+def test_the_cta_pair_is_judged_against_the_brand_ground_independently() -> None:
+    """The pair that is easy to forget: a CTA label is `bg`-coloured text, so
+    when `bg` becomes the brand, the most important text on the page changes
+    colour and lands on a fill nobody re-measured it against.
+
+    **It takes a mutated accent to demonstrate, and that is worth recording
+    rather than working around.** With `bold-brutalist` as shipped the check is
+    unreachable on its own: its accent is a deep oxide red at OKLCH L 0.34, and
+    any brand light enough to pass the *ground* check contrasts with it easily.
+    The ground check strictly dominates, so every brand this art direction
+    refuses, it refuses for the other reason.
+
+    A first attempt at this test used a real brand colour and asserted only that
+    the words "button fill" appeared in some finding — which passed while both
+    checks were failing together and would have gone on passing if the CTA check
+    were deleted. Lightening the accent is what makes the assertion mean what it
+    says, and it is a legitimate art direction: a pale fill with the page colour
+    as its label is a real design, and it is the one this rule exists for.
+    """
+    brutalist = next(r for r in SYSTEM_ART_DIRECTIONS if r.id == "bold-brutalist")
+    pale = brutalist.model_copy(deep=True)
+    pale.tokens.color.accent = srgb("#e8dc90")
+
+    report = lint_art_direction_with_brand(pale, "#f2e535")
+    assert not report.ok
+    assert {f.path for f in report.findings} == {"brand.primary"}
+    # Every finding is the fill, and none is the ground — which is the claim.
+    assert all("button fill" in f.message for f in report.findings)
+
+
+def test_an_art_direction_that_does_not_take_a_brand_ground_has_nothing_to_check() -> (
+    None
+):
+    """Not a silent pass: for `accent`-role directions the check *is* the
+    correction loop in `resolve-brand.ts`, which runs where the measurement has
+    to be synchronous and local. This asserts the split rather than hiding it."""
+    for record in SYSTEM_ART_DIRECTIONS:
+        if record.extensions.brand_mapping.accent_role == "bg":
+            continue
+        assert lint_art_direction_with_brand(record, "#39ff14").ok
+
+
+@pytest.mark.parametrize(
+    "primary", ["rgb(1,2,3)", "#fff", "", "#f2e53z", "red; }"], ids=lambda v: repr(v)
+)
+def test_a_brand_primary_that_is_not_a_hex_colour_is_refused(primary: str) -> None:
+    """Parsed and re-serialized, never passed through — this value becomes a CSS
+    custom property on a published page (rule 13)."""
+    brutalist = next(r for r in SYSTEM_ART_DIRECTIONS if r.id == "bold-brutalist")
+    report = lint_art_direction_with_brand(brutalist, primary)
+    assert _rules(report) == {"BRAND_PRIMARY_NOT_A_COLOUR"}
+
+
 def test_motion_durations_outside_the_band_are_rejected() -> None:
     vocabulary = SYSTEM_MOTION_VOCABULARIES[0].model_copy(deep=True)
     vocabulary.durations.reveal = 4000
@@ -490,29 +651,43 @@ def test_findings_are_typed_and_carry_a_greppable_rule_code() -> None:
 # with: the linter runs in `api` at the point of save, and `web` has never
 # needed the perceptual gate.
 _CONTRAST_FIXTURES = [
-    ("cinematic-dark", "ink", 18.1226),
-    ("cinematic-dark", "ink_muted", 13.0187),
-    ("cinematic-dark", "ink_faint", 4.9409),
-    ("cinematic-dark", "accent", 13.0978),
-    ("editorial-light", "ink", 18.3965),
-    ("editorial-light", "ink_muted", 6.9943),
-    ("editorial-light", "ink_faint", 4.1428),
-    ("editorial-light", "accent", 7.7501),
+    # (art direction, palette role, WCAG 2.2 ratio, APCA Lc against its own bg)
+    #
+    # **The Lc column carries its sign**, and that is the column that proves the
+    # boundary is crossed by the thing we care about. WCAG's ratio is
+    # polarity-blind: `cinematic-dark` and `editorial-light` both score ~18:1
+    # for full ink and the number cannot tell you one is white-on-black. The Lc
+    # values are -100.6 and +103.5. A TypeScript port that dropped the sign, or
+    # swapped the two branches of the transfer function, would still pass a
+    # ratio-only table and would be wrong about every dark art direction.
+    ("cinematic-dark", "ink", 18.1226, -100.5802),
+    ("cinematic-dark", "ink_muted", 13.0187, -78.4442),
+    ("cinematic-dark", "ink_faint", 4.9409, -33.9427),
+    ("cinematic-dark", "accent", 13.0978, -78.9501),
+    ("editorial-light", "ink", 18.3965, 103.4859),
+    ("editorial-light", "ink_muted", 6.9943, 83.0809),
+    ("editorial-light", "ink_faint", 4.1428, 67.5481),
+    ("editorial-light", "accent", 7.7501, 84.3561),
+    ("bold-brutalist", "ink", 15.0287, 88.2312),
+    ("bold-brutalist", "ink_muted", 11.7961, 84.7988),
+    ("bold-brutalist", "ink_faint", 5.1078, 65.3753),
+    ("bold-brutalist", "accent", 9.3966, 78.7104),
 ]
 
 
 @pytest.mark.parametrize(
-    ("art_direction_id", "role", "expected"),
+    ("art_direction_id", "role", "expected_ratio", "expected_lc"),
     _CONTRAST_FIXTURES,
     ids=lambda v: str(v),
 )
 def test_contrast_matches_its_typescript_twin(
-    art_direction_id: str, role: str, expected: float
+    art_direction_id: str, role: str, expected_ratio: float, expected_lc: float
 ) -> None:
     record = next(r for r in SYSTEM_ART_DIRECTIONS if r.id == art_direction_id)
     ground = to_rgb(record.tokens.color.bg.value)
     text = to_rgb(getattr(record.tokens.color, role).value)
-    assert round(contrast_ratio(text, ground), 4) == expected
+    assert round(contrast_ratio(text, ground), 4) == expected_ratio
+    assert round(apca_lc(text, ground), 4) == expected_lc
 
 
 def test_a_hostile_token_file_is_refused_by_the_import_path() -> None:

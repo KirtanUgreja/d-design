@@ -87,7 +87,41 @@ _PROSE_ROLES = ("lead", "normal", "muted")
 _DISPLAY_LEADING_MIN = 0.85
 _PROSE_LEADING_MIN, _PROSE_LEADING_MAX = 1.4, 1.8
 
-_SCALE_RATIO_MIN, _SCALE_RATIO_MAX = 2.5, 8.0
+# The floor is about perceptible hierarchy and has nothing to do with how long
+# a headline is, so it is a plain ratio and phase 04 did not move it.
+#
+# **The ceiling was 8.0 and it was wrong, and art direction #3 is what showed
+# it.** `bold-brutalist` runs hero at 13.18x body, which the flat ceiling
+# rejected — and the rejection was the rule mistaking a value it had only ever
+# seen under two art directions for a universal one (the exact failure
+# docs/v2/plan/README.md predicts under "the values a system holds globally").
+#
+# What the ceiling was actually protecting against is in its own message: a
+# headline that *orphans the body text under it*. That is not a property of the
+# ratio. It is a property of how much text is set at that size — 60 characters
+# at 8x is a wall, 34 characters at 13x is a poster — so the honest bound is on
+# the product of the two, and `_HEADLINE_SET_WIDTH_MAX` below is it.
+#
+# The ratio keeps an absolute ceiling as a backstop, because the product alone
+# would let a 20-character budget buy hero at 26x body.
+_SCALE_RATIO_MIN, _SCALE_RATIO_MAX = 2.5, 14.0
+
+# Roughly, a headline's set width at full size measured in body-text ems:
+# characters x how many times body size the hero is. It is a physical quantity,
+# which is why it is a better bound than either factor alone.
+#
+# **The three art directions landed at 270, 452 and 448 without being tuned to
+# it**, and two of those were authored before this rule existed. A constant that
+# three independently-authored designs agree on is the kind of thing only a
+# third data point can show you; with two, "global" and "cinematic-dark's" are
+# indistinguishable.
+#
+# 520 leaves ~15% over the loudest of the three. Note it is *stricter* than the
+# flat 8.0 in a case that one waved through: 8x body against the 80-character
+# budget docs/v2/art-direction-system.md sketches for `editorial-light` is 640,
+# and is now refused. This rule is not the old one relaxed to admit a
+# fashionable art direction.
+_HEADLINE_SET_WIDTH_MAX = 520.0
 _MEASURE_MIN_CH, _MEASURE_MAX_CH = 45.0, 80.0
 _SPACE_RATIO_MIN, _SPACE_RATIO_MAX = 1.2, 2.0
 _HEADLINE_BUDGET_MIN, _HEADLINE_BUDGET_MAX = 20, 120
@@ -126,6 +160,7 @@ def lint_art_direction(record: ArtDirectionRecord) -> LintReport:
         findings.extend(_check_type_scale(record))
         findings.extend(_check_rhythm(record))
         findings.extend(_check_budgets(record))
+        findings.extend(_check_brand_mapping(record))
         findings.extend(_check_no_ramp_or_bloom(record))
         return LintReport(findings=findings)
     except Exception as e:
@@ -142,6 +177,105 @@ def lint_art_direction(record: ArtDirectionRecord) -> LintReport:
                 )
             ]
         )
+
+
+def lint_art_direction_with_brand(
+    record: ArtDirectionRecord, brand_primary: str
+) -> LintReport:
+    """The second thing that has to be lintable, and phase 04 is what found it.
+
+    **An art direction is lintable on its own; an art direction plus a brand is
+    a different object that must also be lintable.** For the two v1 directions
+    the distinction was invisible — a brand lands on `accent`, and `resolveBrand`
+    corrects it until it clears both gates, so the ground the rules run against
+    is the authored one either way. `bold-brutalist` sets `accent_role='bg'` and
+    takes the brand *as the ground, uncorrected*, which means every contrast pair
+    in the art direction is measured against a colour that does not exist until
+    a customer attaches a kit.
+
+    Nothing is corrected here and nothing could be: correcting the ground is the
+    one thing this art direction exists not to do. What this does is refuse, at
+    the point the kit is chosen, with a message written for the person who chose
+    the colour. `web/src/features/art-direction/resolve-brand.ts` runs the same
+    two pairs at render time, because a stored brand kit can predate a change to
+    the art direction it is applied to.
+
+    Returns an empty report for an art direction that does not take a brand
+    ground — not because there is nothing to check, but because for those the
+    check is `resolveBrand`'s correction loop and it happens in `web`, where the
+    measurement has to be synchronous and local (rule 6).
+    """
+    try:
+        mapping = record.extensions.brand_mapping
+        if mapping.accent_role != "bg":
+            return LintReport(findings=[])
+
+        parsed = _parse_hex(brand_primary)
+        if parsed is None:
+            return LintReport(
+                findings=[
+                    LintFinding(
+                        rule="BRAND_PRIMARY_NOT_A_COLOUR",
+                        path="brand.primary",
+                        message=(
+                            "is not a six-digit hex colour. It is parsed and "
+                            "re-serialized rather than passed through, because this "
+                            "value becomes a CSS custom property on a published page."
+                        ),
+                    )
+                ]
+            )
+
+        findings: list[LintFinding] = []
+        findings.extend(
+            _judge(
+                text=to_rgb(record.tokens.color.ink.value),
+                ground=parsed,
+                large=False,
+                path="brand.primary",
+                what=f"{record.id}'s body text on the brand colour as the page ground",
+            )
+        )
+        # The pair that is easy to forget and matters most: a CTA label is
+        # `bg`-coloured text, so when `bg` becomes the brand the most important
+        # text on the page changes colour and lands on a fill nobody
+        # re-measured it against.
+        findings.extend(
+            _judge(
+                text=parsed,
+                ground=to_rgb(record.tokens.color.accent.value),
+                large=False,
+                path="brand.primary",
+                what=f"the brand colour as a CTA label on {record.id}'s button fill",
+            )
+        )
+        return LintReport(findings=findings)
+    except Exception as e:
+        return LintReport(
+            findings=[
+                LintFinding(
+                    rule="LINTER_ERROR",
+                    path="brand.primary",
+                    message=(
+                        f"the linter raised {type(e).__name__} and could not finish. "
+                        "The brand kit is refused rather than allowed."
+                    ),
+                )
+            ]
+        )
+
+
+def _parse_hex(value: str) -> Rgb | None:
+    """`#rrggbb` only. The one parse, and it returns `None` rather than raising
+    because a malformed brand colour is a user typing, not a bug."""
+    text = value.strip()
+    if len(text) != 7 or not text.startswith("#"):
+        return None
+    try:
+        channels = [float(int(text[i : i + 2], 16)) for i in (1, 3, 5)]
+    except ValueError:
+        return None
+    return Rgb(channels[0], channels[1], channels[2], 1.0)
 
 
 def lint_motion_vocabulary(record: MotionVocabularyRecord) -> LintReport:
@@ -409,8 +543,31 @@ def _check_type_scale(record: ArtDirectionRecord) -> list[LintFinding]:
                         message=(
                             f"hero is {ratio:.2f}x body, outside {_SCALE_RATIO_MIN}-"
                             f"{_SCALE_RATIO_MAX}. Below the floor the page has no "
-                            "hierarchy; above the ceiling the headline orphans the "
-                            "body text under it."
+                            "hierarchy; above the ceiling no character budget is "
+                            "tight enough to make the headline set."
+                        ),
+                    )
+                )
+
+            # The bound that replaced the flat ceiling. A large ratio is not a
+            # defect on its own — it is a defect unpaid for, and the headline
+            # budget is what pays for it.
+            budget = record.extensions.budgets.headline
+            set_width = ratio * budget
+            if set_width > _HEADLINE_SET_WIDTH_MAX:
+                findings.append(
+                    LintFinding(
+                        rule="HEADLINE_SET_WIDTH",
+                        path="budgets.headline",
+                        message=(
+                            f"{budget} characters at {ratio:.2f}x body sets a headline "
+                            f"{set_width:.0f} body-ems wide, over the "
+                            f"{_HEADLINE_SET_WIDTH_MAX:.0f} a page can carry without "
+                            "the body text under it reading as a caption. Type this "
+                            "large is allowed, and the budget is what pays for it: "
+                            f"cut the headline budget to "
+                            f"{int(_HEADLINE_SET_WIDTH_MAX / ratio)} characters, or "
+                            "bring the hero size down."
                         ),
                     )
                 )
@@ -528,6 +685,36 @@ def _check_budgets(record: ArtDirectionRecord) -> list[LintFinding]:
                     f"{_HEADLINE_BUDGET_MAX}. Below the floor no real headline fits "
                     "and the model is forced into fragments; above it the headline is "
                     "a paragraph set at display size."
+                ),
+            )
+        ]
+    return []
+
+
+def _check_brand_mapping(record: ArtDirectionRecord) -> list[LintFinding]:
+    """The one contradiction the two fields can express between them.
+
+    `accent_role='bg'` says the brand becomes the ground and
+    `allow_brand_background=False` says it may not, and a record holding both is
+    not a design anybody chose — it is a `bg` typed into one field without the
+    other. The types cannot rule it out, because each field is individually
+    valid, so this is where it gets ruled out.
+
+    Refused rather than resolved toward either half. Picking one would mean
+    guessing whether a customer's colour is supposed to become their whole page,
+    which is not a guess worth making silently.
+    """
+    mapping = record.extensions.brand_mapping
+    if mapping.accent_role == "bg" and not mapping.allow_brand_background:
+        return [
+            LintFinding(
+                rule="BRAND_BACKGROUND_NOT_ALLOWED",
+                path="brandMapping.accentRole",
+                message=(
+                    "is 'bg', which puts the brand colour on the page ground, while "
+                    "allowBrandBackground is false. One of the two is wrong and this "
+                    "cannot tell which: set allowBrandBackground, or map the brand to "
+                    "'accent' and leave the ground to the art direction."
                 ),
             )
         ]
