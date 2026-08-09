@@ -3,6 +3,8 @@ import { join } from 'node:path';
 
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
+import type { BrandKit } from '@/schema';
+
 import type { ArtDirection, TypeRoleKey } from './cinematic-dark';
 import { CINEMATIC_DARK, FONT_REGISTRY, TYPE_SCALE } from './cinematic-dark';
 import { contrastRatio } from './color';
@@ -167,11 +169,18 @@ describe('resolveBrand', () => {
   });
 });
 
-function brandWith(primary: string) {
+// Typed as `BrandKit` rather than inferred, so the font fields are checked
+// against the registry ids the schema actually allows. They used to read
+// `'Fraunces'`/`'Inter'` — family *names*, which the Pydantic `FontId` Literal
+// (phase 10) no longer has a representation for. A user-supplied family string
+// is the most natural-looking free-text token in the system and the one that
+// most easily carries a payload, so the fix is the schema and this is the fix
+// landing.
+function brandWith(primary: string): BrandKit {
   return {
     id: 'brand-1',
-    displayFont: 'Fraunces',
-    textFont: 'Inter',
+    displayFont: 'fraunces',
+    textFont: 'inter',
     primary,
     secondary: '#ffffff',
     neutral: '#888888',

@@ -12,6 +12,9 @@ dependencies = [
     "alembic>=1.18.5",
     "httpx>=0.28.1",
     "boto3>=1.43.0",
+    "pillow>=11.4.0",
+    "defusedxml>=0.7.1",
+    "python-multipart>=0.0.32",
 ]
 
 [dependency-groups]
@@ -22,6 +25,7 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "pre-commit>=4.5.0",
     "boto3-stubs[s3]>=1.43.0",
+    "types-defusedxml>=0.7.0.20260504",
 ]
 
 # Not a distributable package — `api` and `jobs` are two entry points into this

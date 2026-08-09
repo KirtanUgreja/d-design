@@ -42,6 +42,11 @@ Already decided, no justification needed — these are the stack. **Two language
 | React Email | Auth email templates, next to the auth code that sends them (v3) |
 | Sentry | Errors, **both languages** — **configure scrubbing before the first event**, see [../security/operations.md](../security/operations.md) |
 | Promptfoo · Langfuse (self-hosted) | Evals and tracing ([../techstack/ai-stack.md](../techstack/ai-stack.md)) |
+| **Pillow** (`api`) | Upload re-encode: strips EXIF, kills polyglots, normalizes to PNG/JPEG, and enforces the pixel cap through `MAX_IMAGE_PIXELS` before an allocator is asked for anything. Not `sharp`, which [../v1/plan/10-brand-and-uploads.md](../v1/plan/10-brand-and-uploads.md) named — that file predates the Python backend move, and the pipeline lives beside the `assets` table now. **Moves to the fetch worker with the rest of the pipeline in v3** |
+| **defusedxml** (`api`) | SVG entity-expansion refusal. The billion-laughs family is a denial-of-service shape distinct from SVG XSS, and it happens *in the parser*, before an allowlist has an element to inspect — so it needs a parser that refuses entity declarations rather than a sanitizer that removes them. Pure-stdlib wrapper, no transitive tree |
+| **python-multipart** (`api`) | FastAPI's own requirement for `UploadFile`; a form parser is not something to write |
+
+**Not added: DOMPurify.** [../v1/plan/10-brand-and-uploads.md](../v1/plan/10-brand-and-uploads.md) anticipated it, and its Verify list asks to prove no DOMPurify **2.x** is anywhere in the tree. There is no DOMPurify at all — SVG sanitization runs in `api`, in Python, as an allowlist over a `defusedxml` parse (`api/features/assets/sanitize_svg.py`), so that check is satisfied by absence. Deletion is a feature, and this is the version of it where the dependency never arrives: DOMPurify had four distinct XSS bypasses disclosed in 2025–2026, which is precisely why the design does not rest on a sanitizer in the first place — an SVG is served only through `<img>`, where it cannot execute regardless.
 
 shadcn/ui is deliberately absent: it is copy-in source, not a dependency. That is the point of it. Resend is absent for the same class of reason — sending mail is a POST with a JSON body, and `httpx` already does that.
 

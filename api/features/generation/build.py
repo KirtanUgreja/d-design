@@ -64,8 +64,13 @@ async def build_experience(
     call site (docs/v1/plan/07-director.md -> "The gate is the product
     decision"), not only the route layer's own discipline."""
     outline = approved_outline.outline
-    brand_kit = get_brand_kit(brand_id)
-    assets = list_assets()
+    # Both reads happen once, before the loop: they are identical for every
+    # scene in a build and they belong to the cached system prefix, so
+    # re-fetching per scene would buy nothing and cost a round trip each time.
+    # `brand_id` is not a filter — one brand per owner in v1, and the RLS
+    # policy is what scopes the read (rule 9).
+    brand_kit = await get_brand_kit(owner_id)
+    assets = await list_assets(owner_id)
     system = build_system_prompt(brief, outline, brand_kit, assets)
     total = len(outline.scenes)
 

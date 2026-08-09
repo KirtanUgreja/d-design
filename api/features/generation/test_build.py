@@ -28,6 +28,11 @@ _BRIEF = Brief(
     cta=BriefCta(label="Get started", href="https://example.com"),
 )
 
+# A real uuid: `build_experience` opens an `as_user` session to read the brand
+# kit and the asset list, so the owner id reaches Postgres rather than only the
+# mocked seam.
+_OWNER = "00000000-0000-4000-8000-00000000000a"
+
 _OUTLINE = Outline.model_validate(
     {
         "title": "A narrative",
@@ -97,7 +102,7 @@ async def test_build_experience_runs_against_an_approved_outline(
             brief=_BRIEF,
             approved_outline=approve_outline(_OUTLINE),
             brand_id=None,
-            owner_id="owner-1",
+            owner_id=_OWNER,
             experience_id="exp-1",
         )
     ]
@@ -119,7 +124,7 @@ async def test_a_bare_outline_is_rejected_at_runtime_not_only_by_mypy() -> None:
         brief=_BRIEF,
         approved_outline=_OUTLINE,  # type: ignore[arg-type]
         brand_id=None,
-        owner_id="owner-1",
+        owner_id=_OWNER,
         experience_id="exp-1",
     )
     with pytest.raises(AttributeError):
@@ -167,7 +172,7 @@ async def _build_all(
             brief=_BRIEF,
             approved_outline=approve_outline(_OUTLINE),
             brand_id=None,
-            owner_id="owner-1",
+            owner_id=_OWNER,
             experience_id="exp-1",
         )
     ]

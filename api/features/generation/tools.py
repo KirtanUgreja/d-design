@@ -7,50 +7,61 @@ ponytail: wire real tool-calling (see api/ai/complete.py's docstring) if a
 future tool is only sometimes relevant rather than always-needed context.
 """
 
+import features.assets as assets_feature
+import features.brand as brand_feature
+from db.tenant import as_user
 from schema.experience import BrandKit
 from schema.scene import LAYOUT_REGIONS
 
-# scene-schema.md's own caps table, restated as prompt text. Prompting is the
-# only portable lever on output length (docs/v1/ai-pipeline.md) — structured-
-# output enforcement of minLength/maxLength is widely unsupported regardless
-# of route, so this has to exist as words, not only as a Pydantic Field. It
-# is a copy for the model to read, never a second place validation runs from
-# — schema/scene.py's Field(max_length=...) is what actually rejects.
-_CHARACTER_CAPS = """Character caps, hard limits:
-- Eyebrow: 24
-- Headline: 60
-- Body: 240
-- Quote: 200 (attribution/role: 60 each)
-- List item: 80 (detail: 120), 2-5 items
-- Stat value: 12, label: 40, prefix/suffix: 8 each
-- Image alt: 160
-- CTA label: 32"""
+# Each tool opens its own `as_user` session rather than taking one, and that
+# is rule 8 rather than a preference: SQLAlchemy belongs in a `*_data.py`
+# module and nowhere else, so this file cannot name an `AsyncSession` even in a
+# type annotation (`scripts/checks/invariants.sh` greps for exactly that, and
+# caught it). Two short sessions instead of one shared one is the cost, and it
+# buys a tool that is callable from anywhere with an owner id — which is what a
+# tier-0 read should be.
 
 
-def get_brand_kit(brand_id: str | None) -> BrandKit | None:
-    """ponytail: brand kit storage is phase 10 (brand + uploads) — there is
-    no `brands` row to fetch yet regardless of what `brand_id` names.
-    Returns `None`, and the build prompt omits brand-color guidance when it
-    does; a null brand is exactly what `resolveBrand` already falls back to
-    on the render side (web/src/features/art-direction/resolve-brand.ts),
-    so Build and the renderer agree about what "no brand" means."""
-    return None
+async def get_brand_kit(owner_id: str) -> BrandKit | None:
+    """The owner's brand kit, or `None` if they have not set one.
+
+    Scoped by the RLS policy, never by a filter here (rule 9). A null brand is
+    exactly what `resolveBrand` falls back to on the render side
+    (web/src/features/art-direction/resolve-brand.ts), so Build and the
+    renderer agree about what "no brand" means.
+    """
+    async with as_user(owner_id) as session:
+        return await brand_feature.load_brand(session)
 
 
-def list_assets() -> list[dict[str, str]]:
-    """ponytail: uploads are phase 10 — there is no `assets` table yet, so
-    this always returns empty. The build prompt states plainly that no
-    assets exist, so the model reaches for `AbstractVisual` instead of
-    inventing an `assetId` that `assert_assets_resolve` would reject."""
-    return []
+async def list_assets(owner_id: str) -> list[dict[str, str]]:
+    """The owner's assets, as the id/description pairs the prompt names.
+
+    Only the id and a description cross into the prompt — not the storage key,
+    not the mime type. The model's one job with an asset is to reference it by
+    id, and everything else would be context it cannot use and could leak.
+    """
+    async with as_user(owner_id) as session:
+        assets = await assets_feature.list_assets(session)
+    return [
+        {"id": asset.id, "description": asset.alt or f"{asset.kind} asset"}
+        for asset in assets
+    ]
 
 
 def get_constraints() -> str:
-    """Character budgets and valid layout regions, as text — stable across
-    every scene in a build, so it belongs in the cached system prefix rather
-    than being re-fetched per call."""
+    """The valid layout regions, as text — stable across every scene in a
+    build, so it belongs in the cached system prefix rather than being
+    re-fetched per call.
+
+    **No character caps here any more.** They used to be restated in this file
+    as a hand-maintained table, and `prompts/build.py`'s `_limits_section` now
+    derives the same numbers from the Pydantic models — so the prompt carried
+    both, and the hand-written copy was the one that could drift. Deleting it
+    is the fix; a second copy of a constraint is the bug, not the redundancy.
+    """
     regions = "\n".join(
         f"- {layout}: {', '.join(sorted(cells))}"
         for layout, cells in sorted(LAYOUT_REGIONS.items())
     )
-    return f"{_CHARACTER_CAPS}\n\nLayouts and their valid regions:\n{regions}"
+    return f"Layouts and their valid regions:\n{regions}"

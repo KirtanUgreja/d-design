@@ -80,7 +80,12 @@ export function appHeaders(): Record<string, string> {
       "default-src 'self'",
       script,
       "style-src 'self'",
-      "img-src 'self' data:",
+      // The api origin, because that is where uploaded assets are served
+      // from — `api` owns object storage and there is exactly one storage
+      // path (docs/v1/plan/10-brand-and-uploads.md). One exact origin from
+      // configuration, not a wildcard, and it stays out of `publishedHeaders`:
+      // a published page still reaches nothing.
+      `img-src 'self' data: ${apiUrl}`.trim(),
       "font-src 'self'",
       `connect-src 'self' ${apiUrl}`.trim(),
       "frame-ancestors 'none'",

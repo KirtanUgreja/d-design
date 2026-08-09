@@ -7,6 +7,8 @@ data modules, same seam. `jobs` arrives in v3 and will sit next to this file.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from routes.assets import router as assets_router
+from routes.brand import router as brand_router
 from routes.director import router as director_router
 from routes.edit import router as edit_router
 from routes.experiences import router as experiences_router
@@ -47,3 +49,5 @@ app.include_router(intake_router)
 app.include_router(director_router)
 app.include_router(generation_router)
 app.include_router(edit_router)
+app.include_router(assets_router)
+app.include_router(brand_router)

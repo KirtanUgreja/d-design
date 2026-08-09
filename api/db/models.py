@@ -170,3 +170,35 @@ class BriefRow(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class AssetRow(Base):
+    """An uploaded or generated file (docs/v1/plan/10-brand-and-uploads.md).
+
+    Named `AssetRow`, not `Asset`, because `schema.experience.Asset` is the
+    Pydantic shape and having two `Asset`s in scope is how the wrong one gets
+    imported — the same reasoning as `BriefRow`.
+
+    `storage_key` is a server-generated UUID path and is unique. A user's own
+    filename never reaches this column, or any path: it is read for nothing and
+    discarded at the door (docs/security/content-and-web.md -> Uploads).
+    """
+
+    __tablename__ = "assets"
+
+    __mapper_args__ = {"eager_defaults": True}  # noqa: RUF012
+
+    id: Mapped[UUID] = mapped_column(
+        primary_key=True, server_default=text("gen_random_uuid()")
+    )
+    owner_id: Mapped[UUID] = mapped_column(index=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    storage_key: Mapped[str] = mapped_column(String(200), unique=True)
+    mime: Mapped[str] = mapped_column(String(128))
+    width: Mapped[int | None] = mapped_column(default=None)
+    height: Mapped[int | None] = mapped_column(default=None)
+    alt: Mapped[str | None] = mapped_column(String(160), default=None)
+    source: Mapped[str] = mapped_column(String(16))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )

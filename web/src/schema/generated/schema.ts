@@ -179,13 +179,13 @@ export const blockPatchSchema = z.strictObject({
 export type BlockPatch = z.infer<typeof blockPatchSchema>;
 
 export const brandKitSchema = z.strictObject({
-  displayFont: z.string().min(1).max(120),
+  displayFont: z.enum(['fraunces', 'inter']),
   id: z.string().min(1),
   logoAssetId: z.string().nullable().default(null).optional(),
   neutral: z.string().min(1).max(32),
   primary: z.string().min(1).max(32),
   secondary: z.string().min(1).max(32),
-  textFont: z.string().min(1).max(120),
+  textFont: z.enum(['fraunces', 'inter']),
 });
 
 export type BrandKit = z.infer<typeof brandKitSchema>;

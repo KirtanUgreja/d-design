@@ -35,17 +35,24 @@ The brand kit is a **v1 primitive**, not a feature ([../spec.md](../spec.md)). U
 ## Make
 
 ```
-src/features/brand/
-  index.ts
-  brand-kit.tsx          fonts by registry id, colours, logo
-  brand_data.py
-src/features/assets/
-  index.ts
-  upload.ts              the pipeline below
-  sanitize-svg.ts        the one place SVG is touched
+api/features/assets/
+  __init__.py
+  upload.py              the six controls below
+  sanitize_svg.py        the one place SVG is touched
   assets_data.py
-  assets.test.ts
+  test_upload.py · test_isolation.py
+api/features/brand/
+  __init__.py · brand_data.py
+api/routes/assets.py · api/routes/brand.py
+api/migrations/versions/0005_assets.py
+web/src/features/brand/     brand-kit.tsx — fonts by registry id, colours, contrast notice
+web/src/features/assets/    asset-list.tsx — every asset through `<img>`
+web/src/app/brand/
 ```
+
+**Paths corrected 2026-08-09**, the same drift [08-intake.md](08-intake.md) had: this section predates the Python backend move. The pipeline lives in `api` because `api` owns both the `assets` table and object storage (`api/lib/storage.py`, built in phase 00) — putting it in `web` would mean a second storage client, which the Search list above explicitly forbids.
+
+**`sharp` became Pillow** for the same reason: the re-encode has to happen where the bytes already are. **DOMPurify never arrived at all** — SVG sanitization is an allowlist over a `defusedxml` parse in Python, so the Verify list's "no DOMPurify 2.x anywhere in the tree" is satisfied by absence rather than by a version pin. Both are ledger lines in [../../coderules/dependencies.md](../../coderules/dependencies.md).
 
 ### Brand kit
 
@@ -155,15 +162,20 @@ Assets reach the pipeline only after verification, which is why phase 06 can tre
 | Stock images | Not in v1 |
 | Video transcoding | Uploads are accepted as-is with a size cap. Add transcoding when a real file forces it |
 | Asset library UI beyond a list | Cold 90% ([../../coderules/performance.md](../../coderules/performance.md)). Assemble it, do not craft it |
+| A quarantine prefix as a separate storage location | The pipeline never writes unverified bytes anywhere: `verify_and_reencode` is pure and returns bytes only after every control has passed, so there is no window in which raw input exists in storage at all. A quarantine prefix is the shape this takes once verification is a *separate process* — it arrives with the fetch worker, and until then it would be a prefix that nothing is ever written to |
+| Alt text on upload, and the logo picker | `Asset.alt` and `BrandKit.logoAssetId` are stored and read but nothing sets them yet. Trigger: the asset picker that phase 11's `Image` block needs anyway |
+| Serving assets from a second origin | `assets.<domain>` is a DNS and deploy change, not a code one. The single prefix is built now so the move is a host swap; `ponytail:` on the serving route |
 
 ---
 
 ## Exit gate
 
-- [ ] All six upload controls implemented, in the right order, each with a test
-- [ ] SVG sanitized **and** served via `<img>` — both layers, because either alone has failed in the wild
-- [ ] Brand contrast correction works and is visible
-- [ ] Fonts by registry id only
-- [ ] `assets` and `brands` isolated and tested
-- [ ] `sharp` and the sanitizer have ledger lines and `sharp` is in `onlyBuiltDependencies` by name
-- [ ] The in-process `ponytail:` comment exists and names the upgrade path
+- [x] All six upload controls implemented, in the right order, each with a test — `features/assets/test_upload.py`. The two that could pass while being wrong are asserted on **elapsed time**, not only on the rejection: a decompression bomb (19000×19000, 344KB on disk) and an entity-expansion bomb both have to be refused in under a second, because a version that decoded or expanded first would still return an error and would still be the bug
+- [x] SVG sanitized **and** served via `<img>` — both layers. The sanitizer is an allowlist over a `defusedxml` parse, and `asset-list.tsx` renders every asset through `<img>` with no `<object>`, no inline `<svg>` and no `dangerouslySetInnerHTML`. `next/image` is deliberately not used, and the lint disable says why: it would route an SVG through the optimizer, which is the CPU-exhaustion path [../../security/content-and-web.md](../../security/content-and-web.md) says to keep SVG out of
+- [x] Brand contrast correction works and is visible — `ContrastNotice`, three states (passes / lightened, with both swatches shown / cannot be made legible, which fails closed). Verified live: `#7a0000` renders "we lightened your primary for text so it reaches 4.5:1", showing `rgb(122 0 0) → rgb(244 0 0)`
+- [x] Fonts by registry id only — and not as a validation. `FontId` is a Pydantic `Literal`, so `BrandKit` has *no representation* for a family string: it generates into a Zod enum, the UI can only be a `<select>`, and the API answers a raw family with a 422 before the handler runs. Verified live with `Helvetica; }*{display:none}`
+- [x] `assets` and `brands` isolated and tested — `features/assets/test_isolation.py`, both tables, both directions: a second owner's rows are invisible, and the `with check` half refuses an insert owned by someone else
+- [x] Pillow, defusedxml and python-multipart have ledger lines, and the DOMPurify row records why there is no DOMPurify. **No `onlyBuiltDependencies` entry is needed** — that requirement was `sharp`'s native build, and Pillow ships wheels through `uv`
+- [x] The in-process `ponytail:` comment exists and names the upgrade path — top of `features/assets/upload.py`
+
+**Verified live 2026-08-09**, end to end: a JPEG with a `CanaryCam` EXIF tag uploads and is served with an empty EXIF block; an SVG carrying `onload=` and `<script>` is stored sanitized and renders as a logo through `<img>`; a PHP file named `../../../etc/passwd.png` is refused by its bytes; a 344KB decompression bomb is refused in 6ms; `../../../etc/passwd` against the serving route is a 404 because a storage key is matched against a column and never joined onto a path.

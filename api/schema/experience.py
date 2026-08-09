@@ -34,10 +34,30 @@ class Asset(Schema):
     source: Literal["upload", "generated"]
 
 
+# The fonts a brand may choose from, by id. **Never a user-supplied family
+# string** — docs/v1/plan/10-brand-and-uploads.md calls that "the most
+# natural-looking free-text token in the whole system and the one that most
+# easily carries a payload", and it is right: a family name is echoed into a
+# stylesheet, so free text there is a CSS injection with a friendly label on
+# it.
+#
+# A `Literal` rather than a validated string, because the two are not the same
+# control. A validated string rejects a bad value at runtime; a Literal means
+# `BrandKit` has no representation for one — it generates into a Zod enum and a
+# TypeScript union, so the editor cannot offer a text input for it and the API
+# cannot accept one. Same reasoning as `BriefDraft` having no `audience`.
+#
+# Adding a font is deliberately more than a row here: the family also needs a
+# self-hosted `@fontsource` import in `web/src/app/globals.css`, or the name
+# resolves to a system fallback. Two edits is the right amount of friction for
+# a decision that changes every published page.
+FontId = Literal["fraunces", "inter"]
+
+
 class BrandKit(Schema):
     id: str = Field(min_length=1)
-    display_font: str = Field(min_length=1, max_length=120)
-    text_font: str = Field(min_length=1, max_length=120)
+    display_font: FontId
+    text_font: FontId
     primary: str = Field(min_length=1, max_length=32)
     secondary: str = Field(min_length=1, max_length=32)
     neutral: str = Field(min_length=1, max_length=32)
