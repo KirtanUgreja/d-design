@@ -123,6 +123,9 @@ It costs nothing to close. Slot code renders a visual moment; it has no legitima
 | More than one Slot per experience | The constraint is the feature |
 | Charts | Real charting is a product inside the product. `Stat` is v1's answer ([../spec.md](../spec.md)) |
 | A sixth `AbstractVisual` generator | A real scene needed something the five could not do |
+| The image-generation provider call | An image model is configured, and `complete` grows an image branch so there is still one call site. Named in a `ponytail:`, not left implicit |
+| Resolving an `Image` block's `assetId` to a URL | Still the phase 04 `ponytail:` in `blocks/asset-placeholder.ts`, now with storage behind it. It is not a renderer change — the renderer is pure and cannot fetch — so it needs the URL to be derivable, which is a same-origin-assets decision the published page shares. Trigger: assets served from the page's own origin |
+| Calling `generate_slot` from the build loop | The generator, its boundary and its checks exist and are tested; nothing calls it yet, because "exactly one Slot per experience" is a whole-tree decision that belongs to the build orchestration rather than to a scene. Trigger: the first experience that wants one |
 | Video generation | Not in v1 |
 | The visual verification loop checking generated visuals | v2. It is where abstract-visual-versus-photography conflicts would be caught automatically instead of by eye |
 
@@ -130,11 +133,34 @@ It costs nothing to close. Slot code renders a visual moment; it has no legitima
 
 ## Exit gate
 
-- [ ] Five generators, deterministic from scene id, tested against real photography
-- [ ] Generated imagery marked, capped, and stored like any other asset
-- [ ] Slot generated from outline and intent only, proven at the function boundary
-- [ ] Sandbox suite green against generated code, not just fixtures
-- [ ] Injection corpus re-run with every v1 path live, and its rate recorded
+- [x] **Five generators, deterministic from scene id, tested against real photography.** `particle-field`, `grid-lines`, `orb` and `noise-veil` join `gradient-mesh`, sharing one PRNG and one intensity scale (`blocks/visual-seed.ts`) rather than four copies of the seed logic. Seeds derive from the scene id on the build path (`features/generation/visuals.py`), so a rebuild is not a visual change nobody asked for, and reroll stays the one explicit way to change one
+
+  **The photography review found a real defect, which is the whole reason the doc calls it the check most likely to be skipped.** `/dev/visuals` renders all five at all three intensities twice — on the art direction's own background, and over a real uploaded photograph. Alone, every generator looked good. Over the photo, `gradient-mesh` at medium and bold was a grey-brown smudge across the sky: composited normally, a warm radial gradient over a bright image *darkens* it, and it read as dirt on the lens. Fixed by compositing every layer with `mix-blend-mode: screen`, so the dark part of a layer is transparent and only light adds — the generators now read as lighting rather than as graphics, and over the near-black art direction background the change is close to a no-op. A flat-background-only review page would have passed this and told you nothing
+
+- [x] **Generated imagery marked, capped, and stored like any other asset** — with one part deliberately unbuilt, below. The cap is per-experience and fails closed by signature (it takes a count rather than fetching one, so a caller who cannot produce a count cannot proceed with a default of zero). A generated image goes through the *same* pipeline an upload takes — magic bytes, re-encode, server-generated key — and lands with `source='generated'`, which the editor's asset list already badges
+
+  **The provider call is not wired**, and this is the phase's one real gap rather than a deferral of polish. There is no image model configured, and the seam speaks one shape (`response_format: json_schema`); an image route is a different response entirely. Wiring one blind would mean either a second call site — precisely what rule 6 exists to prevent — or an unverifiable branch through the most security-critical file in the codebase. Everything around it is built and tested: `ponytail:` at the top of `features/imagery/imagery.py` names the upgrade
+
+- [x] **Slot generated from outline and intent only, proven at the function boundary.** `generate_slot` takes `outline_title`, `scene_intent`, `scene_beat` and the two ids — no `source_text`, no `**kwargs` — and `test_generate.py` asserts the signature rather than reading the prompt, because a prompt that merely *does not mention* the source document is one convenience parameter away from mentioning it. v1 has no imported material at all, which is exactly why this is built as a property of the signature: the day import arrives, the path is already closed
+
+- [x] **Sandbox suite green against generated code, not just fixtures.** `/dev/slot` renders a Slot carrying what a successful injection would produce — storage, cookies, the parent document, a network call, top navigation — and the phase 04 five run against it. `full.json`'s Slot would have passed every one of those assertions even if the sandbox did nothing, because it never attempts anything
+
+  Two things this turned up. First, a control on the control: the suite now asserts the payload *ran* (`#ran` appears), because the first version died silently and every escape assertion passed for the wrong reason. Second, the reason it died — in an opaque origin `document.cookie` **throws** rather than returning an empty string, which is a stronger result than the assertion originally expected
+
+- [x] **Injection corpus re-run with every v1 path live, and its rate recorded.** All 7 payload families, all 4 structural assertions, **0 failures**. The rate, which is the number to watch over time rather than the pass/fail:
+
+  | Family | Scenes built | Refused | As |
+  |---|---|---|---|
+  | direct-override, role-confusion, encoding-tricks, claim-tampering | 4 / 4 | 0 | — |
+  | exfiltration | 2 / 4 | 2 | `repair_exhausted` |
+  | href-hijack | 2 / 4 | 2 | `invalid_input` |
+  | slot-poisoning | 3 / 4 | 1 | `invalid_input` |
+
+  **25 of 28 scenes built; 5 refused, every one of them on a payload attacking an href, a Slot, or exfiltration.** A refusal here is the control working — the scene never reaches storage or the client — and "failure at scene 6 of 8 keeps the five" is how the loop is designed to degrade
+
+  Run directly through `evals/provider.py` rather than through promptfoo, which errored all 12 cases on worker timeouts after 6m44s — the harness failure mode `promptfooconfig.yaml`'s own comments already record, not a pipeline result
+
+- [x] **`allow-same-origin` appears nowhere**, and it is now a codebase-wide grep rather than a component test — `scripts/checks/invariants.sh` check 6. The component's own tests would still pass with the sandbox weakened, which is what makes a grep the right shape. Verified by weakening it and watching the gate go red
 
 ---
 

@@ -25,6 +25,7 @@ from features.generation.prompts.build import (
     build_system_prompt,
 )
 from features.generation.tools import get_brand_kit, list_assets
+from features.generation.visuals import with_derived_seeds
 from lib.result import Err, Result, err, ok
 from schema.brief import Brief
 from schema.scene import Scene
@@ -127,9 +128,17 @@ async def build_experience(
             yield BuildEvent(index=index, result=checked, repaired=False)
             continue
 
+        # After the checks, not before: the checks run against what the model
+        # actually produced, and this rewrites a field the model had no basis
+        # for choosing. An `AbstractVisual` seed is a number with no meaning to
+        # anything but a PRNG, so what comes back is arbitrary and differs on
+        # every call — which makes a rebuild of the same scene look different
+        # for no reason anyone can explain (docs/v1/plan/11-visuals-and-slot.md).
+        scene = with_derived_seeds(completion.value)
+
         yield BuildEvent(
             index=index,
-            result=ok(completion.value),
+            result=ok(scene),
             # A redraw counts as a repair: same meaning to the client, which
             # renders it as nothing at all, and the same thing worth counting
             # in `generations` — this is now the only place a truncation rate

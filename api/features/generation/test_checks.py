@@ -279,3 +279,44 @@ def test_characters_that_never_belong_in_copy_are_truncation(text: str) -> None:
     decoder filling space it should not have had, and both were observed live.
     """
     assert find_truncation(_scene_with(text, "body")) is not None
+
+
+def test_an_abstract_visual_carries_no_presentational_value() -> None:
+    """docs/v1/plan/11-visuals-and-slot.md's Verify: "the generator is an enum
+    and a number, so the block carries no values".
+
+    That is why `AbstractVisual` needs no XSS treatment and why a generator can
+    interpolate straight into a `data:` URI: nothing the AI writes reaches the
+    output. Asserted here rather than in the renderer's own tests because the
+    walker is Python-only — a TypeScript copy of it would be the drift the
+    codegen arrangement exists to prevent.
+    """
+    from schema.no_style import assert_no_presentational_values
+
+    scene = Scene.model_validate(
+        {
+            "id": "s1",
+            "intent": "hook",
+            "layout": "full-bleed",
+            "blocks": [
+                {
+                    "id": "b1",
+                    "region": "content",
+                    "props": {"type": "headline", "text": "Hi"},
+                },
+                {
+                    "id": "b2",
+                    "region": "bg",
+                    "props": {
+                        "type": "abstract-visual",
+                        "generator": "noise-veil",
+                        "intensity": "bold",
+                        "seed": 2147483647,
+                    },
+                },
+            ],
+        }
+    )
+    assert isinstance(
+        assert_no_presentational_values(scene.model_dump(by_alias=True)), Ok
+    )

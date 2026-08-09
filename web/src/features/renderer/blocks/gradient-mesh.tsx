@@ -1,37 +1,17 @@
-// The one AbstractVisual generator this phase ships (docs/v1/plan/04-renderer.md
-// — the other four land in phase 11). Deterministic: `seed` is the only input
-// besides the palette, so the same block renders the same visual forever and
-// no user string ever reaches the output (security/content-and-web.md).
+// The first AbstractVisual generator (docs/v1/plan/04-renderer.md); the other
+// four joined it in phase 11 and live in `visuals.tsx`. Deterministic: `seed`
+// is the only input besides the palette, so the same block renders the same
+// visual forever and no user string ever reaches the output
+// (security/content-and-web.md).
 
 import type { Color, Palette } from '@/features/art-direction';
 import { toCssColor } from '@/features/art-direction';
 
 import type { AbstractVisualProps } from './block-props';
-
-// mulberry32 — a tiny, fast, seedable PRNG. Not cryptographic, and does not
-// need to be: this seeds visual placement, not a security decision.
-function mulberry32(seed: number): () => number {
-  let a = seed;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-const BLOB_COUNT: Record<AbstractVisualProps['intensity'], number> = {
-  subtle: 2,
-  medium: 3,
-  bold: 4,
-};
-
-const OPACITY: Record<AbstractVisualProps['intensity'], number> = {
-  subtle: 0.25,
-  medium: 0.45,
-  bold: 0.7,
-};
+// The PRNG and the intensity scale moved to `visual-seed.ts` in phase 11, when
+// four more generators needed them. Five copies of a seeded random is exactly
+// the duplication that phase's Search section warns about.
+import { INTENSITY, mulberry32 } from './visual-seed';
 
 interface Blob {
   color: Color;
@@ -47,7 +27,7 @@ function blobs(
 ): Blob[] {
   const rand = mulberry32(seed);
   const colors = [palette.accent, palette.accentSoft, palette.bgElevated];
-  return Array.from({ length: BLOB_COUNT[intensity] }, (_, i) => ({
+  return Array.from({ length: INTENSITY[intensity].count }, (_, i) => ({
     color: colors[i % colors.length] ?? palette.accent,
     leftPct: 10 + rand() * 80,
     topPct: 10 + rand() * 80,
@@ -79,8 +59,18 @@ export function GradientMesh({
             transform: 'translate(-50%, -50%)',
             borderRadius: '50%',
             background: `radial-gradient(circle, ${toCssColor(b.color)} 0%, transparent 70%)`,
-            opacity: OPACITY[props.intensity],
+            opacity: INTENSITY[props.intensity].opacity,
             filter: 'blur(24px)',
+            // Light, not paint. Reviewed over a real photograph on
+            // /dev/visuals (docs/v1/plan/11-visuals-and-slot.md's "check most
+            // likely to be skipped") and this was the one generator that
+            // clearly failed it: composited normally, a warm radial gradient
+            // over a bright sky reads as a grey-brown smudge — dirt on the
+            // lens. `screen` makes the dark part of the gradient transparent
+            // so only the light adds, which is what "atmosphere" actually
+            // looks like. On the art direction's own dark background it is
+            // very nearly a no-op, so this costs the standalone case nothing.
+            mixBlendMode: 'screen',
           }}
         />
       ))}

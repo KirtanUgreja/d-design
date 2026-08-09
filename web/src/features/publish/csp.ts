@@ -141,7 +141,10 @@ export function devToolingHeaders(): Record<string, string> {
       "default-src 'self'",
       "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data:",
+      // The api origin serves uploaded assets, and `/dev/visuals` reviews the
+      // five generators *over a real photograph* — without this the photo half
+      // of that page is a black rectangle that looks like a passing review.
+      `img-src 'self' data: ${apiUrl}`.trim(),
       "font-src 'self'",
       `connect-src 'self' ${apiUrl}`.trim(),
       "frame-ancestors 'none'",

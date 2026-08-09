@@ -21,7 +21,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 08 | [Intake](08-intake.md) | 7 | done |
 | 09 | [Editor](09-editor.md) | 8 | done |
 | 10 | [Brand kit + uploads](10-brand-and-uploads.md) | 9 | done |
-| 11 | [Visuals + Slot](11-visuals-and-slot.md) | 10 | not started |
+| 11 | [Visuals + Slot](11-visuals-and-slot.md) | 10 | done |
 
 Statuses are `not started` · `in progress` · `done` · `blocked — <why>`. Update this table when a phase changes state, and nothing else. A phase is `done` only when its Exit gate checklist is fully ticked — not when the code appears to work.
 

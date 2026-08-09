@@ -84,3 +84,68 @@ test.describe('Slot sandbox', () => {
     expect(page.url()).toBe(urlBefore);
   });
 });
+
+// --- The same five, against generated-shaped code ---------------------------
+//
+// docs/v1/plan/11-visuals-and-slot.md's Verify asks for the phase 04 suite
+// re-run against a **generated** slot rather than a fixture, and the reason is
+// sharp: `full.json`'s Slot would pass every assertion above even if the
+// sandbox did nothing, because it never attempts anything. `/dev/slot` carries
+// the code a successful prompt injection would produce — storage, cookies, the
+// parent document, a network call, top navigation — so these measure the
+// sandbox rather than the politeness of the payload.
+//
+// `check_slot` (api/features/slot/generate.py) would refuse this code before
+// it reached a scene. That it is stopped here *anyway* is the layering the
+// whole Slot design rests on: the sandbox is the guarantee, and the check is
+// only there so a wasted generation does not ship as a blank frame.
+
+test.describe('Slot sandbox, against generated-shaped code', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/dev/slot');
+    await page.locator('iframe[title="Hostile generated slot"]').scrollIntoViewIfNeeded();
+  });
+
+  test('the hostile slot really does execute — otherwise this proves nothing', async ({
+    page,
+  }) => {
+    // The control on the control. If the payload silently failed to run, every
+    // assertion below would pass for the wrong reason.
+    await expect(slotFrame(page).locator('#ran')).toHaveText('slot ran');
+  });
+
+  test('every escape it attempts is refused', async ({ page }) => {
+    const frame = slotFrame(page);
+    await expect(frame.locator('#ran')).toBeAttached();
+    const escapes = await frame.evaluate(
+      () => (window as unknown as { __escapes: Record<string, unknown> }).__escapes,
+    );
+
+    // `'threw'` rather than `false`, and the distinction is the finding: in an
+    // opaque origin `document.cookie` throws rather than returning an empty
+    // string. An unguarded read of it killed the first version of this payload
+    // outright, which made the sandbox look perfect for the wrong reason.
+    expect(escapes['storage'], 'localStorage should throw').toBe('threw');
+    expect(escapes['cookie'], 'document.cookie should throw').toBe('threw');
+    expect(escapes['parent'], 'parent.document should throw').toBe('threw');
+  });
+
+  test('its network call fails and no request leaves', async ({ page }) => {
+    const requests: string[] = [];
+    page.on('request', (r) => requests.push(r.url()));
+    // A fresh navigation with the listener already attached — `reload()` left
+    // `slotFrame` holding the previous document's frame, which is detached by
+    // the time anything is evaluated on it.
+    await page.goto('/dev/slot');
+    await expect(page.locator('iframe[title="Hostile generated slot"]')).toBeAttached();
+    await expect.poll(() => slotFrame(page).locator('#ran').count()).toBeGreaterThan(0);
+    await page.waitForTimeout(500);
+    expect(requests.filter((u) => u.includes('example.com'))).toEqual([]);
+  });
+
+  test('its top-navigation attempt does not move the page', async ({ page }) => {
+    await expect(slotFrame(page).locator('#ran')).toBeAttached();
+    await page.waitForTimeout(300);
+    expect(page.url()).toContain('/dev/slot');
+  });
+});

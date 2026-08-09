@@ -106,5 +106,23 @@ if scan -qE "^[[:space:]]*import[[:space:]]+pickle|^[[:space:]]*from[[:space:]]+
   note "pickle or yaml.load in api/. Neither has a safe use here."
 fi
 
+# --- 6. The Slot sandbox ----------------------------------------------------
+# `allow-same-origin` alongside `allow-scripts` gives the frame the parent's
+# origin, and every guarantee the Slot rests on evaporates at once: storage,
+# cookies, parent access and credentialed requests all come back. It is one
+# word, in one attribute, and nothing else in the codebase would notice.
+#
+# docs/v1/plan/11-visuals-and-slot.md asks for this as a codebase-wide grep
+# rather than a component test, and the reason is that the component's own
+# tests would still pass — the sandbox would simply be weaker.
+#
+# Matches an *assignment* (`sandbox="…"`, `const SANDBOX = '…'`), not the bare
+# word. The first version of this check matched the word and immediately fired
+# on slot.tsx's own comment explaining why it must never be added — a check
+# that flags the documentation of a rule is a check people learn to ignore.
+if scan -qiE "sandbox[[:space:]]*=[[:space:]]*[\"'][^\"']*allow-same-origin" -- 'web/**/*.ts' 'web/**/*.tsx' 'web/**/*.html'; then
+  note "allow-same-origin appears in a sandbox attribute. With allow-scripts that is a same-origin iframe running generated code."
+fi
+
 [ "$fail" -eq 0 ] || printf '\ninvariants failed — see docs/coderules/tooling.md\n' >&2
 exit "$fail"

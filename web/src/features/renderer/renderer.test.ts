@@ -10,6 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
@@ -20,7 +21,9 @@ import {
 } from '@/features/art-direction';
 import { experienceSchema, sceneSchema } from '@/schema';
 
+import { AbstractVisualBlock } from './blocks/abstract-visual';
 import { isSafeHref } from './blocks/href-safety';
+import { seedFromId } from './blocks/visual-seed';
 import { SceneRenderer } from './scene-renderer';
 
 const FIXTURES = join(process.cwd(), '..', 'api', 'schema', 'fixtures');
@@ -180,4 +183,95 @@ describe('isSafeHref', () => {
   ])('rejects %s', (href) => {
     expect(isSafeHref(href)).toBe(false);
   });
+});
+
+// --- AbstractVisual: five generators, deterministic from a scene id --------
+
+describe('seedFromId', () => {
+  // The same table as `api/tests/test_visual_seed.py`. Two implementations of
+  // one hash — the server derives a seed during a build, the editor derives
+  // one for reroll, and the alternative to a second implementation is a
+  // network round trip for a number. Shared fixtures are what make the
+  // duplication survivable: change one side without the other and this turns
+  // red.
+  //
+  // The non-ASCII rows are the ones that matter. Python hashes UTF-8 bytes and
+  // the obvious TypeScript loop walks UTF-16 code units masked to a byte; the
+  // two agree on ASCII and diverge on everything else, which is exactly the
+  // bug these caught.
+  const FIXTURES: Record<string, number> = {
+    'scene-1': 860226354,
+    'scene-1-hook': 342120084,
+    s1: 139573449,
+    '': 18652614,
+    'a-much-longer-scene-identifier-than-usual': 1412726095,
+    '🎬': 1406619490,
+    'scène-é': 1341928168,
+  };
+
+  it('matches the Python implementation byte for byte', () => {
+    for (const [id, expected] of Object.entries(FIXTURES)) {
+      expect(seedFromId(id), id).toBe(expected);
+    }
+  });
+
+  it('always lands inside the schema’s seed range', () => {
+    for (const id of [...Object.keys(FIXTURES), 'x'.repeat(200)]) {
+      expect(seedFromId(id)).toBeGreaterThanOrEqual(0);
+      expect(seedFromId(id)).toBeLessThanOrEqual(2147483647);
+    }
+  });
+});
+
+describe('the five AbstractVisual generators', () => {
+  const GENERATORS = [
+    'gradient-mesh',
+    'particle-field',
+    'grid-lines',
+    'orb',
+    'noise-veil',
+  ] as const;
+  const INTENSITIES = ['subtle', 'medium', 'bold'] as const;
+
+  function visual(generator: string, intensity: string, seed = 42) {
+    return renderToStaticMarkup(
+      createElement(AbstractVisualBlock, {
+        props: { type: 'abstract-visual', generator, intensity, seed },
+        artDirection: CINEMATIC_DARK,
+      } as never),
+    );
+  }
+
+  it('all five render at all three intensities', () => {
+    for (const generator of GENERATORS) {
+      for (const intensity of INTENSITIES) {
+        const html = visual(generator, intensity);
+        expect(html.length, `${generator}/${intensity}`).toBeGreaterThan(50);
+        expect(html).toContain('aria-hidden');
+      }
+    }
+  });
+
+  it('the same seed gives byte-identical output', () => {
+    // Determinism across processes and across a restart is the whole promise:
+    // the published page and the edited page have to be the same page, and a
+    // visual that re-randomizes on render would break that quietly.
+    for (const generator of GENERATORS) {
+      expect(visual(generator, 'medium', 7)).toBe(visual(generator, 'medium', 7));
+    }
+  });
+
+  it('a different seed gives different output', () => {
+    for (const generator of GENERATORS) {
+      expect(visual(generator, 'medium', 7), generator).not.toBe(
+        visual(generator, 'medium', 8),
+      );
+    }
+  });
+
+  // Not asserted here: `assertNoPresentationalValues`. That walker lives in
+  // `api/schema/no_style.py` and has no TypeScript twin on purpose — a second
+  // copy of a rule is the drift the codegen arrangement exists to prevent. The
+  // generator-carries-no-values assertion is in
+  // `api/features/generation/test_checks.py`, where the walker is.
 });

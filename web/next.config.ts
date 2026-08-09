@@ -75,6 +75,12 @@ const nextConfig: NextConfig = {
       // `devToolingHeaders` docstring for the second, dev-mode-only break
       // this also fixes.
       { source: '/dev/director/:path*', headers: asHeaderList(devToolingHeaders()) },
+      // Same relaxation, different reason: this page loads an uploaded
+      // photograph from the api origin to review the AbstractVisual
+      // generators against it, and `publishedHeaders`'s `img-src 'self'`
+      // silently made that a black rectangle — a review page that looks like
+      // it passed.
+      { source: '/dev/visuals/:path*', headers: asHeaderList(devToolingHeaders()) },
     ];
   },
 };
