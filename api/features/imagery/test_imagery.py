@@ -121,3 +121,105 @@ async def test_bytes_that_are_not_an_image_are_refused_like_any_upload() -> None
         alt="x",
     )
     assert isinstance(result, Err)
+
+
+# --- the ban, for pixels ----------------------------------------------------
+
+
+def test_the_prompt_carries_the_no_gradient_ban() -> None:
+    """Rules 18 and 19 are greppable because they govern CSS. An image is
+    bytes, and `invariants.sh` cannot see a bloom inside a JPEG — so the prompt
+    is the only place the ban can be applied to generated imagery, and this is
+    the only test that can hold it there.
+
+    Not hypothetical. Asked only for "atmospheric background imagery", the
+    configured model's first live output was a soft blurred colour wash: a
+    gradient by any other name, and precisely the look the product bans
+    (verified 2026-08-09). With these terms it returned crumpled paper, burlap
+    and stone.
+    """
+    prompt = build_imagery_prompt(
+        scene_intent="hook", scene_beat="opening", tone="confident"
+    ).lower()
+    for banned in ("gradient", "glow", "bloom", "neon", "haze", "lens flare"):
+        assert f"no {banned}" in prompt or "no smooth colour ramps" in prompt, (
+            f"the prompt should forbid {banned}"
+        )
+    # And it has to ask for something, not only forbid things — a prompt that
+    # is all prohibitions gets a blank frame.
+    assert "tactile" in prompt
+    assert "grain" in prompt
+
+
+# --- the seam's image branch ------------------------------------------------
+
+
+def test_a_data_uri_becomes_bytes() -> None:
+    import base64 as _b64
+
+    from ai.complete import _data_uri_bytes
+
+    raw = b"\xff\xd8\xff\xe0not really a jpeg"
+    uri = "data:image/jpeg;base64," + _b64.b64encode(raw).decode()
+    result = _data_uri_bytes(uri)
+    assert isinstance(result, Ok)
+    assert result.value == (raw, "image/jpeg")
+
+
+@pytest.mark.parametrize(
+    "uri",
+    [
+        "https://evil.example/x.jpg",
+        "data:text/html;base64,PHNjcmlwdD4=",
+        "data:image/jpeg,notbase64",
+        "data:image/jpeg;base64,!!!!",
+    ],
+)
+def test_anything_that_is_not_a_base64_image_uri_is_refused(uri: str) -> None:
+    """A provider response is external input (rule 2). The failure mode of a
+    lenient parse is handing arbitrary bytes to the asset pipeline with a mime
+    type the provider chose — note the `text/html` case, which is the one that
+    would matter."""
+    from ai.complete import _data_uri_bytes
+
+    assert isinstance(_data_uri_bytes(uri), Err)
+
+
+def test_a_refusal_arrives_on_a_successful_response() -> None:
+    """The model declines by setting a field, not by failing — the same shape
+    the text path already normalizes."""
+    from ai.complete import _image_from_body
+
+    body: dict[str, object] = {
+        "choices": [{"message": {"refusal": "I can't help with that."}}]
+    }
+    result = _image_from_body(body)
+    assert isinstance(result, Err)
+    assert result.error.code == "refused"
+
+
+def test_only_the_first_image_is_taken() -> None:
+    """Verified live: one prompt came back with **two** images. One generation
+    has to consume one slot of the cap, so the rest are dropped."""
+    import base64 as _b64
+
+    from ai.complete import _image_from_body
+
+    def entry(byte: int) -> dict[str, object]:
+        uri = "data:image/png;base64," + _b64.b64encode(bytes([byte])).decode()
+        return {"type": "image_url", "image_url": {"url": uri}}
+
+    body: dict[str, object] = {
+        "choices": [{"message": {"images": [entry(1), entry(2)]}}]
+    }
+    result = _image_from_body(body)
+    assert isinstance(result, Ok)
+    assert result.value.data == bytes([1])
+
+
+def test_no_images_is_a_refusal_rather_than_a_crash() -> None:
+    from ai.complete import _image_from_body
+
+    empty: dict[str, object] = {"choices": [{"message": {}}]}
+    assert isinstance(_image_from_body(empty), Err)
+    assert isinstance(_image_from_body({}), Err)

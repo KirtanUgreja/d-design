@@ -25,7 +25,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 12 | [Seven primitives](12-primitives.md) | 13 | not started |
 | 13 | [The scene as a stage](13-scene-fit.md) | delta | **in progress** — fit shell done; viewport overflow deferred to after [00](00-foundations.md) |
 | 14 | [Texture without gradient](14-texture-without-gradient.md) | delta | **done** |
-| 15 | [Images that exist](15-images.md) | delta | **in progress** — resolution and treatment done; generation and `srcset` deferred on a provider decision |
+| 15 | [Images that exist](15-images.md) | delta | **in progress** — resolution, treatment and generation done; `srcset` deferred |
 | 16 | [Charts](16-charts.md) | delta | not started |
 | 17 | [Composition](17-composition.md) | delta | not started |
 

@@ -8,6 +8,7 @@ when the seam is what triggered it — the same circular-import shape
 the package.
 """
 
+from decimal import Decimal
 from uuid import UUID
 
 from db.tenant import as_user
@@ -44,6 +45,7 @@ async def log_generation(
     repaired: bool,
     error_class: str | None,
     duration_ms: int,
+    cost_usd: Decimal | None = None,
 ) -> None:
     async with as_user(owner_id) as session:
         await generation_data.record_generation(
@@ -60,4 +62,5 @@ async def log_generation(
             repaired=repaired,
             error_class=error_class,
             duration_ms=duration_ms,
+            cost_usd=cost_usd,
         )

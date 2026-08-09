@@ -10,9 +10,10 @@ it.
 """
 
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import Boolean, DateTime, Integer, String, func, text
+from sqlalchemy import Boolean, DateTime, Integer, Numeric, String, func, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -136,6 +137,13 @@ class Generation(Base):
     repaired: Mapped[bool] = mapped_column(Boolean, server_default=text("false"))
     error_class: Mapped[str | None] = mapped_column(String(64), default=None)
     duration_ms: Mapped[int] = mapped_column(Integer, server_default=text("0"))
+    # What the provider actually charged, from its own `usage.cost`. Nullable
+    # because a row written before 0007, or a call that failed before billing,
+    # has an unknown cost — and "unknown" must not read as "free". `Numeric`
+    # rather than a float: money in binary floating point accumulates error.
+    cost_usd: Mapped[Decimal | None] = mapped_column(
+        Numeric(precision=12, scale=6), default=None
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

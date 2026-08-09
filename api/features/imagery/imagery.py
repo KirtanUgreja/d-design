@@ -1,19 +1,17 @@
 """Generated imagery (docs/v1/plan/11-visuals-and-slot.md -> "2. Generated
-imagery").
+imagery"; wired in v2 phase 15, docs/v2/plan/15-images.md).
 
-**This module is the cap and the storage path. The provider call is not
-built.**
+v1 left this as the cap and the storage path with no provider call, and the
+`ponytail:` here named the upgrade path exactly: *set an image model, add an
+image branch inside `complete` so there is still one call site, and call it
+from `generate_image` below.* That is what happened, and nothing else in this
+file had to change.
 
-ponytail: there is no image model configured for this project — the seam
-(`ai/complete.py`) speaks one shape, `response_format: json_schema`, and an
-image route is a different response entirely. Wiring one would mean either a
-second call site, which is precisely what rule 6 exists to prevent, or a branch
-through the most security-critical file in the codebase for a feature that
-cannot be verified without a provider. Neither is worth doing blind. Upgrade
-path: set an image model, add an image branch *inside* `complete` so there is
-still one call site, and call it from `generate_image` below — everything
-around it (the cap, the prompt boundary, the verification, the `Asset` row) is
-built and tested here already.
+The provider is chosen on **reference-image support**, not fidelity, because
+holding one art direction's look across a whole deck is the hard part. Imagen
+shut down 2026-08-17, which took the obvious default off the table; Gemini 3
+Pro Image accepts up to 14 references and is reachable through the endpoint the
+seam already speaks.
 
 The three rules, none of which is about quality:
 
@@ -31,6 +29,7 @@ The three rules, none of which is about quality:
 
 from uuid import UUID
 
+from ai.complete import complete_image
 from db.tenant import as_user
 from features.assets import save_asset, store, verify_and_reencode
 from lib.result import Err, Result, err, ok
@@ -57,7 +56,17 @@ def build_imagery_prompt(*, scene_intent: str, scene_beat: str, tone: str) -> st
         f"The scene's intent is {scene_intent!r} and its beat is {scene_beat!r}. "
         f"The overall tone is {tone!r}. "
         "Texture, light and abstract environment only. "
-        "Do not depict any product, device, screen, logo, brand mark, or person."
+        "Do not depict any product, device, screen, logo, brand mark, or person. "
+        # The house ban, in the only place it can be enforced for pixels.
+        # Rules 18 and 19 are greppable because they are CSS; an image is
+        # bytes, and `invariants.sh` cannot see a bloom inside a JPEG. Asked
+        # only for "atmospheric background imagery", this model's first output
+        # was a soft blurred colour wash — a gradient by any other name, and
+        # the exact look the product bans. Verified 2026-08-09.
+        "Physical, tactile surfaces with visible structure and grain: paper, "
+        "ink, fibre, stone, weathered metal, fabric weave. Hard-edged forms. "
+        "No smooth colour ramps, no gradients, no soft glow, no bloom, no "
+        "haze, no lens flare, no neon, no out-of-focus blur across the frame."
     )
 
 
@@ -124,3 +133,47 @@ def check_generation_cap(existing_generated: int) -> Result[None]:
             f"which is the limit of {MAX_GENERATED_PER_EXPERIENCE}",
         )
     return ok(None)
+
+
+async def generate_image(
+    *,
+    owner_id: str,
+    experience_id: str,
+    existing_generated: int,
+    scene_intent: str,
+    scene_beat: str,
+    tone: str,
+    alt: str,
+) -> Result[Asset]:
+    """The whole path: cap, prompt, seam, verification, row.
+
+    The order is the point. The cap is checked *before* the call, so a refusal
+    costs nothing — and it is checked here rather than inside the seam because
+    it is a per-experience count this module owns, where the seam's quota is
+    per-owner. Both have to pass and both fail closed.
+
+    No retry. A failed image returns the error and leaves the caller to decide;
+    an automatic second attempt at $0.137 is the denial-of-wallet shape this
+    codebase caps everywhere else.
+    """
+    capped = check_generation_cap(existing_generated)
+    if isinstance(capped, Err):
+        return capped
+
+    generated = await complete_image(
+        prompt=build_imagery_prompt(
+            scene_intent=scene_intent, scene_beat=scene_beat, tone=tone
+        ),
+        owner_id=owner_id,
+        experience_id=experience_id,
+    )
+    if isinstance(generated, Err):
+        return generated
+
+    # The provider's bytes go through the upload pipeline unchanged — magic
+    # bytes, re-encode, server-generated key. `mime` from the response is
+    # deliberately *not* trusted here; `verify_and_reencode` decides what these
+    # bytes actually are, exactly as it does for a user's upload.
+    return await store_generated_image(
+        raw=generated.value.data, owner_id=owner_id, alt=alt
+    )

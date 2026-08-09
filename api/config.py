@@ -37,6 +37,10 @@ class Config:
     openrouter_model_director: str
     openrouter_model_build: str
     openrouter_model_edit: str
+    # Image generation. A different response shape entirely — no
+    # `response_format`, bytes come back as a data URI — but the same endpoint,
+    # the same key, and the same seam (docs/v2/plan/15-images.md).
+    openrouter_model_image: str
 
 
 @cache
@@ -54,4 +58,5 @@ def config() -> Config:
         openrouter_model_director=_require("OPENROUTER_MODEL_DIRECTOR"),
         openrouter_model_build=_require("OPENROUTER_MODEL_BUILD"),
         openrouter_model_edit=_require("OPENROUTER_MODEL_EDIT"),
+        openrouter_model_image=_require("OPENROUTER_MODEL_IMAGE"),
     )

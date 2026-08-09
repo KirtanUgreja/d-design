@@ -28,11 +28,14 @@ seam and the same two functions through `features.generation`'s public
 surface.
 """
 
+import base64
+import binascii
 import json
 import time
 from collections import Counter
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import Literal, cast
 
 import httpx
@@ -43,7 +46,7 @@ from features.generation.quota import check_quota_and_kill_switch, log_generatio
 from lib.result import Err, Result, err, ok
 from schema.json_schema import serialize_deterministically
 
-Phase = Literal["intake", "director", "build", "edit"]
+Phase = Literal["intake", "director", "build", "edit", "imagery"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -108,6 +111,7 @@ def _model_for_phase(phase: Phase) -> str:
         "director": c.openrouter_model_director,
         "build": c.openrouter_model_build,
         "edit": c.openrouter_model_edit,
+        "imagery": c.openrouter_model_image,
     }[phase]
 
 
@@ -224,6 +228,181 @@ def _payload(
             },
         },
     }
+
+
+# --- the image branch ------------------------------------------------------
+#
+# docs/v2/plan/15-images.md -> "Generation, through the one seam". An image
+# response is a different shape — no `response_format`, no schema, no repair
+# loop, and the bytes arrive as a data URI rather than as text — but it is the
+# same endpoint, the same key, the same quota check and the same log. Putting
+# it in this module is the whole point: rule 6 is about there being one place
+# that holds the provider, not one function signature.
+#
+# Not streamed, unlike `complete`. Streaming exists there so scenes can reach
+# the client as they land; a base64 blob has no partial value, and a stream
+# would only add a framing path to get wrong.
+#
+# Everything below was verified against a live call on 2026-08-09 rather than
+# read off a doc, and three details would have been wrong if guessed:
+#   * the model returns **two** images for one prompt, unasked. Taking `[0]`
+#     and ignoring the rest is what keeps one generation costing one slot of
+#     the cap
+#   * `modalities: ["image", "text"]` is required, or it answers in prose
+#   * the message carries its own `refusal` field, which arrives on a 200
+
+_IMAGE_TIMEOUT = httpx.Timeout(240.0, connect=10.0)
+
+
+@dataclass(frozen=True, slots=True)
+class GeneratedImage:
+    """Raw bytes and what they cost. The bytes go through the same
+    magic-byte verification an upload does before they become an `Asset` —
+    `features/imagery` owns that half."""
+
+    data: bytes
+    mime: str
+    cost_usd: Decimal | None
+
+
+def _data_uri_bytes(url: str) -> Result[tuple[bytes, str]]:
+    """`data:image/jpeg;base64,...` -> bytes and mime.
+
+    Parsed strictly rather than with a split-and-hope: this is a provider
+    response, which is external input (rule 2), and the failure mode of a
+    lenient parse here is handing arbitrary bytes to the asset pipeline with a
+    mime type the provider chose.
+    """
+    if not url.startswith("data:"):
+        return err("upstream_unavailable", "image url was not a data uri")
+    header, _, payload = url[len("data:") :].partition(",")
+    if not payload or not header.endswith(";base64"):
+        return err("upstream_unavailable", "image data uri was not base64")
+    mime = header[: -len(";base64")]
+    if not mime.startswith("image/"):
+        return err("upstream_unavailable", f"image data uri mime was {mime!r}")
+    try:
+        return ok((base64.b64decode(payload, validate=True), mime))
+    except (ValueError, binascii.Error) as e:
+        return err("upstream_unavailable", f"image data uri did not decode: {e}")
+
+
+async def complete_image(
+    *, prompt: str, owner_id: str, experience_id: str
+) -> Result[GeneratedImage]:
+    """One image, through the one seam.
+
+    No repair retry, deliberately. Repair exists because a *schema* can be
+    missed by a token or two and fixed by naming the field; there is no
+    equivalent for a picture, and a second call at $0.137 is the
+    denial-of-wallet this file already caps everywhere else. A bad image is a
+    reroll the user asks for, not one the server takes on its own.
+    """
+    quota = await check_quota_and_kill_switch(owner_id)
+    if isinstance(quota, Err):
+        return quota
+
+    model = _model_for_phase("imagery")
+    start = time.monotonic()
+    error_class: str | None = None
+    result: GeneratedImage | None = None
+    model_id = model
+    provider_route = "openrouter"
+    tokens_in = tokens_out = 0
+    cost: Decimal | None = None
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                _ENDPOINT,
+                json={
+                    "model": model,
+                    "modalities": ["image", "text"],
+                    "messages": [{"role": "user", "content": prompt}],
+                },
+                headers={"Authorization": f"Bearer {config().openrouter_api_key}"},
+                timeout=_IMAGE_TIMEOUT,
+            )
+            if response.status_code != 200:
+                error_class = "upstream_unavailable"
+                body = response.content[:200]
+                outcome: Result[GeneratedImage] = err(
+                    "upstream_unavailable",
+                    f"openrouter {response.status_code}: {body!r}",
+                )
+            else:
+                body_json = cast(dict[str, object], response.json())
+                model_id = cast(str, body_json.get("model", model))
+                provider_route = cast(str, body_json.get("provider", provider_route))
+                usage = body_json.get("usage")
+                if isinstance(usage, dict):
+                    tokens_in = cast(int, usage.get("prompt_tokens", 0))
+                    tokens_out = cast(int, usage.get("completion_tokens", 0))
+                    raw_cost = usage.get("cost")
+                    if isinstance(raw_cost, (int, float, str)):
+                        cost = Decimal(str(raw_cost))
+                outcome = _image_from_body(body_json)
+                if isinstance(outcome, Err):
+                    error_class = outcome.error.code
+                else:
+                    result = outcome.value
+    except (httpx.HTTPError, json.JSONDecodeError) as e:
+        error_class = "upstream_unavailable"
+        outcome = err("upstream_unavailable", f"{type(e).__name__}: {e}")
+
+    await log_generation(
+        owner_id=owner_id,
+        experience_id=experience_id,
+        phase="imagery",
+        model_id=model_id,
+        provider_route=provider_route,
+        tokens_in=tokens_in,
+        tokens_out=tokens_out,
+        cached_tokens=0,
+        calls=1,
+        repaired=False,
+        error_class=error_class,
+        duration_ms=int((time.monotonic() - start) * 1000),
+        # Billed whether or not usable bytes came back, so it is recorded on
+        # the failure path too. A spend you did not get an image for is the
+        # one you most want to see.
+        cost_usd=cost,
+    )
+
+    if result is not None:
+        return ok(GeneratedImage(data=result.data, mime=result.mime, cost_usd=cost))
+    return outcome
+
+
+def _image_from_body(body: dict[str, object]) -> Result[GeneratedImage]:
+    choices = cast(list[dict[str, object]], body.get("choices") or [])
+    if not choices:
+        return err("upstream_unavailable", "image response had no choices")
+    message = cast(dict[str, object], choices[0].get("message") or {})
+
+    # A decline arrives as a successful response here exactly as it does for
+    # text, and this model carries its own field for it.
+    refusal = message.get("refusal")
+    if isinstance(refusal, str) and refusal.strip():
+        return err("refused", "the model declined the image request")
+
+    images = cast(list[dict[str, object]], message.get("images") or [])
+    if not images:
+        return err("refused", "the model returned no image")
+
+    # `[0]`, and the rest are dropped on purpose — see the note above: one
+    # prompt came back with two pictures, and one generation must consume one
+    # slot of `MAX_GENERATED_PER_EXPERIENCE`.
+    image_url = cast(dict[str, object], images[0].get("image_url") or {})
+    url = image_url.get("url")
+    if not isinstance(url, str):
+        return err("upstream_unavailable", "image entry carried no url")
+
+    decoded = _data_uri_bytes(url)
+    if isinstance(decoded, Err):
+        return decoded
+    data, mime = decoded.value
+    return ok(GeneratedImage(data=data, mime=mime, cost_usd=None))
 
 
 class _RawCompletion(BaseModel):

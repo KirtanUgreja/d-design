@@ -5,6 +5,7 @@ Future phases (intake, director, edit) import `consume_quota`/
 cross-feature access happens (docs/coderules/structure.md).
 """
 
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import update
@@ -48,6 +49,7 @@ async def record_generation(
     repaired: bool,
     error_class: str | None,
     duration_ms: int,
+    cost_usd: Decimal | None = None,
 ) -> None:
     """Metadata only. No prompt, no output, no brief content — ever
     (docs/v1/ai-pipeline.md -> "generations")."""
@@ -65,6 +67,7 @@ async def record_generation(
             repaired=repaired,
             error_class=error_class,
             duration_ms=duration_ms,
+            cost_usd=cost_usd,
         )
     )
     await session.flush()

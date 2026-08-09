@@ -43,10 +43,22 @@ export function ImageBlock({
   return (
     <div
       style={{
-        position: 'relative',
+        // A bleed image fills its frame, and `blockSize: '100%'` does not get
+        // it there: every layout puts blocks inside `RegionBlocks`, an
+        // auto-height flex column, and a percentage height against an auto
+        // parent resolves to auto — so the image quietly fell back to its own
+        // aspect ratio and left a band of ground below it. Found by looking at
+        // a full-bleed hero, not by any assertion.
+        //
+        // Absolute positioning skips the intermediate wrappers and fills the
+        // nearest positioned ancestor, which is `full-bleed`'s own `inset: 0`
+        // bg region, and failing that the scene `<section>`. Both are the
+        // right answer for a block whose whole meaning is "cover the frame".
+        ...(bleed
+          ? { position: 'absolute' as const, inset: 0 }
+          : { position: 'relative' as const }),
         overflow: 'hidden',
-        inlineSize: '100%',
-        blockSize: bleed ? '100%' : undefined,
+        inlineSize: bleed ? undefined : '100%',
         aspectRatio: ratio,
         borderRadius: `var(--image-edge)`,
         ...toneSurface(artDirection),

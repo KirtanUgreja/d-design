@@ -218,24 +218,44 @@ Three things this phase adds to it:
 - [x] Zero layout shift on a viewport-fit scene — by the art direction's `ratios` token rather than by intrinsic dimensions; see the deviation below
 - [x] Both shipped art directions declare an `ImageTreatment`, and one photograph reads two ways with no re-encode and no second asset row. The third way waits on `bold-brutalist` in [04](04-three-art-directions.md)
 - [x] Duotone, overlay, frame and veil are all token-driven and gradient-free
-- [ ] **Generation is not built.** Deferred deliberately, below
+- [x] Generation runs through the single seam, capped, marked, and with the prompt boundary asserted at the signature
 - [x] `asset-placeholder.ts`'s `ponytail:` is deleted; the file survives as the resolve-failure state, which is what the note predicted
 - [x] The gate is green
-- [ ] Two rendition sizes and a `srcset` — deferred with generation
+- [ ] Two rendition sizes and a `srcset` — **still deferred**, see below
 
-## What is deferred, and why
+## Generation, and how the provider question actually resolved
 
-**Image generation.** Everything around it exists and is tested — the cap that fails closed, the prompt builder with no access to key messages, magic-byte verification, re-encode, the `Asset` row, the editor badge. What is missing is a provider decision that cannot be made from inside the repo: this phase's own Search section records that Google's Imagen shut down on 2026-08-17, so the obvious default is a dead path, and the selection criterion is reference-image support rather than fidelity. Wiring a provider blind is what v1 declined to do for the same reason, and it was right.
+It was deferred once on the grounds that the provider decision *"cannot be made from inside the repo"*. That was wrong, and cheaply so: the repo already holds an OpenRouter key, and OpenRouter's `/models` endpoint answers the question directly. Eleven models serve image output through the **same OpenAI-compatible endpoint the seam already speaks** — so the choice took one query, and `google/gemini-3-pro-image` is the one this phase's own criterion already named (14 reference images; reference support over fidelity, because holding one art direction across a deck is the hard part).
 
-The two things that make the product look different — **resolution and treatment** — are built. The phase said as much before it started: *"Resolution and treatment are the ones that change how the product looks. Generation is the one that gets talked about."*
+No new dependency, no second client, no provider SDK in a feature module.
 
-**Two renditions and `srcset`** go with it: both are ingest-pipeline work, and a second rendition of an image nobody can generate yet is speculative.
+**Everything below was verified against a live call rather than a doc, and three details would have been wrong if guessed:**
+
+| | |
+|---|---|
+| It returns **two** images for one prompt, unasked | `[0]` is taken and the rest dropped, or one generation quietly consumes two slots of the cap |
+| `modalities: ["image", "text"]` is required | Without it the model answers in prose |
+| The message carries its own `refusal` field | A decline arrives on a 200, exactly as the text path already normalizes |
+
+**Cost is no longer a projection: $0.137 per image.** At `MAX_GENERATED_PER_EXPERIENCE = 4` that is ~$0.55 of imagery per experience against fractions of a cent for all four text phases together — the moment [../../v1/ai-pipeline.md](../../v1/ai-pipeline.md) predicted, arriving on schedule. Tokens cannot express it, so migration `0007` adds `generations.cost_usd`, read from the provider's own `usage.cost`, `Numeric` not float, nullable so "unmeasured" never reads as "free", and recorded on the failure path too — a spend with no image is the one you most want to see.
+
+**Still deferred: two renditions and `srcset`.** Ingest-pipeline work, unblocked by nothing here, and genuinely not yet needed at one local user.
+
+### The finding that matters most
+
+**Rules 18 and 19 are enforceable on CSS and unenforceable on pixels, and the image model walks straight through the gap.** Asked only for *"atmospheric background imagery"* — the prompt v1 shipped — the model returned a soft blurred colour wash. A gradient by any other name, and precisely the look the product bans, arriving as bytes where `invariants.sh` cannot see it.
+
+The prompt is the only control that exists for this, so it now carries the ban: tactile surfaces with visible structure and grain, hard-edged forms, and an explicit refusal of ramps, glow, bloom, haze, flare and neon. Same model, same phase, only the prompt changed — the next call returned crumpled paper, burlap and stone. `test_the_prompt_carries_the_no_gradient_ban` is what holds it there.
+
+Worth generalising: **every greppable rule in this codebase governs code, and generation is the door that lets a banned property back in as content.** Phase [16](16-charts.md) should expect the same shape.
 
 ## What the build found
 
 **The duotone destroyed the photograph, and only looking at it showed that.** The first implementation stacked a `multiply` plate in the ground colour *and* a `screen` plate in the accent on top of an opaque image. Every midtone was crushed and the result was a flat olive rectangle with no photograph left in it. That is not how a duotone is built: the canonical construction paints the *wrapper* in the highlight colour and multiplies the greyscaled image onto it, then lifts the blacks with a single `screen` plate. Two colours, two blend modes, and the pixels do the shaping instead of being covered up.
 
 **The veil was being applied to every image.** It exists for copy sitting on media, and `cinematic-dark` sets it to 0.45 — which, on a plate with no text on it, is a 45% fog. It is now scoped to `bleed`, the treatment where content actually sits over the image.
+
+**A `bleed` image did not bleed.** Every layout puts blocks inside `RegionBlocks`, an auto-height flex column, so `blockSize: '100%'` resolved against `auto` and the image fell back to its own aspect ratio — leaving a band of ground under a full-bleed hero. It is absolutely positioned now, which skips the intermediate wrappers and fills the nearest positioned ancestor. Found by looking at a rendered hero; no assertion in the repo covered it.
 
 **`invariants.sh` never checked new files.** `git ls-files` lists only *tracked* paths, so `treatment.tsx` — which contains a shadow — passed check 9 by not existing yet. New code is precisely where a violation arrives. `mine()` now passes `--others --exclude-standard`. This is the second fail-open found in that file in two phases, and both were found the same way: by breaking a check on purpose and watching nothing happen.
 
