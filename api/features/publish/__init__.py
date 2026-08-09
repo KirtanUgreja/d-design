@@ -37,11 +37,27 @@ def _to_schema(row: ExperienceRow) -> Experience:
     )
 
 
+def _proposed_id(experience_id: str) -> UUID | None:
+    """The caller's id if it is a well-formed UUID, otherwise `None` — meaning
+    the server picks one.
+
+    Not a validation error, because the fixtures this feature is tested against
+    carry human ids ("exp-full", "exp-minimal") and always have. The rule is
+    "an id we can honour, we honour"; the shape of `Experience.id` is `str`, so
+    anything else is a name the database has no column for. See
+    `publish_data.create` for why a caller proposes one at all."""
+    try:
+        return UUID(experience_id)
+    except ValueError:
+        return None
+
+
 async def create_experience(user_id: str, experience: Experience) -> Result[Experience]:
     async with as_user(user_id) as session:
         row = await publish_data.create(
             session,
             owner_id=UUID(user_id),
+            experience_id=_proposed_id(experience.id),
             title=experience.title,
             mode=experience.mode,
             brand_id=experience.brand_id,

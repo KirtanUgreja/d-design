@@ -18,20 +18,38 @@
 // list of events, and the outline gate is still `OutlineEditor`'s plain
 // markup. Both are phase-06/07 deferrals already recorded in those phases.
 
+import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
+import { loadBrand } from '@/features/brand';
 import { directBrief, OutlineEditor } from '@/features/director';
-import { streamBuild, type GenerationEvent } from '@/features/generation';
+import {
+  saveBuiltExperience,
+  streamBuild,
+  type GenerationEvent,
+} from '@/features/generation';
 import { IntakeScreen } from '@/features/intake';
-import type { Brief, Outline } from '@/schema';
+import type { Brief, Outline, Scene } from '@/schema';
 
 type Stage =
   | { kind: 'intake' }
   | { kind: 'directing' }
   | { kind: 'outline'; outline: Outline }
-  | { kind: 'building'; events: GenerationEvent[] };
+  | { kind: 'building'; events: GenerationEvent[]; saving: boolean };
+
+/** What to call a scene in the watch list. Its headline if it has one — the
+ * copy is the only part a person recognises — and its narrative intent
+ * otherwise, for the scenes that are a photograph or a Slot and have no
+ * words at all. */
+function sceneLabel(scene: Scene): string {
+  for (const block of scene.blocks) {
+    if (block.props.type === 'headline') return block.props.text;
+  }
+  return scene.intent;
+}
 
 export function NewExperience() {
+  const router = useRouter();
   const [experienceId] = useState(() => crypto.randomUUID());
   // Held above the stage: the Brief outlives Intake. Build needs it, and the
   // approved-claims record is not something the user passes through and leaves
@@ -54,12 +72,43 @@ export function NewExperience() {
 
   async function runBuild(approved: Outline) {
     if (!brief) return;
-    setStage({ kind: 'building', events: [] });
+    setStage({ kind: 'building', events: [], saving: false });
+    setError(null);
+
+    // Collected here rather than derived from `events` at the end: the stage's
+    // event list is what the watch renders, and reading a render list back as
+    // a data structure is how the two quietly diverge.
+    const scenes: Scene[] = [];
     for await (const event of streamBuild(experienceId, { brief, outline: approved })) {
+      if (event.type === 'scene') scenes.push(event.scene);
       setStage((prev) =>
         prev.kind === 'building' ? { ...prev, events: [...prev.events, event] } : prev,
       );
     }
+    await save(approved.title, scenes);
+  }
+
+  // The step that turns a finished stream into something with a URL. Until the
+  // acceptance pass this did not exist and the scenes were simply dropped on
+  // the floor when the page unmounted (docs/v1/plan/README.md -> "v1 is done
+  // when": every checkbox after "Build streams 8 scenes" depends on this).
+  async function save(title: string, scenes: Scene[]) {
+    setStage((prev) => (prev.kind === 'building' ? { ...prev, saving: true } : prev));
+
+    // A brand kit is legitimately absent for a new user — it is asked for
+    // second, after the first artifact exists (docs/v1/plan/10-brand-and-uploads.md).
+    // `brandId` is opaque text on the row, so "default" is a real value and not
+    // a placeholder that breaks a join.
+    const brand = await loadBrand();
+    const brandId = brand.ok ? brand.value.id : 'default';
+
+    const saved = await saveBuiltExperience(experienceId, { title, scenes, brandId });
+    if (!saved.ok) {
+      setStage((prev) => (prev.kind === 'building' ? { ...prev, saving: false } : prev));
+      setError(`${saved.error.code}: ${saved.error.message}`);
+      return;
+    }
+    router.push(`/edit/${saved.value.id}`);
   }
 
   return (
@@ -106,9 +155,47 @@ export function NewExperience() {
       )}
 
       {stage.kind === 'building' && (
-        <pre className="px-6 py-16 text-xs text-neutral-400">
-          {JSON.stringify(stage.events, null, 2)}
-        </pre>
+        <div className="mx-auto max-w-2xl px-6 py-16">
+          <h2 className="text-sm font-medium text-neutral-300">
+            {stage.saving ? 'Saving…' : 'Building the experience…'}
+          </h2>
+          {/* Still not the generation watch the design doc asks for — that is
+              phase 06's recorded deferral and it is a motion-design job, not a
+              markup one. This is the honest interim: one line per scene as it
+              lands, in the order the outline promised, so the forty seconds
+              read as progress rather than as a stalled page. The raw event
+              dump this replaced was neither. */}
+          <ol className="mt-4 space-y-2">
+            {stage.events.map((event, i) => (
+              <li key={i} className="text-sm">
+                {event.type === 'scene' && (
+                  <span className="text-neutral-200">
+                    <span className="text-neutral-500">{event.index + 1}.</span>{' '}
+                    {sceneLabel(event.scene)}
+                  </span>
+                )}
+                {event.type === 'repair' && (
+                  <span className="text-neutral-500">
+                    scene {event.index + 1} needed a second pass
+                  </span>
+                )}
+                {event.type === 'error' && (
+                  <span className="text-red-400">
+                    scene {event.index + 1} could not be built ({event.code})
+                  </span>
+                )}
+                {event.type === 'done' && (
+                  <span className="text-neutral-400">{event.count} scenes built</span>
+                )}
+              </li>
+            ))}
+          </ol>
+          {error && (
+            <p role="alert" className="mt-6 text-sm text-red-400">
+              {error}
+            </p>
+          )}
+        </div>
       )}
     </main>
   );

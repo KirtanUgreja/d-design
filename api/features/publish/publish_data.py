@@ -35,13 +35,32 @@ async def create(
     session: AsyncSession,
     *,
     owner_id: UUID,
+    experience_id: UUID | None,
     title: str,
     mode: str,
     brand_id: str | None,
     art_direction: str,
     scenes: list[dict[str, object]],
 ) -> Experience:
+    """`experience_id` is the caller's proposal, and `None` means "you pick" —
+    the column's `gen_random_uuid()` default then applies, which is why it is
+    omitted from the kwargs rather than passed as `None` (that would insert a
+    literal NULL into a primary key).
+
+    Why a caller may propose one at all: `/new` mints a UUID before Intake and
+    every `generations` row for that session — Intake's, the Director's, Build's
+    eight — is written against it. If the finished experience then got a fresh
+    server id, `generations.experience_id` would point at nothing and the log
+    could never answer the one question it exists to answer, which is what an
+    experience cost to make.
+
+    ponytail: this is safe while there is one user. With real tenants, an id a
+    client proposes is an existence oracle — insert succeeds or hits a unique
+    violation — so this becomes server-generated again and the build session
+    gets its own column. Trigger: the first non-local user.
+    """
     row = Experience(
+        **({} if experience_id is None else {"id": experience_id}),
         owner_id=owner_id,
         title=title,
         mode=mode,

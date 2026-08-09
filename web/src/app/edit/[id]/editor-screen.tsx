@@ -17,12 +17,22 @@ import {
 } from '@/features/editor';
 import type { EditResult, Scene } from '@/schema';
 
+import { publishEdited, unpublishEdited } from './actions';
+import { PublishBar } from './publish-bar';
+
 export function EditorScreen({
   experienceId,
+  title,
   initialScenes,
+  stored,
 }: {
   experienceId: string;
+  title: string;
   initialScenes: Scene[];
+  /** False when this is the phase 01 fixture rather than a stored experience —
+   * see the route. Publishing something `api` has never heard of cannot work,
+   * and the bar says so up front rather than at the click. */
+  stored: boolean;
 }) {
   // `useState`'s initializer, not an effect: the store is seeded once, on the
   // first render, and a reset in an effect would fight an in-progress edit on
@@ -100,9 +110,38 @@ export function EditorScreen({
     [runEdit],
   );
 
+  const [publishing, setPublishing] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
+  const runPublish = useCallback(async () => {
+    setPublishing(true);
+    setPublishError(null);
+    // The store's scenes, read at click time rather than from the render's
+    // closure: the last keystroke before the click has to be in what ships.
+    const result = await publishEdited(experienceId, useEditor.getState().scenes);
+    setPublishing(false);
+    if (!result.ok) {
+      setPublishError(result.error.message || result.error.code);
+      return;
+    }
+    setRevealed(true);
+  }, [experienceId]);
+
+  const runUnpublish = useCallback(async () => {
+    setPublishing(true);
+    const result = await unpublishEdited(experienceId);
+    setPublishing(false);
+    if (!result.ok) {
+      setPublishError(result.error.message || result.error.code);
+      return;
+    }
+    setRevealed(false);
+  }, [experienceId]);
+
   return (
     <main
-      className="flex h-screen bg-neutral-950 text-neutral-100"
+      className="flex h-screen flex-col bg-neutral-950 text-neutral-100"
       onKeyDown={(e) => {
         if (!(e.metaKey || e.ctrlKey) || e.key !== 'z') return;
         e.preventDefault();
@@ -111,47 +150,62 @@ export function EditorScreen({
       }}
       tabIndex={-1}
     >
-      <Canvas
-        scenes={scenes}
-        artDirection={CINEMATIC_DARK}
-        motion={CINEMATIC_MOTION}
-        selection={selection}
-        onSelect={(next) => {
-          select(next);
-          setResult(null);
-          setEditError(null);
-        }}
-      >
-        <ElementPrompt
-          onSubmit={submitEdit}
-          pending={pending}
-          result={result}
-          error={editError}
-        />
-      </Canvas>
+      <PublishBar
+        id={experienceId}
+        title={title}
+        publishable={stored}
+        published={revealed}
+        pending={publishing}
+        error={publishError}
+        onPublish={() => void runPublish()}
+        onUnpublish={() => void runUnpublish()}
+        onDismiss={() => setRevealed(false)}
+      />
 
-      {block && selection ? (
-        <PropertyPanel
-          block={block}
-          sceneId={selection.sceneId}
-          onPatch={patch}
-          onReachForStyling={() => setStylingReaches((n) => n + 1)}
-          error={error}
-        />
-      ) : (
-        <aside className="w-72 shrink-0 border-l border-neutral-800 p-4 text-xs text-neutral-500">
-          Select anything on the page to edit it.
-          {/* ponytail: the styling-reach count is state, not an event sink.
+      {/* The row the bar sits above: canvas and panel, filling what is left. */}
+      <div className="flex min-h-0 flex-1">
+        <Canvas
+          scenes={scenes}
+          artDirection={CINEMATIC_DARK}
+          motion={CINEMATIC_MOTION}
+          selection={selection}
+          onSelect={(next) => {
+            select(next);
+            setResult(null);
+            setEditError(null);
+          }}
+        >
+          <ElementPrompt
+            onSubmit={submitEdit}
+            pending={pending}
+            result={result}
+            error={editError}
+          />
+        </Canvas>
+
+        {block && selection ? (
+          <PropertyPanel
+            block={block}
+            sceneId={selection.sceneId}
+            onPatch={patch}
+            onReachForStyling={() => setStylingReaches((n) => n + 1)}
+            error={error}
+          />
+        ) : (
+          <aside className="w-72 shrink-0 border-l border-neutral-800 p-4 text-xs text-neutral-500">
+            Select anything on the page to edit it.
+            {/* ponytail: the styling-reach count is state, not an event sink.
               The phase doc wants it counted — "the cheapest high-signal metric
               in the product" — and there is no analytics transport in v1, so it
               is surfaced here rather than dropped. Upgrade: the v3 beacon. */}
-          {stylingReaches > 0 && (
-            <span className="mt-2 block">
-              styling-control reaches this session: {stylingReaches}
-            </span>
-          )}
-        </aside>
-      )}
+            {stylingReaches > 0 && (
+              <span className="mt-2 block">
+                styling-control reaches this session: {stylingReaches}
+              </span>
+            )}
+          </aside>
+        )}
+      </div>
     </main>
   );
 }

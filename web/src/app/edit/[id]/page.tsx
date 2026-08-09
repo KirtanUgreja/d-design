@@ -1,27 +1,45 @@
-// The editor's route. Reads the published artifact if there is one and falls
-// back to the phase 01 `full` fixture, so the editor is reachable and
-// judgeable without running a generation first — the same reason
-// /dev/primitives reads fixtures rather than calling the pipeline.
+// The editor's route. Loads the experience by id from `api`, and falls back to
+// the phase 01 `full` fixture when there is none — so the editor stays
+// reachable and judgeable without paying for a generation first, the same
+// reason /dev/primitives reads fixtures rather than calling the pipeline.
 //
-// ponytail: experiences live in `api` and the editor should load one by id
-// through it. That needs a scenes-by-experience read the API does not expose
-// yet (publish stores a whole `Experience`; Build streams scenes to the client
-// and never persists them on its own). Upgrade: a GET that returns the built
-// scenes, at which point this file loses its fixture branch.
+// The fixture branch was the *only* branch until the acceptance pass: nothing
+// persisted a built experience, so there was no id that could resolve. `/new`
+// now creates one and redirects here, which is what makes "build → edit →
+// publish" a single path rather than three demos.
+//
+// A fixture-loaded editor cannot publish — `saveScenes` 404s on an id `api`
+// has never seen — and that is the correct outcome rather than a gap. The
+// screen is told which one it is holding so it can say so instead of failing
+// at the click.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { readExperience } from '@/features/publish';
 import { experienceSchema } from '@/schema';
 
 import { EditorScreen } from './editor-screen';
 
 const FIXTURES = join(process.cwd(), '..', 'api', 'schema', 'fixtures');
 
-export default async function EditPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const experience = experienceSchema.parse(
+function fixture() {
+  return experienceSchema.parse(
     JSON.parse(readFileSync(join(FIXTURES, 'full.json'), 'utf8')),
   );
-  return <EditorScreen experienceId={id} initialScenes={experience.scenes} />;
+}
+
+export default async function EditPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const loaded = await readExperience(id);
+  const experience = loaded.ok ? loaded.value : fixture();
+
+  return (
+    <EditorScreen
+      experienceId={id}
+      title={experience.title}
+      initialScenes={experience.scenes}
+      stored={loaded.ok}
+    />
+  );
 }

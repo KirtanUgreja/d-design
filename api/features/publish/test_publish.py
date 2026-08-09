@@ -58,6 +58,27 @@ async def test_create_and_get_round_trip() -> None:
     assert fetched.value.title == "Minimal Experience"
 
 
+async def test_a_uuid_the_caller_proposes_becomes_the_row_id() -> None:
+    """`/new` writes every `generations` row for a build session against an id
+    it mints before Intake, then creates the experience under that same id. If
+    the server silently reassigned it, the cost log for a build could never be
+    joined to what it built — which is the log's only purpose."""
+    proposed = "11111111-2222-4333-8444-555555555555"
+    created = await create_experience(
+        USER_A, _minimal().model_copy(update={"id": proposed})
+    )
+    assert isinstance(created, Ok)
+    assert created.value.id == proposed
+
+
+async def test_a_non_uuid_id_is_ignored_rather_than_rejected() -> None:
+    """The fixtures carry human ids ("exp-minimal") and always have. An id the
+    id column has no representation for is a name, not an error."""
+    created = await create_experience(USER_A, _minimal())
+    assert isinstance(created, Ok)
+    assert created.value.id != "exp-minimal"
+
+
 async def test_get_unknown_id_is_not_found() -> None:
     result = await get_experience(USER_A, "00000000-0000-0000-0000-000000000000")
     assert isinstance(result, Err)

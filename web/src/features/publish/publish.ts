@@ -14,7 +14,7 @@ import { z } from 'zod';
 
 import { err, ok, type Result } from '@/lib/result';
 import { deleteArtifact, readArtifact, writeArtifact } from '@/lib/storage';
-import { experienceSchema, sceneSchema } from '@/schema';
+import { experienceSchema, sceneSchema, type Experience, type Scene } from '@/schema';
 
 const publishedArtifactSchema = z.strictObject({
   title: z.string(),
@@ -32,19 +32,74 @@ function apiUrl(): string {
   return url;
 }
 
-export async function publishExperience(id: string): Promise<Result<void>> {
-  const getRes = await fetch(`${apiUrl()}/experiences/${id}`, { cache: 'no-store' });
-  if (!getRes.ok) {
+/** The one read of a stored `Experience`, shared by everything on this side
+ * that needs one — publishing, saving an edit, and the editor route loading
+ * the thing it is about to edit.
+ *
+ * Extracted in the acceptance pass, when the editor stopped reading a fixture:
+ * three call sites were about to spell the same fetch-parse-or-404 three
+ * times, which is the duplication ai-authorship.md measures. `cache: 'no-store'`
+ * on all of them — an editor that opens a cached copy of the scenes it is
+ * about to overwrite is a lost edit. */
+export async function readExperience(id: string): Promise<Result<Experience>> {
+  // `api` being down is an expected failure of an external service, not a bug
+  // in this process, so it returns a `Result` like every other expected failure
+  // (docs/coderules/README.md rule 3). A bare `fetch` here *throws* on a
+  // refused connection, which turned the editor route into a 500 the first time
+  // it was opened without `api` running — and the editor is exactly the page
+  // that has a designed answer for this, since it can fall back to the fixture.
+  let res: Response;
+  try {
+    res = await fetch(`${apiUrl()}/experiences/${id}`, { cache: 'no-store' });
+  } catch (e) {
     return err(
-      getRes.status === 404 ? 'not_found' : 'upstream_unavailable',
-      await getRes.text(),
+      'upstream_unavailable',
+      e instanceof Error ? e.message : 'api unreachable',
     );
   }
-
-  const parsed = experienceSchema.safeParse(await getRes.json());
+  if (!res.ok) {
+    return err(
+      res.status === 404 ? 'not_found' : 'upstream_unavailable',
+      await res.text(),
+    );
+  }
+  const parsed = experienceSchema.safeParse(await res.json());
   if (!parsed.success) return err('invalid_input', parsed.error.message);
+  return ok(parsed.data);
+}
 
-  const experience = parsed.data;
+/** Persist edited scenes against the experience they came from.
+ *
+ * Read-then-replace rather than a scenes-only endpoint, because `api`'s
+ * `PUT /experiences/{id}` takes a whole `Experience` and re-runs the
+ * structural validators on it (one hook first, at least one CTA, at most one
+ * Slot). Those rules are about the *tree*, so an edit that breaks one has to
+ * be refused, and the only way to get that for free is to hand the whole tree
+ * back. The read is what supplies the fields the editor does not own — title,
+ * mode, brand — so it cannot silently reset them to a client's guess. */
+export async function saveScenes(id: string, scenes: Scene[]): Promise<Result<void>> {
+  const current = await readExperience(id);
+  if (!current.ok) return current;
+
+  const res = await fetch(`${apiUrl()}/experiences/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...current.value, scenes }),
+  });
+  if (!res.ok) {
+    return err(
+      res.status === 422 ? 'invalid_input' : 'upstream_unavailable',
+      await res.text(),
+    );
+  }
+  return ok(undefined);
+}
+
+export async function publishExperience(id: string): Promise<Result<void>> {
+  const parsed = await readExperience(id);
+  if (!parsed.ok) return parsed;
+
+  const experience = parsed.value;
   const artifact: PublishedArtifact = {
     title: experience.title,
     mode: experience.mode,

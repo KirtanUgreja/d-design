@@ -3,9 +3,15 @@ import { randomUUID } from 'node:crypto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { deleteArtifact, readArtifact, writeArtifact } from '@/lib/storage';
+import { experienceSchema } from '@/schema';
 
 import { embedHeaders, publishedHeaders } from './csp';
-import { publishExperience, readPublishedArtifact, unpublishExperience } from './publish';
+import {
+  publishExperience,
+  readPublishedArtifact,
+  saveScenes,
+  unpublishExperience,
+} from './publish';
 
 const MINIMAL_EXPERIENCE = {
   id: 'exp-1',
@@ -139,6 +145,73 @@ describe('publish/unpublish', () => {
 
     const artifact = await readArtifact(id);
     expect(artifact.ok).toBe(false);
+  });
+});
+
+describe('saveScenes', () => {
+  const originalFetch = globalThis.fetch;
+  afterEach(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  it('replaces only the scenes, carrying the stored fields through untouched', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(MINIMAL_EXPERIENCE), { status: 200 }),
+      )
+      .mockResolvedValueOnce(new Response('{}', { status: 200 }));
+    globalThis.fetch = fetchMock as unknown as typeof fetch;
+
+    // Through the schema rather than cast: these are `Scene`s the same way the
+    // editor's are, so the test cannot pass on a shape the real caller can't
+    // produce.
+    const scenes = experienceSchema.parse(MINIMAL_EXPERIENCE).scenes;
+    const edited = scenes.map((scene, i) =>
+      i === 0
+        ? {
+            ...scene,
+            blocks: [
+              { id: 'b1', props: { type: 'headline' as const, text: 'Ship it faster' } },
+            ],
+          }
+        : scene,
+    );
+
+    const result = await saveScenes('exp-1', edited);
+    expect(result.ok).toBe(true);
+
+    // The whole point of the read-then-replace: `PUT` takes a full
+    // `Experience`, so a client that assembled one from its own state would
+    // silently reset title, mode and brand to whatever it happened to hold.
+    const body: unknown = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
+    expect(body).toMatchObject({
+      title: 'Minimal Experience',
+      mode: 'scroll',
+      brandId: 'brand-1',
+      artDirection: 'cinematic-dark',
+    });
+  });
+
+  it('reports a rejected tree as invalid input, not as an outage', async () => {
+    // 422 is what `api` returns when the *tree* rules fail — an edit that
+    // deleted the last CTA, say. The editor has to be able to tell that apart
+    // from the API being down, because only one of the two is the user's to fix.
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify(MINIMAL_EXPERIENCE), { status: 200 }),
+      )
+      .mockResolvedValueOnce(
+        new Response('an experience has at least one CTA', { status: 422 }),
+      ) as unknown as typeof fetch;
+
+    const result = await saveScenes(
+      'exp-1',
+      experienceSchema.parse(MINIMAL_EXPERIENCE).scenes,
+    );
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe('invalid_input');
   });
 });
 
