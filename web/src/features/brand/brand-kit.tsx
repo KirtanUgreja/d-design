@@ -15,7 +15,14 @@
 // which is the point, because a family name is echoed into a stylesheet and
 // free text there is a CSS injection wearing a friendly label.
 
-import { CINEMATIC_DARK, resolveBrand, toCssColor } from '@/features/art-direction';
+import {
+  ART_DIRECTION_IDS,
+  resolveArtDirection,
+  relativeLuminance,
+  resolveBrand,
+  toCssColor,
+  type ArtDirectionId,
+} from '@/features/art-direction';
 import type { BrandKit } from '@/schema';
 
 const FONTS = [
@@ -157,37 +164,58 @@ function ColorField({
   );
 }
 
-/** The correction, said out loud.
+/** The correction, said out loud — for every art direction, not just the one
+ * this file used to import.
  *
- * `resolveBrand` already lightens a primary that fails 4.5:1 against the dark
- * background and keeps the original for non-text surfaces — this only makes
- * that visible. Three states, and each is a different thing to tell someone:
+ * `resolveBrand` corrects a primary that fails 4.5:1 against a given ground and
+ * keeps the original for non-text surfaces; this makes that visible. It asked
+ * `cinematic-dark` only, which was the whole story while there was one
+ * direction and became a half-truth the moment there were two: a colour can
+ * pass on near-black and fail on near-white, and the answer a brand kit owes
+ * someone is "here is what happens wherever you publish this", not "here is
+ * what happens if you pick the dark one".
+ *
+ * Three states per direction, and each is a different thing to tell someone:
  * their colour passed, their colour was adjusted for text and why, or their
- * colour cannot reach legibility at all, which fails closed rather than
+ * colour cannot reach legibility at all — which fails closed rather than
  * shipping unreadable text.
  */
 function ContrastNotice({ kit }: { kit: BrandKit }) {
-  const resolved = resolveBrand(kit, CINEMATIC_DARK);
+  return (
+    <div className="space-y-2">
+      {ART_DIRECTION_IDS.map((id) => (
+        <ContrastNoticeFor key={id} kit={kit} id={id} />
+      ))}
+    </div>
+  );
+}
+
+function ContrastNoticeFor({ kit, id }: { kit: BrandKit; id: ArtDirectionId }) {
+  const { artDirection } = resolveArtDirection(id);
+  const resolved = resolveBrand(kit, artDirection);
+  const ground = relativeLuminance(artDirection.color.bg) > 0.5 ? 'light' : 'dark';
 
   if (!resolved.ok) {
     return (
       <p className="rounded-md border border-amber-900/60 bg-amber-950/30 px-3 py-2 text-xs text-amber-200">
-        That colour cannot be made legible on a dark background, even lightened. Pick a
-        lighter primary — we would rather say so than ship text nobody can read.
+        <b className="font-medium">{id}</b> — that colour cannot be made legible on a{' '}
+        {ground} background. Pick another primary; we would rather say so than ship text
+        nobody can read.
       </p>
     );
   }
 
   const { accent, accentRaw } = resolved.value;
   // Compared as rendered values, not by reference. `resolveBrand` happens to
-  // return the very same object when no lightening was needed, so `===` would
+  // return the very same object when no correction was needed, so `===` would
   // work today — and would silently stop working the day it returns a copy.
   const corrected = toCssColor(accent);
   const yours = toCssColor(accentRaw);
   if (corrected === yours) {
     return (
       <p className="text-xs text-neutral-500">
-        Passes contrast on the dark background. Used exactly as you gave it.
+        <b className="font-medium text-neutral-400">{id}</b> — passes on the {ground}{' '}
+        background. Used exactly as you gave it.
       </p>
     );
   }
@@ -195,8 +223,9 @@ function ContrastNotice({ kit }: { kit: BrandKit }) {
   return (
     <div className="space-y-1.5 rounded-md border border-neutral-800 bg-neutral-900/50 px-3 py-2">
       <p className="text-xs text-neutral-300">
-        We lightened your primary for text so it reaches 4.5:1 on the dark background.
-        Your exact colour is still used for fills and glows.
+        <b className="font-medium">{id}</b> — we adjusted your primary for text so it
+        reaches 4.5:1 on the {ground} background. Your exact colour is still used for
+        fills and glows.
       </p>
       <div className="flex items-center gap-3 text-xs text-neutral-500">
         <Swatch label="yours" color={yours} />

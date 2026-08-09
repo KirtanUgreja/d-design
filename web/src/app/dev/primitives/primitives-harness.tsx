@@ -8,7 +8,11 @@
 
 import { useState } from 'react';
 
-import { CINEMATIC_DARK } from '@/features/art-direction';
+import {
+  ART_DIRECTION_IDS,
+  resolveArtDirection,
+  type ArtDirectionId,
+} from '@/features/art-direction';
 import { MotionToggle, useMotionPreference } from '@/features/present';
 import { SceneRenderer } from '@/features/renderer';
 import type { Experience } from '@/schema';
@@ -20,7 +24,13 @@ export function PrimitivesHarness({
 }: {
   experiences: Record<FixtureName, Experience>;
 }) {
-  const { vocabulary, reduced, toggle } = useMotionPreference();
+  // The art-direction switch, and the reason this harness exists at all now:
+  // the same fixture, the same eleven primitives, one string apart. If the two
+  // do not look like different products here, art direction #2 failed and no
+  // amount of token authoring fixes it (docs/v1/spec.md, Risk 4).
+  const [adId, setAdId] = useState<ArtDirectionId>('cinematic-dark');
+  const { artDirection, motion } = resolveArtDirection(adId);
+  const { vocabulary, reduced, toggle } = useMotionPreference(motion);
   const [dir, setDir] = useState<'ltr' | 'rtl'>('ltr');
   const [fixture, setFixture] = useState<FixtureName>('full');
 
@@ -48,13 +58,18 @@ export function PrimitivesHarness({
           </button>
         ))}
         <span style={{ marginInlineStart: 'auto' }} />
+        {ART_DIRECTION_IDS.map((id) => (
+          <button key={id} onClick={() => setAdId(id)} disabled={adId === id}>
+            {id}
+          </button>
+        ))}
         <button onClick={() => setDir(dir === 'ltr' ? 'rtl' : 'ltr')}>dir: {dir}</button>
         <MotionToggle reduced={reduced} onToggle={toggle} />
       </div>
       <div dir={dir}>
         <SceneRenderer
           scenes={experience.scenes}
-          artDirection={CINEMATIC_DARK}
+          artDirection={artDirection}
           motion={vocabulary}
         />
       </div>

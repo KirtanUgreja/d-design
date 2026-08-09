@@ -54,6 +54,22 @@ class Asset(Schema):
 FontId = Literal["fraunces", "inter"]
 
 
+# The art directions that exist. A `Literal`, so an unknown id is a 422 at the
+# edge rather than a page rendered with no tokens at all — and so `web`'s own
+# `ArtDirectionId` is generated from here rather than written twice
+# (docs/coderules/python.md).
+#
+# One value became two when art direction #2 landed, and that is the whole of
+# what the schema owed that exercise: the renderer took no change, this took
+# one line, and the token layer took the rest (docs/v1/spec.md, Risk 4).
+#
+# Adding a third is this line plus an `ArtDirection` object in
+# `web/src/features/art-direction/` plus a row in its resolver — and the
+# resolver is `Record<ArtDirectionId, …>`, so forgetting the row is a type
+# error rather than a page that renders as unstyled HTML.
+ArtDirectionId = Literal["cinematic-dark", "editorial-light"]
+
+
 class BrandKit(Schema):
     id: str = Field(min_length=1)
     display_font: FontId
@@ -75,7 +91,7 @@ class Experience(Schema):
     title: str = Field(min_length=1, max_length=200)
     mode: Mode
     brand_id: str = Field(min_length=1)
-    art_direction: Literal["cinematic-dark"]  # v1: one value
+    art_direction: ArtDirectionId
     scenes: list[Scene] = Field(min_length=3, max_length=12)
     meta: ExperienceMeta
 

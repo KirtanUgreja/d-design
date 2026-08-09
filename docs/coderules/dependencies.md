@@ -98,6 +98,12 @@ stripe — billing (v3) — never hand-roll payments.
   redistributed to a customer's published-page audience, not just used by
   our own app) — installing the two families FONT_REGISTRY already names is
   that decision, not a new one.
+@fontsource/newsreader, @fontsource/archivo (v1, art direction #2) — the same
+  decision, for editorial-light's two faces. They have to be different families
+  from cinematic-dark's, not different sizes of them: docs/design/brand.md
+  requires art direction #2's display face to differ from both #1's and our own
+  chrome's, which is the constraint that stopped the font registry being
+  global. Open license, self-hosted, same reason as above.
 server-only (v1, phase 05) — the marker structure.md already mandates for
   every *.data.ts and anything holding a secret ("a client component
   importing it is a build-time error"). web/src/lib/storage.ts is the first

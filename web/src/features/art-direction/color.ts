@@ -131,6 +131,18 @@ export function lighten(c: Color, steps: number): Color {
   return { ...next, a: c.a };
 }
 
+/** Darken by `steps` percentage points of HSL lightness, clamped to 0%.
+ *
+ * The counterpart `lighten` needed once a light art direction existed: on a
+ * white ground, a brand colour that fails contrast has to move *away* from
+ * white, and lightening it makes it worse until the resolver gives up. See
+ * `resolve-brand.ts`. */
+export function darken(c: Color, steps: number): Color {
+  const { h, s, l } = rgbToHsl(c);
+  const next = hslToRgb(h, s, Math.max(0, l - steps / 100));
+  return { ...next, a: c.a };
+}
+
 export function toCssColor(c: Color): string {
   const r = Math.round(c.r);
   const g = Math.round(c.g);

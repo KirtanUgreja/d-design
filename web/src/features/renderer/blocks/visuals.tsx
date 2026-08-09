@@ -26,6 +26,7 @@ import { toCssColor } from '@/features/art-direction';
 
 import type { AbstractVisualProps } from './block-props';
 import { INTENSITY, mulberry32, type Intensity } from './visual-seed';
+import { VISUAL_BLEND, visualOpacity } from '../tokens';
 
 /** Every generator paints inside the same absolutely-positioned, non-
  * interactive layer. `aria-hidden` because none of them carries meaning — a
@@ -82,9 +83,9 @@ export function ParticleField({
             blockSize: `${p.size}px`,
             borderRadius: '50%',
             background: toCssColor(p.color),
-            opacity: opacity * p.dim,
+            opacity: visualOpacity(opacity * p.dim),
             filter: 'blur(0.5px)',
-            mixBlendMode: 'screen',
+            mixBlendMode: VISUAL_BLEND,
           }}
         />
       ))}
@@ -119,8 +120,8 @@ export function GridLines({
           transform: `rotate(${skew.toFixed(2)}deg)`,
           backgroundImage: `linear-gradient(to right, ${line} 1px, transparent 1px), linear-gradient(to bottom, ${line} 1px, transparent 1px)`,
           backgroundSize: `${spacing}px ${spacing}px`,
-          opacity: opacity * 0.5,
-          mixBlendMode: 'screen',
+          opacity: visualOpacity(opacity * 0.5),
+          mixBlendMode: VISUAL_BLEND,
           // Fades the grid out before it reaches any edge, so it never draws a
           // hard line across a photograph behind it.
           maskImage: 'radial-gradient(ellipse at center, black 20%, transparent 75%)',
@@ -138,8 +139,8 @@ export function GridLines({
             bottom: 0,
             inlineSize: '1px',
             background: `linear-gradient(to bottom, transparent, ${toCssColor(palette.accent)}, transparent)`,
-            opacity: opacity * 0.6,
-            mixBlendMode: 'screen',
+            opacity: visualOpacity(opacity * 0.6),
+            mixBlendMode: VISUAL_BLEND,
           }}
         />
       ))}
@@ -177,9 +178,9 @@ export function Orb({
           transform: 'translate(-50%, -50%)',
           borderRadius: '50%',
           background: `radial-gradient(circle, ${toCssColor(palette.accent)} 0%, ${toCssColor(palette.accentSoft)} 35%, transparent 70%)`,
-          opacity,
+          opacity: visualOpacity(opacity),
           filter: 'blur(40px)',
-          mixBlendMode: 'screen',
+          mixBlendMode: VISUAL_BLEND,
         }}
       />
       {/* A faint rim, so the orb has an edge to catch rather than dissolving
@@ -194,9 +195,9 @@ export function Orb({
           transform: 'translate(-50%, -50%)',
           borderRadius: '50%',
           border: `1px solid ${toCssColor(palette.accentSoft)}`,
-          opacity: opacity * 0.35,
+          opacity: visualOpacity(opacity * 0.35),
           filter: 'blur(1px)',
-          mixBlendMode: 'screen',
+          mixBlendMode: VISUAL_BLEND,
         }}
       />
     </Layer>
@@ -230,8 +231,8 @@ export function NoiseVeil({
           position: 'absolute',
           inset: 0,
           background: `linear-gradient(${angle}deg, ${toCssColor(palette.accentSoft)} 0%, transparent 60%)`,
-          opacity: opacity * 0.8,
-          mixBlendMode: 'screen',
+          opacity: visualOpacity(opacity * 0.8),
+          mixBlendMode: VISUAL_BLEND,
         }}
       />
       <div
@@ -239,7 +240,7 @@ export function NoiseVeil({
           position: 'absolute',
           inset: 0,
           backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='128' height='128'%3E%3Cfilter id='v'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='${frequency}' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23v)'/%3E%3C/svg%3E")`,
-          opacity: opacity * 0.35,
+          opacity: visualOpacity(opacity * 0.35),
           mixBlendMode: 'overlay',
         }}
       />

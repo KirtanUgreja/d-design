@@ -2,17 +2,36 @@
    side and no file imports both — docs/techstack/frontend.md. */
 @import 'tailwindcss';
 
-/* cinematic-dark's FONT_REGISTRY (web/src/features/art-direction/cinematic-dark.ts)
- * names 'Fraunces' and 'Inter' by id; these @font-face rules are what makes
- * those names resolve to something instead of a system-font fallback.
- * Fontsource registers the family under the exact bare name, self-hosted,
- * open license — techstack/frontend.md's Fonts section, already the
- * documented decision, not a new one (ledger line in coderules/dependencies.md).
- * ponytail: imported globally for now; publish (phase 05) will want these
- * scoped to what a published page actually serves rather than the whole app. */
+/* FONT_REGISTRY (web/src/features/art-direction/art-direction.ts) names these
+ * families by id; these @font-face rules are what makes those names resolve to
+ * something instead of a system-font fallback. Fontsource registers the family
+ * under the exact bare name, self-hosted, open license — techstack/frontend.md's
+ * Fonts section, already the documented decision, not a new one (ledger line in
+ * coderules/dependencies.md).
+ *
+ * The registry and this block are the two halves of adding a family, and there
+ * is no compiler between them: a registry row with no import here renders as a
+ * system fallback, silently, and looks like a font-loading bug rather than a
+ * missing line. `art-direction.test.ts` asserts the weights match; nothing can
+ * assert the import exists, so it is the one thing to check by eye.
+ *
+ * ponytail: imported globally, and it is now four families where it was two —
+ * a published page downloads every art direction's fonts to use one of them.
+ * Fine at four; the fix when it is not is to scope the import to the artifact's
+ * own direction at publish time. Trigger: art direction #3. */
+
+/* cinematic-dark */
 @import '@fontsource/fraunces/400.css';
 @import '@fontsource/fraunces/500.css';
 @import '@fontsource/fraunces/600.css';
 @import '@fontsource/inter/400.css';
 @import '@fontsource/inter/500.css';
 @import '@fontsource/inter/600.css';
+
+/* editorial-light */
+@import '@fontsource/newsreader/400.css';
+@import '@fontsource/newsreader/500.css';
+@import '@fontsource/newsreader/600.css';
+@import '@fontsource/archivo/400.css';
+@import '@fontsource/archivo/500.css';
+@import '@fontsource/archivo/600.css';

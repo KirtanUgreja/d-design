@@ -38,6 +38,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
     <EditorScreen
       experienceId={id}
       title={experience.title}
+      artDirectionId={experience.artDirection}
       initialScenes={experience.scenes}
       stored={loaded.ok}
     />

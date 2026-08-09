@@ -5,6 +5,8 @@
 // docs/v1/plan/04-renderer.md -> Search: "to-css-vars — the only token->string
 // path. Do not write a second one."
 
+import type { CSSProperties } from 'react';
+
 import type { ArtDirection, Palette, TypeRoleKey } from '@/features/art-direction';
 
 export const COLOR_VAR: Record<keyof Palette, string> = {
@@ -52,6 +54,26 @@ export function typeStyle(role: TypeRoleKey, ad: ArtDirection): TypeStyle {
 
 export function spaceVar(index: 1 | 2 | 3 | 4 | 5 | 6 | 7): string {
   return `var(--space-${index})`;
+}
+
+/** How the AbstractVisual generators composite onto the ground.
+ *
+ * A `var()` rather than a literal, because `screen` — keep only what is lighter
+ * — is a near-black-ground assumption, and the seven places that hardcoded it
+ * turned every generator into a smudge the first time an art direction had a
+ * white ground. The value is the art direction's `visualBlend` token.
+ *
+ * Cast because React types `mixBlendMode` as the CSS keyword union, which a
+ * `var()` reference is not — the same cast `SceneRenderer` already makes for
+ * the custom-property bundle, and for the same reason. */
+export const VISUAL_BLEND = 'var(--visual-blend)' as CSSProperties['mixBlendMode'];
+
+/** An AbstractVisual layer's opacity: the generator's own intensity, scaled by
+ * the art direction's `visualStrength`. A `calc()` rather than a number, so the
+ * token stays a token — the generators never read the art direction object, the
+ * same way no block does. */
+export function visualOpacity(intensity: number): string {
+  return `calc(${intensity} * var(--visual-strength))`;
 }
 
 export const SCENE_PADDING_BLOCK = 'var(--scene-padding-y)';

@@ -19,7 +19,12 @@ import { experienceSchema, sceneSchema, type Experience, type Scene } from '@/sc
 const publishedArtifactSchema = z.strictObject({
   title: z.string(),
   mode: z.enum(['scroll', 'slides']),
-  artDirection: z.literal('cinematic-dark'),
+  // Taken from the generated `Experience` rather than restated. It was
+  // `z.literal('cinematic-dark')`, which was a second source of truth that
+  // happened to agree — and stopped agreeing the moment `api`'s Literal grew a
+  // second value, with nothing to catch it but a runtime parse failure on a
+  // freshly published page.
+  artDirection: experienceSchema.shape.artDirection,
   scenes: z.array(sceneSchema),
   publishedAt: z.string(),
 });

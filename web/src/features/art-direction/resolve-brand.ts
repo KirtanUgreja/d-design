@@ -7,12 +7,37 @@
 import type { BrandKit } from '@/schema';
 import { err, ok, type Result } from '@/lib/result';
 
-import type { ArtDirection, Palette } from './cinematic-dark';
-import { contrastRatio, lighten, parseHex } from './color';
+import type { ArtDirection, Palette } from './art-direction';
+import {
+  contrastRatio,
+  darken,
+  lighten,
+  parseHex,
+  relativeLuminance,
+  type Color,
+} from './color';
 
 const MIN_CONTRAST = 4.5;
-const LIGHTEN_STEP = 4; // HSL lightness percentage points per attempt
+const STEP = 4; // HSL lightness percentage points per attempt
 const MAX_ATTEMPTS = 20; // 20 * 4 = 80 points of headroom; if that isn't enough, nothing is
+
+/** Which way is "away from the ground".
+ *
+ * This function is what `editorial-light` cost this file. The resolver only
+ * ever lightened, which is correct on a near-black ground and exactly backwards
+ * on a near-white one: a brand red that fails against white gets *lighter*,
+ * fails harder, and twenty attempts later the resolver reports that the colour
+ * cannot reach 4.5:1 — a false negative that would have rejected perfectly
+ * usable brand colours on every light art direction.
+ *
+ * The threshold is the ground's own luminance, not a hardcoded "is this
+ * direction dark": an art direction with a mid-grey ground picks whichever
+ * direction has more room, which is the right answer without anyone declaring
+ * a polarity token. 0.18 rather than 0.5 because luminance is not perceptual
+ * lightness — a "mid grey" ground sits around 0.2. */
+function awayFromGround(bg: Color): (c: Color, steps: number) => Color {
+  return relativeLuminance(bg) > 0.18 ? darken : lighten;
+}
 
 export interface ResolvedPalette extends Palette {
   /** The brand's own primary, unmodified. Non-text surfaces only — a fill, a
@@ -34,16 +59,17 @@ export function resolveBrand(brand: BrandKit, ad: ArtDirection): Result<Resolved
   if (!parsed.ok) return err('invalid_input', `brand.primary: ${parsed.error.message}`);
 
   const raw = parsed.value;
+  const away = awayFromGround(ad.color.bg);
   let candidate = raw;
   for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
     if (contrastRatio(candidate, ad.color.bg, ad.color.bg) >= MIN_CONTRAST) {
       return ok({ ...ad.color, accent: candidate, accentRaw: raw });
     }
-    candidate = lighten(raw, LIGHTEN_STEP * (attempt + 1));
+    candidate = away(raw, STEP * (attempt + 1));
   }
 
   return err(
     'invalid_input',
-    `brand.primary (${brand.primary}) cannot reach ${MIN_CONTRAST}:1 against --bg by lightening`,
+    `brand.primary (${brand.primary}) cannot reach ${MIN_CONTRAST}:1 against ${ad.id}'s --bg`,
   );
 }

@@ -13,12 +13,13 @@
 import type {
   ArtDirection,
   ClampTriple,
+  FontSlot,
   Length,
   Palette,
   TypeRoleKey,
   Unit,
-} from './cinematic-dark';
-import { FONT_REGISTRY } from './cinematic-dark';
+} from './art-direction';
+import { FONT_REGISTRY } from './art-direction';
 import { type Color, toCssColor } from './color';
 
 const TYPE_ROLES: readonly TypeRoleKey[] = [
@@ -83,10 +84,21 @@ function colorEntries(color: Palette): [string, string][] {
   ];
 }
 
-function typeEntries(type: ArtDirection['type']): [string, string][] {
-  const fontFamilies: [string, string][] = (
-    Object.keys(FONT_REGISTRY) as (keyof typeof FONT_REGISTRY)[]
-  ).map((id) => [`--font-${id}`, FONT_REGISTRY[id].family]);
+const FONT_SLOTS: readonly FontSlot[] = ['display', 'text'];
+
+function typeEntries(
+  type: ArtDirection['type'],
+  fonts: ArtDirection['fonts'],
+): [string, string][] {
+  // Two variables, one per slot, resolved through the registry — so
+  // `--font-display` means "whatever *this* art direction calls display".
+  // It used to enumerate the whole registry, which was fine while the registry
+  // had exactly the two families the one art direction used, and became wrong
+  // the moment a second direction wanted a different pair.
+  const fontFamilies: [string, string][] = FONT_SLOTS.map((slot) => [
+    `--font-${slot}`,
+    FONT_REGISTRY[fonts[slot]].family,
+  ]);
 
   const roles = TYPE_ROLES.flatMap((role): [string, string][] => {
     const def = type[role];
@@ -124,9 +136,11 @@ function textureEntries(texture: ArtDirection['texture']): [string, string][] {
 export function toCssVars(ad: ArtDirection): Record<string, string> {
   return Object.fromEntries([
     ...colorEntries(ad.color),
-    ...typeEntries(ad.type),
+    ...typeEntries(ad.type, ad.fonts),
     ...rhythmEntries(ad.rhythm),
     ...textureEntries(ad.texture),
+    ['--visual-blend', ad.visualBlend],
+    ['--visual-strength', String(ad.visualStrength)],
   ]);
 }
 
@@ -162,7 +176,7 @@ function cssToColor(css: string): Color {
 
 export function fromCssVars(vars: Record<string, string>): Pick<
   ArtDirection,
-  'color' | 'rhythm' | 'texture'
+  'color' | 'rhythm' | 'texture' | 'visualBlend' | 'visualStrength'
 > & {
   type: Record<
     TypeRoleKey,
@@ -217,5 +231,19 @@ export function fromCssVars(vars: Record<string, string>): Pick<
     intensity: Number.parseFloat(requireVar(vars, `--texture-${kind}-intensity`)),
   })).filter((l) => l.intensity > 0);
 
-  return { color, type, rhythm, texture };
+  // A closed union on the way out too — the round-trip is only lossless if it
+  // rejects a value the type does not have, rather than widening to `string`.
+  const blend = requireVar(vars, '--visual-blend');
+  if (blend !== 'screen' && blend !== 'multiply') {
+    throw new Error(`to-css-vars: not a visual blend: ${blend}`);
+  }
+
+  return {
+    color,
+    type,
+    rhythm,
+    texture,
+    visualBlend: blend,
+    visualStrength: Number.parseFloat(requireVar(vars, '--visual-strength')),
+  };
 }

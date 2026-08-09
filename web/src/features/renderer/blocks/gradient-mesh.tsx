@@ -12,6 +12,7 @@ import type { AbstractVisualProps } from './block-props';
 // four more generators needed them. Five copies of a seeded random is exactly
 // the duplication that phase's Search section warns about.
 import { INTENSITY, mulberry32 } from './visual-seed';
+import { VISUAL_BLEND, visualOpacity } from '../tokens';
 
 interface Blob {
   color: Color;
@@ -59,7 +60,7 @@ export function GradientMesh({
             transform: 'translate(-50%, -50%)',
             borderRadius: '50%',
             background: `radial-gradient(circle, ${toCssColor(b.color)} 0%, transparent 70%)`,
-            opacity: INTENSITY[props.intensity].opacity,
+            opacity: visualOpacity(INTENSITY[props.intensity].opacity),
             filter: 'blur(24px)',
             // Light, not paint. Reviewed over a real photograph on
             // /dev/visuals (docs/v1/plan/11-visuals-and-slot.md's "check most
@@ -70,7 +71,7 @@ export function GradientMesh({
             // so only the light adds, which is what "atmosphere" actually
             // looks like. On the art direction's own dark background it is
             // very nearly a no-op, so this costs the standalone case nothing.
-            mixBlendMode: 'screen',
+            mixBlendMode: VISUAL_BLEND,
           }}
         />
       ))}

@@ -24,6 +24,30 @@ Same 11 primitives, same scene tree, unrecognizably different output — because
 
 **v1 does not prove this.** One art direction proves nothing about variety. The proof is art direction #2, and the test is specific: if it requires *any* renderer change, the abstraction is wrong and should be fixed before a third exists.
 
+### The result: `editorial-light`, built 2026-08-09
+
+**The claim holds, with one correction to how the test is worded.** Two art directions now render the same fixture tree — the same eleven primitives, the same eight scenes — as a black stage with amber light and 8vw type, and as a printed spread with oxide-red rules and a 4.5rem serif. Side by side on `/dev/primitives`, one switch apart. Nothing in the scene tree changed and no block component learned a second way to lay anything out.
+
+But "any renderer change" turned out to be the wrong bar, and reading it literally would have produced a worse system. Two files under `renderer/` did change, and both changes were **a hardcoded value becoming a token** — which is what the paragraph above this one instructs ("if a component needs a number the tokens don't provide, the token set has a gap — fill the gap, don't hardcode"). The sharper test, and the one to apply to art direction #3:
+
+> Did the renderer gain a **branch** — a `mode`, an `if (artDirection.id === …)`, a second layout path? Then the abstraction is wrong. Did it gain a **token read**? Then the token set had a gap, which is the exercise working.
+
+It gained no branches. Here is the whole cost, in the order it was found:
+
+| What #2 cost | Where | Why it had been invisible |
+|---|---|---|
+| **The types split from the values** | `art-direction.ts` split out of `cinematic-dark.ts` | With one instance, the instance and the interface are the same file and nothing makes you notice |
+| **The font registry was global** | keyed by role (`display`/`text`) → keyed by family, with each direction binding the two slots | Two families were "the" two families. A second direction could change every size and colour and was still stuck with Fraunces and Inter |
+| **The brand resolver only lightened** | `resolve-brand.ts` picks a direction from the ground's luminance | Correct on near-black, exactly backwards on near-white: a failing brand colour moved *toward* the background and was then reported unreachable. Its own test asserted this as "fail-closed" |
+| **`mix-blend-mode: screen`, seven times** | → the `visualBlend` token | `screen` keeps what is lighter than the backdrop. Phase 11 reviewed the generators over a photograph and fixed them *into* a dark-ground assumption. On paper they were invisible |
+| **The visual layer's loudness** | → the `visualStrength` token | Only visible once the blend was fixed: a saturated ink at cinematic-dark's 45% is a stain rather than atmosphere |
+| **Two `@fontsource` families** | `dependencies.md` | — |
+| **One `Literal` value** | `api/schema/experience.py` | — |
+
+Four of those seven are the same shape: **a value the renderer or the token layer held globally, because "global" and "cinematic-dark's" were indistinguishable while there was one.** That is the real lesson for #3, and the reason #3 should be cheap in a way #2 was not.
+
+**What was deliberately not paid for.** The texture vocabulary is a closed union of three kinds — grain, glow, vignette — each with one renderer implementation and only intensity varying. All three assume a dark ground and a light source, so on white every one of them is dirt. `editorial-light` takes the empty array and gets its structure from hairline rules instead, which is a real answer rather than a gap papered over; a fourth kind would be a renderer change of the branching sort and was not taken. If art direction #3 wants a texture that is not one of those three, that is the moment to design the vocabulary properly rather than add a fourth `if`.
+
 ## Brand kit integration
 
 The user supplies fonts, colors, and a logo. The art direction decides how they're used.

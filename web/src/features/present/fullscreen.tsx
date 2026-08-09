@@ -7,7 +7,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import type { ArtDirection } from '@/features/art-direction';
+import type { ArtDirection, MotionVocabulary } from '@/features/art-direction';
 import { SceneRenderer } from '@/features/renderer';
 import type { Scene } from '@/schema';
 
@@ -26,14 +26,19 @@ const CONTROL_STYLE = {
 export function PresentedExperience({
   scenes,
   artDirection,
+  motion,
 }: {
   scenes: Scene[];
   artDirection: ArtDirection;
+  /** The art direction's own full-motion vocabulary. The reduced-motion swap
+   * happens below, in this wrapper, because it is the only layer allowed to
+   * read the environment (patterns.md rule 6). */
+  motion: MotionVocabulary;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [index, setIndex] = useState(0);
-  const { vocabulary, reduced, toggle } = useMotionPreference();
+  const { vocabulary, reduced, toggle } = useMotionPreference(motion);
 
   useEffect(() => {
     const onChange = () =>

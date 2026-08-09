@@ -11,7 +11,7 @@
 
 import { notFound } from 'next/navigation';
 
-import { CINEMATIC_DARK } from '@/features/art-direction';
+import { resolveArtDirection } from '@/features/art-direction';
 import { PresentedExperience } from '@/features/present';
 import { readPublishedArtifact } from '@/features/publish';
 
@@ -24,7 +24,15 @@ export default async function PublishedPage({
   const artifact = await readPublishedArtifact(id);
   if (!artifact.ok) notFound();
 
+  // The artifact carries its own art direction, and this is where that stops
+  // being decoration and starts being the product: two published pages from the
+  // same renderer, told apart by one string.
+  const { artDirection, motion } = resolveArtDirection(artifact.value.artDirection);
   return (
-    <PresentedExperience scenes={artifact.value.scenes} artDirection={CINEMATIC_DARK} />
+    <PresentedExperience
+      scenes={artifact.value.scenes}
+      artDirection={artDirection}
+      motion={motion}
+    />
   );
 }

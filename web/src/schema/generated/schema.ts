@@ -247,7 +247,7 @@ export const sceneSchema = z.strictObject({
 export type Scene = z.infer<typeof sceneSchema>;
 
 export const experienceSchema = z.strictObject({
-  artDirection: z.literal('cinematic-dark'),
+  artDirection: z.enum(['cinematic-dark', 'editorial-light']),
   brandId: z.string().min(1),
   id: z.string().min(1),
   meta: experienceMetaSchema,

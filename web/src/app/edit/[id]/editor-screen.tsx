@@ -6,7 +6,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 
-import { CINEMATIC_DARK, CINEMATIC_MOTION } from '@/features/art-direction';
+import { resolveArtDirection, type ArtDirectionId } from '@/features/art-direction';
 import {
   Canvas,
   ElementPrompt,
@@ -23,11 +23,16 @@ import { PublishBar } from './publish-bar';
 export function EditorScreen({
   experienceId,
   title,
+  artDirectionId,
   initialScenes,
   stored,
 }: {
   experienceId: string;
   title: string;
+  /** The experience's own art direction. What-you-edit-is-what-you-ship means
+   * the canvas renders the direction the artifact will publish under, not the
+   * one this component happens to import. */
+  artDirectionId: ArtDirectionId;
   initialScenes: Scene[];
   /** False when this is the phase 01 fixture rather than a stored experience —
    * see the route. Publishing something `api` has never heard of cannot work,
@@ -110,6 +115,8 @@ export function EditorScreen({
     [runEdit],
   );
 
+  const { artDirection, motion } = resolveArtDirection(artDirectionId);
+
   const [publishing, setPublishing] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [publishError, setPublishError] = useState<string | null>(null);
@@ -166,8 +173,8 @@ export function EditorScreen({
       <div className="flex min-h-0 flex-1">
         <Canvas
           scenes={scenes}
-          artDirection={CINEMATIC_DARK}
-          motion={CINEMATIC_MOTION}
+          artDirection={artDirection}
+          motion={motion}
           selection={selection}
           onSelect={(next) => {
             select(next);

@@ -5,10 +5,18 @@ import { describe, expect, expectTypeOf, it } from 'vitest';
 
 import type { BrandKit } from '@/schema';
 
-import type { ArtDirection, TypeRoleKey } from './cinematic-dark';
-import { CINEMATIC_DARK, FONT_REGISTRY, TYPE_SCALE } from './cinematic-dark';
-import { contrastRatio } from './color';
-import { CINEMATIC_MOTION, REDUCED_MOTION, staggerDelayMs } from './motion-vocabulary';
+import type { ArtDirection, TypeRoleKey } from './art-direction';
+import { FONT_REGISTRY } from './art-direction';
+import { CINEMATIC_DARK, TYPE_SCALE } from './cinematic-dark';
+import { EDITORIAL_LIGHT } from './editorial-light';
+import { contrastRatio, relativeLuminance } from './color';
+import {
+  CINEMATIC_MOTION,
+  EDITORIAL_MOTION,
+  REDUCED_MOTION,
+  staggerDelayMs,
+} from './motion-vocabulary';
+import { ART_DIRECTION_IDS, resolveArtDirection } from './resolve-art-direction';
 import { resolveBrand } from './resolve-brand';
 import { fromCssVars, toCssVars } from './to-css-vars';
 
@@ -72,7 +80,8 @@ describe('to-css-vars round-trips', () => {
     const vars = toCssVars(CINEMATIC_DARK);
     const names = Object.keys(vars).sort();
     // 9 color + 2 font-family + 7*4 type-role + 7 space + 4 rhythm + 3 texture
-    expect(names.length).toBe(9 + 2 + 7 * 4 + 7 + 4 + 3);
+    // + visual-blend + visual-strength
+    expect(names.length).toBe(9 + 2 + 7 * 4 + 7 + 4 + 3 + 2);
     expect(vars['--space-1']).toBe('8px');
     expect(vars['--space-7']).toBe('160px');
     expect(vars['--measure']).toBe('62ch');
@@ -92,15 +101,21 @@ describe('the two phase-02 corrections are the values that shipped', () => {
   });
 
   it('the display font is Fraunces (400/500/600), not the untested Instrument Serif', () => {
-    expect(FONT_REGISTRY.display.family).toBe('Fraunces');
-    expect(FONT_REGISTRY.display.weights).toContain(500);
-    expect(FONT_REGISTRY.display.weights).toContain(600);
+    expect(FONT_REGISTRY[CINEMATIC_DARK.fonts.display].family).toBe('Fraunces');
+    expect(FONT_REGISTRY.fraunces.weights).toContain(500);
+    expect(FONT_REGISTRY.fraunces.weights).toContain(600);
   });
 
-  it('every declared weight is actually used by some type role', () => {
-    const used = new Set(Object.values(TYPE_SCALE).map((role) => role.weight));
-    for (const weight of FONT_REGISTRY.display.weights) {
-      expect(used.has(weight)).toBe(true);
+  it('every weight some type role asks for is one the family actually ships', () => {
+    // Inverted from "every declared weight is used": with four families in the
+    // registry and two art directions, the interesting direction is the other
+    // one — a role asking for a weight nobody downloaded renders as a synthetic
+    // bold, which looks like a font-loading bug and is not one.
+    for (const ad of [CINEMATIC_DARK, EDITORIAL_LIGHT]) {
+      for (const role of Object.values(ad.type)) {
+        const weights: readonly number[] = FONT_REGISTRY[ad.fonts[role.font]].weights;
+        expect(weights).toContain(role.weight);
+      }
     }
   });
 });
@@ -139,23 +154,37 @@ describe('resolveBrand', () => {
     expect(result.value.accent).not.toEqual(result.value.accentRaw);
   });
 
-  it('fails closed — a Result, not a best-effort guess — when lightening cannot help', () => {
-    // Against cinematic-dark's near-black --bg, lightening toward white always
-    // eventually clears 4.5:1 — that direction happens to be correct for this
-    // art direction, which makes "cannot reach it" hard to trigger honestly
-    // with the real token set. The genuine failure mode is a light --bg: the
-    // algorithm only ever lightens, so a candidate converging on white against
-    // a background that is already near-white can never separate from it,
-    // however many attempts run. Synthesized here rather than skipped, because
-    // rule 5 says to prove fail-closed by injection, not assume it.
-    const lightBg: ArtDirection = {
-      ...CINEMATIC_DARK,
-      color: { ...CINEMATIC_DARK.color, bg: { r: 250, g: 250, b: 248, a: 1 } },
-    };
-    const result = resolveBrand(brandWith('#e8e8e0'), lightBg);
-    expect(result.ok).toBe(false);
+  // This test used to assert the opposite, and it is worth saying why rather
+  // than quietly rewriting it. It synthesized a light `--bg`, fed in a
+  // near-white brand colour, and asserted `ok === false` — described as
+  // "proving fail-closed by injection". What it was actually proving was a
+  // bug: the resolver only ever lightened, so on a light ground it walked the
+  // candidate *toward* the background and then reported the colour
+  // unreachable. Every light art direction would have rejected usable brand
+  // colours, and the test would have called that correct. `editorial-light`
+  // is what turned the assertion from a guarantee into a symptom.
+  it('darkens, rather than lightens, when the ground is light', () => {
+    const result = resolveBrand(brandWith('#e8e8e0'), EDITORIAL_LIGHT);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(
+      contrastRatio(
+        result.value.accent,
+        EDITORIAL_LIGHT.color.bg,
+        EDITORIAL_LIGHT.color.bg,
+      ),
+    ).toBeGreaterThanOrEqual(4.5);
+    // Moved away from the ground, not toward it.
+    expect(relativeLuminance(result.value.accent)).toBeLessThan(
+      relativeLuminance(result.value.accentRaw),
+    );
   });
 
+  // With the direction chosen from the ground's own luminance, 4.5:1 is
+  // reachable from *any* ground — no luminance exists where both black and
+  // white fall short — so the `err` return is now unreachable for a
+  // well-formed hex. It stays because rule 10 says anything that grants fails
+  // closed, and the reachable failure is the one below.
   it('rejects a malformed hex rather than guessing at it', () => {
     const result = resolveBrand(brandWith('not-a-color'), CINEMATIC_DARK);
     expect(result.ok).toBe(false);
@@ -231,5 +260,103 @@ describe('the motion vocabulary is data', () => {
     expect(source).not.toMatch(/typeof window/);
     expect(source).not.toMatch(/process\.env/);
     expect(source).not.toMatch(/matchMedia/);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Art direction #2 — docs/v1/spec.md Risk 4
+//
+// "The art-direction layer is unproven until there are two." These are the
+// assertions that make the second one a claim rather than a second file: that
+// it is genuinely a different design, that it is as accessible as the first,
+// and that the layer is total — every art direction answers every token, or
+// the renderer falls back to a browser default and nobody notices until a
+// customer does.
+// ---------------------------------------------------------------------------
+
+describe('editorial-light', () => {
+  const BOTH = [CINEMATIC_DARK, EDITORIAL_LIGHT];
+
+  it('emits exactly the same variable names as cinematic-dark', () => {
+    // Totality. A missing `--type-lead-size` does not throw anywhere — the
+    // block asks for `var(--type-lead-size)`, gets nothing, and inherits.
+    expect(Object.keys(toCssVars(EDITORIAL_LIGHT)).sort()).toEqual(
+      Object.keys(toCssVars(CINEMATIC_DARK)).sort(),
+    );
+  });
+
+  it('round-trips through the CSS-variable format like any other direction', () => {
+    const parsed = fromCssVars(toCssVars(EDITORIAL_LIGHT));
+    expect(parsed.color).toEqual(EDITORIAL_LIGHT.color);
+    expect(parsed.rhythm).toEqual(EDITORIAL_LIGHT.rhythm);
+    expect(parsed.texture).toEqual(EDITORIAL_LIGHT.texture);
+  });
+
+  it('is a light ground with dark ink — the inverse of #1, not a tint of it', () => {
+    expect(relativeLuminance(EDITORIAL_LIGHT.color.bg)).toBeGreaterThan(0.8);
+    expect(relativeLuminance(CINEMATIC_DARK.color.bg)).toBeLessThan(0.05);
+    expect(relativeLuminance(EDITORIAL_LIGHT.color.ink)).toBeLessThan(0.05);
+  });
+
+  it('shares no font family with cinematic-dark', () => {
+    const families = (ad: ArtDirection) =>
+      new Set([
+        FONT_REGISTRY[ad.fonts.display].family,
+        FONT_REGISTRY[ad.fonts.text].family,
+      ]);
+    const a = families(CINEMATIC_DARK);
+    for (const family of families(EDITORIAL_LIGHT)) {
+      expect(a.has(family)).toBe(false);
+    }
+  });
+
+  it('is a materially different design, not the same numbers relit', () => {
+    // Every group, because "unrecognizably different output" is the claim and
+    // a palette swap alone would not earn it. Not a threshold on how different
+    // — that would be a taste assertion — just that no group is copied.
+    expect(EDITORIAL_LIGHT.type).not.toEqual(CINEMATIC_DARK.type);
+    expect(EDITORIAL_LIGHT.rhythm).not.toEqual(CINEMATIC_DARK.rhythm);
+    expect(EDITORIAL_LIGHT.texture).not.toEqual(CINEMATIC_DARK.texture);
+    expect(EDITORIAL_MOTION).not.toEqual(CINEMATIC_MOTION);
+  });
+
+  it('every text role clears 4.5:1 against its own ground, in both directions', () => {
+    // The accessibility floor is a property of the layer, not of art direction
+    // #1. A second direction that ships an unreadable eyebrow is a second
+    // direction that should not ship.
+    for (const ad of BOTH) {
+      for (const [name, role] of Object.entries(ad.type)) {
+        const ink = role.color ? ad.color[role.color] : ad.color.ink;
+        const ratio = contrastRatio(ink, ad.color.bg, ad.color.bg);
+        expect(
+          ratio,
+          `${ad.id}: ${name} is ${ratio.toFixed(2)}:1 against --bg`,
+        ).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it('motion arrives rather than drifts — every intent shorter than #1s', () => {
+    for (const intent of ['reveal', 'emphasize'] as const) {
+      expect(EDITORIAL_MOTION.intents[intent].durationMs).toBeLessThan(
+        CINEMATIC_MOTION.intents[intent].durationMs,
+      );
+    }
+    expect(EDITORIAL_MOTION.staggerMs).toBeLessThan(CINEMATIC_MOTION.staggerMs);
+  });
+});
+
+describe('resolveArtDirection', () => {
+  it('answers for every id the schema allows', () => {
+    for (const id of ART_DIRECTION_IDS) {
+      const resolved = resolveArtDirection(id);
+      expect(resolved.artDirection.id).toBe(id);
+      expect(resolved.motion.intents.reveal.durationMs).toBeGreaterThan(0);
+    }
+  });
+
+  it('pairs each direction with its own motion, not a shared default', () => {
+    expect(resolveArtDirection('cinematic-dark').motion).toBe(CINEMATIC_MOTION);
+    expect(resolveArtDirection('editorial-light').motion).toBe(EDITORIAL_MOTION);
   });
 });

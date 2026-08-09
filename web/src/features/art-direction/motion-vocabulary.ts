@@ -52,6 +52,33 @@ export const CINEMATIC_MOTION: MotionVocabulary = {
   triggerRatio: 0.25,
 };
 
+const EASE_EDITORIAL: Easing = [0.32, 0.72, 0, 1];
+
+/** `editorial-light`'s vocabulary — motion that *arrives* rather than drifts.
+ *
+ * Motion is a token group like the other four, and it is the one where using
+ * the wrong direction's values is most obviously wrong: a printed spread that
+ * eases in over 900ms with a 120ms stagger is a slideshow pretending to be a
+ * page. Roughly a third of cinematic-dark's duration, a third of its travel,
+ * and a stagger short enough to read as one movement rather than a sequence.
+ *
+ * `emphasize` scales *up* from 0.99 — barely — where cinematic-dark scales up
+ * from 0.96. A print page does not swell. `parallax` keeps a real but small
+ * travel: zero would be a lie the token layer should not tell, since the
+ * schema still lets a scene ask for it. */
+export const EDITORIAL_MOTION: MotionVocabulary = {
+  intents: {
+    reveal: { durationMs: 320, distancePx: 12, scale: 1, ease: EASE_EDITORIAL },
+    emphasize: { durationMs: 360, distancePx: 0, scale: 0.99, ease: EASE_EDITORIAL },
+    parallax: { durationMs: 0, distancePx: 24, scale: 1, ease: EASE_EDITORIAL },
+    none: { durationMs: 0, distancePx: 0, scale: 1, ease: EASE_EDITORIAL },
+  },
+  staggerMs: 40,
+  // Fires later than cinematic-dark's 0.25: short motion that starts while the
+  // block is barely on screen has finished before anyone is looking at it.
+  triggerRatio: 0.4,
+};
+
 /** Every intent collapses to opacity-only, 200ms, no transform, no parallax —
  * WCAG 2.3.3, and art-direction.md is explicit this is a design requirement
  * for this product, not a checkbox: parallax is a documented vestibular

@@ -178,3 +178,5 @@ Charts · PDF/PPTX export · speaker notes / presenter view · collaboration · 
 **3. "Presentation" framing sets expectations v1 won't meet.** PPTX, PDF, speaker notes will all be asked for in week one. Fullscreen + keyboard nav is the minimum that keeps the word honest; messaging carries the rest. Have a real answer ready, not "coming soon."
 
 **4. The art-direction layer is unproven until there are two.** v1 ships one, so the central claim — that variety is cheap — is asserted, not demonstrated. First priority after v1 is art direction #2, and if it requires renderer changes, the abstraction is wrong.
+
+**Retired 2026-08-09: `editorial-light` is built, and the claim held.** The same fixture tree renders as a black stage with amber light and as a printed spread with oxide-red rules, one switch apart on `/dev/primitives`, with no branch added to the renderer. The renderer did change twice — both times a hardcoded value becoming a token, which is what this layer's own rules instruct. See [art-direction.md](art-direction.md) → "The result", which also sharpens the test for #3: *a token read is the exercise working; a branch is the abstraction failing.*

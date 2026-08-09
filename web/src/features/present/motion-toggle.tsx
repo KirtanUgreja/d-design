@@ -10,11 +10,7 @@
 import type { CSSProperties } from 'react';
 import { useState, useSyncExternalStore } from 'react';
 
-import {
-  CINEMATIC_MOTION,
-  REDUCED_MOTION,
-  type MotionVocabulary,
-} from '@/features/art-direction';
+import { REDUCED_MOTION, type MotionVocabulary } from '@/features/art-direction';
 
 function subscribeToReducedMotionPreference(onChange: () => void): () => void {
   const query = matchMedia('(prefers-reduced-motion: reduce)');
@@ -30,7 +26,14 @@ function useSystemPrefersReducedMotion(): boolean {
   );
 }
 
-export function useMotionPreference(): {
+/** `full` is the art direction's own vocabulary, passed in rather than picked
+ * here. It used to be `CINEMATIC_MOTION` by name, which was invisible while
+ * there was one art direction and wrong the moment there were two: motion is a
+ * token group, and a printed page that drifts in over 900ms is a slideshow
+ * wearing a serif. The *reduced* half stays a constant, because collapsing to
+ * opacity-only is an accessibility floor rather than a design choice — no art
+ * direction gets to have a louder reduced-motion mode. */
+export function useMotionPreference(full: MotionVocabulary): {
   vocabulary: MotionVocabulary;
   reduced: boolean;
   toggle: () => void;
@@ -39,7 +42,7 @@ export function useMotionPreference(): {
   const [override, setOverride] = useState<boolean | null>(null);
   const reduced = override ?? systemReduced;
   return {
-    vocabulary: reduced ? REDUCED_MOTION : CINEMATIC_MOTION,
+    vocabulary: reduced ? REDUCED_MOTION : full,
     reduced,
     toggle: () => setOverride(!reduced),
   };
