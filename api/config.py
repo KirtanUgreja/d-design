@@ -41,6 +41,11 @@ class Config:
     # `response_format`, bytes come back as a data URI — but the same endpoint,
     # the same key, and the same seam (docs/v2/plan/15-images.md).
     openrouter_model_image: str
+    # The screenshot and measurement service (v2 phase 00). A URL rather than a
+    # host so the scheme is explicit, and required rather than defaulted for
+    # the same reason the models are: a wrong default here means silently
+    # measuring nothing and reporting no overflow, which reads as good news.
+    render_url: str
 
 
 @cache
@@ -59,4 +64,5 @@ def config() -> Config:
         openrouter_model_build=_require("OPENROUTER_MODEL_BUILD"),
         openrouter_model_edit=_require("OPENROUTER_MODEL_EDIT"),
         openrouter_model_image=_require("OPENROUTER_MODEL_IMAGE"),
+        render_url=_require("RENDER_URL"),
     )

@@ -9,6 +9,8 @@
 > **What did depend on 00 is split out and deferred: section 9, viewport overflow reporting.** Measuring against a frame needs a headless layout, which needs the `render` service. That half is not done and is not counted as done.
 >
 > The rest shipped because the defect it fixes is the one visible in the output, and spending the sitting on a render container and four migrations that change nothing anyone can see was the wrong trade.
+>
+> **Section 9 landed once [00](00-foundations.md) did.** The whole phase is now complete.
 
 ---
 
@@ -165,9 +167,9 @@ Measuring against a viewport means a layout exists, which means the `render` ser
 
 **Overflow**
 
-- [ ] A scene whose content exceeds the frame produces an `OverflowReport` entry in **scroll** mode
-- [ ] The report is the same type the reskin banner renders. If slides mode later needs a second type, one of the two designs is wrong
-- [ ] Content is never clipped and never hidden. Assert against the DOM, not against a screenshot
+- [x] A scene whose content exceeds the frame produces an `OverflowReport` entry in **scroll** mode — measured live at 1,565px of content in a 600px frame
+- [x] The report is the one type every producer uses. If slides mode later needs a second, one of the two designs is wrong
+- [x] Content is never clipped and never hidden. Asserted against the DOM in `scene-fit.spec.ts`, not against a screenshot
 
 **Cross-surface**
 
@@ -201,7 +203,7 @@ Measuring against a viewport means a layout exists, which means the `render` ser
 - [x] At most one scene boundary is visible in a frame — asserted at every scroll position, in a real browser
 - [x] `proximity` snapping, with a tall scene still fully readable
 - [x] Arrow-key navigation lands flush and respects reduced motion
-- [ ] Viewport overflow reports through the existing `OverflowReport`, in scroll mode — **deferred, needs [00](00-foundations.md)**
+- [x] Viewport overflow reports through `OverflowReport`, in scroll mode
 - [x] The gate is green
 
 ## What the build found
@@ -213,6 +215,16 @@ Measuring against a viewport means a layout exists, which means the `render` ser
 **The existing arrow-key e2e test asserted the bug.** `present-and-embed.spec.ts` required the navigated-to scene to land at `top < 10`, which is the position that puts the first line under the fixed control pill. `scroll-margin-block-start` moves it to 64px, clear of a pill whose bottom edge measures 45.5px. The test now asserts against the pill's measured position rather than a literal.
 
 **`scroll-snap-type` and a literal viewport height are now `invariants.sh` check 7**, both verified by breaking them. Writing them cost two lessons the file had already learned once: the first version matched the property *name* and fired on the comment explaining why the property must not be there, and the second used a `renderer/**/*.tsx` pathspec, which in git matches only files at least one directory deep — so it passed while the violation sat in `renderer/scene.tsx`. **The `**` spellings in checks 1–6 have the same hole**, and check 1 is the tenant wrapper.
+
+### Overflow, once `render` existed
+
+**It is `features/overflow/`, not `features/reskin/`.** This file put it in reskin's module, which was the right guess when reskin was the only caller anyone had named — and then the same section names four: generation, edit, reskin and slides mode. A concept with four callers living inside one of them is three features importing across a boundary rule 4 says they should not.
+
+**`render` gained `POST /measure`.** A PNG cannot answer "which scene overflowed", and a character count cannot answer "does this fit" — that is a question about line breaking, font metrics, clamped type and the art direction's frame, and only a layout engine knows. `/measure` is the same payload as `/screenshot` and the same browser; it returns per-scene extents instead of pixels. This is the service's first real customer, ahead of the critic, exactly as this phase predicted.
+
+**The bug that endpoint nearly shipped with**: reporting each section's *own* height as its frame. A scene that grew past the frame would then measure its content and its frame as the same number, every overflow would compute as zero, and the report would be permanently empty and permanently green. The frame is the viewport, passed in.
+
+**A failure to measure is an error, never an empty report.** "We could not check" and "nothing overflows" must not be the same value — the second draws a green banner over an unmeasured page. That is rule 10's reasoning applied to a check that grants permission to publish without a warning, and it is the test in `test_measure.py` worth keeping.
 
 ### Deviations
 

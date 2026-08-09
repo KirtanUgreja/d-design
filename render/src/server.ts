@@ -125,6 +125,51 @@ function parseRequest(raw: string): {
   };
 }
 
+/** What a scene actually measured, once a browser had laid it out.
+ *
+ * The whole reason this endpoint exists rather than a calculation in `api`:
+ * whether copy fits is a question about line breaking, font metrics, clamped
+ * type and the art direction's own frame, and nothing short of a real layout
+ * engine answers it. Guessing from character counts is how a product tells a
+ * customer their approved headline fits and then clips it.
+ */
+export interface SceneExtent {
+  sceneId: string;
+  /** The frame the art direction gave this scene — its `min-block-size` once
+   * resolved, or the viewport when the layout runs at content height. */
+  frameBlockSize: number;
+  /** What the content actually needed. */
+  contentBlockSize: number;
+  blocks: { blockId: string; blockSize: number }[];
+}
+
+export async function measure(raw: string): Promise<SceneExtent[]> {
+  const { scenes, artDirection, reducedMotion, viewport } = parseRequest(raw);
+  const html = renderDocument(scenes, artDirection, reducedMotion);
+  return withPage(viewport, async (page) => {
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    await page.evaluate(() => document.fonts.ready);
+    return page.evaluate((frameHeight) => {
+      return [...document.querySelectorAll('section[id^="scene-"]')].map((section) => {
+        const el = section as HTMLElement;
+        return {
+          sceneId: el.id.replace(/^scene-/, ''),
+          // The viewport, not the section's own height: a scene that grew past
+          // the frame reports its *own* size as the frame otherwise, and every
+          // overflow measures as zero. That inversion is the whole bug this
+          // endpoint would ship with if the two were confused.
+          frameBlockSize: frameHeight,
+          contentBlockSize: el.scrollHeight,
+          blocks: [...el.querySelectorAll('[data-block-id]')].map((node) => ({
+            blockId: (node as HTMLElement).dataset.blockId ?? '',
+            blockSize: Math.round((node as HTMLElement).getBoundingClientRect().height),
+          })),
+        };
+      });
+    }, viewport.height);
+  });
+}
+
 export async function screenshot(raw: string): Promise<Buffer> {
   const { scenes, artDirection, reducedMotion, viewport } = parseRequest(raw);
   const html = renderDocument(scenes, artDirection, reducedMotion);
@@ -168,12 +213,21 @@ async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> 
     res.end('{"ok":true}');
     return;
   }
-  if (req.method !== 'POST' || req.url !== '/screenshot') {
+  // Two routes, one payload shape. `/measure` answers "does this fit" and
+  // `/screenshot` answers "what does it look like"; both need a real layout,
+  // which is the whole reason either lives in a service with a browser in it.
+  if (req.method !== 'POST' || (req.url !== '/screenshot' && req.url !== '/measure')) {
     res.writeHead(404).end();
     return;
   }
   try {
-    const png = await screenshot(await readBody(req));
+    const body = await readBody(req);
+    if (req.url === '/measure') {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify(await measure(body)));
+      return;
+    }
+    const png = await screenshot(body);
     res.writeHead(200, {
       'content-type': 'image/png',
       'content-length': png.length,

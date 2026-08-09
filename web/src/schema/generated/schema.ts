@@ -171,6 +171,13 @@ export const blockSchema = z.strictObject({
 
 export type Block = z.infer<typeof blockSchema>;
 
+export const blockExtentSchema = z.strictObject({
+  blockId: z.string().min(1),
+  blockSize: z.int().min(0),
+});
+
+export type BlockExtent = z.infer<typeof blockExtentSchema>;
+
 export const blockPatchSchema = z.strictObject({
   blockId: z.string().min(1),
   props: z.record(z.string(), z.unknown()),
@@ -293,3 +300,18 @@ export const outlineSchema = z.strictObject({
 });
 
 export type Outline = z.infer<typeof outlineSchema>;
+
+export const sceneOverflowSchema = z.strictObject({
+  blocks: z.array(blockExtentSchema).optional(),
+  contentBlockSize: z.int().min(0),
+  frameBlockSize: z.int().min(0),
+  sceneId: z.string().min(1),
+});
+
+export type SceneOverflow = z.infer<typeof sceneOverflowSchema>;
+
+export const overflowReportSchema = z.strictObject({
+  scenes: z.array(sceneOverflowSchema).optional(),
+});
+
+export type OverflowReport = z.infer<typeof overflowReportSchema>;

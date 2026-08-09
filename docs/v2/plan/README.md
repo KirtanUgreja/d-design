@@ -23,7 +23,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 10 | [Slides mode](10-slides-mode.md) | 12 | not started |
 | 11 | [Range: motion and compare](11-range.md) | 10, 11 | not started |
 | 12 | [Seven primitives](12-primitives.md) | 13 | not started |
-| 13 | [The scene as a stage](13-scene-fit.md) | delta | **in progress** — fit shell done; viewport overflow deferred to after [00](00-foundations.md) |
+| 13 | [The scene as a stage](13-scene-fit.md) | delta | **done** |
 | 14 | [Texture without gradient](14-texture-without-gradient.md) | delta | **done** |
 | 15 | [Images that exist](15-images.md) | delta | **done** |
 | 16 | [Charts](16-charts.md) | delta | not started |
@@ -97,7 +97,7 @@ The two that land after 04 do so for the opposite reason: [16](16-charts.md) and
 **Recommended build order**, which is the graph flattened:
 
 ```
-13a · 00 · 01 · 13b · 14 · 15 · 02 · 03 · 04 · 17 · 05 · 16 · 06 · 07 · 08 · 09 · 10 · 11 · 12
+13a · 00 · 14 · 15 · 13b · 01 · 02 · 03 · 04 · 17 · 05 · 16 · 06 · 07 · 08 · 09 · 10 · 11 · 12
 ```
 
 **[13](13-scene-fit.md) splits, and its first half went first.** The graph above shows 13 hanging off 01, which was drawn reflexively and is not true of the code: the fit shell is three `Rhythm` tokens, four CSS variables and two component edits, all in files that exist today. Only section 9 of that phase — viewport overflow reporting — needs a headless layout and therefore [00](00-foundations.md)'s `render` service. `13a` is the shell and is **done**; `13b` is the overflow half and waits.

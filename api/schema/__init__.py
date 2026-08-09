@@ -18,6 +18,7 @@ from pydantic import BaseModel
 from schema.brief import Brief, InterviewStep, Question
 from schema.experience import Asset, BrandKit, Experience
 from schema.outline import Outline
+from schema.overflow import BlockExtent, OverflowReport, SceneOverflow
 from schema.patch import BlockPatch, EditResult
 from schema.scene import Block, Scene
 
@@ -35,6 +36,13 @@ EXPORTED: dict[str, type[BaseModel]] = {
     "InterviewStep": InterviewStep,
     "Question": Question,
     "Outline": Outline,
+    # `OverflowReport` pulls the other two in as `$defs`; all three are listed
+    # because the banner renders a `SceneOverflow` on its own and a shape web
+    # imports by name should be a row here rather than reached through another
+    # model's `$defs`.
+    "OverflowReport": OverflowReport,
+    "SceneOverflow": SceneOverflow,
+    "BlockExtent": BlockExtent,
     "BlockPatch": BlockPatch,
     "EditResult": EditResult,
 }
