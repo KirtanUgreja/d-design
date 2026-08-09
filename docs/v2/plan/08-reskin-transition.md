@@ -95,6 +95,7 @@ This is the single most likely thing in the phase to be forgotten, because the t
 **Human**
 
 - [ ] Reskin between all three art directions, both directions, several times. This is the screenshot people share and from v3 it is the marketing hero's one interactive control — it is allowed to take an afternoon
+- [ ] **Choose a scene with a photograph in it for that screenshot.** One uploaded image under three `ImageTreatment`s — duotone on a black stage, as-shot behind a hairline frame, posterized under a halftone — is three genuinely different images from unchanged pixels, with no regeneration and no second asset row ([15](15-images.md)). Type reskinning is easy to dismiss as a theme switch; a photograph that has been *art-directed* three ways is the argument that cannot be, and it is the frame that should lead the demo
 
 ---
 

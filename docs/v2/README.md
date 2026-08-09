@@ -10,11 +10,11 @@ v1 ships one art direction, so the central bet is untested — a token layer wit
 
 | Doc | What's in it |
 |---|---|
-| [spec.md](spec.md) | Theme, commitments vs bets, 13 locked decisions, platform reality, the deltas from v1, build order, verification, risks |
-| [plan/](plan/README.md) | **The implementation plan.** Thirteen phases from one art direction to three, each with what to read, what to build, and what to verify. Build status lives in its README |
+| [spec.md](spec.md) | Theme, commitments vs bets, the locked decisions, **the composition deltas**, platform reality, the deltas from v1, build order, verification, risks |
+| [plan/](plan/README.md) | **The implementation plan.** Eighteen phases from one art direction to three, each with what to read, what to build, and what to verify. Build status lives in its README |
 | [art-direction-system.md](art-direction-system.md) | **The AD format.** DTCG alignment, budgets, brand mapping, the 3 hand-authored ADs, motion as an independent axis, user controls, the linter |
 | [transformations.md](transformations.md) | Reskin and its transition, overflow handling, compare view, motion swap, slides mode, version history |
-| [primitives.md](primitives.md) | The 7 new blocks — `Gallery`, `Timeline`, `Comparison`, `Marquee`, `LogoWall`, `SpecTable`, `ScrollSequence` — and what was refused |
+| [primitives.md](primitives.md) | The 7 new blocks — `Gallery`, `Timeline`, `Comparison`, `Marquee`, `LogoWall`, `SpecTable`, `ScrollSequence` — plus `Chart`, reversed out of the refusal list, and what stays refused |
 
 ## Find it fast
 
@@ -37,6 +37,12 @@ v1 ships one art direction, so the central bet is untested — a token layer wit
 | Slides mode, and what degrades in it | [transformations.md](transformations.md) → "Slides mode" |
 | A new primitive's props | [primitives.md](primitives.md) — one section per block |
 | What was proposed and rejected | [primitives.md](primitives.md) → "Not added, and why" |
+| **Why the output looked thin, and the five phases that fix it** | [spec.md](spec.md) → "Composition deltas" |
+| Why a scene shares the viewport with the next one, and the fix | [plan/13-scene-fit.md](plan/13-scene-fit.md) |
+| The gradient and neon bans, and what replaces them | [plan/14-texture-without-gradient.md](plan/14-texture-without-gradient.md) |
+| Why every `Image` block renders a grey rectangle | [plan/15-images.md](plan/15-images.md) |
+| Why charts stopped being refused | [primitives.md](primitives.md) → "The chart reversal, in full" |
+| Why generated pages are eight centred scenes in a row | [plan/17-composition.md](plan/17-composition.md) |
 
 ## The thing to understand about v2
 

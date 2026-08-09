@@ -61,6 +61,8 @@ One browser instance, reused across requests, with a page pool. Launching Chromi
 
 Nothing about the generation changes. What changes is that a `file:` link becomes a version, so `render` cannot silently drift onto a different schema than `web` compiled against.
 
+**A workspace protocol, not a registry.** `workspace:*` with an explicit version gets the whole benefit — versioned, no drift, CI still fails on a regeneration diff — and costs no external service, no auth, and no publish step in the local loop. Everything in v2 runs on `docker compose up` and a dev server with no account anywhere, and that property is worth keeping deliberately rather than losing to a convenience. A registry belongs to v3 step 11, when the services deploy separately and there is no shared workspace to resolve through ([../../v3/spec.md](../../v3/spec.md) → Build order).
+
 ### The migrations
 
 ```sql
@@ -125,7 +127,7 @@ experiences         art_direction jsonb   -- {id, version}, was text
 |---|---|
 | AWS, RDS, a deployed anything | v3. v2 is still Docker Compose and a dev server ([../../techstack/infrastructure.md](../../techstack/infrastructure.md)) |
 | A queue in front of `render` | When a single browser pool stops absorbing the load, which one local user will not do. `jobs` calls it synchronously in v2 |
-| Publishing `@d-design/schema` to a public registry | v4's marketplace. v2 publishes it to a private registry or a workspace protocol — what matters is that it is versioned, not that it is public |
+| Publishing `@d-design/schema` to any registry, public or private | **v2 uses a workspace protocol** — `workspace:*` with a version in `package.json`, resolved by pnpm. What matters is that the version is explicit so `render` cannot silently drift onto a different schema than `web` compiled against; a registry adds an external service and an auth story to buy nothing at two consumers in one repo. A real registry arrives with v3 step 11, when the services deploy separately and there is no shared workspace to resolve through. v4's marketplace is the public case |
 | Frame extraction from video | Phase 12, and it lands in the **fetch worker**, not here. Video containers are the same hostile-bytes class as PDFs ([../primitives.md](../primitives.md) → `ScrollSequence`) |
 
 ---
@@ -136,5 +138,6 @@ experiences         art_direction jsonb   -- {id, version}, was text
 - [ ] `render` returns a correct screenshot of a hand-written scene tree, and holds no credential
 - [ ] Four migrations up, down, and up again against v1 data with no content change
 - [ ] RLS proven on both new tables, including the system-AD read path
-- [ ] `@d-design/schema` is versioned and consumed by both `web` and `render`
+- [ ] `@d-design/schema` is versioned and consumed by both `web` and `render`, through a workspace protocol and no registry
+- [ ] The whole of v2 still runs on `docker compose up` and a dev server, with no account on any external service. If this phase acquired one, it acquired the wrong thing
 - [ ] The gate is green

@@ -107,8 +107,8 @@ Four presentation decisions ride on top of that shape without changing it, and t
 | One scene tree per experience | One per locale | Transcreation produces real per-locale trees |
 | Layout direction is LTR | LTR or RTL | Mirrors layouts, motion, and marquees |
 | Pricing deferred | Free to generate, pay to publish | Third deferral would be permanent |
-| Docker Compose and a dev server | **The whole AWS stack** — two workers, RDS, S3/CloudFront, Terraform, CI/CD | v3 is the first release with users, other people's data, and hostile input from strangers |
-| One runtime | **Three**, split on trust | The process holding database credentials must not be the one rendering an attacker's webpage |
+| Docker Compose and a dev server | **The whole AWS stack** — but not until step 11, after every feature works locally | v3 is the first release with users and hostile input from strangers. It is also the first release large enough that owning an estate before knowing the product is right is the expensive mistake |
+| One runtime | **Four**, split on trust — and split in Compose at step 0, long before they are split into subnets | The process holding database credentials must not be the one rendering an attacker's webpage. The boundary is written in code from the start; the network enforces it at the end |
 | A published page makes zero requests | **Exactly two**, by exact path | The cost of client-side personalization and the analytics beacon |
 
 **Migration:** existing experiences get `locale: 'en'`, `direction: 'ltr'`, and an `environment` group defaulted per AD. No content changes.
@@ -146,7 +146,7 @@ experiences    + owner_id
 
 Ordered by reversibility — cheapest to unwind first, with one unavoidable exception at the front.
 
-0. **Infrastructure.** v1 and v2 ran on Docker Compose and a dev server. **v3 is where the entire operational stack stands up** ([../techstack/infrastructure.md](../techstack/infrastructure.md)): AWS account, VPC with the quarantine subnet, both ECS workers, RDS/Aurora, S3 + CloudFront + ACM, Secrets Manager and KMS, Terraform, GitHub Actions with OIDC, and the second repo for the fetch worker
+0. **Runtime topology — locally.** The processes and the trust boundaries between them, in Docker Compose: the **fetch worker** as its own container on its own network with no route to `api`, `jobs`, `postgres` or `minio`; the **`jobs`** worker running PGQueuer; LocalStack for KMS and Secrets Manager. **No AWS account.** This is the part almost everything below depends on, and it is a topology requirement rather than a hosting one
 1. AD format v3: `environment` group, per-script fonts. Migrate the 3 ADs
 2. **AI-derived AD** — the biggest wow, and it rides entirely on v2's control axes
 3. Localization: transcreation + locale URLs + per-script fonts
@@ -157,14 +157,43 @@ Ordered by reversibility — cheapest to unwind first, with one unavoidable exce
 8. 3D: `environment` rendering, `Model3D`, stock library, abstract generators
 9. Accounts, custom domains, branding badge, billing, publish gate — **and the marketing site, pricing page, and signup**, which are the same release's work and are already designed ([../design/website.md](../design/website.md))
 10. **AI transparency marking** — C2PA on generated imagery, machine-readable declaration on published pages, per-locale marking. Not last because it is least important; last because it needs every generating surface to exist first. **It gates launch, not v3 feature-completeness**
+11. **Deployment — the AWS stack.** AWS account, VPC with the quarantine subnet, ECS Fargate for all four services, RDS/Aurora, S3 + CloudFront + ACM, Secrets Manager and KMS, Terraform, GitHub Actions with OIDC ([../techstack/infrastructure.md](../techstack/infrastructure.md)). **Last, and deliberately so** — see below
 
-**Step 0 is not optional and it is not reversible-ordered, which is why it breaks the rule the rest of the list follows.** Almost everything after it depends on infrastructure that does not exist yet: derivation fetches attacker-supplied URLs (fetch worker), transcreation is long-running work per locale (job worker), live data holds integration credentials (fetch worker), 3D posters are generated at publish (job worker), and every one of those writes to S3. Attempting step 2 first means building it twice.
+### Why topology is first and deployment is last
 
-The cost is real and it belongs in the estimate rather than in a surprise: this is the release where a solo build acquires an AWS topology, an IaC codebase, and a second repository, none of which move Risk 1.
+These were one step until 2026-08-09, and splitting them is the single highest-value reordering available in this plan.
 
-**The one thing v1 should already have done is `storage.ts`** — pointed at the S3 API from day one with MinIO locally, so this step is a credential change rather than a rewrite.
+**The original argument for infrastructure-first was correct, and it was an argument about topology, not about AWS.** Derivation fetches attacker-supplied URLs, so it needs the fetch worker to *exist as a separate process*. Transcreation is minutes of work per locale, so it needs a job worker. Live data holds integration credentials, so it needs the quarantine. Every one of those writes to object storage. Build step 2 without those processes and you build it twice — that reasoning stands and it is why step 0 is still step 0.
 
-Steps 1–4 are a shippable product on their own. If you ever decide to meet users earlier, stop here.
+**But none of those dependencies is on Amazon.** They are dependencies on *processes, boundaries and APIs*, and Docker Compose provides all three:
+
+| The claim | Locally |
+|---|---|
+| The fetch worker cannot reach the database or the app | Its own Compose network, not shared with `api`, `jobs`, `postgres` or `minio`. It keeps internet egress through the default gateway, which is what it needs and all it needs. **Not `internal: true`** — that would also cut the egress the worker exists to have |
+| `storage.ts` talks to the S3 API | MinIO, which is not a mock — it speaks the protocol. This is why v1 was told to write `storage.ts` against S3 from day one |
+| The envelope-encryption path runs | LocalStack KMS, so the crypto path is exercised in development rather than first tried in production |
+| Long-running work does not block a request | PGQueuer in a `jobs` container, exactly as it will run on Fargate |
+
+So the whole feature build — derivation, localization, RTL, live data, personalization, analytics, 3D, billing, content marking — happens against the real topology and never touches an AWS account. **You find out whether the product is right before you own an estate**, which is the point of the reordering and the reason to make it now rather than after paying for it.
+
+**What deployment then is:** taking a system that works into an environment that is reviewable, isolated by network rather than by convention, and reachable by strangers. That is real work with its own verification list — it is not "flip a switch at the end", and treating it that way is the way this reordering fails.
+
+### What local cannot prove, and therefore what step 11 owes
+
+This is the honest cost of the deferral, and it is a short, specific list rather than a shrug. Every item is a control that is **only** real in the deployed environment:
+
+- **The socket-level unreachability test** ([../security/testing.md](../security/testing.md)) — *"from inside the worker, the metadata IP and a VPC-internal host are unreachable"*. Locally, the metadata IP does not exist, so the test passes vacuously and proves nothing. `169.254.169.254` and IMDSv2-disabled-on-the-task are AWS facts. This is described as **the most important assertion in the suite**, and deferring it means it is unproven until step 11 — so step 11 runs it first, not last
+- **Task-role scoping** — *"the fetch worker's role can decrypt integration credentials and nothing else"*. LocalStack defaults to a permit-all IAM environment, so a local pass says nothing about a real policy. Its IAM Policy Stream can generate and test policies, which makes this partly rehearsable, but the enforced version is AWS
+- **The CloudFront cache-key policy**, which is a security control and not a performance setting
+- **ACM, SNI, custom domains, and the dangling-DNS rules** — no local analogue at all
+- **RDS Proxy, connection-pool behaviour under real latency**, and anything that only appears when the database is a network hop away
+- **Published pages as static S3 objects behind CloudFront.** Locally they are served by a dev server, which means the *"there is no router to be lenient"* argument against web cache deception is untested until the objects are really objects
+
+Two consequences follow, and they belong in the plan rather than in a surprise. **Step 11 is time-boxed but not small** — it carries the six items above as its own verification list, and the socket-level test is its first checkbox. And **the trust split has to be honoured in code from step 0 anyway**, because a fetch worker that acquired a `DATABASE_URL` while nobody was enforcing a subnet is a fetch worker that will not survive being put behind one. Assert the absence of credentials in the Compose file and in a test that reads the environment, exactly as v2's `render` service already does.
+
+**The one thing v1 should already have done is `storage.ts`** — pointed at the S3 API from day one with MinIO locally, so step 11 is a credential change rather than a rewrite.
+
+Steps 1–4 are a shippable product on their own. If you ever decide to meet users earlier, stop here — and note that "meeting users" is now the only thing that requires step 11, which is precisely the property this ordering was chosen for.
 
 ## Verification
 
@@ -183,8 +212,11 @@ Steps 1–4 are a shippable product on their own. If you ever decide to meet use
 | **Content marking** | Published page and every locale page carry a machine-readable AI-content declaration, derived from per-block provenance. Human-authored copy is *not* marked synthetic |
 | **RTL exception list** | Arabic renders mirrored via `dir` alone, except `translateX` motion, `Marquee`, and horizontal `Timeline` — assert each inverts |
 | **Reskin still holds** | 3 ADs + derived ADs × 4 motion × 2 modes × 12 locales. The v2 guarantee must survive everything above |
+| **Trust split, locally** | From step 0: the fetch worker container has no `DATABASE_URL`, no `S3_*` and no model key, and cannot resolve or reach `postgres`, `minio`, `api` or `jobs`. Asserted in the Compose file **and** in a test that reads the environment — a control nobody asserts is a comment |
+| **Trust split, really** | Step 11's **first** checkbox, not its last: from inside the deployed worker, `169.254.169.254` and a VPC-internal host are unreachable at the socket level. The local version of this test passes vacuously and must be marked not-covered rather than green |
+| **The other five deferred controls** | Task-role scoping, the CloudFront cache-key policy, ACM/SNI/custom domains, RDS Proxy under real latency, and published pages as real S3 objects. Each is a step-11 line item because none has a local analogue |
 
-That last row matters most. Every v3 feature is a chance to break the one thing v2 promised.
+That reskin row matters most. Every v3 feature is a chance to break the one thing v2 promised.
 
 ## Risks
 
@@ -202,4 +234,6 @@ That last row matters most. Every v3 feature is a chance to break the one thing 
 
 **6. This is the largest version by far, built solo.** v2 was 54 design surfaces. v3 is five subsystems, three of which (3D, analytics, billing) are new competencies. The build order exists so that stopping early still leaves a coherent product.
 
-**6b. And it is also the release that acquires an infrastructure estate.** Step 0 is an AWS topology, a Terraform codebase, two container services, a CDN, a secrets story, and a second repo — none of it visible to a user, all of it prerequisite. It is genuinely satisfying work, which is the danger: it feels like progress and does not move Risk 1 or Risk 3 at all. Time-box it, keep it in Terraform so it is reviewable rather than remembered ([../techstack/infrastructure.md](../techstack/infrastructure.md)), and get back to the features.
+**6b. And it is also the release that acquires an infrastructure estate — now at the end rather than the beginning.** Step 11 is an AWS topology, a Terraform codebase, four container services, a CDN and a secrets story, none of it visible to a user. It is genuinely satisfying work, which is the danger: it feels like progress and does not move Risk 1 or Risk 3 at all. Moving it last is the mitigation, and it also removes the *"build the VPC first because it feels productive"* temptation the infrastructure doc warns about ([../techstack/infrastructure.md](../techstack/infrastructure.md)) by making it structurally impossible to yield to.
+
+**6c. The reordering has its own failure mode, and it is not the one people expect.** The worry is that deployment turns out to be hard at the end. The real risk is subtler: **six security controls go unproven for the whole build** (see "What local cannot prove"), and the most important assertion in the entire test suite — socket-level unreachability from the fetch worker — passes vacuously on Compose because there is no metadata endpoint to be unreachable from. A vacuous pass is worse than a skipped test, because it reads green. Two mitigations: mark those six as **explicitly not covered** in the local suite rather than letting them appear to pass, and make the socket-level test the *first* checkbox of step 11 rather than a line item in it. If it fails there, everything built on the assumption of quarantine needs re-examining, and you want that discovery on day one of step 11 rather than on the last.

@@ -47,6 +47,11 @@ So this doc separates two kinds of statement.
 | AD versioning | Pinned at publish, opt-in upgrade | A live launch page must not restyle itself overnight |
 | History | Auto-snapshot at milestones + named saves | Scene trees are small JSON; storing 50 costs nothing |
 | Slides mode | One scene = one slide, motion retimed | No content changes, no second authoring pass |
+| Gradients | **Banned in the artifact**, not only in our chrome | Principle 5's list was always right; it was scoped to the wrong surface ([plan/14](plan/14-texture-without-gradient.md)) |
+| Texture | Print-derived — halftone, hatch, dither, weave, grain, rule. Stepped, never ramped | The replacement has to be better than what it replaces, or the ban costs quality |
+| Scene fit | An AD lookup from layout, floored at `100svh`, `proximity` snap | Composition assumes a frame. Nothing ever defined one |
+| Charts | **In**, as a primitive of 5 marks with no library and no data editor | The refusal was about a charting tool; a library would be the one part of a page the AD does not control |
+| Chart data | Traces to a Brief proof point, `source` required | An unsourced number on a customer's launch page is the failure that matters |
 | Delight budget | The reskin transition | It's the screenshot people share — and from v3 it is the marketing hero's one interactive control, where it demonstrates the abstraction instead of asserting it ([../design/website.md](../design/website.md)) |
 | Pricing | Still deferred — v3 | v2 is about being loved, not monetized |
 
@@ -66,6 +71,30 @@ Per the versioning convention, v1 docs stay as the record of what was believed. 
 | AD token values are hand-authored by you | Partly **user-controlled**, and validated by grammar before becoming CSS | The first release where a token value is untrusted input |
 
 **Migration:** existing v1 experiences get `artDirection: { id: 'cinematic-dark', version: 1 }` and the v1 caps become that AD's budgets. No content changes. The `scenes` jsonb shape is otherwise unchanged.
+
+## Composition deltas — added 2026-08-09, after looking at the output
+
+Everything above this section was written before a generated experience had been examined as a *design* rather than as a tree. Five defects were visible immediately, none of them was in the plan, and all five share one property: **they are presentational, and every quality mechanism this product has verifies structure.** The schema, the linter, the gate and the invariants script all passed on output that was plainly not good enough.
+
+These are commitments, not bets. Each one is a defect against something already written down.
+
+| Delta | v1/v2 said | What is true | Phase |
+|---|---|---|---|
+| **A scene owns its frame** | *"Scenes are generously tall"* — expressed as padding only | Scenes are content-height, so a short hero and the top of the next scene share the viewport and neither is composed. `fit` becomes an AD lookup from layout, floored at `100svh`, placed by token, snapped by `proximity` | [13](plan/13-scene-fit.md) |
+| **No gradient in the artifact** | Principle 5 bans gradients, glow and bloom — filed under `docs/design/`, read as being about our chrome | The renderer *is* gradients: a coloured bloom behind every hero, a radial vignette, four of five visual generators. The artifact was exempt by filing rather than by decision. Replaced by halftone, hatch, dither, weave, rule and grain — stepped, never ramped | [14](plan/14-texture-without-gradient.md) |
+| **Images exist** | v1 deferred asset resolution and the generation call, honestly and twice | Every `Image` block renders a grey rectangle. Resolution, art-directed treatment, and generation through the single seam. **One photograph under three ADs is the best demonstration of the reskin thesis in the product** | [15](plan/15-images.md) |
+| **Charts** | Refused twice: *"a product inside the product"* | The refusal was about a charting *tool* and two of its three objections do not apply to a primitive. Five marks, no library, series differentiated by texture as well as hue, numbers that must trace to a Brief proof point | [16](plan/16-charts.md) |
+| **Composition** | Principle 5: *"five consecutive centred sections — no rhythm, no hierarchy, no editing"* | That is our output. One anchor per scene, asymmetric splits as tokens, a ground cycle, editorial furniture, and four sequence constraints in the Director | [17](plan/17-composition.md) |
+
+**Three of these are the same shape as v1's art-direction #2 finding** — *the values a system holds globally are the ones it holds because it only ever had one instance.* `1fr 1fr` in `split-left.tsx`, `radial-gradient` in `scene.tsx`, and the absence of any frame at all are three more values that were never decided, only defaulted. That the same lesson landed twice is the argument for the visual critic in step 9 landing as early as it can.
+
+**Two locked decisions follow, and they are absolute rather than tuned:**
+
+> **No gradient, anywhere in the artifact.** Colour changes by dot, line, dither or hard edge. Enforced by grep, not by review.
+
+> **No neon, no bloom, no glow.** No blur, no chromatic shadow, no luminous edge. A hard offset shadow with zero blur is a print device and stays. Saturation is bounded by value in the linter, so `bold-brutalist`'s full-strength brand ground survives and acid-on-black does not.
+
+The replacement vocabulary is not a reduction. Print-derived texture — halftone, riso misregistration, dither, hatch — is where the actual craft is, and it is what reads as *engineered* where a mesh gradient reads as a template. It also composes: series fills in [16](plan/16-charts.md), image overlays in [15](plan/15-images.md), and the ground treatments in [17](plan/17-composition.md) are all the same six kinds.
 
 ## Platform reality (researched August 2026)
 
@@ -178,6 +207,8 @@ experiences         + motion_vocabulary, + art_direction is now {id, version}
 12. Slides mode — reuses the overflow mechanism from step 7
 13. The 7 primitives, in order of real demand
 
+**Five composition deltas interleave with this list rather than appending to it** ([plan/README.md](plan/README.md) → "Dependency graph" is the authority). Scene fit, the texture vocabulary and images land **between steps 1 and 3**, because each adds tokens and an art direction authored before they exist has to be re-authored after them. Composition lands immediately after step 5, and charts after it — both are three-art-direction problems, and building either against one AD bakes that AD's opinions into a default.
+
 Do not build reskin (7) before both new ADs exist (4–5). Reskin against one AD is untestable, and the second and third ADs are what tell you the format is wrong while it's still cheap to change.
 
 ### `editorial-light` must not become our own brand
@@ -207,6 +238,12 @@ Step 9 sits after reskin deliberately. The loop needs something to look at and a
 | **History** | Reskin, restore, assert the tree is identical to the pre-reskin snapshot. |
 | **Slides overflow** | Content that fits a scroll scene and not a slide is flagged, never silently clipped. |
 | **Primitives** | All 18 rendered under all 3 ADs. Visual judgment — 54 surfaces, and this is the real cost of v2. |
+| **Scene fit** | At most one scene boundary visible in a 100svh frame, across 5 golden experiences × 3 ADs. A scene taller than the frame **grows and stays readable** — assert `scrollHeight === clientHeight` on every section, and scroll a deliberately over-long scene by hand |
+| **No gradient, no bloom** | `scripts/checks/invariants.sh` checks 7 and 8, each verified by breaking it. Then the harder one: the stepped bloom must read as *more* deliberate than the mesh it replaced, not as the mesh with a bug |
+| **Images** | An uploaded photograph renders. The same photograph under 3 ADs gives 3 visibly different images, no re-encode, no second asset row. `img-src 'self'` blocks a real remote URL. Zero CLS on a viewport-fit scene with a hero image |
+| **Generated imagery** | Exactly one call site — grep the provider name and find it only in `complete.py`. Cap fails closed. Prompt boundary asserted at the signature: no key messages, no proof points, no token values |
+| **Charts** | 5 marks × 3 ADs, distinguishable in **greyscale** and under deuteranopia. Bars start at zero and cannot be made not to. A model output inventing plausible numbers with no Brief proof point is **rejected in the build path** |
+| **Composition** | 10 generated experiences: no three consecutive identical layouts, every one meets the visual ratio floor, none opens and closes on the same layout, every scene has exactly one anchor and uses at least two type roles |
 
 ## Risks
 
@@ -221,3 +258,7 @@ The residual risk is smaller and worth naming: `view-transition-name` must be un
 **4. Per-AD budgets couple copy to art direction.** "Content is independent of styling" becomes "content is *mostly* independent of styling." This is an honest crack in the thesis, and the flagged-overflow design is the mitigation: the coupling is surfaced to the user rather than hidden.
 
 **5. Still no users.** Everything in the bets table may be wrong. Ship v1, watch what breaks, then re-read this document before building any of it.
+
+**6. Every quality mechanism in this product verifies structure, and every defect that mattered was presentational.** This is the risk the composition deltas were found by, and it is not retired by fixing them — the next four will be the same shape. The schema cannot see a gradient, the linter cannot see eight centred scenes in a row, and the invariants script only sees what someone already knew to grep for. Two mitigations, both partial: the greppable property bans (rules 18–19) turn *this* class of judgement into a gate, and the visual critic in step 9 is the only general mechanism aimed at the class. **Extend the critic's questions with what these phases fixed** — is a scene sharing the frame, is a series distinguishable in greyscale, does this scene look like the last three — and accept that the real control is still someone looking at the output on a screen, on a schedule.
+
+**7. The gradient ban could cost quality rather than buy it.** Removing a coloured bloom and shipping flat colour is a worse page, and "we followed the principle" is not a defence a viewer can see. The mitigation is that [plan/14](plan/14-texture-without-gradient.md) is scoped as *replacement*, not removal — six kinds where there were three, and an exit gate that requires the re-authored `cinematic-dark` hero to read as more deliberate than the one it replaces, judged by eye. If it does not, the steps are wrong; the ban is not.

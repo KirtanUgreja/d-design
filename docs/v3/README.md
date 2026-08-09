@@ -60,7 +60,9 @@ It began as a quality rule — a plausible-but-wrong render of the thing being s
 
 **The natural early exit is after step 4.** Derived ADs plus twelve languages is already worth showing someone, and given the top risk above, showing someone early is worth more than finishing the list.
 
-**Step 0 comes first and is not a feature.** v1 and v2 run on Docker Compose; v3 is where the entire operational stack stands up — AWS, both workers, RDS, S3/CloudFront, Terraform, CI/CD ([../techstack/infrastructure.md](../techstack/infrastructure.md)). Nearly every feature below it depends on infrastructure that does not exist yet, so it cannot be deferred the way the reversibility ordering would otherwise suggest. See [spec.md](spec.md) → Build order.
+**Step 0 comes first and is not a feature — but it is no longer AWS.** Nearly every feature below depends on a *runtime topology* that does not exist yet: a fetch worker as its own process, a job worker, S3-shaped storage. Step 0 stands all of that up in **Docker Compose**, with the fetch worker on its own network and no route to the database. The AWS stack — VPC, ECS, RDS, CloudFront, Terraform, OIDC — is **step 11, last**, after every feature has been verified locally ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
+
+Split on 2026-08-09. The original argument for infrastructure-first was right and was about processes and boundaries, not about a hosting provider; separating the two means the entire feature build happens before an account exists. The honest cost is six security controls that only the deployed environment can prove — including the socket-level unreachability test, which **passes vacuously on a laptop** and must be marked not-covered rather than green. See [spec.md](spec.md) → "Why topology is first and deployment is last".
 
 ## Connects to
 

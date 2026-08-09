@@ -67,7 +67,17 @@ The corollary is that the check is **per art direction**, which is exactly why i
 - Does this scene look meaningfully different from the previous one?
 - Does the emphasis land where the scene's intent says it should?
 
+Five more, added with the composition deltas ([../spec.md](../spec.md)) — each one is a defect that shipped in v1 and that every structural check passed:
+
+- Is more than one scene visible in this frame? ([13](13-scene-fit.md))
+- Is any image a flat placeholder rectangle rather than a photograph? ([15](15-images.md))
+- Does this scene have a single dominant element, or is everything the same size? ([17](17-composition.md))
+- Are the chart's series distinguishable without relying on colour? ([16](16-charts.md))
+- Do the last three scenes share a layout and a ground? ([17](17-composition.md))
+
 Structural questions with defensible answers. A vision model asked "is this good?" returns flattery. **The critic catches broken, not boring** — exactly as the linter enforces readability and has no opinion on taste.
+
+The five additions are worth understanding as a set rather than as items. Every one of them describes a defect that was **presentational**, that passed the schema, the linter, the gate and the invariants script, and that was found by a person looking at a screen. This loop is the only general mechanism in the product aimed at that class, which is the argument for asking it more questions and for running it earlier than reskin — see [README.md](README.md) → "The five phases added after the plan was written". The bound that keeps it from becoming an agent is the loop limit, not the question count.
 
 ### It streams optimistically
 

@@ -1,6 +1,6 @@
 # v2 Implementation Plan
 
-> Thirteen phases from one art direction to three, a reskin that breaks nothing, and a pipeline that looks at what it made. Every phase is one sitting's work, has a gate in and a gate out, and cannot start before the phase it depends on is green.
+> Eighteen phases from one art direction to three, a reskin that breaks nothing, a pipeline that looks at what it made, and output that survives being looked at. Every phase is one sitting's work, has a gate in and a gate out, and cannot start before the phase it depends on is green.
 
 **Status of the whole build lives in the table below. Status of the work *inside* a phase lives in that phase's Exit gate checklist.** Two places, no overlap — the table says which phase you are in, the checklist says how far through it you are. Do not copy status between them.
 
@@ -23,8 +23,28 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 10 | [Slides mode](10-slides-mode.md) | 12 | not started |
 | 11 | [Range: motion and compare](11-range.md) | 10, 11 | not started |
 | 12 | [Seven primitives](12-primitives.md) | 13 | not started |
+| 13 | [The scene as a stage](13-scene-fit.md) | delta | not started |
+| 14 | [Texture without gradient](14-texture-without-gradient.md) | delta | not started |
+| 15 | [Images that exist](15-images.md) | delta | not started |
+| 16 | [Charts](16-charts.md) | delta | not started |
+| 17 | [Composition](17-composition.md) | delta | not started |
 
 Statuses are `not started` · `in progress` · `done` · `blocked — <why>`. Update this table when a phase changes state, and nothing else. A phase is `done` only when its Exit gate checklist is fully ticked — not when the code appears to work.
+
+## The five phases added after the plan was written, and why they are numbered last
+
+Phases 13–17 were added on 2026-08-09, after the first generated experiences were looked at rather than reasoned about. They are numbered last because **a phase number is a filename, not a position** — renumbering thirteen files to insert five would break every cross-reference in the corpus to buy nothing. Several of them build *early*; the dependency graph below is the authority on order and the numbers are not.
+
+They exist because four defects were visible in the output and none of them was in this plan:
+
+| What was wrong | Phase | Why the original plan could not have caught it |
+|---|---|---|
+| Scenes are content-height, so two share the viewport and neither is composed | [13](13-scene-fit.md) | Nothing in v1 or v2 ever said what a scene's *frame* is. The renderer tests assert structure, and structure was correct |
+| The renderer is built out of gradients — a coloured bloom behind every hero, four of five visual generators | [14](14-texture-without-gradient.md) | [../../design/principles.md](../../design/principles.md) principle 5 bans exactly this, and it was filed under `docs/design/`, which everyone read as being about *our chrome*. The artifact was exempt by filing rather than by decision |
+| Every `Image` block renders a grey rectangle | [15](15-images.md) | It was recorded honestly, twice, as a v1 deferral — and then not picked up by any v2 phase. A gap two docs agree on can still belong to nobody |
+| A page of numbers has no way to show a trend, and generated pages are eight centred scenes in a row | [16](16-charts.md), [17](17-composition.md) | Charts were refused on reasoning that was about a charting *tool*. Sameness is invisible to a schema and was invisible to a plan written before there was output |
+
+**The pattern is worth naming, because it will recur.** Every one of these is a *presentational* property, and this plan's entire quality apparatus — the schema, the linter, the gate, the invariants script — is built to verify **structure**. All four defects passed every check the product had. The visual critic in [09](09-visual-verification.md) is the only mechanism in v2 aimed at this class, which is an argument for it landing earlier than it does, and its questions should be extended by what these phases fix.
 
 ## What v1 already delivered, and what that changes
 
@@ -46,27 +66,41 @@ Statuses are `not started` · `in progress` · `done` · `blocked — <why>`. Up
 ```
 00 foundations (render service · published schema · migrations)
  └─ 01 AD format v2
-     ├─ 02 motion as an axis ──────────┐
-     ├─ 03 AD linter ──────────┐       │
-     │                         ▼       │
-     └──────────────▶ 04 three art directions
-                                │      │
-              ┌─────────────────┼──────┴──────────┐
-              ▼                 ▼                 ▼
-      05 budgets in       06 version         11 range
-      the pipeline          history       (motion 2-4, compare)
-                                │
-                                ▼
-                          07 reskin ──────┬──────────┐
-                                │         │          │
-                                ▼         ▼          ▼
-                    08 transition  09 visual   10 slides mode
-                                   verification
-                                                     │
-                                          12 primitives (after 04)
+     ├─ 02 motion as an axis ─────────────────────┐
+     ├─ 13 scene fit ───────────────┐             │
+     ├─ 14 texture (no gradient) ───┤             │
+     │        └─ 15 images ─────────┤             │
+     ├─ 03 AD linter ───────────────┤             │
+     │       (+ 14's neon bounds)   ▼             │
+     └──────────────────▶ 04 three art directions │
+                                │  │  │           │
+       ┌────────────────────────┘  │  └───────────┼────────┐
+       ▼                           ▼              ▼        ▼
+ 05 budgets in            16 charts        06 version   11 range
+ the pipeline           17 composition       history  (motion 2-4,
+                     (also needs 13,14,15)      │        compare)
+                                │               ▼
+                                │         07 reskin ──┬─────────┐
+                                │               │     │         │
+                                ▼               ▼     ▼         ▼
+                          09 visual   08 transition  10 slides mode
+                          verification
+                                            12 primitives (after 04)
 ```
 
 **Order matters more here than it did in v1.** Steps 04–05 exist to break step 01. A format that has only ever expressed the art direction it was extracted from is not a format; it is that art direction with extra syntax. Do not build reskin before all three art directions exist — reskin against one AD is untestable, and the third AD is what tells you the format is wrong while changing it is still cheap.
+
+**Three of the new phases land before 04, and that placement is the whole point of adding them where they are.** 13, 14 and 15 each add tokens — `fit`, six texture kinds, `ImageTreatment` — and an art direction authored before those tokens exist is an art direction that has to be re-authored after them. Authoring `bold-brutalist` against a format that has no image treatment means discovering at phase 15 that it needed one, which is precisely the "expect the format to be wrong" cost [04](04-three-art-directions.md) is trying to pay once instead of three times. 14 also lands before 03, because the linter's neon bounds are that phase's output.
+
+The two that land after 04 do so for the opposite reason: [16](16-charts.md) and [17](17-composition.md) are both **three-art-direction problems**. A chart authored against one AD is a chart with that AD's opinions baked in, and composition tokens whose values were only ever chosen for `cinematic-dark` are the same trap in a different group. Building them after three ADs exist is what makes them tokens rather than defaults.
+
+**Recommended build order**, which is the graph flattened:
+
+```
+00 · 01 · 13 · 14 · 15 · 02 · 03 · 04 · 17 · 05 · 16 · 06 · 07 · 08 · 09 · 10 · 11 · 12
+```
+
+[17](17-composition.md) sits immediately after 04 because it is the phase that decides whether the three art directions look like three designs or three colour schemes, and that is a judgement best made while all three are still fresh and cheap to change.
 
 ## The one hard gate
 
@@ -99,8 +133,12 @@ The eleven non-negotiables from [../../coderules/README.md](../../coderules/READ
 15. **A published page never restyles itself.** The AD reference is `{ id, version }` and publishing pins it. Upgrading is opt-in, with a preview
 16. **The critic never acts.** The visual loop is a `for` with a literal limit of 1, its output stays inside a fixed schema, and its verdict triggers no tool call and no write ([../../techstack/ai-stack.md](../../techstack/ai-stack.md))
 17. **Nothing rewrites approved copy without being asked.** Overflow is flagged, visibly and deliberately annoyingly; shortening is one click and shows the proposed text first ([../transformations.md](../transformations.md))
+18. **No gradient, anywhere in the artifact.** No `linear-`, `radial-`, `conic-` or `repeating-*-gradient`, in the renderer, in a token value, or in a generated visual. Colour changes by dot, line, dither or hard edge. [../../design/principles.md](../../design/principles.md) principle 5 governs the artifact and not only our chrome, and [14](14-texture-without-gradient.md) is where that stops being an aspiration — `scripts/checks/invariants.sh` check 7
+19. **No neon, no bloom, no glow.** No `blur()`, no `backdrop-filter` as bloom, no chromatic `box-shadow` or `text-shadow` at any radius, no luminous edge. A hard offset shadow with zero blur is a print device and is allowed; the banned property is the blur. Saturation is bounded by value in the linter rather than by taste — invariants check 8
+20. **A scene owns its frame.** Whether a scene fills the viewport is the art direction's lookup from the layout the AI wrote, never a field the AI sets and never a renderer constant ([13](13-scene-fit.md))
+21. **A number on a published page traces to something the user supplied.** A `Chart` whose points do not trace to a proof point in the approved Brief is rejected before storage, and `source` is a required field, not an optional one ([16](16-charts.md))
 
-Rules 13 and 14 are enforced by one validator with two purposes, and building it as one is what stops the security half being deferred as separate work. Rules 12 and 17 have no automated enforcement and are the two most likely to erode under deadline; phase 04 and phase 07 carry the greppable checks that approximate them.
+Rules 13 and 14 are enforced by one validator with two purposes, and building it as one is what stops the security half being deferred as separate work. Rules 18 and 19 are greppable by construction — that is why they are written as property bans rather than as taste guidance, and each is verified by breaking it and watching the gate go red. Rules 12, 17 and 20 have no automated enforcement and are the three most likely to erode under deadline; phases 04, 07 and 13 carry the greppable checks that approximate them.
 
 ## Where the design budget goes
 
@@ -112,10 +150,16 @@ v1 rationed design attention to four hot screens ([../../design/app.md](../../de
 | `bold-brutalist` — the art direction that has to look deliberate rather than loud | [04](04-three-art-directions.md) |
 | The overflow banner — the place the honest crack in the thesis is shown to a user | [07](07-reskin.md) |
 | 18 primitives × 3 art directions = **54 surfaces** | [12](12-primitives.md) |
+| The six texture kinds — the replacement vocabulary has to be *better* than the gradients, not merely compliant | [14](14-texture-without-gradient.md) |
+| Image treatment — one photograph reading three ways is the best demonstration of the whole thesis | [15](15-images.md) |
+| 5 chart marks × 3 art directions = 15 surfaces | [16](16-charts.md) |
+| The composition tokens, and Intake + the outline gate, deferred from v1 | [17](17-composition.md) |
 
-That last row is the single largest cost in v2, larger than the art direction system itself. It is why primitives are built last, in demand order, and why shipping v2 with fourteen of them is an acceptable outcome and not a failure.
+That 54-surface row is the single largest cost in v2, larger than the art direction system itself. It is why primitives are built last, in demand order, and why shipping v2 with fourteen of them is an acceptable outcome and not a failure.
 
-**Everything else is furniture.** The history panel, the compare view, the AD picker's chrome, the motion picker — assembled from shadcn/ui and left alone.
+**The four rows below it are new, and they change where the budget actually goes.** v1's ration went to four hot *screens*; the first draft of this plan said the expensive surface was a matrix. Both were right about the app and wrong about the artifact: the most expensive surface in v2 is **the generated page itself**, and it is the only one nobody had costed. Every row added here is artifact craft, and none of it is furniture.
+
+**Everything else still is.** The history panel, the compare view, the AD picker's chrome, the motion picker — assembled from shadcn/ui and left alone.
 
 ## What v2 does not build, and why the plan says so
 
@@ -143,4 +187,15 @@ Everything in [../spec.md](../spec.md) → Verification passes, in one sitting, 
 - [ ] `prefers-reduced-motion: reduce` collapses motion under all 4 vocabularies, in both modes
 - [ ] The gate is green and CI is green
 
+And the boxes the five added phases put on this list, which are about the output rather than the system:
+
+- [ ] At most one scene boundary is visible in a 100svh frame, across all 5 golden experiences and all 3 art directions — and a scene taller than the frame is still fully readable
+- [ ] Zero gradient functions and zero blurs under `renderer/` and `art-direction/`, enforced by grep and verified by breaking each check
+- [ ] An uploaded photograph renders, and the **same** photograph under 3 art directions produces 3 visibly different images with no re-encode and no second asset row
+- [ ] A generated image goes through the single seam, is capped, is marked `source: 'generated'`, and its prompt carries no key messages and no token values
+- [ ] Five chart marks render under 3 art directions, distinguishable in greyscale, with a zero baseline on bars and a required `source` — and a chart of invented numbers is rejected in the build path
+- [ ] Ten generated experiences: none has three consecutive identical layouts, all meet the visual ratio floor, none opens and closes on the same layout, every scene has exactly one anchor
+
 And the honest one, which is not a checkbox: **someone who has seen the product under `cinematic-dark` looks at the same experience under `bold-brutalist` and asks what tool made it.** If the answer is visibly the same tool, the range is not real yet.
+
+There is now a second honest one, and it comes first: **generate a page from a cold prompt, put it full-screen next to a page from a design studio, and ask someone which is which.** v2's original list could go entirely green while the answer stayed obvious, because every box on it verifies the system and none verifies the artifact. That is the gap phases 13–17 exist to close, and this is the only question that tells you whether they did.

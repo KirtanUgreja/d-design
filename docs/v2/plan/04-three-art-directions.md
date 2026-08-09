@@ -2,7 +2,9 @@
 
 > `editorial-light` moves into the format. `bold-brutalist` breaks it. This is the phase the whole build order is arranged around, and needing a format refactor here is the process working rather than failing.
 
-**Depends on:** [01](01-ad-format.md), [02](02-motion-axis.md), [03](03-ad-linter.md) · **Blocks:** [05](05-budgets-in-the-pipeline.md), [06](06-version-history.md), [12](12-primitives.md) · **Spec step:** 4, 5
+**Depends on:** [01](01-ad-format.md), [02](02-motion-axis.md), [03](03-ad-linter.md), [13](13-scene-fit.md), [14](14-texture-without-gradient.md), [15](15-images.md) · **Blocks:** [05](05-budgets-in-the-pipeline.md), [06](06-version-history.md), [12](12-primitives.md), [16](16-charts.md), [17](17-composition.md) · **Spec step:** 4, 5
+
+> **Three added phases land before this one, and each one is a token group these three art directions have to author.** [13](13-scene-fit.md) gives them `rhythm.fit`, [14](14-texture-without-gradient.md) replaces the texture union with six kinds none of which is a ramp, and [15](15-images.md) gives them `ImageTreatment`. Authoring `bold-brutalist` before those exist means re-authoring it after them — the exact repeated cost the "expect the format to be wrong" section below is trying to pay once. [16](16-charts.md) and [17](17-composition.md) go the other way and land *after*, because a chart or a composition token authored against one art direction is that art direction's default wearing a token's name.
 
 ---
 
@@ -69,6 +71,8 @@ Three things in that sketch are traps, and naming them now is cheaper than findi
 
 **"Hard-edged colour blocking at the layout level" is the sentence to be most suspicious of in all of v2.** Layout belongs to the scene, not to the art direction — rule 12, and the thing reskin's whole promise rests on. Whatever this turns into, it is a *token* the existing layouts read: a block-level surface colour, a rule weight, an edge treatment. If it cannot be expressed that way, the honest outcome is that `bold-brutalist` does not get it, and that outcome is recorded rather than worked around.
 
+> **It has since been expressed that way.** [17](17-composition.md)'s `groundCycle` is an ordered list of palette roles indexed by scene position, so `bold-brutalist` inverts on alternate scenes with no layout change and no branch — a lookup by position is not a conditional and the AI never sees it. Since 17 lands after this phase, seed `bold-brutalist` with a single ground and a `ponytail:` pointing at the cycle, the same way `defaultMotion` points at a vocabulary that does not exist yet.
+
 ### Expect the format to be wrong, and budget for it
 
 Two points define a line, and you will mistake AD-specific tokens for universal ones. **The third art direction is what tells you the format is right**, which is why the spec's Risk 1 says to budget for a format refactor between AD #2 and AD #3 and to treat needing one as the process working.
@@ -113,7 +117,8 @@ The v1 exercise found four values held globally because "global" and "cinematic-
 | A fourth art direction | v3's user authoring and AI derivation. Three is what proves the format; four is what proves you enjoyed authoring them |
 | `mechanical-snap` | [11](11-range.md). `bold-brutalist` points at `cinematic-slow` until then, with a `ponytail:` |
 | The four user control axes | Late v2 at the earliest ([../art-direction-system.md](../art-direction-system.md) → "User-authored art directions"). They are the same four v3's AI fills in, which is why they are designed before they are built |
-| A texture kind that suits a light or a flat ground | Deliberately refused here. `editorial-light` and `bold-brutalist` both take `texture: []` and get their structure from hairlines and colour blocks. A fourth kind is a renderer change of the branching sort |
+| ~~A texture kind that suits a light or a flat ground~~ | **Built** — [14](14-texture-without-gradient.md) pays that cost deliberately and once, taking the union from three kinds to six. `editorial-light` no longer takes the empty array, and this phase authors real texture for all three |
+| `bold-brutalist`'s ground cycle | [17](17-composition.md). Seeded with a single ground and a `ponytail:` until then |
 
 ---
 

@@ -13,8 +13,13 @@ ArtDirection {
 
   type:    TypeTokens;
   color:   ColorTokens;
-  rhythm:  RhythmTokens;
-  texture: TextureTokens;
+  rhythm:  RhythmTokens;        // + fit, fitMinBlock, fitPlace
+  texture: TextureTokens;       // six kinds, none of them a ramp
+
+  composition: CompositionTokens;   // splits, ground cycle, measures
+  furniture:   FurnitureTokens;     // scene index, rules, running label
+  image:       ImageTreatment;      // how a photograph joins this AD
+  chart:       ChartTokens;         // series fills, grid, labelling
 
   defaultMotion: MotionVocabularyId;
   budgets: ContentBudgets;
@@ -22,7 +27,11 @@ ArtDirection {
 }
 ```
 
-Four token groups instead of v1's five — **motion has left** and become an independent axis. Two new fields carry the weight of everything v2 adds.
+Motion has left v1's five and become an independent axis. Two of the remaining fields — `budgets` and `brandMapping` — carry the weight of everything v2's original scope adds.
+
+**The four groups in the middle were added on 2026-08-09** ([../v2/spec.md](spec.md) → "Composition deltas"), and each one exists because a value that should have been the art direction's turned out to be hardcoded in the renderer or absent entirely: `1fr 1fr` in every split, a radial bloom behind every hero, a grey rectangle for every image, and no answer at all for a trend. Their full definitions live with the phases that build them — [13](plan/13-scene-fit.md) for `rhythm.fit`, [14](plan/14-texture-without-gradient.md) for the texture union, [15](plan/15-images.md) for `ImageTreatment`, [16](plan/16-charts.md) for `ChartTokens`, [17](plan/17-composition.md) for `composition` and `furniture`.
+
+They are not a separate kind of thing. Every one is read by a `var()` the same way `--bg` is, none introduces a branch, and rule 12 holds unchanged: **an art direction is still tokens only.** What changed is how much of the design those tokens actually cover — which was the honest answer to "why do two art directions look like two colour schemes."
 
 ### Speak DTCG for the parts that map
 
@@ -131,7 +140,9 @@ Light ground, serif display against a grotesque text face, tight columnar grid, 
 --ink-muted    rgba(22,23,26,0.60)
 --hairline     rgba(22,23,26,0.12)
 budgets.headline  80         roomier type, longer headlines work
-texture           none — no grain, no glow, no gradient
+texture           weave + rule — v1 took the empty array because the only
+                  three kinds all assumed a dark ground. Phase 14 gives it
+                  two that read on paper, so "none" stops being the answer
 ```
 
 Chosen as AD #2 precisely because it is hostile to `cinematic-dark`'s assumptions: light instead of dark, serif instead of sans, restraint instead of atmosphere, no texture at all. Anything shared between these two is genuinely universal.
@@ -146,10 +157,15 @@ Oversized type, hard color blocks, zero gradients, thick rules, mechanical snap 
 type.hero      clamp(4rem, 12vw, 14rem), tracking -0.05em, weight 800
 rhythm         dense — half the scene padding of cinematic-dark
 budgets.headline  34         type is enormous; brevity is structural
-texture        none, but hard-edged color blocking at the layout level
+texture        halftone at full strength, riso misregistration, hard rules
+composition    ground cycle inverts on alternate scenes — this is where the
+               "hard-edged colour blocking" lives, as a token the existing
+               layouts read rather than as a layout the AD supplies
 ```
 
 This one breaks things. `allowBrandBackground` exists because of it. The 34-character budget exists because of it. Expect more discoveries — that is why it is AD #3 and not a v3 idea.
+
+**"Hard-edged colour blocking at the layout level" was the most suspicious sentence in this document**, because layout belongs to the scene and rule 12 is what reskin's whole promise rests on. It resolves as [17](plan/17-composition.md)'s `groundCycle`: an ordered list of palette roles indexed by scene position. A lookup indexed by position is not a branch, the AI never sees it, and the layouts are untouched — which is what [plan/04](plan/04-three-art-directions.md) said the honest answer would have to look like if there was one.
 
 ---
 
@@ -239,6 +255,13 @@ Any AD from a control panel — and later from AI derivation — can produce unr
 | Motion duration | between 120ms and 1400ms | — |
 | Reduced motion | present, opacity-only, ≤ 300ms | — |
 | Budgets | headline between 20 and 120 characters | — |
+| **No ramp** | no token value serializes to a string containing `gradient`. There is no token whose type could produce one | rule 18 |
+| **No bloom** | no token value produces a blur radius or a chromatic shadow. A hard offset shadow at zero blur is permitted | rule 19 |
+| **Saturation bound** | a colour carrying text or used at small size, at OKLCH `C > 0.20` **and** `L > 0.72`, on a ground below `L 0.30` → rejected | rule 19 |
+| Ground cycle | every role in the cycle passes both contrast gates with the AD's ink, including inverted scenes | [17](plan/17-composition.md) |
+| Split ratio | each side between 0.25 and 0.75 of the whole; the narrow side has a `measureShort` between 28ch and 50ch | [17](plan/17-composition.md) |
+| Chart series | 4 entries, each a palette role plus a fill, and no two entries identical on **both** axes | [16](plan/16-charts.md) |
+| Chart value labels | pass APCA against their own mark's fill, including halftone and hatch, where the effective ground is not flat | [16](plan/16-charts.md) |
 | **Token grammar** | every value parses as its declared type and re-serializes | [../security/content-and-web.md](../security/content-and-web.md) |
 
 ### The linter is also the injection boundary

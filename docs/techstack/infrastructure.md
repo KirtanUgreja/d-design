@@ -116,6 +116,9 @@ Terraform runs `plan` on PR and `apply` on merge to main, gated on review. An in
 postgres     # the real database
 minio        # S3-compatible object storage
 localstack   # KMS and Secrets Manager
+render       # v2 — renderer + Playwright, no credential
+jobs         # v3 — PGQueuer
+fetch        # v3 — the quarantined worker, on its own network
 ```
 
 Everything runs offline. The point is not convenience — it is that **`storage.ts` talks to the S3 API locally and in production**, so the one abstraction with a planned second implementation ([../v1/spec.md](../v1/spec.md)) has one implementation after all. MinIO is not a mock; it speaks the same protocol.
@@ -124,12 +127,37 @@ Same for KMS via LocalStack: the envelope-encryption code path is exercised in d
 
 **v1 needs none of this except Postgres.** Local disk through `storage.ts` is fine until there is something to publish to strangers. Add MinIO when S3 arrives, LocalStack when integration credentials do. The Compose file grows with the versions.
 
+### The topology is local before it is deployed
+
+**Everything in this document above "Local development" lands at v3 step 11 — the last step, after every feature works** ([../v3/spec.md](../v3/spec.md) → "Why topology is first and deployment is last"). What lands at v3 **step 0** is the *topology*: the same four processes, the same trust boundaries, in Compose.
+
+That distinction is the whole reordering. The dependencies that force infrastructure early are dependencies on processes and APIs — a fetch worker that exists, a job worker that runs, an S3-shaped storage call — and Compose satisfies all of them. Nothing in the feature build depends on Amazon specifically.
+
+**The fetch worker's local isolation is a separate Compose network, not `internal: true`.** Its own bridge network, not shared with `api`, `jobs`, `postgres` or `minio`, so it cannot resolve or reach any of them — while it keeps internet egress through the default gateway, which is the one capability it exists to have. `internal: true` would cut that egress and produce a worker that models the wrong thing. This is a faithful local model of *"egress 0.0.0.0/0, no route to the app subnet"*, and it is testable on a laptop.
+
+### What only the deployed environment proves
+
+Six controls have no local analogue, and one of them fails in a way worth naming twice:
+
+| Control | Why local cannot |
+|---|---|
+| **Socket-level unreachability of the metadata IP** | `169.254.169.254` does not exist on a laptop, so the test **passes vacuously**. [../security/testing.md](../security/testing.md) calls this the most important assertion in the suite; a vacuous green is worse than a skip. Mark it not-covered locally, and make it step 11's *first* check |
+| Task-role scoping — the worker decrypts integration credentials and nothing else | LocalStack defaults to permit-all IAM. Its policy tooling makes this rehearsable, never enforced |
+| The CloudFront cache-key policy | A security control ([../security/platform-and-packages.md](../security/platform-and-packages.md)), and there is no local CDN to configure wrongly |
+| ACM, SNI, custom domains, dangling DNS | No analogue at all |
+| RDS Proxy and pool behaviour under real latency | Appears only when the database is a network hop away |
+| Published pages as static S3 objects | Served by a dev server locally, so the *"no router to be lenient"* argument against cache deception is untested |
+
+**The mitigation that costs nothing is to honour the trust split in code from the first day of step 0.** A fetch worker that quietly acquired a `DATABASE_URL` while no subnet was enforcing anything is a worker that will not survive being put behind one. Assert the absence of every credential in the Compose file and in a test that reads the environment — the same control v2's `render` service already carries, for the same reason.
+
+The temptation to build the infrastructure first should be resisted specifically because it feels productive. Putting it last removes the temptation structurally rather than relying on discipline.
+
 ## What v1 actually stands up
 
 **Docker Compose and a dev server. No AWS account.**
 
 v1 is single-user with local Postgres, no accounts, no publishing to strangers, no personalization, no integrations, no 3D. Its verification list asks you to open the published URL in an incognito window, which a dev server satisfies completely.
 
-Everything in this document lands with **v3** — the release that has real users, which is the same boundary every other v3 control sits on ([../security/README.md](../security/README.md)).
+Everything in this document lands with **v3** — the release that has real users, which is the same boundary every other v3 control sits on ([../security/README.md](../security/README.md)) — and within v3 it lands **last**, at step 11, after every feature has been verified against the local topology.
 
-The temptation to build the infrastructure first should be resisted specifically because it feels productive. The long pole in this project is the renderer and whether it produces something genuinely beautiful ([../v1/spec.md](../v1/spec.md), Risk 1). A perfect VPC does not move that risk at all.
+The long pole in this project is the renderer and whether it produces something genuinely beautiful ([../v1/spec.md](../v1/spec.md), Risk 1). A perfect VPC does not move that risk at all.

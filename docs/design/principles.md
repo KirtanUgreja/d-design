@@ -66,6 +66,8 @@ Near-monochrome UI. One accent, used almost nowhere. The canvas supplies all the
 
 The visual language of "AI product, built fast" is now instantly legible to exactly the audience we want, and it reads as *unserious*. We are selling design judgment. Shipping the defaults is a confession that we have none.
 
+> **This list governs the artifact, not only our chrome.** It was written about the marketing site and the app, it lives in `docs/design/`, and for the whole of v1 it was read as being about our surfaces — while the renderer shipped a coloured radial bloom behind every hero and four of five visual generators built from gradients. Nobody decided the output was exempt; the filing decided it. A page we generate for a customer carries our judgement more directly than our own homepage does, so it is held to this table at least as hard. v2 phases [../v2/plan/14-texture-without-gradient.md](../v2/plan/14-texture-without-gradient.md) and [../v2/plan/17-composition.md](../v2/plan/17-composition.md) are where the artifact is brought into line, and rules 18–21 in [../v2/plan/README.md](../v2/plan/README.md) are where the first four rows below become greppable rather than aspirational.
+
 **Banned outright** — not "used sparingly", banned:
 
 | Pattern | Why it is fatal *here* |
@@ -86,6 +88,8 @@ The visual language of "AI product, built fast" is now instantly legible to exac
 | "Meet ⟨product⟩" · "Supercharge your…" · "The AI-powered platform for…" · "10x your…" | LLM house style. Our copy has to sound like a person with an opinion |
 | Dark mode chosen because it hides weak typography | Dark is a decision, not a hiding place |
 | Five consecutive centred sections at `max-w-3xl` | No rhythm, no hierarchy, no editing |
+
+Four of those rows are now automated for the artifact, and it is worth knowing which: gradients and gradient text are `invariants.sh` check 7, glow/bloom/glassmorphism-blur is check 8, and the consecutive-centred-sections row is four sequence constraints in the Director. The rest remain judgement, which is why the positive rule below is the one that actually does the work.
 
 **The positive rule that replaces the list:** every visual decision on our surfaces should be defensible in one sentence that isn't *"it looks modern"*. Type, spacing, and one restrained colour idea are enough to look expensive; that is the same bet [../techstack/frontend.md](../techstack/frontend.md) makes when it calls buying type the highest-leverage money in the product.
 

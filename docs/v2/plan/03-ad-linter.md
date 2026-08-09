@@ -2,7 +2,9 @@
 
 > One validator, two purposes. It refuses art directions that are unreadable, and it refuses art directions that are an injection. Building it as one thing is what stops the security half being deferred as separate work.
 
-**Depends on:** [01](01-ad-format.md) · **Blocks:** [04](04-three-art-directions.md) · **Spec step:** 3
+**Depends on:** [01](01-ad-format.md), [14](14-texture-without-gradient.md) · **Blocks:** [04](04-three-art-directions.md) · **Spec step:** 3
+
+> **[14](14-texture-without-gradient.md) lands first and adds four rules to this one.** The no-ramp and no-bloom checks, the OKLCH saturation bound, and the ground-cycle contrast check are all in [../art-direction-system.md](../art-direction-system.md) → "The AD linter". They are the same kind of rule as the rest — a bound with a reason, refused as a hard failure — and building them here rather than as a follow-up is what keeps one validator instead of two.
 
 ---
 

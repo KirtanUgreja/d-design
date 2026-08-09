@@ -1,10 +1,10 @@
 # New Primitives
 
-Seven, taking the library from 11 to 18. Chosen for the product-launch wedge specifically, not for general expressiveness.
+Seven here, taking the library from 11 to 18 — plus `Chart`, reversed out of the refusal list below and specified in [plan/16-charts.md](plan/16-charts.md), which makes **19**. Chosen for the product-launch wedge specifically, not for general expressiveness.
 
 **The v1 invariant still holds without exception:** no presentational values. No sizes, no colors, no durations, no speeds. Marquee speed comes from the motion vocabulary. Gallery spacing comes from the rhythm tokens. If a new primitive seems to need a visual prop, the art direction has a gap — fill the gap.
 
-**Cost warning:** 18 primitives × 3 art directions = **54 design surfaces**. This is the single largest expense in v2, larger than the art direction system itself. Build these last, in order of real demand, and be willing to ship v2 with 14.
+**Cost warning:** 18 primitives × 3 art directions = **54 design surfaces**, and `Chart`'s five marks add 15 more. This is the single largest expense in v2, larger than the art direction system itself. Build these last, in order of real demand, and be willing to ship v2 with 14.
 
 **Two platform notes that apply across several of these.** `Marquee` and `ScrollSequence` are both scroll-linked, and CSS scroll-driven animations (`animation-timeline`, `scroll-timeline`, `view-timeline`) are ~84% supported but **not Baseline** — Firefox stable still gates them behind a flag. Use them as progressive enhancement over the Motion-driven path, and always author the finished state as the default so an unsupported browser shows a complete page rather than a blank one. See [../v1/art-direction.md](../v1/art-direction.md).
 
@@ -122,10 +122,24 @@ Ship this one last. It is the most impressive and the most likely to be half-bui
 
 | | Why not |
 |---|---|
-| **Charts** | Still a product inside the product: data model, editor, its own design system. `Stat` covers marketing needs |
+| ~~**Charts**~~ | **Reversed 2026-08-09 — see below.** The refusal was about a charting *tool*, and two of its three objections do not survive contact with a chart *primitive*. Built in [plan/16-charts.md](plan/16-charts.md) |
 | **Forms / capture** | Collects data, needs a backend, crosses the not-an-app boundary |
 | **Embed / iframe block** | Arbitrary third-party content defeats both the art direction and the sandbox guarantee |
 | **Accordion / tabs** | Interactive disclosure is app UI. A presentation reveals by scrolling, not by clicking to expand |
 | **Map** | Needs a provider, an API key, and network access from inside the page |
 
 The pattern: anything needing network access, persistence, or user input is the boundary being tested. The answer is no, and the reason is the same each time — `Slot` exists for genuine one-offs, sandboxed and unable to do any of it.
+
+### The chart reversal, in full
+
+The original entry read *"a product inside the product: data model, editor, its own design system."* Taken one at a time:
+
+**Data model** — 1–4 series of labelled numbers, 2–12 points each. Smaller than `SpecTable`'s. The objection was imagining a chart that accepts arbitrary shapes; this one does not.
+
+**Editor** — there isn't one. Values are edited through the same property panel and the same AI-edit path as every other block's props. A spreadsheet surface remains refused and always will be; that is the thing the objection was actually about.
+
+**Its own design system** — this one was correct, and it is the reason to build the primitive *here* rather than reach for a library later. Every charting library ships a palette, a grid, a tick style and a legend, and those would be **the one part of a published page the art direction does not control** — Recharts defaults sitting inside `bold-brutalist`, immune to reskin. Rule 12 does not have an exception for third-party components. So: no library, five marks, roughly two hundred lines of SVG, every value a token.
+
+**What actually changed** is that `Stat` covers a number and does not cover a trend, a comparison or a share, so a launch page needing one gets a paragraph describing it instead. And [plan/14-texture-without-gradient.md](plan/14-texture-without-gradient.md) supplied the missing piece: with gradients banned and a nine-role palette, four distinguishable categorical colours do not exist — so series differ on **two token colours × three texture fills**, which survives greyscale and every form of colour blindness because it never carried the distinction on hue. A constraint imposed for one reason solving an unrelated problem is the same signal the character budget gave, and it is the strongest evidence available that the abstraction is right.
+
+**The line that keeps this from becoming a charting tool is drawn at the data, not the visuals.** A `Chart` whose points do not trace to a proof point in the approved Brief is rejected before storage, and `source` is a required field. That is rule 21, and it exists because the failure mode that matters is not an ugly chart — it is a plausible chart of invented numbers on a customer's launch page under their logo.

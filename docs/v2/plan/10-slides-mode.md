@@ -2,7 +2,9 @@
 
 > Deferred from v1. Same tree, different playback. One scene is one slide, and the overflow mechanism is the one phase 07 already built — if slides needs its own overflow concept, one of the two designs is wrong.
 
-**Depends on:** [07](07-reskin.md) · **Blocks:** — · **Spec step:** 12
+**Depends on:** [07](07-reskin.md), [13](13-scene-fit.md) · **Blocks:** — · **Spec step:** 12
+
+> **Two pieces of this phase moved to [13](13-scene-fit.md).** Viewport overflow and the scene's own frame were both scoped here, on the assumption that a fixed viewport was a slides-only condition. It is not: `fit: 'viewport'` creates it in scroll mode, four phases earlier. So `OverflowReport`-against-viewport-height and the fit shell are built there, and this phase **consumes** them. What is left here is genuinely playback: advance instead of scroll, `slidesVariant` timing, parallax off, and the padding collapse.
 
 ---
 
@@ -15,7 +17,8 @@
 
 **Grep for**
 
-- `web/src/features/present/fullscreen.tsx` — the existing fullscreen wrapper, its arrow-key handler, and the `overflow-y: auto` fix from v1's acceptance run. Slides mode is a second playback behaviour in this wrapper, **not a second renderer**
+- `web/src/features/present/fullscreen.tsx` — the existing fullscreen wrapper, its arrow-key handler, the `overflow-y: auto` fix from v1's acceptance run, and the `scroll-snap-type` / `overscroll-behavior` added in [13](13-scene-fit.md). Slides mode is a second playback behaviour in this wrapper, **not a second renderer** — and it is the one place `scroll-snap-stop: always` becomes correct, because advancing is discrete
+- `web/src/features/renderer/scene.tsx` — the fit shell from [13](13-scene-fit.md). A slide is a `fit: 'viewport'` scene with the padding collapsed; that is the whole geometric difference
 - `api/schema/scene.py` — `Mode = Literal["scroll", "slides"]`. The field has existed since v1 and only one value has ever rendered
 - `api/schema/motion.py` — `slidesVariant`, authored in phase 02. This phase reads it and adds nothing to it
 - `api/features/reskin/__init__.py` — `OverflowReport`. Reused, not re-declared
@@ -30,8 +33,6 @@
 web/src/features/present/
   slides.tsx               playback: one scene, advance, no scroll
   fullscreen.tsx           chooses a playback behaviour by mode
-api/features/reskin/
-  __init__.py              + overflow computed against viewport height
 ```
 
 ### One scene is one slide
@@ -46,19 +47,21 @@ api/features/reskin/
 | Durations | full | ~30% shorter — a slide advance is a beat, not a journey |
 | Parallax | on | off entirely |
 | Scene padding | the art direction's | collapsed to fit the viewport |
+| Scene fit | the AD's layout→fit table | every scene is `viewport`, unconditionally |
+| Snap | `proximity` | `mandatory` + `scroll-snap-stop: always`. Both are wrong in scroll mode and both are right here, because a slide is guaranteed to fit and skipping one is a defect |
 | Navigation | scroll | arrow keys, clicker, click |
 
 The first three come from the motion vocabulary's `slidesVariant`, authored in phase 02. **Slides mode is a lookup, not a code path**, and the moment a component asks `if (mode === 'slides')` to decide a duration, that vocabulary field has been bypassed.
 
 The padding collapse is the one genuine layout difference, and it belongs in the playback wrapper — the renderer core does not learn about modes.
 
-### Overflow, again — the same mechanism
+### Overflow, again — and it is already built
 
-Content that fits a tall scroll scene may not fit a fixed viewport. **Reuse `OverflowReport`**: same type, same banner, same shorten-with-AI affordance, computed against viewport height instead of character budget.
+Content that fits a tall scroll scene may not fit a fixed viewport. That check, computed against viewport height in the `render` service and reported through `OverflowReport`, is [13](13-scene-fit.md)'s work — because `fit: 'viewport'` produces the identical condition in scroll mode. **This phase adds no overflow concept and no second report type.** If slides mode appears to need one, one of the two designs is wrong.
 
-Two features, one mechanism. The entry point is a third one alongside generation, edit and reskin — and the banner does not say which produced it.
+What is different here is only the frame being measured against: a slide's frame is the viewport minus the collapsed padding, where a scroll scene's is `fitMinBlock`. Same measurement, one different input.
 
-Measuring against viewport height means measuring, which means this check runs where a layout exists. The `render` service from phase 00 is that place, and this is its second customer after the critic.
+Three entry points became five across the release — generation, edit, reskin, scroll fit, slides — and the banner still does not say which produced it.
 
 ### `ScrollSequence` has no scroll
 
@@ -81,7 +84,7 @@ A scroll-driven image sequence degrades to a single representative frame, and **
 **Overflow**
 
 - [ ] Content that fits a scroll scene and not a slide **is flagged, never silently clipped**
-- [ ] The report is the same type the reskin banner already renders
+- [ ] The report is the same type the reskin banner already renders, and **no new overflow code was written in this phase**. If any was, [13](13-scene-fit.md)'s implementation was not general enough and the fix belongs there
 - [ ] A mode switch snapshots first, labelled `mode-switch`
 
 **Accessibility**
