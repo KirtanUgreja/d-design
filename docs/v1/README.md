@@ -56,6 +56,14 @@ v1 stands as the record of what was believed at the time. These parts have since
 | Generation has no tools | No tools *with side effects*; read-only tools are tiered, and v1 ships three | [../techstack/pipeline-tools.md](../techstack/pipeline-tools.md) |
 | ~$0.20 per experience | ~$0.40 once v2's visual verification loop is on | [ai-pipeline.md](ai-pipeline.md) |
 
+## What v1 actually shipped, against what it planned
+
+v1 planned one art direction. **It shipped two**, and the second was not scope creep — [spec.md](spec.md) Risk 4 says the layer is unproven until there are two, and the acceptance run was the moment that debt came due. `editorial-light` was built the same day, as the falsification test rather than as a feature.
+
+The claim held: the same scene tree renders as a black cinematic stage and as a printed editorial spread with **no branch added to the renderer**. Two renderer files changed, both replacing a hardcoded value with a token, which is what this layer's own rules instruct. [art-direction.md](art-direction.md) → "The result" records the sharpened test for art direction #3, everything the second one cost, and the four gaps it found — all four of them values held globally because "global" and "cinematic-dark's" were indistinguishable while there was one.
+
+The v2 plan starts from that, rather than from the format v2 was specified against: see [../v2/plan/README.md](../v2/plan/README.md) → "What v1 already delivered".
+
 **Two things were added to v1 that v1 does not benefit from**, because both are cheap now and brutal to retrofit: CSS logical properties throughout the renderer (v3 RTL), and a pure renderer with no environment branching (v3 runs it in three processes). Both are in [spec.md](spec.md) → Build order.
 
 The stack table in [spec.md](spec.md) has been patched where a stale line would actively mislead someone building from it. Everything else stands.

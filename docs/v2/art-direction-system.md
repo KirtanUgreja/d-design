@@ -120,6 +120,8 @@ Deep space, large light type, slow confident motion, grain and glow. Forgiving o
 
 ### `editorial-light` — the opposite corner
 
+> **Built in v1, and its ground is cool rather than warm.** The sketch below says `#FBFAF8`, warm off-white. [../design/brand.md](../design/brand.md) requires the opposite — our own chrome is warm paper, and if the two converge the site stops looking like a neutral wall and starts looking like it is wearing one of the three things we sell. `brand.md` won; the shipped ground is a cool `#fbfcfd`. Treat the value below as superseded and the character description as accurate.
+
 Light ground, serif display against a grotesque text face, tight columnar grid, hairline rules, generous margins, restrained motion. Reads premium and trustworthy.
 
 ```

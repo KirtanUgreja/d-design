@@ -18,8 +18,8 @@ Three kinds of directory, and the difference matters when you are looking for so
 
 | Directory | | What it answers |
 |---|---|---|
-| [v1/](v1/README.md) | versioned | Generate, edit, publish. One art direction, end to end |
-| [v2/](v2/README.md) | versioned | Creative range — same content, radically different experiences |
+| [v1/](v1/README.md) | versioned | Generate, edit, publish — **shipped**, with two art directions. Its `plan/` holds the twelve-phase build and its status |
+| [v2/](v2/README.md) | versioned | Creative range — same content, radically different experiences. Its `plan/` holds the thirteen-phase build |
 | [v3/](v3/README.md) | versioned | The wow release: derived, personalized, live, multilingual, dimensional |
 | [techstack/](techstack/README.md) | current | Where every piece runs, which model, what the AI may call |
 | [security/](security/README.md) | current | Threat model and every control, gated to the version that needs it |

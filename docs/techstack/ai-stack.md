@@ -42,6 +42,30 @@ Under OpenRouter this matters more than it would with decoder-enforced structure
 
 > The one-line rule: **spend on Build, economise everywhere else, and let evals decide where the line falls.**
 
+### The constraint none of the four predicted: reasoning tokens are billed out of `max_tokens`
+
+Found live in v1, and it is a property of the *route* rather than of any model's quality, which is why none of the criteria above would have caught it.
+
+**Every model behind this seam is a reasoning model, and OpenRouter bills hidden reasoning tokens out of the same `max_tokens` budget as the visible completion.** A trivial forty-word request burned 256 reasoning tokens and hit `finish_reason: length` having produced nothing. On Build — open-ended, and the phase with the largest output — reasoning silently ate a variable and sometimes large slice of the budget, so the completion was truncated, invalid, and repaired. Each repair is another full-length call.
+
+Two things about the lever, both verified live rather than read:
+
+- **`reasoning.max_tokens` does not cap it.** Set to 50, the model still spent 256 and produced nothing
+- **`reasoning.effort: "minimal"` does.** Same run, 0 reasoning tokens, full completion
+
+**The cost of getting this wrong was almost entirely wall-clock, not money**, which is why "cost, last" did not surface it. A call that runs to the token ceiling is the slowest call the provider can serve, and a truncated call buys a second one. The CI eval job — the same 12 cases, sequential, before and after the fix:
+
+| | before | after |
+|---|---|---|
+| total model latency | 2,653 s | 250 s |
+| slowest single case | 379 s | 93 s |
+| scenes produced | 39 | 42 |
+| errors | 10 | 7 — and all 7 are the injection corpus's controls firing correctly |
+
+**Ten times faster, with better output.** The eval step went from 45m 49s to 5m 53s and took the whole `api` job from 47 minutes to 7 with no other step changing.
+
+The generalisable rule: **when a route bills hidden tokens out of the visible budget, latency and repair rate are the same problem wearing two faces.** Instrument both, and treat a rising repair rate as a possible budget problem before assuming it is a model-quality one.
+
 ## Evals — the missing apparatus
 
 This is the real gap the model question exposes. Model-neutrality without evals is not a strategy.

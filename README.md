@@ -10,9 +10,9 @@
 
 <br/>
 
-<img src="https://img.shields.io/badge/status-building%20v1-F4B740?style=for-the-badge&labelColor=08090B" alt="Status: building v1">
-<img src="https://img.shields.io/badge/phase-00%20foundations%20done-64748B?style=for-the-badge&labelColor=08090B" alt="Phase: 00 foundations done">
-<img src="https://img.shields.io/badge/spec-47%20documents-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Spec: 47 documents">
+<img src="https://img.shields.io/badge/status-v1%20shipped-4ADE80?style=for-the-badge&labelColor=08090B" alt="Status: v1 shipped">
+<img src="https://img.shields.io/badge/next-v2%20planned%20%C2%B7%2013%20phases-F4B740?style=for-the-badge&labelColor=08090B" alt="Next: v2 planned, 13 phases">
+<img src="https://img.shields.io/badge/spec-84%20documents-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Spec: 84 documents">
 <img src="https://img.shields.io/badge/builder-solo%20%2B%20AI-A78BFA?style=for-the-badge&labelColor=08090B" alt="Builder: solo + AI">
 
 <br/><br/>
@@ -24,7 +24,9 @@
 <br/>
 
 > [!NOTE]
-> **Nothing is built yet.** `docs/` is the complete specification — 47 documents, ~6,400 lines, covering the product, the stack, the threat model, and the rules the code must follow. Start at [`docs/README.md`](docs/README.md).
+> **v1 is built and its acceptance run passes.** A prompt becomes a Brief, an editable outline, streamed scenes, an experience you edit two ways and publish — presented fullscreen or embedded. **Two art directions ship**, which is the falsification test v1's own Risk 4 demanded: the same scene tree renders as a black cinematic stage and as a printed editorial spread, one switch apart, with no branch in the renderer.
+>
+> `docs/` is the specification — 84 documents, ~13,000 lines, covering the product, the stack, the threat model, and the rules the code must follow. Start at [`docs/README.md`](docs/README.md); build status lives in [`docs/v1/plan/README.md`](docs/v1/plan/README.md) and the next release is planned in [`docs/v2/plan/README.md`](docs/v2/plan/README.md).
 
 ---
 
@@ -373,12 +375,12 @@ Publishing renders the scene tree to HTML and writes it to S3. There is no route
 
 <table>
 <tr><th align="left">Directory</th><th align="left">Kind</th><th align="left">What it covers</th><th align="center">Docs</th></tr>
-<tr><td>📘 <a href="docs/v1/README.md"><b>v1</b></a></td><td><i>versioned</i></td><td>Generate, edit, publish. One art direction, end to end</td><td align="center">6</td></tr>
-<tr><td>📗 <a href="docs/v2/README.md"><b>v2</b></a></td><td><i>versioned</i></td><td>Creative range — same content, radically different experiences</td><td align="center">5</td></tr>
+<tr><td>📘 <a href="docs/v1/README.md"><b>v1</b></a></td><td><i>versioned</i></td><td>Generate, edit, publish — <b>shipped</b>. Includes the twelve-phase build plan</td><td align="center">20</td></tr>
+<tr><td>📗 <a href="docs/v2/README.md"><b>v2</b></a></td><td><i>versioned</i></td><td>Creative range — same content, radically different experiences. Includes the thirteen-phase plan</td><td align="center">19</td></tr>
 <tr><td>📙 <a href="docs/v3/README.md"><b>v3</b></a></td><td><i>versioned</i></td><td>Derived, personalized, live, multilingual, dimensional</td><td align="center">8</td></tr>
 <tr><td>🧰 <a href="docs/techstack/README.md"><b>techstack</b></a></td><td><b>current</b></td><td>Where every piece runs, which model, what the AI may call</td><td align="center">7</td></tr>
 <tr><td>🛡️ <a href="docs/security/README.md"><b>security</b></a></td><td><b>current</b></td><td>Threat model and every control, gated to the version that needs it</td><td align="center">12</td></tr>
-<tr><td>📐 <a href="docs/coderules/README.md"><b>coderules</b></a></td><td><b>current</b></td><td>How the code stays consistent when an AI writes most of it</td><td align="center">8</td></tr>
+<tr><td>📐 <a href="docs/coderules/README.md"><b>coderules</b></a></td><td><b>current</b></td><td>How the code stays consistent when an AI writes most of it</td><td align="center">9</td></tr>
 </table>
 
 Version directories record **what was believed at the time**; the cross-cutting ones are kept current. Where they disagree, the cross-cutting ones win — and [`docs/techstack/decisions.md`](docs/techstack/decisions.md) lists every supersession.
@@ -404,14 +406,14 @@ flowchart LR
     classDef done fill:#131A24,stroke:#38BDF8,stroke-width:1.5px,color:#E8EAED
     classDef next fill:#1C1917,stroke:#F4B740,stroke-width:1.5px,color:#E8EAED
     classDef far fill:#16181D,stroke:#64748B,stroke-width:1.5px,color:#CBD5E1
-    class V1,V2 done
-    class V3 next
-    class V4 far
+    class V1 done
+    class V2 next
+    class V3,V4 far
 ```
 
 | | Focus | Why then |
 |---|---|---|
-| **v1** | One art direction, end to end | Proves the runtime, the editing model, and that output can be beautiful |
+| **v1** ✅ | Generate, edit, publish — and, in the end, *two* art directions | Proved the runtime, the editing model, and that the output can be beautiful. The second art direction was built the day the acceptance run passed, because Risk 4 said the layer was unproven until there were two |
 | **v2** | 3 ADs, motion as its own axis, reskin, slides, history | The abstraction is unproven with one AD. Reskin is what makes it visible to users |
 | **v3** | AI-derived ADs, personalization, analytics, localization, live data, 3D, pricing | The wow release — and the first one real users see |
 | **v4** | Marketplace, CRM integrations, teams and roles | All gated on users who exist by then |
@@ -468,7 +470,7 @@ d-design/
 ### Scope, honestly
 
 **Wedge:** marketers building product launches &nbsp;·&nbsp; **Delivery:** live URL, embed, fullscreen<br/>
-**Builder:** solo, with AI assistance — so v1 ships *one* art direction, end to end
+**Builder:** solo, with AI assistance — so v1 shipped the smallest thing that could prove the bet, end to end
 
 <br/>
 

@@ -160,6 +160,8 @@ experiences         + motion_vocabulary, + art_direction is now {id, version}
 
 ## Build order
 
+> **Two of these are partly delivered.** v1 shipped art direction #2 to answer its own Risk 4, which moves step 4 from "hand-author" to "migrate into the format", and gets step 2 half-way — two motion vocabularies exist as separate objects, but the pairing is a code table rather than a selectable axis. [plan/README.md](plan/README.md) → "What v1 already delivered" is the reconciliation, and the implementation plan is written against the real starting point rather than this list.
+
 **Order matters more than usual here.** Steps 4–5 exist to break step 1.
 
 1. AD format v2 — budgets, versioning, brand mapping. Migrate `cinematic-dark` into it

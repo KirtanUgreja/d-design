@@ -30,7 +30,7 @@ It is cheap to prevent at authoring time and expensive to discover afterwards, s
 - **Different ground.** If ours is warm paper, `editorial-light` is cool or bright white, or the reverse. Not both warm
 - **Different accent behaviour.** Ours appears twice on a screen. An art direction is allowed to be much louder, and here it should be
 
-**The test, at v2 step 4:** put `editorial-light` in the editor canvas with our chrome around it. If a stranger cannot tell which pixels are the product and which are the artifact, one of the two has to move — and it is the wall that moves, because the art direction is the thing we sell.
+**The test, available now rather than at v2 step 4** — `editorial-light` was hand-authored during v1 as the answer to Risk 4 ([../v1/art-direction.md](../v1/art-direction.md) → "The result"), and it was authored against the three constraints above. One of them had to be resolved against a conflicting sketch: [../v2/art-direction-system.md](../v2/art-direction-system.md) proposes a *warm* off-white ground, and this document requires the opposite. This document won, and the v2 plan records the sketch as superseded. **The test itself:** put `editorial-light` in the editor canvas with our chrome around it. If a stranger cannot tell which pixels are the product and which are the artifact, one of the two has to move — and it is the wall that moves, because the art direction is the thing we sell.
 
 ---
 
