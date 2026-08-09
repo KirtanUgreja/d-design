@@ -4,6 +4,8 @@
 
 **Depends on:** [01](01-ad-format.md), [14](14-texture-without-gradient.md) · **Blocks:** [04](04-three-art-directions.md) · **Spec step:** 3
 
+> **Done, 2026-08-09.** One validator, both halves. It found three real defects in `cinematic-dark` — all of them clearing WCAG 2.2 AA and failing APCA — and the art direction was fixed rather than the gate relaxed. `editorial-light` passed unchanged. What the phase found is under "What actually happened".
+
 > **[14](14-texture-without-gradient.md) lands first and adds four rules to this one.** The no-ramp and no-bloom checks, the OKLCH saturation bound, and the ground-cycle contrast check are all in [../art-direction-system.md](../art-direction-system.md) → "The AD linter". They are the same kind of rule as the rest — a bound with a reason, refused as a hard failure — and building them here rather than as a follow-up is what keeps one validator instead of two.
 
 ---
@@ -110,28 +112,28 @@ Font families deserve the emphasis. A family name is the most natural-looking fr
 
 **Design rules**
 
-- [ ] A deliberately broken AD — 2:1 contrast, non-monotonic scale, 4-second durations, a 6-character headline budget — fails **every** rule it violates, and the report names each one
-- [ ] An AD that passes WCAG 2.2 AA at 4.6:1 and scores `Lc 55` on dark is **rejected**. If it passes, the APCA gate is not wired, and that exact combination is what muddy dark themes look like
-- [ ] Both shipped art directions pass every rule. If `cinematic-dark` fails APCA, **fix `cinematic-dark`** — that is the finding, and relaxing the gate to accommodate it is how the gate becomes decorative
-- [ ] Derived colours are linted, not just authored ones
+- [x] A deliberately broken AD — 2:1 contrast, a section larger than its hero, a 120ch measure, a 6-character headline budget — fails **every** rule it violates, and the report names each one. One record breaking everything at once, because separately-broken records test the rules and not the *report*, and the report is the feature
+- [x] An AD that passes WCAG 2.2 AA and scores in the thirties on dark is **rejected**, with the fixture asserting it clears the legal floor on *both* grounds first — so the test cannot pass for the wrong reason
+- [x] Both shipped art directions pass every rule. `cinematic-dark` did not, and `cinematic-dark` was fixed — see below
+- [x] Derived colours are linted: `bgElevated` as a second ground, and the CTA's `bg`-on-`accent` pair, which no type role describes because the colours are the other way round
 
 **Grammar** ([../../security/testing.md](../../security/testing.md))
 
-- [ ] A colour token of `red; } body { background: url(//evil` is rejected as a hard failure
-- [ ] A font family given as a free string is rejected — the field takes an id
-- [ ] Each of `url(`, `expression(`, `@import`, `</style`, `javascript:`, and a backslash escape is rejected in every token kind that could carry it
-- [ ] An easing curve of `cubic-bezier(0,0,1,1); animation: x` is rejected
-- [ ] A value that passes the grammar and is then emitted by `to-css-vars` produces exactly the re-serialized form, never the input string. Assert on the emitted CSS, because that is the thing that ships
-- [ ] A DTCG file uploaded with a hostile value is rejected at the Zod parse or by the linter, and the test says which — a control that passes because a different control caught it is a control you have not tested
+- [x] A colour token of `red; } body { background: url(//evil` is rejected — **at the parse**, because a colour is three floats and there is no field a string can arrive in
+- [x] A font family given as a free string is rejected — the field is a `Literal` of vetted names, so an unvetted one has no representation and does not compile on the TypeScript side either
+- [x] Each of `url(`, `expression(`, `@import`, `</style`, `javascript:`, a backslash escape, and a bare `{`/`}`/`;` is rejected in the one field with room for a string
+- [ ] **Not applicable as written — easing curves are not in this record.** See below
+- [x] A value that passes the grammar and is then emitted by `to-css-vars` produces exactly the re-serialized form: every emitted colour matches `rgb(r g b[ / a%])` and nothing else, asserted on the emitted CSS
+- [x] A hostile DTCG document is refused by `from_document`, and the test proves the *linter* refused it by asserting the same record parses cleanly first
 
 **Fails closed** ([../../security/testing.md](../../security/testing.md) → "Failing closed")
 
-- [ ] The linter raising an unexpected exception refuses the save. A `catch` returning "no findings" is a vulnerability, not error handling
-- [ ] An AD saved by a route that skips the linter is impossible — there is one save path, and it lints
+- [x] The linter raising an unexpected exception refuses the save — the `except Exception` lives inside `lint_art_direction`, where the only thing it can become is a finding
+- [x] An AD saved by a route that skips the linter is impossible — there is no save route at all, and the one path an art direction can enter by (`from_document`) lints
 
 **Human**
 
-- [ ] Read the findings for the deliberately broken AD as a person would. A linter that says `SCALE_RANGE_VIOLATION` teaches nobody anything; the message is part of the feature
+- [x] The findings read as sentences with the number, the bound and the consequence in them, and a test asserts they do — a message of twelve words or fewer fails it
 
 ---
 
@@ -148,10 +150,49 @@ Font families deserve the emphasis. A family name is the most natural-looking fr
 
 ## Exit gate
 
-- [ ] Every rule in the table fails a deliberately broken AD, and the report names each
-- [ ] WCAG 2.2 AA and APCA both run, both are hard, and the AD that passes one and fails the other is rejected
-- [ ] Every token value is parsed and re-serialized; hostile values are rejected rather than sanitized
-- [ ] Font families are ids into the registry, and a free string is refused
-- [ ] The linter fails closed on its own exception
-- [ ] Both shipped art directions pass, and any change made to make them pass is a change to the art direction
-- [ ] The gate is green
+- [x] Every rule in the table fails a deliberately broken AD, and the report names each
+- [x] WCAG 2.2 AA and APCA both run, both are hard, and the AD that passes one and fails the other is rejected
+- [x] Every token value is parsed and re-serialized; hostile values are rejected rather than sanitized
+- [x] Font families are ids into the registry, and a free string is refused
+- [x] The linter fails closed on its own exception
+- [x] Both shipped art directions pass, and every change made to make them pass is a change to the art direction
+- [x] The gate is green
+
+---
+
+## What actually happened
+
+**The linter found three real defects, all of them in the flagship, and all of them invisible to WCAG.**
+
+| Pair | WCAG 2.2 | APCA | Needed |
+|---|---|---|---|
+| `muted` body text on `bg` | 7.14:1 ✅ | Lc 48.0 | Lc 75 |
+| `eyebrow` on `bg` | 4.94:1 ✅ | Lc 33.9 | Lc 75 |
+| CTA label (`bg`) on the `accent` fill | 11.09:1 ✅ | Lc 70.6 | Lc 75 |
+
+`editorial-light` passed every rule unchanged. That contrast is the phase's argument made concrete rather than asserted: WCAG 2's ratio is polarity-blind, so the light direction and the dark one score alike on paper, and only the perceptual gate can tell you which of them is actually muddy.
+
+**The fix was three token changes, and one of them is a finding worth more than the number.** `inkMuted` went from 0.62 to 0.85 alpha, the eyebrow moved from `inkFaint` to `inkMuted`, and the accent lightened from `#f4b740` to `#fcca6d`. The general fact underneath: **on a near-black ground, opacity is not a viable hierarchy mechanism.** The alpha range that clears Lc 75 against `#08090b` is 0.83–1.0 — room for one step below full ink, not three — so a design that wanted `ink`/`inkMuted`/`inkFaint` as three legible tiers could not have them. What carries the hierarchy instead is size, weight, case and tracking, which the type scale was already doing. `inkFaint` stays in the palette at 0.5 and is simply no longer a text colour.
+
+**The phase-01 baseline was not regenerated.** `art_direction_css_v1.json` still holds what the v1 constants emitted; the test now carries an explicit table of the three variables that moved, with their before and after and the reason. A variable that changes *without* being listed still fails — regenerating a baseline is how "no pixel moved" quietly becomes "no pixel moved that anyone checked".
+
+**Most of the grammar half is unreachable, and the tests say so.** Colours are three floats, lengths are a number and a unit enum, easings are four floats, font families are a `Literal`. `red; } body { background: url(//evil` fails the *parse*; there is no field it can arrive in. The grammar module exists anyway, and every test names which layer refused the value — because "a control that passes because a different control caught it is a control you have not tested". The types are the defence; the linter is the assertion that they still are, and the thing that fires the day someone widens a field.
+
+**Font families became a `Literal` rather than a validated string**, which is a strictly stronger control and the one the phase actually asked for. It generates into a Zod enum and a TypeScript union, so `web`'s `FONT_REGISTRY` cannot name a family the schema does not — the two lists are now one list, checked by the compiler rather than by a test that hopes.
+
+**Two bugs found while building it.**
+
+- Migration 0011 seeds from `seed.py`, so a database that ran it yesterday keeps yesterday's values while a fresh one gets today's. Every future change to the seed needs a re-sync revision; 0013 is the first, and it explains why the row is updated in place rather than inserted as a version 2 (nothing has been published, and a published page freezes its own record anyway).
+- 0013's first draft passed `model_dump_json` into a `JSONB` bindparam, which encodes the string again and stores a jsonb *scalar string*. The migration reported success and the rows were unreadable. Caught by looking at a row rather than by anything failing — which is what that class of bug does, and the reason `art_direction_data._as_record` parses on the way out instead of trusting the column.
+
+### Where the phase's checklist did not match the code
+
+**"An easing curve of `cubic-bezier(0,0,1,1); animation: x` is rejected."** There is no easing in an art direction. Phase 02 moved motion to its own table, and an easing there is four floats — a string has nowhere to be. The rule the checkbox is reaching for is enforced by the type, and `lint_motion_vocabulary` bounds the numbers around it.
+
+**`Lc 45` for "incidental/disabled" was not used.** The three roles it could have applied to are the *smallest* text in the system, and APCA asks for more contrast as text gets smaller, not less. Applying the loosest threshold to the smallest role would invert the standard being applied, so `eyebrow` is judged as body — which is already generous for 13px — and the tier is left for a genuinely decorative role when one exists.
+
+### Deferred, and named rather than quietly dropped
+
+**Live linting in the browser.** The rules live in `api` and the phase already lists this as later work. Nothing here blocks it, and the important half — that the server never trusts the client's verdict — is true by construction, since there is no client path to a save.
+
+**The ground-cycle rule's inverted-scene half.** `bg` and `bgElevated` are both checked, which is every ground that exists today. Inverted scenes arrive in phase [17](17-composition.md), and the check extends by adding a ground to the list rather than by growing a rule.

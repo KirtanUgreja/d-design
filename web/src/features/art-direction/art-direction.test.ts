@@ -3,9 +3,9 @@ import { join } from 'node:path';
 
 import { describe, expect, expectTypeOf, it } from 'vitest';
 
-import type { BrandKit } from '@/schema';
+import { artDirectionRecordSchema, type BrandKit } from '@/schema';
 
-import type { ArtDirection, Texture, TypeRoleKey } from './art-direction';
+import type { ArtDirection, Palette, Texture, TypeRoleKey } from './art-direction';
 import { FONT_REGISTRY, LAYOUTS, px } from './art-direction';
 import { contrastRatio, relativeLuminance, toCssColor } from './color';
 import { fromRecord } from './from-record';
@@ -454,7 +454,7 @@ describe('the brand overlay derives in CSS, not in JavaScript', () => {
     // The overlay is a separate map applied on top, so an experience with no
     // brand renders exactly what it rendered before — which is what keeps the
     // byte-identical proof above meaningful.
-    expect(toCssVars(CINEMATIC_DARK)['--accent-soft']).toBe('rgb(244 183 64 / 12%)');
+    expect(toCssVars(CINEMATIC_DARK)['--accent-soft']).toBe('rgb(252 202 109 / 12%)');
   });
 });
 
@@ -708,11 +708,53 @@ describe('the v2 record renders what the v1 constants rendered', () => {
     readFileSync(join(FIXTURES, 'art_direction_css_v1.json'), 'utf8'),
   ) as Record<string, Record<string, string>>;
 
+  // **Every variable that has deliberately moved since v1, with what it was and
+  // what it is.** The baseline file is not regenerated when a value changes on
+  // purpose — regenerating it is how "no pixel moved" quietly becomes "no pixel
+  // moved that anyone checked". A change lands here, with the reason, or the
+  // test goes red.
+  //
+  // All three are v2 phase 03: the linter judged `cinematic-dark` against APCA
+  // and it failed, so the art direction was fixed rather than the gate relaxed.
+  // `--accent-soft` is not a separate decision — it is `--accent` at the alpha
+  // the direction already declared, and it moves because the accent did.
+  const DELIBERATE: Record<string, Record<string, [string, string]>> = {
+    'cinematic-dark': {
+      // Muted body text scored Lc 48 against a required 75.
+      '--ink-muted': ['rgb(244 244 245 / 62%)', 'rgb(244 244 245 / 85%)'],
+      // The CTA label sits on this fill and scored Lc 70.6 against 75.
+      '--accent': ['rgb(244 183 64)', 'rgb(252 202 109)'],
+      '--accent-soft': ['rgb(244 183 64 / 12%)', 'rgb(252 202 109 / 12%)'],
+    },
+    'editorial-light': {},
+  };
+
   for (const id of ['cinematic-dark', 'editorial-light']) {
-    it(`${id} emits byte-identical custom properties`, () => {
-      expect(toCssVars(resolved(id))).toEqual(V1_CSS[id]);
+    it(`${id} emits v1's custom properties, except where a rule moved one`, () => {
+      const now = toCssVars(resolved(id));
+      const before = V1_CSS[id] ?? {};
+      const moved = DELIBERATE[id] ?? {};
+
+      // The whole map, with the known deltas applied to the baseline. Written
+      // this way rather than as a filter so that a variable which changed
+      // *without* being listed still fails — a filtered comparison would let
+      // the next silent drift through the same hole.
+      const expected = { ...before };
+      for (const [name, [was, is]] of Object.entries(moved)) {
+        expect(before[name], `${name} baseline`).toBe(was);
+        expected[name] = is;
+      }
+      expect(now).toEqual(expected);
     });
   }
+
+  it('editorial-light was not touched by the linter at all', () => {
+    // Worth its own assertion because it is the phase-03 finding in miniature:
+    // the light direction cleared every gate unchanged, and the dark one did
+    // not. That is what "APCA is the one that can judge cinematic-dark" means
+    // in practice, rather than as a claim.
+    expect(DELIBERATE['editorial-light']).toEqual({});
+  });
 });
 
 describe('fromRecord', () => {
@@ -753,10 +795,17 @@ describe('fromRecord', () => {
     }
   });
 
-  it('fails closed on a font family the registry does not have', () => {
-    // The control that keeps a free-text font family out of a stylesheet. A
-    // fallback here would publish a page in the wrong typeface and report
-    // success; a pass-through would be a CSS injection with a friendly label.
+  it('has no representation for a font family outside the registry', () => {
+    // The control that keeps a free-text font family out of a stylesheet, and
+    // as of v2 phase 03 it is a *type* rather than a runtime check: the schema
+    // makes the family a `Literal` of vetted names, so the forged record below
+    // does not compile and the parse below refuses it.
+    //
+    // Asserted at the parse rather than at `fromRecord`, deliberately. A
+    // control that passes because a different control caught it is a control
+    // nobody has tested — and `fromRecord`'s registry lookup would have caught
+    // this either way, which is exactly why the test has to say which layer is
+    // doing the work.
     const record = seededRecord('cinematic-dark');
     const forged = {
       ...record,
@@ -768,9 +817,7 @@ describe('fromRecord', () => {
         },
       },
     };
-    const result = fromRecord(forged);
-    expect(result.ok).toBe(false);
-    if (!result.ok) expect(result.error.code).toBe('invalid_input');
+    expect(artDirectionRecordSchema.safeParse(forged).success).toBe(false);
   });
 
   it('does not carry the optional hex fallback into the resolved colour', () => {
@@ -797,5 +844,81 @@ describe('fromRecord', () => {
     expect(result.ok).toBe(true);
     if (result.ok)
       expect(result.value.artDirection.color.bg).toEqual(CINEMATIC_DARK.color.bg);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// The cross-language pin, and the claim that survives the boundary
+// ---------------------------------------------------------------------------
+
+describe('contrast agrees with the linter across the language boundary', () => {
+  // **Shared with `api/features/art_direction/test_lint.py`. Do not edit one
+  // copy.** `contrastRatio` here and `contrast_ratio` there are two
+  // implementations of one formula — the linter runs in `api` at the point of
+  // save, so it cannot call into this one, and a validator that has to make a
+  // network hop to decide is a validator that fails open when the hop fails.
+  //
+  // Two implementations of one algorithm is a duplication. The honest way to
+  // carry one is to make drift fail rather than to hope, which is the same
+  // treatment `seedFromId` already gets.
+  const FIXTURES: [string, keyof Palette, number][] = [
+    ['cinematic-dark', 'ink', 18.1226],
+    ['cinematic-dark', 'inkMuted', 13.0187],
+    ['cinematic-dark', 'inkFaint', 4.9409],
+    ['cinematic-dark', 'accent', 13.0978],
+    ['editorial-light', 'ink', 18.3965],
+    ['editorial-light', 'inkMuted', 6.9943],
+    ['editorial-light', 'inkFaint', 4.1428],
+    ['editorial-light', 'accent', 7.7501],
+  ];
+
+  it.each(FIXTURES)('%s %s is %f:1 against its own ground', (id, role, expected) => {
+    const ad = resolved(id);
+    const ratio = contrastRatio(ad.color[role], ad.color.bg, ad.color.bg);
+    expect(Number(ratio.toFixed(4))).toBe(expected);
+  });
+});
+
+describe('a token becomes CSS only as its re-serialized form', () => {
+  // The claim the grammar half of the linter rests on, asserted on the thing
+  // that actually ships. A value that passes validation and is then emitted as
+  // the *input string* would make every check upstream decorative — so this
+  // asserts on the emitted CSS rather than on the token, because the emitted
+  // CSS is what a browser parses.
+  it('emits colours as rgb() built from channels, never as anything author-shaped', () => {
+    const vars = toCssVars(CINEMATIC_DARK);
+    for (const [name, value] of Object.entries(vars)) {
+      if (!name.startsWith('--') || !value.startsWith('rgb')) continue;
+      // `rgb(r g b)` or `rgb(r g b / a%)` and nothing else. No hex, no named
+      // colour, no function call that is not this one.
+      expect(value, name).toMatch(/^rgb\(\d+ \d+ \d+( \/ [\d.]+%)?\)$/);
+    }
+  });
+
+  it('emits no value carrying CSS syntax a token could not have contained', () => {
+    // The emitted map, checked for the sequences the linter refuses at the
+    // other end. Belt and braces on purpose: this is the last point at which a
+    // value is still ours, and the first at which it is a browser's.
+    const hostile = ['url(', 'expression(', '@import', '</style', 'javascript:', '\\'];
+    for (const ad of [CINEMATIC_DARK, EDITORIAL_LIGHT]) {
+      for (const [name, value] of Object.entries(toCssVars(ad))) {
+        for (const needle of hostile) {
+          expect(value.toLowerCase(), `${ad.id} ${name}`).not.toContain(needle);
+        }
+      }
+    }
+  });
+
+  it('names only vetted font families, and they are the registry keyed by name', () => {
+    // The Literal in `api/schema/art_direction.py` is what makes an unvetted
+    // family unrepresentable; this is the assertion that the TypeScript
+    // registry is the same set rather than a second list that happens to agree.
+    const registryFamilies = new Set(
+      Object.values(FONT_REGISTRY).map((entry) => entry.family),
+    );
+    for (const record of seededRecords()) {
+      expect(registryFamilies).toContain(record.tokens.font.display.$value);
+      expect(registryFamilies).toContain(record.tokens.font.text.$value);
+    }
   });
 });

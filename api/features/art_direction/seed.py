@@ -137,7 +137,14 @@ _V1_BUDGETS = ContentBudgets(
 
 _INK = "#f4f4f5"
 _CINEMATIC_BG = "#08090b"
-_CINEMATIC_ACCENT = "#f4b740"
+# Lightened from #f4b740 by phase 03's linter, which is the only reason it
+# moved. The CTA sets `bg` on this fill — the most important text on the page —
+# and at the old value that pair scored APCA Lc 70.6 against a required 75,
+# while clearing WCAG 2.2 at 11.09:1. That gap is the whole argument for running
+# both standards: the legal floor said it was fine and the perceptual gate said
+# it was muddy, and on a near-black ground the perceptual gate is the one
+# telling the truth. Same hue, ~2 points of headroom (Lc 79.5).
+_CINEMATIC_ACCENT = "#fcca6d"
 
 CINEMATIC_DARK = ArtDirectionRecord(
     id="cinematic-dark",
@@ -149,7 +156,20 @@ CINEMATIC_DARK = ArtDirectionRecord(
             bg=srgb(_CINEMATIC_BG),
             bg_elevated=srgb("#101215"),
             ink=srgb(_INK),
-            ink_muted=srgb(_INK, 0.62),
+            # 0.62 -> 0.85, also phase 03's linter. At 0.62 the muted body role
+            # scored Lc 48 against a required 75 while clearing WCAG at 7.14:1.
+            #
+            # The finding underneath it is worth more than the number: **on a
+            # near-black ground, opacity is not a viable hierarchy mechanism.**
+            # The alpha range that clears Lc 75 against #08090b is 0.83-1.0, so
+            # there is room for one step below full ink and not three. What
+            # carries the rest of the hierarchy here is size, weight, case and
+            # tracking — which the type scale was already doing.
+            ink_muted=srgb(_INK, 0.85),
+            # Unchanged, and no longer a text colour — see the eyebrow role
+            # below. It stays in the palette as the faint ink a texture layer or
+            # a hairline-adjacent surface can reference, where the text gates do
+            # not apply.
             ink_faint=srgb(_INK, 0.5),
             accent=srgb(_CINEMATIC_ACCENT),
             accent_soft=srgb(_CINEMATIC_ACCENT, 0.12),
@@ -217,7 +237,17 @@ CINEMATIC_DARK = ArtDirectionRecord(
                     font="text",
                     size=_fixed(_rem(0.8125)),
                     case="uppercase",
-                    color="inkFaint",
+                    # `inkFaint` until phase 03. At 0.5 alpha it scored Lc 33.9
+                    # against a required 75 — the worst failure in either art
+                    # direction, and on the *smallest* text in the system, which
+                    # is where APCA asks for the most rather than the least.
+                    #
+                    # Moved to `inkMuted` rather than raising `inkFaint`: at the
+                    # alpha this role needs the two tokens would be 0.85 and
+                    # 0.83, which is two names for one colour. The eyebrow keeps
+                    # its quiet by being small, uppercase and tracked, which is
+                    # what was doing the work anyway.
+                    color="inkMuted",
                 ),
                 stat=FluidTypeRole(
                     font="display", size=_clamp(_rem(3), _vw(7), _rem(6))

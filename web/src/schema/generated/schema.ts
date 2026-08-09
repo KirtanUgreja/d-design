@@ -299,7 +299,7 @@ export type ArtDirectionFluid = z.infer<typeof artDirectionFluidSchema>;
 export const artDirectionExtensionsSchema = z.strictObject({
   brandMapping: brandMappingSchema,
   budgets: contentBudgetsSchema,
-  defaultMotion: z.string().min(1).max(64),
+  defaultMotion: z.string().min(1).max(64).regex(new RegExp('^[a-z][a-z0-9-]*$')),
   fluid: artDirectionFluidSchema,
 });
 
@@ -342,7 +342,7 @@ export type DtcgPalette = z.infer<typeof dtcgPaletteSchema>;
 
 export const dtcgFontFamilyTokenSchema = z.strictObject({
   $type: z.literal('fontFamily').default('fontFamily').optional(),
-  $value: z.string().min(1).max(64),
+  $value: z.enum(['Fraunces', 'Inter', 'Newsreader', 'Archivo']),
 });
 
 export type DtcgFontFamilyToken = z.infer<typeof dtcgFontFamilyTokenSchema>;

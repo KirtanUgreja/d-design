@@ -28,6 +28,7 @@ and when it arrives it arrives through here — one parse at entry, then phase
 
 import re
 
+from features.art_direction.lint import lint_art_direction
 from lib.result import Result, err, ok
 from schema.art_direction import (
     EXTENSION_KEY,
@@ -39,6 +40,7 @@ from schema.art_direction import (
     DtcgFontFamilyToken,
     DtcgFontWeightToken,
     DtcgNumberToken,
+    FontFamilyName,
 )
 
 _HEX = re.compile(r"^#([0-9a-fA-F]{6})$")
@@ -82,11 +84,15 @@ def px(value: float) -> DtcgDimensionToken:
     return DtcgDimensionToken(value=DtcgDimensionValue(value=value, unit="px"))
 
 
-def family(name: str) -> DtcgFontFamilyToken:
-    """The family name, not the registry id. `from-record.ts` resolves it back
-    through `FONT_REGISTRY` and fails closed on a family that is not there —
-    which is the control that keeps a free-text font family, "the most
-    natural-looking free-text token in the whole system", out of the CSS."""
+def family(name: FontFamilyName) -> DtcgFontFamilyToken:
+    """The family name, not the registry id.
+
+    Typed as the `Literal` rather than `str`, so a family outside the vetted set
+    is a type error here and has no representation in the model at all — the
+    control that keeps a free-text font family, "the most natural-looking
+    free-text token in the whole system", out of the CSS. `from-record.ts`
+    resolves the name back to a registry id on the other side and fails closed
+    for the same reason."""
     return DtcgFontFamilyToken(value=name)
 
 
@@ -132,12 +138,23 @@ def from_document(document: dict[str, object]) -> Result[ArtDirectionRecord]:
     }
 
     try:
-        return ok(
-            ArtDirectionRecord.model_validate(
-                {**identity, "tokens": tokens, "extensions": semantic}
-            )
+        record = ArtDirectionRecord.model_validate(
+            {**identity, "tokens": tokens, "extensions": semantic}
         )
     except ValueError as e:
         # The message names paths and codes, never values — a token file is a
         # customer's design, and this string reaches a log.
         return err("invalid_input", f"token file failed validation: {type(e).__name__}")
+
+    # **The parse is not the check.** One Zod/Pydantic parse at the boundary
+    # says the shape is right; the linter says the values are readable and are
+    # not an injection. A token file that parses and lints badly is the whole
+    # case phase 03 exists for, and running the linter here rather than leaving
+    # it to the caller is what makes "there is one import path, and it lints"
+    # true rather than aspirational.
+    report = lint_art_direction(record)
+    if not report.ok:
+        rules = sorted({finding.rule for finding in report.findings})
+        return err("invalid_input", f"token file failed the linter: {', '.join(rules)}")
+
+    return ok(record)

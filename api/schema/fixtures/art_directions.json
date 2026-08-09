@@ -154,7 +154,7 @@
         "type": {
           "eyebrow": {
             "case": "uppercase",
-            "color": "inkFaint",
+            "color": "inkMuted",
             "font": "text",
             "size": {
               "max": {
@@ -288,11 +288,11 @@
             "alpha": 1.0,
             "colorSpace": "srgb",
             "components": [
-              0.9568627450980393,
-              0.7176470588235294,
-              0.25098039215686274
+              0.9882352941176471,
+              0.792156862745098,
+              0.42745098039215684
             ],
-            "hex": "#f4b740"
+            "hex": "#fcca6d"
           }
         },
         "accentSoft": {
@@ -301,11 +301,11 @@
             "alpha": 0.12,
             "colorSpace": "srgb",
             "components": [
-              0.9568627450980393,
-              0.7176470588235294,
-              0.25098039215686274
+              0.9882352941176471,
+              0.792156862745098,
+              0.42745098039215684
             ],
-            "hex": "#f4b740"
+            "hex": "#fcca6d"
           }
         },
         "bg": {
@@ -376,7 +376,7 @@
         "inkMuted": {
           "$type": "color",
           "$value": {
-            "alpha": 0.62,
+            "alpha": 0.85,
             "colorSpace": "srgb",
             "components": [
               0.9568627450980393,

@@ -68,7 +68,7 @@ being fed by a lenient parser, which is the same arrangement `Scene` already
 has with model output.
 """
 
-from typing import Annotated, Literal
+from typing import Annotated, Literal, get_args
 
 from pydantic import Field
 
@@ -78,6 +78,11 @@ from schema.base import Schema
 # this project adds is discoverable in one place and nothing collides with a
 # tool's own extensions.
 EXTENSION_KEY = "com.d-design.v2"
+
+# Ids are lower-kebab everywhere: art directions, motion vocabularies, and the
+# `defaultMotion` that points from one to the other. A pattern rather than a
+# length bound, because an id reaches a URL path and a JSON key.
+_ID_PATTERN = r"^[a-z][a-z0-9-]*$"
 
 
 # ---------------------------------------------------------------------------
@@ -135,15 +140,37 @@ class DtcgDimensionToken(Schema):
     value: DtcgDimensionValue = Field(alias="$value")
 
 
+# The families that exist, by name.
+#
+# **A `Literal`, not a validated string, and the two are not the same control.**
+# A validated string rejects a bad value at runtime; a Literal means the model
+# has no representation for one — it generates into a Zod enum and a TypeScript
+# union, so `web`'s `FONT_REGISTRY` fails to compile if it names a family this
+# list does not, and an uploaded token file naming one fails its parse before
+# the linter runs. Exactly the reasoning `FontId` in `schema/experience.py`
+# already spells out: a family name is echoed into a stylesheet, so free text
+# there is a CSS injection with a friendly label on it.
+#
+# Adding a family is deliberately more than a row here: it also needs a
+# self-hosted `@fontsource` import in `web/src/app/globals.css`, or the name
+# resolves to a system fallback. Two edits is the right amount of friction for a
+# decision that changes every published page.
+#
+# This is a *narrowing* of the DTCG spec, which lets a `fontFamily` be any
+# string. We are consuming the format rather than defining it, and a consumer
+# may be stricter than what it reads — the document we emit is still valid DTCG.
+FontFamilyName = Literal["Fraunces", "Inter", "Newsreader", "Archivo"]
+
+VETTED_FONT_FAMILIES: frozenset[str] = frozenset(get_args(FontFamilyName))
+
+
 class DtcgFontFamilyToken(Schema):
     """The family *name*, which is what the spec means and what a designer's
     tool round-trips. The id (`fraunces`) is the TypeScript registry's business;
-    resolving a name back to a registry entry is a lookup that fails closed, so
-    a token file naming an unvetted family is rejected rather than silently
-    falling back to a system font."""
+    the name is what crosses the boundary."""
 
     type: Literal["fontFamily"] = Field(default="fontFamily", alias="$type")
-    value: str = Field(min_length=1, max_length=64, alias="$value")
+    value: FontFamilyName = Field(alias="$value")
 
 
 class DtcgFontWeightToken(Schema):
@@ -483,15 +510,13 @@ class ArtDirectionExtensions(Schema):
     # `ArtDirectionId` stops being one in this phase — the vocabularies are
     # rows from phase 02 onward, and a Literal here would be a second list of
     # them that goes stale silently. Resolution fails closed.
-    default_motion: str = Field(min_length=1, max_length=64)
+    default_motion: str = Field(min_length=1, max_length=64, pattern=_ID_PATTERN)
     fluid: ArtDirectionFluid
 
 
 # ---------------------------------------------------------------------------
 # The record, and the reference to it
 # ---------------------------------------------------------------------------
-
-_ID_PATTERN = r"^[a-z][a-z0-9-]*$"
 
 
 class ArtDirectionRef(Schema):
@@ -529,3 +554,38 @@ class ArtDirectionRecord(Schema):
     @property
     def ref(self) -> ArtDirectionRef:
         return ArtDirectionRef(id=self.id, version=self.version)
+
+
+# ---------------------------------------------------------------------------
+# The linter's report
+# ---------------------------------------------------------------------------
+
+
+class LintFinding(Schema):
+    """One reason an art direction cannot be saved.
+
+    **There is no severity field, and that absence is the design.** Every rule
+    in this linter is a hard failure — "an AD that fails cannot be saved. Not a
+    warning, not a badge" (docs/v2/plan/03-ad-linter.md). A severity enum is how
+    a gate becomes decorative: the first inconvenient rule becomes a warning,
+    and then the warnings are a list nobody reads.
+
+    `message` is written for a person and is part of the feature. A linter that
+    says `SCALE_RANGE_VIOLATION` teaches nobody anything; the rule code is for
+    grepping and the message is for fixing.
+    """
+
+    rule: str = Field(min_length=1, max_length=64, pattern=r"^[A-Z][A-Z0-9_]*$")
+    # Dotted path into the record, so a finding points at a field rather than at
+    # an art direction. Never carries the offending *value* — a token set is a
+    # customer's design and this string reaches a log.
+    path: str = Field(min_length=1, max_length=200)
+    message: str = Field(min_length=1, max_length=500)
+
+
+class LintReport(Schema):
+    findings: list[LintFinding] = Field(default_factory=list, max_length=200)
+
+    @property
+    def ok(self) -> bool:
+        return not self.findings
