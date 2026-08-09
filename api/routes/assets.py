@@ -14,6 +14,7 @@ from config import config
 from db.tenant import as_user
 from features.assets import (
     find_by_storage_key,
+    get_asset,
     list_assets,
     read_object,
     save_asset,
@@ -78,7 +79,7 @@ async def upload(file: UploadFile = File(...)) -> Asset:  # noqa: B008 -- FastAP
         )
 
 
-__all__ = ["SVG_MIME", "router"]
+__all__ = ["SVG_MIME", "asset_by_id", "router"]
 
 
 # Controls 5 and 6, at the point they are observable: the browser.
@@ -107,12 +108,20 @@ async def serve(storage_key: str) -> Response:
     if asset is None:
         raise as_http_exception(AppError("not_found", "no such asset"))
 
+    return await _serve_bytes(asset)
+
+
+async def _serve_bytes(asset: Asset) -> Response:
+    """The one place asset bytes leave this service, shared by the two routes
+    that reach them. Two routes with two copies of these headers is two places
+    for `nosniff` to be dropped from."""
     body = await read_object(asset.storage_key)
     if isinstance(body, Err):
         raise as_http_exception(AppError("not_found", "no such asset"))
 
     return Response(
         content=body.value,
+        # From the stored, re-encoded type. Never the request's, never sniffed.
         media_type=asset.mime,
         headers={
             "X-Content-Type-Options": "nosniff",
@@ -125,3 +134,35 @@ async def serve(storage_key: str) -> Response:
             "Content-Disposition": "inline",
         },
     )
+
+
+# A second router, mounted at `/a`, because this path is composed by the
+# *renderer* rather than requested by the app.
+#
+# docs/v2/plan/15-images.md -> "Resolution: a same-origin path, composed from an
+# id". The renderer is pure and cannot fetch (patterns.md rule 6), so the only
+# URL it can produce is one derived from something already in the scene tree —
+# and an `Image` block carries an `assetId`. Composing `/a/{id}` is string work
+# that behaves identically in the browser, the app server and the render
+# service. A signed URL cannot: it needs a secret, a clock and a network call,
+# and it would put all three inside the renderer.
+#
+# Short on purpose. It appears in published HTML once per image.
+asset_by_id = APIRouter(prefix="/a", tags=["assets"])
+
+
+@asset_by_id.get("/{asset_id}")
+async def serve_by_id(asset_id: UUID) -> Response:
+    """Resolution by id, which is the only handle the renderer has.
+
+    `asset_id` is typed as `UUID`, so a path that is not one is a 422 before any
+    code here runs — there is no string to traverse with and no key to forge.
+    The lookup is tenant-scoped through `as_user()` like every other read, and a
+    miss is a 404 rather than a fallback: an `except` that returned the bytes
+    would be the vulnerability rule 10 names, not error handling.
+    """
+    async with as_user(config().local_user_id) as session:
+        asset = await get_asset(session, asset_id)
+    if asset is None:
+        raise as_http_exception(AppError("not_found", "no such asset"))
+    return await _serve_bytes(asset)

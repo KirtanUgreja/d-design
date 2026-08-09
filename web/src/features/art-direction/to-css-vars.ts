@@ -170,7 +170,34 @@ function rhythmEntries(rhythm: ArtDirection['rhythm']): [string, string][] {
 // about which fields were meaningful.
 function textureEntries(texture: ArtDirection['texture']): [string, string][] {
   const entries: [string, string][] = [['--texture-count', String(texture.length)]];
-  texture.forEach((layer, i) => {
+  layerEntries(texture, entries, 0);
+  return entries;
+}
+
+// The image treatment's overlay is a texture layer too, and it is emitted into
+// the *same* namespace starting one past the ground layers — so
+// `TextureLayerView` reads it with the same variable names and needs no second
+// path. It sits outside `--texture-count`, which is the ground list's length
+// and is what `fromCssVars` walks.
+function imageEntries(
+  image: ArtDirection['image'],
+  groundLayers: number,
+): [string, string][] {
+  const entries: [string, string][] = [
+    ['--image-edge', lengthToCss(image.edge)],
+    ['--image-veil', String(image.veil)],
+  ];
+  if (image.overlay !== null) layerEntries([image.overlay], entries, groundLayers);
+  return entries;
+}
+
+function layerEntries(
+  texture: ArtDirection['texture'],
+  entries: [string, string][],
+  offset: number,
+): void {
+  texture.forEach((layer, n) => {
+    const i = n + offset;
     const v = (field: string, value: string): void => {
       entries.push([`--texture-${i}-${field}`, value]);
     };
@@ -202,7 +229,6 @@ function textureEntries(texture: ArtDirection['texture']): [string, string][] {
         break;
     }
   });
-  return entries;
 }
 
 export function toCssVars(ad: ArtDirection): Record<string, string> {
@@ -211,6 +237,7 @@ export function toCssVars(ad: ArtDirection): Record<string, string> {
     ...typeEntries(ad.type, ad.fonts),
     ...rhythmEntries(ad.rhythm),
     ...textureEntries(ad.texture),
+    ...imageEntries(ad.image, ad.texture.length),
     ['--visual-blend', ad.visualBlend],
     ['--visual-strength', String(ad.visualStrength)],
   ]);

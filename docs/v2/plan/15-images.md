@@ -214,10 +214,37 @@ Three things this phase adds to it:
 
 ## Exit gate
 
-- [ ] Uploaded images render, on a same-origin authorized route that fails closed
-- [ ] Intrinsic dimensions recorded at ingest; zero layout shift on a viewport-fit scene
-- [ ] Every art direction declares an `ImageTreatment`, and one photograph reads three ways with no re-encode
-- [ ] Duotone, overlay, frame and veil are all token-driven and gradient-free
-- [ ] Generation runs through the single seam, capped, marked, and with a prompt boundary asserted at the signature
-- [ ] `asset-placeholder.ts`'s `ponytail:` is deleted, not amended
-- [ ] The gate is green
+- [x] Uploaded images render, on a same-origin authorized route that fails closed
+- [x] Zero layout shift on a viewport-fit scene — by the art direction's `ratios` token rather than by intrinsic dimensions; see the deviation below
+- [x] Both shipped art directions declare an `ImageTreatment`, and one photograph reads two ways with no re-encode and no second asset row. The third way waits on `bold-brutalist` in [04](04-three-art-directions.md)
+- [x] Duotone, overlay, frame and veil are all token-driven and gradient-free
+- [ ] **Generation is not built.** Deferred deliberately, below
+- [x] `asset-placeholder.ts`'s `ponytail:` is deleted; the file survives as the resolve-failure state, which is what the note predicted
+- [x] The gate is green
+- [ ] Two rendition sizes and a `srcset` — deferred with generation
+
+## What is deferred, and why
+
+**Image generation.** Everything around it exists and is tested — the cap that fails closed, the prompt builder with no access to key messages, magic-byte verification, re-encode, the `Asset` row, the editor badge. What is missing is a provider decision that cannot be made from inside the repo: this phase's own Search section records that Google's Imagen shut down on 2026-08-17, so the obvious default is a dead path, and the selection criterion is reference-image support rather than fidelity. Wiring a provider blind is what v1 declined to do for the same reason, and it was right.
+
+The two things that make the product look different — **resolution and treatment** — are built. The phase said as much before it started: *"Resolution and treatment are the ones that change how the product looks. Generation is the one that gets talked about."*
+
+**Two renditions and `srcset`** go with it: both are ingest-pipeline work, and a second rendition of an image nobody can generate yet is speculative.
+
+## What the build found
+
+**The duotone destroyed the photograph, and only looking at it showed that.** The first implementation stacked a `multiply` plate in the ground colour *and* a `screen` plate in the accent on top of an opaque image. Every midtone was crushed and the result was a flat olive rectangle with no photograph left in it. That is not how a duotone is built: the canonical construction paints the *wrapper* in the highlight colour and multiplies the greyscaled image onto it, then lifts the blacks with a single `screen` plate. Two colours, two blend modes, and the pixels do the shaping instead of being covered up.
+
+**The veil was being applied to every image.** It exists for copy sitting on media, and `cinematic-dark` sets it to 0.45 — which, on a plate with no text on it, is a 45% fog. It is now scoped to `bleed`, the treatment where content actually sits over the image.
+
+**`invariants.sh` never checked new files.** `git ls-files` lists only *tracked* paths, so `treatment.tsx` — which contains a shadow — passed check 9 by not existing yet. New code is precisely where a violation arrives. `mine()` now passes `--others --exclude-standard`. This is the second fail-open found in that file in two phases, and both were found the same way: by breaking a check on purpose and watching nothing happen.
+
+**Rule 19's own exemption could not be expressed as a grep.** A hard offset shadow with zero blur is allowed, and check 9 flagged it. Matching the permitted CSS shape was tried and is wrong — `0 0 20px red` contains the same `0 0` as the legal form, so the filter waved a bloom through. The exemption is now a named helper, `hardShadow()`, and the check asks "does this line call it" instead of judging a value's position in a space-separated list.
+
+### Deviations
+
+| | |
+|---|---|
+| The box is reserved by the AD's `ratios`, not by intrinsic `width`/`height` | The scene tree carries an `assetId` and no dimensions, so intrinsic sizing needs either a fetch in the renderer (rule 6) or dimensions in the schema. The art direction already has to declare `ratios` to crop, and one token reserving the box *and* cropping is fewer moving parts than two mechanisms |
+| `/a/{id}` is a `web` route proxying to `api`, not an `api` route the page points at | Same-origin is the whole point. Pointing an `<img>` at the api origin works and would force the published page's CSP to name a second host, which is the one thing that stops `img-src 'self'` from being available |
+| `ImageTreatment.overlay` is a `TextureLayer`, not a `TextureKind` | A kind alone cannot say how strong, how big, or in what colour. It is emitted into the same `--texture-N-*` namespace one past the ground layers, so `TextureLayerView` reads it with no second path |

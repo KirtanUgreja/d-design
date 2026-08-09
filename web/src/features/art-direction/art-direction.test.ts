@@ -83,8 +83,11 @@ describe('to-css-vars round-trips', () => {
     // + visual-blend + visual-strength + 9 fit (1 min-block + 6 per-layout
     // + place + scroll-margin) + texture: 1 count + 3 layers, each 5 common
     // fields (kind, opacity, color, scale, offset) plus its own — halftone
-    // angle+steps, dither steps, grain density.
-    expect(names.length).toBe(9 + 2 + 7 * 4 + 7 + 4 + 2 + 9 + (1 + 3 * 5 + 2 + 1 + 1));
+    // angle+steps, dither steps, grain density + image: edge, veil, and this
+    // direction's grain overlay as a 7th texture layer (5 common + density).
+    expect(names.length).toBe(
+      9 + 2 + 7 * 4 + 7 + 4 + 2 + 9 + (1 + 3 * 5 + 2 + 1 + 1) + (2 + 5 + 1),
+    );
     expect(vars['--space-1']).toBe('8px');
     expect(vars['--space-7']).toBe('160px');
     expect(vars['--measure']).toBe('62ch');

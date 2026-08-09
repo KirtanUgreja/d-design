@@ -295,6 +295,51 @@ export type TextureLayer =
 
 export type Texture = readonly TextureLayer[];
 
+// ---------------------------------------------------------------------------
+// Image treatment — the art direction consuming a photograph.
+//
+// The same principle as brand colour: "brand colours map into semantic roles,
+// they do not replace them" (docs/v1/art-direction.md), applied to pixels. An
+// uploaded photograph arrives with its own colour, contrast and light. Dropped
+// into `cinematic-dark` untreated it reads as a stock image *on* a dark page
+// rather than part of one.
+//
+// This is also where the reskin claim gets its best demonstration: one
+// photograph, three art directions, three visibly different images, with no
+// re-encode and no second asset row — because the treatment is a token and the
+// pixels never changed. docs/v2/plan/15-images.md.
+// ---------------------------------------------------------------------------
+
+export type ImageTone = 'as-shot' | 'mono' | 'duotone' | 'posterize';
+export type ImageFrame = 'none' | 'hairline' | 'block' | 'inset';
+
+/** A crop this art direction will accept, as `width / height`. An art
+ * direction that accepts any ratio has no compositional opinion; cropping to a
+ * declared set is what makes a page of images read as a spread rather than a
+ * folder. Applied with `object-fit: cover` against a token `aspect-ratio`,
+ * never by re-encoding — so switching art directions re-crops instead of
+ * reprocessing. */
+export interface Ratio {
+  w: number;
+  h: number;
+}
+
+export interface ImageTreatment {
+  tone: ImageTone;
+  /** Composited over the photograph from phase 14's vocabulary, so an image
+   * carries the same surface as the ground it sits on. `null` is none. */
+  overlay: TextureLayer | null;
+  frame: ImageFrame;
+  /** Corner radius. Zero for most art directions — a rounded photograph is a
+   * UI card, and this product makes pages. */
+  edge: Length;
+  /** 0–1. A flat scrim for text over media. Flat, because the conventional
+   * bottom-up scrim is a gradient and rule 18 does not have an exception for
+   * the case everyone makes an exception for. */
+  veil: number;
+  ratios: readonly Ratio[];
+}
+
 /** How a luminous overlay composites onto the ground.
  *
  * This was `mixBlendMode: 'screen'`, written seven times inside the
@@ -346,6 +391,7 @@ export interface ArtDirection {
   type: Record<TypeRoleKey, TypeRole>;
   rhythm: Rhythm;
   texture: Texture;
+  image: ImageTreatment;
   visualBlend: VisualBlend;
   visualStrength: VisualStrength;
 }

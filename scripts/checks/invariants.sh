@@ -17,7 +17,15 @@ note() { printf '  ✗ %s\n' "$1" >&2; fail=1; }
 
 # Only our own code. `git ls-files` is exact where an --exclude-dir list is a
 # guess that grows a hole the first time a vendored directory is renamed.
-mine() { git ls-files -- "$@"; }
+#
+# `--others --exclude-standard` is load-bearing: plain `git ls-files` lists only
+# *tracked* files, so a brand-new file was invisible to every check in here
+# until someone staged it. New code is precisely where a violation arrives, and
+# the check that would have caught it ran on everything except the file that
+# had it. Found in v2 phase 15, when a new `treatment.tsx` containing a shadow
+# passed check 9 by not existing yet. `--exclude-standard` keeps `.gitignore`
+# honoured, so `node_modules` and `.next` stay out.
+mine() { git ls-files --cached --others --exclude-standard -- "$@"; }
 # Success means "found something", decided by whether there was output — not by
 # the pipeline's exit code.
 #
@@ -244,9 +252,21 @@ fi
 # Saturation is bounded by *value* rather than by grep, in the linter — phase
 # 03. A saturated colour is not neon; a saturated colour that appears to emit
 # light is, and that is a value judgement a grep cannot make.
+# A hard offset shadow with zero blur is a print device and rule 19 allows it
+# explicitly — so the exemption has to be expressible, or the check bans what
+# the rule permits and gets switched off the first time someone needs a plate.
+#
+# The exemption is a **named helper**, `hardShadow()` in tokens.ts, and not a
+# syntax this check tries to recognise. Matching the allowed CSS shape was
+# tried first and is wrong: `0 0 20px red` — offsets zero, blur 20 — contains
+# the same `0 0` as the permitted form, so the filter passed a bloom. Position
+# in a space-separated list is not something grep should be asked to judge.
+# Routing the one legal case through a helper turns "is this shadow a bloom?"
+# into "does this line call the helper", which grep can answer exactly.
 if code_scan -nE "blur\(|boxShadow|textShadow|dropShadow|box-shadow|text-shadow" -- \
-     'web/src/features/renderer/'; then
-  note "a blur or a shadow in renderer/. Neon is a lighting effect: the banned property is the blur (rule 19)."
+     'web/src/features/renderer/' | grep -vE 'Shadow: hardShadow\('; then
+  note "a blur or a soft shadow in renderer/. Neon is a lighting effect: the banned property is the blur (rule 19)."
+  note "a hard offset shadow is allowed, through tokens.ts's hardShadow() and only through it."
 fi
 
 [ "$fail" -eq 0 ] || printf '\ninvariants failed — see docs/coderules/tooling.md\n' >&2

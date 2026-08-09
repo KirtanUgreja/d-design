@@ -39,6 +39,7 @@
 
 import type {
   ArtDirection,
+  ImageTreatment,
   Palette,
   Rhythm,
   Texture,
@@ -222,6 +223,25 @@ export const EDITORIAL_TEXTURE: Texture = [
  * `Furniture { rule, ruleWeight }` in phase 17, which already has the fields
  * for it — the gap was real and this was the wrong place to close it. */
 
+/** A printed photograph: shown close to as-shot, ruled rather than bled, in
+ * the crops a magazine actually uses. The deliberate opposite of
+ * cinematic-dark's answer at every field, from the same type — which is the
+ * whole test. */
+export const EDITORIAL_IMAGE: ImageTreatment = {
+  // Paper reproduces a photograph; a stage relights it.
+  tone: 'as-shot',
+  overlay: null,
+  // The hairline this direction uses everywhere else, around the plate.
+  frame: 'hairline',
+  edge: px(0),
+  // Much lower. Text sits *beside* images here rather than on them.
+  veil: 0.15,
+  ratios: [
+    { w: 3, h: 2 },
+    { w: 4, h: 5 },
+  ],
+};
+
 export const EDITORIAL_LIGHT: ArtDirection = {
   id: 'editorial-light',
   color: EDITORIAL_PALETTE,
@@ -229,6 +249,7 @@ export const EDITORIAL_LIGHT: ArtDirection = {
   type: EDITORIAL_TYPE_SCALE,
   rhythm: EDITORIAL_RHYTHM,
   texture: EDITORIAL_TEXTURE,
+  image: EDITORIAL_IMAGE,
   // Ink, not light. See `VisualBlend` — this one token is what keeps the
   // AbstractVisual generators meaningful on paper.
   visualBlend: 'multiply',

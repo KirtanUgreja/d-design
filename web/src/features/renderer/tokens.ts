@@ -104,3 +104,16 @@ export const SCENE_SCROLL_MARGIN = 'var(--scene-scroll-margin)';
 export function textureVar(index: number, field: string): string {
   return `var(--texture-${index}-${field})`;
 }
+
+/** The one shadow this renderer is allowed to draw.
+ *
+ * Rule 19 bans the blur, not the shadow: a hard offset plate with zero blur is
+ * a print device and `bold-brutalist` should reach for it. But "is this shadow
+ * a bloom?" is a judgement, and `invariants.sh` check 9 cannot make one — so
+ * the exemption is a *named helper* rather than a syntax the check tries to
+ * recognise. Anything else that sets a shadow property fails the check, and
+ * the only way to draw one is through here, where the zero blur is structural.
+ */
+export function hardShadow(offset: string, color: string): string {
+  return `${offset} ${offset} 0 0 ${color}`;
+}

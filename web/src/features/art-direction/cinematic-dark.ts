@@ -11,6 +11,7 @@
 
 import type {
   ArtDirection,
+  ImageTreatment,
   Palette,
   Rhythm,
   Texture,
@@ -154,6 +155,33 @@ export const CINEMATIC_TEXTURE: Texture = [
   },
 ];
 
+/** Ink to accent, grain over the top, no frame, wide crops. A photograph on
+ * this stage should read as lit by the same source as everything else — the
+ * duotone is what does that, and it is two flat token colours through two
+ * blend modes rather than a filter or a ramp. */
+export const CINEMATIC_IMAGE: ImageTreatment = {
+  tone: 'duotone',
+  // The same grain the ground carries, so the photograph shares its surface.
+  overlay: {
+    kind: 'grain',
+    intensity: 0.07,
+    color: 'ink',
+    scale: px(64),
+    offset: px(0),
+    density: 2,
+  },
+  frame: 'none',
+  edge: px(0),
+  // Enough to hold a hero headline over a bright photograph. Flat, not a
+  // bottom-up scrim, which would be a gradient.
+  veil: 0.45,
+  // Cinema, and the letterbox is the point.
+  ratios: [
+    { w: 21, h: 9 },
+    { w: 16, h: 9 },
+  ],
+};
+
 export const CINEMATIC_DARK: ArtDirection = {
   id: 'cinematic-dark',
   color: CINEMATIC_PALETTE,
@@ -161,6 +189,7 @@ export const CINEMATIC_DARK: ArtDirection = {
   type: TYPE_SCALE,
   rhythm: CINEMATIC_RHYTHM,
   texture: CINEMATIC_TEXTURE,
+  image: CINEMATIC_IMAGE,
   visualBlend: 'screen',
   // The scale the generators were authored and reviewed against, over a real
   // photograph, in phase 11. This direction is the reference; the token exists
