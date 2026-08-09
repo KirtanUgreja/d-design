@@ -23,3 +23,21 @@
 export function assetUrl(assetId: string): string {
   return `/a/${encodeURIComponent(assetId)}`;
 }
+
+/** The narrow rendition, produced at ingest. `/sm` is a literal rather than a
+ * `?w=` parameter: a width the caller names is an image-resizing service
+ * pointed at your own CPU, and there is exactly one extra size. */
+export function assetSmallUrl(assetId: string): string {
+  return `${assetUrl(assetId)}/sm`;
+}
+
+/** 480w is `THUMB_WIDTH` in `api/features/assets/upload.py`, and 1600w is the
+ * stated width of the large rendition rather than a measured one — the scene
+ * tree carries an `assetId` and no dimensions, so the renderer cannot know the
+ * real number without a fetch it is not allowed to make. Overstating it is the
+ * safe direction: a browser picks the small file whenever the slot is narrower
+ * than the *claimed* large width, so a wrong-but-large number errs toward
+ * serving fewer bytes. */
+export function assetSrcSet(assetId: string): string {
+  return `${assetSmallUrl(assetId)} 480w, ${assetUrl(assetId)} 1600w`;
+}

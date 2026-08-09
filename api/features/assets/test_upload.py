@@ -12,7 +12,14 @@ import pytest
 from PIL import Image
 
 from features.assets.sanitize_svg import sanitize_svg
-from features.assets.upload import MAX_BYTES, MAX_PIXELS, SVG_MIME, verify_and_reencode
+from features.assets.upload import (
+    MAX_BYTES,
+    MAX_PIXELS,
+    SVG_MIME,
+    THUMB_WIDTH,
+    thumb_key,
+    verify_and_reencode,
+)
 from lib.result import Err, Ok
 
 
@@ -279,3 +286,63 @@ def test_every_refusal_says_something_different() -> None:
         # (docs/security/operations.md).
         for leaked in ("Error", "Exception", "Traceback", "PIL", "defusedxml"):
             assert leaked not in message
+
+
+# --- the second rendition (v2 phase 15) -------------------------------------
+
+
+def test_a_wide_image_gets_a_small_rendition() -> None:
+    result = verify_and_reencode(_png(1600, 1000))
+    assert isinstance(result, Ok)
+    upload = result.value
+    assert upload.thumb is not None
+    with Image.open(io.BytesIO(upload.thumb)) as small:
+        assert small.width == THUMB_WIDTH
+        # The aspect ratio survives; a squashed thumbnail is worse than none.
+        assert small.height == 300
+
+
+def test_an_image_already_narrow_enough_gets_none() -> None:
+    """Re-encoding a 400px image up to 480 makes a *larger* file that a browser
+    would sometimes prefer, which is the opposite of the point."""
+    result = verify_and_reencode(_png(400, 250))
+    assert isinstance(result, Ok)
+    assert result.value.thumb is None
+
+
+def test_an_svg_has_no_rendition() -> None:
+    result = verify_and_reencode(b'<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+    assert isinstance(result, Ok)
+    assert result.value.thumb is None
+
+
+def test_the_small_key_is_derivable_from_the_large_one() -> None:
+    """Derivable rather than a second column, for the same reason `/a/{id}` is
+    composed rather than looked up: a column that can disagree with the object
+    store eventually does."""
+    assert thumb_key("assets/abc") == "assets/abc-sm"
+
+
+def test_a_rendition_that_is_not_smaller_in_bytes_is_discarded() -> None:
+    """Fewer pixels does not imply fewer bytes, and the gap is not exotic —
+    it is logos, diagrams and screenshots, which is most of what people upload
+    that is not a photograph.
+
+    Downscaling sharp artwork resamples hard edges into intermediate colours
+    that PNG compresses much worse than the crisp original. Measured on this
+    exact fixture: 6,045 bytes at full size, 11,287 as a "thumbnail". Offering
+    that in a `srcset` makes a browser pick the *larger* file for the smaller
+    slot, which is worse than having no rendition at all.
+    """
+    buffer = io.BytesIO()
+    sharp = Image.new("RGB", (600, 400))
+    pixels = sharp.load()
+    assert pixels is not None
+    for y in range(400):
+        for x in range(600):
+            pixels[x, y] = ((x * 7) % 256, (y * 5) % 256, ((x + y) * 3) % 256)
+    sharp.save(buffer, format="PNG")
+
+    result = verify_and_reencode(buffer.getvalue())
+    assert isinstance(result, Ok)
+    assert result.value.thumb is None

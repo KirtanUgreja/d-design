@@ -21,7 +21,7 @@ from features.assets import (
     store,
     verify_and_reencode,
 )
-from features.assets.upload import MAX_BYTES, SVG_MIME
+from features.assets.upload import MAX_BYTES, SVG_MIME, thumb_key
 from lib.result import AppError, Err
 from routes.errors import as_http_exception
 from schema.experience import Asset
@@ -118,11 +118,16 @@ async def _serve_bytes(asset: Asset) -> Response:
     body = await read_object(asset.storage_key)
     if isinstance(body, Err):
         raise as_http_exception(AppError("not_found", "no such asset"))
+    return _image_response(body.value, asset.mime)
 
+
+def _image_response(body: bytes, mime: str) -> Response:
+    """The headers, in one place. Three routes reach asset bytes now, and three
+    copies of this list is three places for `nosniff` to be dropped from."""
     return Response(
-        content=body.value,
+        content=body,
         # From the stored, re-encoded type. Never the request's, never sniffed.
-        media_type=asset.mime,
+        media_type=mime,
         headers={
             "X-Content-Type-Options": "nosniff",
             # Belt and braces for the SVG case: reached directly rather than
@@ -149,6 +154,34 @@ async def _serve_bytes(asset: Asset) -> Response:
 #
 # Short on purpose. It appears in published HTML once per image.
 asset_by_id = APIRouter(prefix="/a", tags=["assets"])
+
+
+@asset_by_id.get("/{asset_id}/sm")
+async def serve_small_by_id(asset_id: UUID) -> Response:
+    """The narrow rendition, for a `srcset`.
+
+    A literal `/sm` rather than a width parameter, and that is the security
+    shape: `?w=` invites a caller to name a number, which is an image-resizing
+    service pointed at your own CPU. One extra size exists, it has one name,
+    and there is nothing to enumerate.
+
+    **Falls back to the full-size object when there is no small one** — an SVG
+    has no rendition, an image narrower than the breakpoint never got one, and
+    every asset stored before v2 phase 15 predates them entirely. Rule 10 is
+    about anything that *grants*: this authorizes identically to the route
+    below and then picks between two representations of the same authorized
+    bytes, so falling back hands over nothing the caller could not already
+    have. Failing closed here would mean a broken image, not a safer one.
+    """
+    async with as_user(config().local_user_id) as session:
+        asset = await get_asset(session, asset_id)
+    if asset is None:
+        raise as_http_exception(AppError("not_found", "no such asset"))
+
+    small = await read_object(thumb_key(asset.storage_key))
+    if isinstance(small, Err):
+        return await _serve_bytes(asset)
+    return _image_response(small.value, asset.mime)
 
 
 @asset_by_id.get("/{asset_id}")

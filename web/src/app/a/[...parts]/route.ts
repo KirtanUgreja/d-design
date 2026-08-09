@@ -25,11 +25,27 @@ const FORWARDED = [
   'content-security-policy',
 ] as const;
 
+/** `/a/{id}` and `/a/{id}/sm`, and nothing else.
+ *
+ * A catch-all segment rather than two files, with the shape checked here — a
+ * proxy that forwards whatever path it is handed is a proxy that will
+ * eventually forward one it should not. Two forms are legal, `sm` is a literal,
+ * and everything else is a 404 before any fetch happens. */
+function upstreamPath(parts: string[]): string | null {
+  const [id, variant, ...rest] = parts;
+  if (id === undefined || id === '' || rest.length > 0) return null;
+  if (variant !== undefined && variant !== 'sm') return null;
+  const encoded = encodeURIComponent(id);
+  return variant === 'sm' ? `${encoded}/sm` : encoded;
+}
+
 export async function GET(
   _request: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ parts: string[] }> },
 ): Promise<Response> {
-  const { id } = await params;
+  const { parts } = await params;
+  const path = upstreamPath(parts);
+  if (path === null) return new NextResponse(null, { status: 404 });
 
   const base = process.env.API_URL;
   if (base === undefined || base === '') {
@@ -38,10 +54,10 @@ export async function GET(
     return new NextResponse(null, { status: 404 });
   }
 
-  // `id` goes through `encodeURIComponent` and lands on a route typed as
-  // `UUID` upstream, so a crafted path is a 422 there rather than a traversal
-  // here. Nothing on this side joins it to anything.
-  const upstream = await fetch(`${base}/a/${encodeURIComponent(id)}`, {
+  // The id is encoded and lands on a route typed as `UUID` upstream, so a
+  // crafted path is a 422 there rather than a traversal here. Nothing on this
+  // side joins it to anything.
+  const upstream = await fetch(`${base}/a/${path}`, {
     cache: 'no-store',
   }).catch(() => null);
 

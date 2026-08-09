@@ -215,13 +215,14 @@ Three things this phase adds to it:
 ## Exit gate
 
 - [x] Uploaded images render, on a same-origin authorized route that fails closed
+- [x] `srcset` serves the small variant to a grid cell and the large one to a hero
 - [x] Zero layout shift on a viewport-fit scene — by the art direction's `ratios` token rather than by intrinsic dimensions; see the deviation below
 - [x] Both shipped art directions declare an `ImageTreatment`, and one photograph reads two ways with no re-encode and no second asset row. The third way waits on `bold-brutalist` in [04](04-three-art-directions.md)
 - [x] Duotone, overlay, frame and veil are all token-driven and gradient-free
 - [x] Generation runs through the single seam, capped, marked, and with the prompt boundary asserted at the signature
 - [x] `asset-placeholder.ts`'s `ponytail:` is deleted; the file survives as the resolve-failure state, which is what the note predicted
 - [x] The gate is green
-- [ ] Two rendition sizes and a `srcset` — **still deferred**, see below
+- [x] Two rendition sizes and a `srcset`
 
 ## Generation, and how the provider question actually resolved
 
@@ -239,7 +240,9 @@ No new dependency, no second client, no provider SDK in a feature module.
 
 **Cost is no longer a projection: $0.137 per image.** At `MAX_GENERATED_PER_EXPERIENCE = 4` that is ~$0.55 of imagery per experience against fractions of a cent for all four text phases together — the moment [../../v1/ai-pipeline.md](../../v1/ai-pipeline.md) predicted, arriving on schedule. Tokens cannot express it, so migration `0007` adds `generations.cost_usd`, read from the provider's own `usage.cost`, `Numeric` not float, nullable so "unmeasured" never reads as "free", and recorded on the failure path too — a spend with no image is the one you most want to see.
 
-**Still deferred: two renditions and `srcset`.** Ingest-pipeline work, unblocked by nothing here, and genuinely not yet needed at one local user.
+**Two renditions and `srcset` are built.** 480w beside the full size, produced from the decode the re-encode already paid for, stored at a *derivable* key (`{storage_key}-sm`) and served at a *derivable* path (`/a/{id}/sm`) — the same reasoning as `/a/{id}` itself, so the renderer composes both candidates without a lookup. A photograph measures 176,823 bytes full size against 28,746 small.
+
+`/sm` is a literal, not `?w=`: a width the caller names is an image-resizing service pointed at your own CPU. And it **falls back to the full-size object** when there is no narrower one — an SVG, an image already under the breakpoint, or anything stored before this phase. Rule 10 governs anything that *grants*; this route authorizes identically to `/a/{id}` and then picks between two representations of the same authorized bytes, so falling back hands over nothing new. Failing closed there would mean a broken image, not a safer one.
 
 ### The finding that matters most
 
@@ -254,6 +257,10 @@ Worth generalising: **every greppable rule in this codebase governs code, and ge
 **The duotone destroyed the photograph, and only looking at it showed that.** The first implementation stacked a `multiply` plate in the ground colour *and* a `screen` plate in the accent on top of an opaque image. Every midtone was crushed and the result was a flat olive rectangle with no photograph left in it. That is not how a duotone is built: the canonical construction paints the *wrapper* in the highlight colour and multiplies the greyscaled image onto it, then lifts the blacks with a single `screen` plate. Two colours, two blend modes, and the pixels do the shaping instead of being covered up.
 
 **The veil was being applied to every image.** It exists for copy sitting on media, and `cinematic-dark` sets it to 0.45 — which, on a plate with no text on it, is a 45% fog. It is now scoped to `bleed`, the treatment where content actually sits over the image.
+
+**A downscaled image can be *bigger*, and the first version shipped that.** The guard was pixel-count only — if the source is wider than 480, make a thumbnail — which is wrong for sharp artwork. Downscaling resamples hard edges into intermediate colours that PNG compresses far worse than the crisp original: measured 6,045 bytes at full size against 11,287 as a "thumbnail". A browser handed that `srcset` picks the *larger* file for the smaller slot. The rendition is now kept only when it is smaller in **bytes as well as pixels**, and this is not an exotic case — logos, diagrams and screenshots are most of what people upload that is not a photograph. Found because the e2e fixture happened to be synthetic line art.
+
+**The image e2e was seeded from an environment variable, and the `api` test suite kept deleting the row.** `pytest` truncates tables, so any run between seeding and the browser test left the spec pointing at an asset that no longer existed — reported twice as a product failure when it was another suite's cleanup. The spec uploads its own fixture through the real `POST /assets` now and needs no environment at all.
 
 **A `bleed` image did not bleed.** Every layout puts blocks inside `RegionBlocks`, an auto-height flex column, so `blockSize: '100%'` resolved against `auto` and the image fell back to its own aspect ratio — leaving a band of ground under a full-bleed hero. It is absolutely positioned now, which skips the intermediate wrappers and fills the nearest positioned ancestor. Found by looking at a rendered hero; no assertion in the repo covered it.
 

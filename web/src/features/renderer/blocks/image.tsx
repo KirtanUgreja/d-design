@@ -1,6 +1,6 @@
 import type { ArtDirection } from '@/features/art-direction';
 
-import { assetUrl } from './asset-url';
+import { assetSrcSet, assetUrl } from './asset-url';
 import type { ImageProps } from './block-props';
 import {
   frameStyle,
@@ -39,6 +39,8 @@ export function ImageBlock({
 }) {
   const bleed = props.treatment === 'bleed';
   const ratio = treatmentRatio(artDirection, bleed);
+  const { value, unit } = artDirection.rhythm.contentMax;
+  const contentMax = `${value}${unit}`;
 
   return (
     <div
@@ -69,6 +71,14 @@ export function ImageBlock({
     >
       <img
         src={assetUrl(props.assetId)}
+        srcSet={assetSrcSet(props.assetId)}
+        // The one place this renderer reads a token's *value* rather than its
+        // variable name, and it is forced: `sizes` is an HTML attribute parsed
+        // before CSS exists, so `var(--content-max)` is not available to it. A
+        // bleed image fills the viewport; a plate is bounded by the art
+        // direction's own canvas. Written from `contentMax` so it still tracks
+        // the token rather than becoming a second opinion about page width.
+        sizes={bleed ? '100vw' : `(min-width: ${contentMax}) ${contentMax}, 100vw`}
         alt={props.alt}
         loading="lazy"
         decoding="async"
