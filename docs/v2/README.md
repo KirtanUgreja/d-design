@@ -11,6 +11,7 @@ v1 ships one art direction, so the central bet is untested — a token layer wit
 | Doc | What's in it |
 |---|---|
 | [spec.md](spec.md) | Theme, commitments vs bets, 13 locked decisions, platform reality, the deltas from v1, build order, verification, risks |
+| [plan/](plan/README.md) | **The implementation plan.** Thirteen phases from one art direction to three, each with what to read, what to build, and what to verify. Build status lives in its README |
 | [art-direction-system.md](art-direction-system.md) | **The AD format.** DTCG alignment, budgets, brand mapping, the 3 hand-authored ADs, motion as an independent axis, user controls, the linter |
 | [transformations.md](transformations.md) | Reskin and its transition, overflow handling, compare view, motion swap, slides mode, version history |
 | [primitives.md](primitives.md) | The 7 new blocks — `Gallery`, `Timeline`, `Comparison`, `Marquee`, `LogoWall`, `SpecTable`, `ScrollSequence` — and what was refused |
@@ -19,6 +20,10 @@ v1 ships one art direction, so the central bet is untested — a token layer wit
 
 | If you need… | Go to |
 |---|---|
+| What to build first, and what blocks what | [plan/README.md](plan/README.md) → "Dependency graph" |
+| How far through the build you are | [plan/README.md](plan/README.md) → "Status" |
+| What v1's art-direction #2 work already delivered against this plan | [plan/README.md](plan/README.md) → "What v1 already delivered" |
+| The six non-negotiables v2 adds to the eleven | [plan/README.md](plan/README.md) → "Rules that apply to every phase" |
 | The full `ArtDirection` type | [art-direction-system.md](art-direction-system.md) → "The format" |
 | Per-AD character budgets, and why they exist | [art-direction-system.md](art-direction-system.md) → "The format" (cinematic-dark 60, editorial-light 80, bold-brutalist 34) |
 | How a user's brand color becomes accent, hover, and soft variants | [art-direction-system.md](art-direction-system.md) → "The format" (OKLCH + `color-mix`) |
@@ -49,4 +54,6 @@ That mechanism turns out to be what makes v3's localization possible at all: tra
 | [../techstack/frontend.md](../techstack/frontend.md) | How motion actually ships to a published page |
 | [../techstack/pipeline-tools.md](../techstack/pipeline-tools.md) | The visual verification loop in full — tiers, cost, and where it runs |
 
-**Infrastructure in v2 is unchanged from v1:** Docker Compose and a dev server ([../techstack/infrastructure.md](../techstack/infrastructure.md)). Everything in this release is application work.
+**Infrastructure in v2: one addition.** Docker Compose grows the **`render` service** — the visual verification loop needs the renderer and Playwright in one process, and Python cannot server-side-render React ([../techstack/backend.md](../techstack/backend.md)). That also makes v2 the release where `@d-design/schema` is published properly rather than file-linked, since `render` is the second TypeScript consumer. Everything else is application work; AWS lands with v3, which is the release that has users.
+
+*Corrected while writing [plan/00-foundations.md](plan/00-foundations.md): this section previously read "unchanged from v1", which contradicted [spec.md](spec.md) → Build order. The spec was right.*
