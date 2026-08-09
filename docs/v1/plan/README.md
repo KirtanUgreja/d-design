@@ -115,17 +115,70 @@ That deletion also removes v1's only untrusted-input path, which is why the inje
 
 The end-to-end run from [../spec.md](../spec.md) → Verification passes in one sitting, unassisted:
 
-- [ ] Prompt or Q&A produces a `Brief`
-- [ ] Director produces an `Outline`, and it is editable before anything is built
-- [ ] Build streams 8 scenes, every one schema-valid after at most one repair
-- [ ] Edit a headline through the property panel, and again through an element-scoped prompt — both produce the same patch shape
-- [ ] Publish, open the URL in a private window
-- [ ] Fullscreen, navigate with arrow keys
-- [ ] Embed in a blank HTML page and it renders
-- [ ] `prefers-reduced-motion: reduce` collapses all motion
-- [ ] Every `Image` has non-empty `alt`
-- [ ] `dir="rtl"` on the root mirrors the layout with no stylesheet change
-- [ ] `generations` contains no prompt, no output, and no brief content
-- [ ] The gate is green and CI is green
+- [x] Prompt or Q&A produces a `Brief`
+- [x] Director produces an `Outline`, and it is editable before anything is built
+- [x] Build streams 8 scenes, every one schema-valid after at most one repair — **read as "the outline's scenes", see below**
+- [x] Edit a headline through the property panel, and again through an element-scoped prompt — both produce the same patch shape
+- [x] Publish, open the URL in a private window
+- [x] Fullscreen, navigate with arrow keys
+- [x] Embed in a blank HTML page and it renders
+- [x] `prefers-reduced-motion: reduce` collapses all motion
+- [x] Every `Image` has non-empty `alt`
+- [x] `dir="rtl"` on the root mirrors the layout with no stylesheet change
+- [x] `generations` contains no prompt, no output, and no brief content
+- [x] The gate is green and CI is green
 
-And the honest one, which is not a checkbox: **you would show it to someone.**
+And the honest one, which is not a checkbox: **you would show it to someone.** Yes — with the two reservations in "What the run found" below.
+
+### The run
+
+2026-08-09, one sitting, against `next start` and a live `api`. A launch page for a
+fictional clinical-trial scheduling tool, typed as prose, taken through the
+interview, directed, built, edited both ways, published, presented and embedded.
+Its `generations` rows: Intake 1 call, Director 1 call, Build 5 calls of which one
+repaired, Edit 1 call, zero errors, 2.5k of every 2.7k input tokens served from
+cache.
+
+**"8 scenes" is not a number the product can be held to.** The Director chose five
+for this brief, which is its job — `Outline.scenes` is 3–12 and the length is a
+narrative decision, not a constant. The checkbox is read as "every scene the
+approved outline asked for arrives, and every one is schema-valid after at most
+one repair." That held: 5 of 5, one repair.
+
+**The eval corpus is green, and it had never actually been run to completion.**
+5/5 golden briefs and 7/7 injection payloads, all four structural assertions on
+every case, zero failures — which closes phase 07's deferred batch verification.
+It was run directly against `evals/provider.py` rather than through Promptfoo:
+0.122.0's Python worker times out on a case that is a whole build, which is a
+harness problem and not a pipeline one. The two injection cases that produced
+*no* scenes (`03-exfiltration`, `04-href-hijack`) are the correct outcome — a
+rejected scene there is `check_scene` catching the payload, which is why
+`no_scenes_lost_to_errors` is asserted on golden briefs only.
+
+**The run could not start when it was first attempted**, and closing that is the
+larger half of this work. Build streamed scenes into the browser and dropped them;
+nothing persisted an experience, so every checkbox from "publish" onward had no
+subject. `/new` now creates the experience and hands off to the editor, the editor
+loads it, and the editor publishes.
+
+### What the run found
+
+Two bugs, both in code that had been written, reviewed and tested, and both
+invisible to those tests because each half worked and the pair had never been run.
+Both are fixed, and both now have a test that was checked against the unfixed code:
+
+| | |
+|---|---|
+| **Every `emphasize` block animated to `scale(0)` and vanished** | Motion cannot interpolate the CSS `transform` shorthand; `'scale(0.96)'` → `'none'` reads "none" as zero. A 0×0 box, still in the layout, still at `opacity: 1`. It happened after hydration, so a published page looked right and then lost its headline. `reveal` survived the same mistake by luck — `translateY`'s degenerate case is where it was going anyway — and the reduced-motion e2e asserts on a `reveal` block |
+| **Fullscreen presentation could not navigate** | The fullscreen container has the UA's `overflow: visible`, so every scene after the first overflowed a box nothing could scroll. Arrow keys fired, `scrollIntoView` ran, the page did not move. [../spec.md](../spec.md) Risk 3 is exactly this feature |
+
+And one thing that is not a bug but is worth knowing before someone loses an
+afternoon to it: **`frame-ancestors *` matches network schemes only**, so the
+obvious way to hand-check the embed — an `<iframe>` on a local `.html` file — is
+the one way that cannot work. The e2e serves the blank page over http.
+
+Two reservations against "you would show it to someone", both art direction rather
+than code, and both the sort of thing art direction #2 will pressure-test:
+
+- **A scene is not a screen.** Scene heights on the run were 800 / 779 / 628 / 505 / 1227 in an 800px window. In scroll that reads as bleed between scenes; in fullscreen it means one arrow press is not one scene
+- **Split layouts are top-anchored**, so a short scene is content in the upper third and a large empty bottom
