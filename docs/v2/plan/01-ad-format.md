@@ -4,6 +4,12 @@
 
 **Depends on:** [00](00-foundations.md) · **Blocks:** [02](02-motion-axis.md), [03](03-ad-linter.md), [04](04-three-art-directions.md) · **Spec step:** 1
 
+> **In progress. The format is defined; nothing has migrated yet.** Started 2026-08-09 and deliberately checkpointed part-way, because the bad state for this phase is a *half-migrated* token layer — every other phase reads it — and stopping at a boundary where nothing has moved is safe in a way stopping half-way through the move is not.
+>
+> **Done:** `api/schema/art_direction.py` — the v2 record, registered in `EXPORTED`, Zod regenerated, gate green.
+>
+> **Not started:** the DTCG converter, seeding both art directions, the equality proof, and the `resolveArtDirection` switch. Picking it up is the "Where to resume" section at the bottom, which is written for someone arriving cold.
+
 ---
 
 ## Search
@@ -144,6 +150,45 @@ In v1 it is `Record<ArtDirectionId, …>`, which makes a missing art direction a
 | User authoring, the four control axes | Late v2 at the earliest, and only after three hand-authored ADs exist. [../art-direction-system.md](../art-direction-system.md) → "User-authored art directions" holds the design |
 | Figma / Tokens Studio round-trip | v4. Speaking DTCG for the primitive layer is the whole of the v2 investment |
 | A third `texture` kind | The vocabulary is closed on purpose ([../../v1/art-direction.md](../../v1/art-direction.md) → "The result"). If `bold-brutalist` needs one in phase 04, that is the moment to design the vocabulary properly rather than add a fourth `if` |
+
+---
+
+## What the spec check changed
+
+The Search section says to take the DTCG type names from the spec rather than from memory. Doing that moved the design, and three findings are worth carrying:
+
+| | |
+|---|---|
+| **`color.$value` is an object** | `{colorSpace, components, alpha?, hex?}` — not a hex string. `hex` is the optional fallback and `components` is authoritative, which happens to be the right way round for us: the linter's APCA and WCAG maths wants channels |
+| **`dimension.$value` allows `px` and `rem` and nothing else** | The finding that reshapes the phase — see below |
+| **`$extensions` keys are reverse-domain** | One namespace, `com.d-design.v2` |
+
+### Most of this token system cannot be DTCG, and that is the honest answer
+
+The design is deliberately fluid: `clamp(3.5rem, 8vw, 8rem)` for a hero, `62ch` for a measure, `100svh` for a scene frame, `-0.03em` of tracking. **None of those are expressible as a DTCG `dimension`.** A format that claimed otherwise would emit invalid DTCG no tool could read, which is worse than not claiming the standard.
+
+So the split follows where the spec actually draws the line:
+
+- **DTCG layer** — the nine palette colours, the fixed `px` spacing scale, font families and weights, motion durations, cubic-béziers, and unitless numbers (leading, tracking, intensities, `visualStrength`). Real tokens a designer's tool can read.
+- **`$extensions`** — every fluid length and clamp triple, the layout→fit table, texture structure, image treatment, budgets, brand mapping, default motion.
+
+That is a smaller DTCG surface than this phase's sketch implies. It is also the one that is true, and the win was never a Figma round-trip — it is choosing a shape that does not have to be migrated later.
+
+`fluid` is stored as the already-typed objects `web` reads rather than re-modelled in Pydantic. Re-declaring `Rhythm`, `Texture` and `ImageTreatment` here would be a second definition of each, and the drift between them would be silent; phase [03](03-ad-linter.md)'s linter is what walks inside them.
+
+---
+
+## Where to resume
+
+Written for someone arriving with no memory of the session that started this.
+
+**1. The converter — `api/features/art_direction/dtcg.py`.** v1's TypeScript constants are the source values. The converter takes a palette/type/rhythm/texture set and emits the DTCG document plus the `$extensions` payload. There is no automated path from the TS constants to Python: they are hand-transcribed once, which is exactly why step 3 exists.
+
+**2. Seed both art directions — a migration, not a script.** `art_directions` already exists (0008) with `(id, version)` as the primary key and `owner_id is null` meaning system. Seeding runs as the migration role, which is the only way a system row can be written at all — the RLS policy makes `owner_id is null` unwritable through `as_user()`, deliberately.
+
+**3. The equality proof, and it is the phase's only real assertion.** *"A format migration that changes a pixel has changed a design."* The pattern this repo already uses for a cross-language invariant is one shared fixture with a test on each side — see `api/tests/test_visual_seed.py` and `renderer.test.ts` agreeing on FNV-1a. Do that here: the stored record and `toCssVars(CINEMATIC_DARK)` must emit an identical CSS-variable map, asserted from both languages against one fixture. Until that exists there are two sources of truth for the same tokens, which is the state this phase must not be left in.
+
+**4. Only then, the switch.** `resolveArtDirection` becomes a store read returning a `Result`, the TypeScript constants are deleted, and `ArtDirectionId` stops being a `Literal`. Note the consequence the phase file does not: **`render` resolves by id today and holds no credential**, so it cannot read the store — its payload has to become validated tokens. That is written up in [15](15-images.md)'s `/measure` and `/screenshot` notes and is the widest-blast-radius part of this phase.
 
 ---
 

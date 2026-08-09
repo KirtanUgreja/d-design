@@ -15,6 +15,7 @@ tree below is exported without being listed twice.
 
 from pydantic import BaseModel
 
+from schema.art_direction import ArtDirectionRecord, BrandMapping, ContentBudgets
 from schema.brief import Brief, InterviewStep, Question
 from schema.experience import Asset, BrandKit, Experience
 from schema.outline import Outline
@@ -36,6 +37,12 @@ EXPORTED: dict[str, type[BaseModel]] = {
     "InterviewStep": InterviewStep,
     "Question": Question,
     "Outline": Outline,
+    # The v2 art-direction record. `ArtDirectionRecord` pulls the other two in
+    # as `$defs`; both are listed because the editor renders budgets and brand
+    # mapping as their own panels.
+    "ArtDirectionRecord": ArtDirectionRecord,
+    "ContentBudgets": ContentBudgets,
+    "BrandMapping": BrandMapping,
     # `OverflowReport` pulls the other two in as `$defs`; all three are listed
     # because the banner renders a `SceneOverflow` on its own and a shape web
     # imports by name should be a row here rather than reached through another

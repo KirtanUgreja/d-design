@@ -11,7 +11,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | # | Phase | Spec step | Status |
 |---|---|---|---|
 | 00 | [Foundations](00-foundations.md) | infra | **done** |
-| 01 | [AD format v2](01-ad-format.md) | 1 | not started |
+| 01 | [AD format v2](01-ad-format.md) | 1 | **in progress** — record defined; converter, seed and equality proof not started |
 | 02 | [Motion as an axis](02-motion-axis.md) | 2 | not started |
 | 03 | [The AD linter](03-ad-linter.md) | 3 | not started |
 | 04 | [Three art directions](04-three-art-directions.md) | 4, 5 | not started |

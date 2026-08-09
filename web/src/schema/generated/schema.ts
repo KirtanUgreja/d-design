@@ -22,6 +22,46 @@ export const abstractVisualPropsSchema = z.strictObject({
 
 export type AbstractVisualProps = z.infer<typeof abstractVisualPropsSchema>;
 
+export const brandMappingSchema = z.strictObject({
+  accentRole: z.enum(['accent', 'bg', 'ink']).default('accent').optional(),
+  allowBrandBackground: z.boolean().default(false).optional(),
+  contrastStrategy: z.enum(['lighten', 'darken', 'auto']).default('auto').optional(),
+  logoTreatment: z.enum(['mono', 'full-color']).default('mono').optional(),
+});
+
+export type BrandMapping = z.infer<typeof brandMappingSchema>;
+
+export const contentBudgetsSchema = z.strictObject({
+  body: z.int().max(1000).gt(0),
+  eyebrow: z.int().max(200).gt(0),
+  headline: z.int().max(200).gt(0),
+  listItem: z.int().max(500).gt(0),
+  quote: z.int().max(1000).gt(0),
+  stat: z.int().max(200).gt(0),
+});
+
+export type ContentBudgets = z.infer<typeof contentBudgetsSchema>;
+
+export const artDirectionExtensionsSchema = z.strictObject({
+  brandMapping: brandMappingSchema,
+  budgets: contentBudgetsSchema,
+  defaultMotion: z.string().min(1),
+  fluid: z.record(z.string(), z.unknown()).optional(),
+});
+
+export type ArtDirectionExtensions = z.infer<typeof artDirectionExtensionsSchema>;
+
+export const artDirectionRecordSchema = z.strictObject({
+  author: z.enum(['system', 'user']),
+  extensions: artDirectionExtensionsSchema,
+  id: z.string().min(1).max(64).regex(new RegExp('^[a-z][a-z0-9-]*$')),
+  name: z.string().min(1).max(120),
+  tokens: z.record(z.string(), z.unknown()).optional(),
+  version: z.int().min(1),
+});
+
+export type ArtDirectionRecord = z.infer<typeof artDirectionRecordSchema>;
+
 export const assetSchema = z.strictObject({
   alt: z.string().max(160).nullable().default(null).optional(),
   height: z.int().gt(0).nullable().default(null).optional(),
