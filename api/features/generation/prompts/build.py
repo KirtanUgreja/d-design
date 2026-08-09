@@ -12,10 +12,15 @@ Caching discipline, all three rules from docs/v1/ai-pipeline.md:
     system
 """
 
+from typing import get_args
+
+from pydantic.fields import FieldInfo
+
 from features.generation.tools import get_constraints
 from schema.brief import Brief
 from schema.experience import BrandKit
 from schema.outline import Outline, OutlineScene
+from schema.scene import BlockProps
 
 _PROMPT_CONTRACT = """You are the Build phase of a presentation-experience generator. \
 For the one scene you are asked to write, output valid JSON conforming exactly to the \
@@ -29,7 +34,9 @@ compute by combining two approved figures (a ratio, a percentage difference, a m
 is not itself approved, even when the arithmetic is correct.
 3. Never emit colors, sizes, fonts, durations, or easing curves — your schema has no \
 field for them, because the art direction supplies all of that from the intent you pick.
-4. Respect every character limit below; they are hard limits, not suggestions.
+4. Respect every character limit in the list below. They are hard: copy over a limit \
+is rejected and the scene is rebuilt, so write comfortably under each one rather than \
+right up against it.
 5. Prefer fewer blocks. A scene with two blocks usually beats one with six."""
 
 # Verbatim slices of the contract above — the sentinels that say "the model
@@ -44,6 +51,51 @@ PROMPT_SENTINELS = (
     "Never emit colors, sizes, fonts",
     "Prefer fewer blocks",
 )
+
+
+def _limits_section() -> str:
+    """The character caps, read off the Pydantic models rather than typed out.
+
+    Rule 4 says "respect every character limit in the list below" and, until
+    this existed, nothing was below: the caps lived only in the JSON Schema's
+    `maxLength`, which `ai/complete.py` now strips before the request goes out
+    (the provider enforced it by truncating copy mid-word). Stripping it without
+    telling the model the numbers left it flying blind, and every remaining
+    build failure was a `string_too_long` on `headline.text` or `body.text`.
+
+    Derived, not restated, so a cap changed in `schema/scene.py` cannot drift
+    out of the prompt — the same reason `PROMPT_SENTINELS` lives beside the
+    contract it quotes.
+    """
+    lines: list[str] = []
+    for props in get_args(get_args(BlockProps)[0]):
+        caps = [
+            f"{name} <= {cap}"
+            for name, field in props.model_fields.items()
+            if (cap := _max_length(field)) is not None
+        ]
+        if not caps:
+            continue
+        block = get_args(props.model_fields["type"].annotation)[0]
+        lines.append(f"- {block}: {', '.join(caps)}")
+    return "Character limits, counted in characters:\n" + "\n".join(lines)
+
+
+def _max_length(field: FieldInfo) -> int | None:
+    """Pydantic keeps `max_length` in a field's metadata, not as an attribute.
+
+    Strings only. The same constraint also caps list lengths (`ListProps.items`
+    is 2-5 *items*), and listing that under a heading about characters would
+    teach the model the wrong unit for the one block where the distinction
+    matters.
+    """
+    if str not in (field.annotation, *get_args(field.annotation)):
+        return None
+    for entry in field.metadata:
+        length = getattr(entry, "max_length", None)
+        if length is not None:
+            return int(length)
+    return None
 
 
 def _brand_section(brand_kit: BrandKit | None) -> str:
@@ -80,6 +132,8 @@ def build_system_prompt(
         for i, s in enumerate(outline.scenes)
     )
     return f"""{_PROMPT_CONTRACT}
+
+{_limits_section()}
 
 {get_constraints()}
 

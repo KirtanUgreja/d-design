@@ -30,6 +30,7 @@ surface.
 
 import json
 import time
+from collections import Counter
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from typing import Literal, cast
@@ -142,6 +143,24 @@ _UNSUPPORTED_STRICT_KEYWORDS = frozenset(
         # model; this key only ever spoke to a validator that no longer sees
         # `oneOf` to attach it to.
         "discriminator",
+        # Supported, and that was the problem. The provider honours `maxLength`
+        # during constrained decoding by *cutting the string off* at the bound,
+        # so an over-long headline came back structurally valid and garbled —
+        # "Tracepoint: API observ-" — which Pydantic accepts, every post-build
+        # check passes, and repair never sees. Silently shipping garbled copy is
+        # strictly worse than failing (docs/v1/plan/06-model-seam-and-build.md).
+        #
+        # Stripping the bounds restores what docs/coderules/typescript.md always
+        # described: the wire schema carries the *shape*, Pydantic enforces the
+        # *lengths* on the way back, and the repair retry is the backstop. That
+        # only became affordable once the discriminator moved to the front of
+        # each variant (`schema/json_schema.py`) — before that the model wrote a
+        # block's text before choosing its type, overshot every cap, and every
+        # scene died in repair. With `type` first it writes to the right block
+        # and lands inside the caps on its own: measured 8 of 9 scenes valid on
+        # the first attempt with no length constraint on the wire at all.
+        "maxLength",
+        "minLength",
     }
 )
 
@@ -336,6 +355,69 @@ async def _stream_once(
     )
 
 
+def _repair_budget(error: ValidationError) -> int:
+    """How many repair calls this failure is worth.
+
+    One, except for a failure where *every* error is a length overshoot, which
+    gets two. Measured 2026-08-09: once the discriminator moved to the front of
+    each variant and the caps reached the prompt, the entire remaining failure
+    tail was `string_too_long` on a single field — copy the model wrote well and
+    slightly too long. That is the cheapest repair there is (shorten one string,
+    change nothing else) and the likeliest to land on a second try.
+
+    Everything else keeps the original budget of one, and deliberately: a
+    response that is not JSON, or that is missing a required field, is a
+    different kind of wrong, and a third call at it is the unbounded-retry
+    denial-of-wallet this cap exists to prevent
+    (docs/security/prompt-injection.md).
+    """
+    kinds = {e["type"] for e in error.errors()}
+    return 2 if kinds and kinds <= {"string_too_long", "string_too_short"} else 1
+
+
+def _repair_prompt(error: ValidationError, previous: str) -> str:
+    """Surgical on purpose. Told only to "return corrected JSON", the model
+    rewrites the whole object and regresses fields that were already fine —
+    measured 2026-08-09: a repair shortened an over-long headline from 66 to 48
+    characters and, in the same response, grew a body that had been valid at 197
+    to 276, failing again on a field the first attempt got right. A repair that
+    can break what it was not asked to touch is a coin flip, not a backstop."""
+    return (
+        f"Your previous response failed schema validation.\n\n"
+        f"Validation errors:\n{error}\n\n"
+        f"Your previous response was:\n{previous}\n\n"
+        f"Return the same JSON with ONLY the fields named in those errors "
+        f"changed. Every other field must come back byte-identical — do not "
+        f"reword, reformat, or improve anything the errors do not mention. "
+        f"Output only the JSON, nothing else."
+    )
+
+
+def _describe(error: ValidationError) -> str:
+    """Which fields failed and how — never what they contained.
+
+    `repair_exhausted` used to discard this entirely, and that is most of why
+    the truncation defect stayed invisible: the one code path that knew exactly
+    what was wrong with a scene threw the answer away and returned "invalid
+    after one repair attempt". Reconstructing it meant reproducing calls by
+    hand outside the seam, twice, in two different sessions.
+
+    `error_type at path` only. Pydantic's `errors()` carries an `input` key
+    holding the offending value, which here is the customer's generated copy —
+    that never reaches a log or an error string
+    (docs/security/tenancy-and-data.md). Types and locations are enough to say
+    "eleven `string_too_long` on `eyebrow.text`", which is the sentence that
+    would have ended this in one reading.
+    """
+    seen = Counter(
+        f"{e['type']} at {'.'.join(str(p) for p in e['loc'] if not isinstance(p, int))}"
+        for e in error.errors()
+    )
+    return "; ".join(
+        f"{name} x{n}" if n > 1 else name for name, n in seen.most_common(5)
+    )
+
+
 def _detect_refusal(raw: _RawCompletion) -> str | None:
     """The field that says "declined" differs by provider, and a decline
     arrives as a *successful* HTTP response — this is the one place that
@@ -374,52 +456,40 @@ async def complete[T: BaseModel](
     start = time.monotonic()
     repaired = False
     error_class: str | None = None
+    repair_failure: str | None = None
     parsed: T | None = None
     raw: _RawCompletion | None = None
     calls = 0
 
     async with httpx.AsyncClient() as client:
-        payload = _payload(model, system, user, schema)
-        first = await _stream_once(client, payload, model)
-        calls += 1
-        if isinstance(first, Err):
-            error_class = first.error.code
-        else:
-            raw = first.value
-            refusal = _detect_refusal(raw)
-            if refusal:
+        attempt = _payload(model, system, user, schema)
+        while True:
+            response = await _stream_once(client, attempt, model)
+            calls += 1
+            if isinstance(response, Err):
+                error_class = response.error.code
+                break
+
+            raw = response.value
+            if _detect_refusal(raw):
                 error_class = "refused"
-            else:
-                try:
-                    parsed = schema.model_validate_json(_strip_code_fence(raw.content))
-                except ValidationError as e:
-                    # One repair call: the scene, the specific errors, and
-                    # nothing else — never a second attempt after this.
-                    repair_user = (
-                        f"Your previous response failed schema validation.\n\n"
-                        f"Validation errors:\n{e}\n\n"
-                        f"Your previous response was:\n{raw.content}\n\n"
-                        f"Return corrected JSON conforming to the schema. "
-                        f"Output only the JSON, nothing else."
-                    )
-                    repair_payload = _payload(model, system, repair_user, schema)
-                    second = await _stream_once(client, repair_payload, model)
-                    calls += 1
-                    if isinstance(second, Err):
-                        error_class = second.error.code
-                    else:
-                        raw = second.value
-                        refusal = _detect_refusal(raw)
-                        if refusal:
-                            error_class = "refused"
-                        else:
-                            try:
-                                parsed = schema.model_validate_json(
-                                    _strip_code_fence(raw.content)
-                                )
-                                repaired = True
-                            except ValidationError:
-                                error_class = "repair_exhausted"
+                break
+
+            try:
+                parsed = schema.model_validate_json(_strip_code_fence(raw.content))
+                repaired = calls > 1
+                break
+            except ValidationError as invalid:
+                # Evaluated per failure, so a run that starts as a length
+                # overshoot and turns structural drops back to one repair
+                # rather than inheriting the larger budget.
+                if calls > _repair_budget(invalid):
+                    error_class = "repair_exhausted"
+                    repair_failure = _describe(invalid)
+                    break
+                attempt = _payload(
+                    model, system, _repair_prompt(invalid, raw.content), schema
+                )
 
     duration_ms = int((time.monotonic() - start) * 1000)
     await log_generation(
@@ -442,5 +512,6 @@ async def complete[T: BaseModel](
     if error_class == "refused":
         return err("refused", "the model declined the request")
     if error_class == "repair_exhausted":
-        return err("repair_exhausted", "invalid after one repair attempt")
+        detail = f": {repair_failure}" if repair_failure else ""
+        return err("repair_exhausted", f"invalid after one repair attempt{detail}")
     return err("upstream_unavailable", error_class or "unknown failure")

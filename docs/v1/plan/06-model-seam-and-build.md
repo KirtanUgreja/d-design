@@ -261,35 +261,58 @@ Two schema-compatibility fixes landed in `ai/complete.py` as a result, both prov
 
 ---
 
-## Open defect — `maxLength` is enforced by the provider, as truncation
+## Fixed — `maxLength` was enforced by the provider, as truncation
 
-**Found 2026-08-09, running phase 08's end-to-end build in a browser. Cause not fixed; the blind spot is closed — see "What was done" below. The two fixes that would address the cause each fail in the opposite direction.**
+**Found 2026-08-09 running phase 08's end-to-end build; cause fixed the same day. Kept in full because the three interventions that did *not* work are the useful part.**
 
-The seam sends `maxLength` over the wire. The provider honours it *during constrained decoding, by cutting the string off at the bound* rather than by rejecting the response. A hook came back with the eyebrow `"Tracepoint: API observX"` — 23 of 24 characters, mid-word — and a scene whose body ended `"your whole stack in one\n"`.
+### The symptom, and why nothing caught it
 
-**This is the worst failure shape the pipeline can produce.** Truncated text is structurally valid: Pydantic accepts it, all four post-build checks pass, `repair` never fires, and the garbling reaches a published page. A rejected scene gets repaired; a silently trimmed one gets shipped. Every existing control is blind to it by construction, because every one of them asks "is this valid?" and the answer is yes.
+The seam sent `maxLength` over the wire, and the provider honoured it *during constrained decoding by cutting the string off at the bound* rather than rejecting the response. A hook came back with the eyebrow `"Tracepoint: API observX"` — 23 of 24 characters, mid-word.
 
-It also invalidates a stated assumption elsewhere: [../../coderules/typescript.md](../../coderules/typescript.md) says "structured outputs widely ignores `minLength`/`maxLength` — the generated JSON Schema carries the *shape*; Pydantic enforces the *lengths* on the response." That is not what this provider does, and the architecture's backstop is therefore not the thing catching lengths today. **Update that sentence when this is fixed, not before** — it is currently a description of the intent rather than of the behaviour.
+Truncated text is structurally valid. Pydantic accepted it, all four post-build checks passed, `repair` never fired, and it would have reached a published page. Every control asks "is this valid?" and the answer was yes. A rejected scene is repaired; a silently trimmed one ships.
 
-Two fixes were tried live and both were reverted:
+### The cause, which was not the caps
+
+Measured rather than guessed, and the measurement is the whole story. With the bounds stripped so the model could write freely, **every** failure was `string_too_long`, and 12 of 13 text blocks came back as `eyebrow` — the union's first member — carrying a median of ~100 and up to **210** characters against a 24-character cap.
+
+That is not a cap slightly too tight. That is the model using `eyebrow` as a general-purpose text container. And the reason was in the serializer:
+
+> `serialize_deterministically` sorted every key alphabetically, so `type` — the discriminator of the `BlockProps` union — came **last** in each variant, after `text`, `label`, `emphasis`. Strict structured outputs emits keys in schema order, so **the model wrote a block's content before declaring what kind of block it was.** A discriminator that arrives last cannot discriminate anything; the choice has already been made.
+
+Three fixes were tried before that was found, and **none of them moved it** — all three speak to a decision the model makes *after* the prose is on the page:
 
 | Tried | Result |
 |---|---|
-| Strip `maxLength`/`minLength` from the wire schema, restoring the documented arrangement (provider never sees a bound, Pydantic enforces, repair backstops) | Text came back well-formed and **over the caps**, and one repair attempt is not enough to bring it under. 3 of 3 scenes died with `repair_exhausted` — a total build failure, strictly worse than garbling |
-| Put the caps in the prompt as prose, derived from the Pydantic models, plus a one-line description of what each block is *for* | No measurable improvement, and the runs that included it were worse: the model used `eyebrow` for every text block, six in one scene, as a line-wrapping device, once emitting `"Tracepoint: see every请求跨"`. n=1 per run against a high-variance model, so this is "no evidence it helps", not "evidence it hurts" — but it is not landable on that basis |
+| A prompt section describing what each block is for | No effect. The model kept writing paragraphs into `eyebrow` |
+| A per-variant JSON Schema `description` on all eleven block types | No effect, for the same reason |
+| Reordering the union so `HeadlineProps` came first | Partial and unstable — one scene became a proper headline/body/visual mix, the next was still all `eyebrow`, and `slot` started appearing |
 
-What the two results together say: the caps are doing real work at decode time, and removing them without also raising the repair budget or the caps themselves just moves the failure. `EyebrowProps.text` at 24 characters is the sharpest edge — small enough that `gpt-5-mini` reliably wants more room than it has.
+### The fix
 
-Directions worth considering, none of them free, in rough order of how much they change:
+Four changes, in the order they matter:
 
-- **Raise the tightest caps.** 24 characters for an eyebrow is a typographic judgment from phase 02 that the model cannot hit. Cheapest change, but it is a change to the art direction's contract, not to the pipeline
-- **Raise the repair budget above one** for length-only violations specifically. The one-repair cap is a deliberate cost control ([the seam's own docstring](../../../api/ai/complete.py)); a length violation is the cheapest possible repair and arguably deserves its own budget
-- **Detect truncation as a post-build check.** Text ending mid-word, or landing exactly on a cap, is mechanically detectable and would at least convert a silent ship into a repair. Does not fix the cause
-- **Reconsider the Build model.** `gpt-5-mini` was chosen on cost after `claude-haiku-4.5` rejected the schema outright ("compiled grammar is too large"). Per-phase model selection is already in this phase's Skipped table, to be decided "by measured repair rate against real briefs" — this is that measurement arriving
+1. **`type` first in every `properties` map** — `schema/json_schema.py`'s `_ordered`. Determinism is preserved (the ordering is total and content-independent, so the cached prefix stays stable); it simply is no longer plain alphabetical. This is the change that did the work: block choice became sensible immediately, and eyebrows came back at 17–22 characters *naturally under the cap*, with **8 of 9 scenes valid on the first attempt and no length constraint on the wire at all**.
+2. **`maxLength`/`minLength` stripped from the wire** — `ai/complete.py`. Truncation is now impossible rather than merely detected, and the arrangement [../../coderules/typescript.md](../../coderules/typescript.md) always described is finally true: the wire schema carries the shape, Pydantic enforces the lengths, repair is the backstop.
+3. **The caps stated in the prompt**, derived from the Pydantic models so they cannot drift (`prompts/build.py`'s `_limits_section`). Stripping the bounds without telling the model the numbers left it flying blind, and the whole remaining failure tail was `string_too_long`.
+4. **Repair made surgical, and given a second attempt for length-only failures.** Told merely to "return corrected JSON", the model rewrote the whole object and regressed fields that were already fine — one repair shortened an over-long headline from 66 to 48 characters and in the same breath grew a valid 197-character body to 276. It is now told to change only the fields the errors name. A failure where *every* error is a length overshoot gets two repairs instead of one, because that is the cheapest repair there is; anything else keeps the budget of one.
 
-Reproduce with `api/evals/briefs/`, or with the three-scene outline in the session that found it: any brief whose copy is longer than an eyebrow.
+### Result
 
-### What was done — the blind spot, not the cause
+| | Before | After |
+|---|---|---|
+| Scenes valid | "100%" — by truncating | **22 of 24 (92%)** |
+| Truncation artifacts | Routine, and invisible to every check | **0 in 53 text blocks** |
+| Block choice | 12 of 13 text blocks `eyebrow` | headline / body / stat / cta / visual, as intended |
+
+The remaining ~8% is an honest failure — a headline a few characters long after two repairs — and the build loop already keeps the scenes around it.
+
+### Two things this left behind
+
+**`repair_exhausted` now says what failed.** That branch used to discard the second `ValidationError` entirely, which is most of why this defect survived two sessions: the one code path that knew exactly what was wrong threw the answer away and returned "invalid after one repair attempt". It now reports error types and locations — and only those, because Pydantic's `errors()` carries an `input` key holding the customer's generated copy, which never reaches a log or an error string ([../../security/tenancy-and-data.md](../../security/tenancy-and-data.md)). The sentence that would have ended this in one reading is "eleven `string_too_long` on `eyebrow.text`".
+
+**The truncation detector stays.** `find_truncation` and its one redraw are no longer load-bearing, since the provider is not handed a bound to trim to — but the failure it guards against was invisible to everything else, and a control that costs one string comparison is worth keeping against a provider changing its mind.
+
+### Appendix — the detector, added before the cause was found
 
 The dangerous property was never the truncation itself. It was that truncated copy is *structurally valid*, so every control passed it: Pydantic accepted it, all four post-build checks passed, `repair` never fired, and the only way to discover it was to read a generated page. A defect nothing can see is worse than a louder one.
 
@@ -301,4 +324,4 @@ It is deliberately **separate from `check_scene`**, because the two want opposit
 
 Verified live on the brief that found the defect: the garbled hook was caught, redrawn, and rejected rather than published; a scene whose redraw came back clean was kept. **Two honest consequences** — some truncation still ships (the word-boundary class above), and the build now fails scenes it previously shipped quietly, so the visible error rate went up. That is the trade this check was chosen to make.
 
-**The next lever, deliberately not pulled:** treating "text length is exactly the field's cap" as truncation would catch nearly all of the remainder, since a decoder clip lands on the cap with probability 1 while a model lands there by chance rarely. It was left out because this model truncates *constantly* at `eyebrow`'s 24 characters, so switching it on today converts a quality problem into mass scene loss. It becomes the right move the moment the caps are raised or the Build model changes — i.e. together with one of the cause-level fixes above, not instead of one.
+**The "exactly at the cap" lever is now moot.** It was held back because the model truncated constantly at `eyebrow`'s 24 characters, so enabling it would have converted a quality problem into mass scene loss. With the cause fixed the provider is never handed a bound to trim to, so there is nothing landing exactly on a cap to detect.

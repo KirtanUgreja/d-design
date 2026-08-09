@@ -92,23 +92,38 @@ HREF_PATTERN = r"^(https?://|mailto:|tel:|#|/($|[^/]))"
 
 
 class EyebrowProps(Schema):
+    """A short kicker or label sitting above a headline — "CASE STUDY",
+    "NEW IN 2026", a product name. A fragment, never a sentence, and never a
+    place to put prose: if what you are writing is a sentence, it belongs in
+    `body`, and if it is the point of the scene it belongs in `headline`.
+    """
+
     type: Literal["eyebrow"]
     text: str = Field(min_length=1, max_length=24)
 
 
 class HeadlineProps(Schema):
+    """The one line the scene is about. Every scene wants at most one, and a
+    scene with something to say should have it."""
+
     type: Literal["headline"]
     text: str = Field(min_length=1, max_length=60)
     emphasis: Literal["hero", "section"] | None = None
 
 
 class BodyProps(Schema):
+    """Supporting prose. The only block that takes more than one sentence, and
+    the right home for any explanation, description or argument."""
+
     type: Literal["body"]
     text: str = Field(min_length=1, max_length=240)
     emphasis: Literal["lead", "normal", "muted"] | None = None
 
 
 class QuoteProps(Schema):
+    """A testimonial in a named person's own words. Only for something the
+    brief actually quoted."""
+
     type: Literal["quote"]
     text: str = Field(min_length=1, max_length=200)
     # Caps on attribution and role are this phase's choice — the spec gives one
@@ -126,12 +141,19 @@ class ListItem(Schema):
 
 
 class ListProps(Schema):
+    """Two to five short parallel items. Use it when the content is genuinely a
+    set; three sentences about one idea are `body`, not a list."""
+
     type: Literal["list"]
     items: list[ListItem] = Field(min_length=2, max_length=5)
     style: Literal["bullets", "numbered", "checks"]
 
 
 class StatProps(Schema):
+    """One number and what it measures — `value` is the number itself, kept
+    very short ("68%", "10min", "3x"), and `label` says what it counts. The
+    number must already appear in the brief's approved copy."""
+
     type: Literal["stat"]
     # A string, not a number — "10x", "2.4M" and "<50ms" are all legitimate.
     # The renderer animates a count-up when it parses as numeric and holds it
@@ -143,6 +165,9 @@ class StatProps(Schema):
 
 
 class ImageProps(Schema):
+    """An uploaded image, referenced by the asset id it was given. Never invent
+    an id; if no asset fits, use `abstract-visual`."""
+
     type: Literal["image"]
     asset_id: str = Field(min_length=1)
     # Required by the schema, not by convention. Generated experiences are
@@ -153,6 +178,8 @@ class ImageProps(Schema):
 
 
 class VideoProps(Schema):
+    """An uploaded video, referenced by the asset id it was given."""
+
     type: Literal["video"]
     asset_id: str = Field(min_length=1)
     poster_asset_id: str | None = None
@@ -161,6 +188,9 @@ class VideoProps(Schema):
 
 
 class CtaProps(Schema):
+    """The call to action. Its label and href come from the brief and are never
+    composed here. At most one per experience."""
+
     type: Literal["cta"]
     label: str = Field(min_length=1, max_length=32)
     href: str = Field(min_length=1, max_length=2048, pattern=HREF_PATTERN)

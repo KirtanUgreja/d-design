@@ -14,7 +14,7 @@ from unittest.mock import AsyncMock
 
 import httpx
 import pytest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, ValidationError
 
 import ai.complete as complete_module
 from ai.complete import complete
@@ -332,3 +332,123 @@ async def test_quota_exceeded_short_circuits_before_any_http_call(
     assert result.error.code == "quota_exceeded"
     assert calls == 0
     _logged.assert_not_awaited()
+
+
+class _Capped(BaseModel):
+    """A model whose only failure mode is a length overshoot."""
+
+    text: str = Field(max_length=10)
+
+
+async def test_a_length_overshoot_gets_a_second_repair(
+    monkeypatch: pytest.MonkeyPatch, _logged: AsyncMock
+) -> None:
+    """Measured 2026-08-09: once the discriminator moved to the front of each
+    variant and the caps reached the prompt, the whole remaining failure tail
+    was `string_too_long` on one field — copy the model wrote well and slightly
+    too long. That is the cheapest repair available and the likeliest to land
+    on a second try, so it is the one failure worth a third call."""
+    bodies = [
+        json.dumps({"text": "x" * 40}),
+        json.dumps({"text": "x" * 20}),
+        json.dumps({"text": "short"}),
+    ]
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        body = bodies[min(calls, len(bodies) - 1)]
+        calls += 1
+        return httpx.Response(200, content=_sse(_chunk(body, "stop")))
+
+    _install_transport(monkeypatch, handler)
+
+    result = await complete(
+        phase="build",
+        schema=_Capped,
+        system="sys",
+        user="usr",
+        owner_id="owner-1",
+        experience_id="exp-1",
+    )
+
+    assert isinstance(result, Ok)
+    assert calls == 3
+    assert result.value.repaired is True
+
+
+async def test_a_length_overshoot_still_stops_at_two_repairs(
+    monkeypatch: pytest.MonkeyPatch, _logged: AsyncMock
+) -> None:
+    """The extra call is a budget, not an invitation. Unbounded retry against a
+    model that overshoots every time is the denial-of-wallet this cap exists to
+    prevent (docs/security/prompt-injection.md)."""
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(
+            200, content=_sse(_chunk(json.dumps({"text": "x" * 40}), "stop"))
+        )
+
+    _install_transport(monkeypatch, handler)
+
+    result = await complete(
+        phase="build",
+        schema=_Capped,
+        system="sys",
+        user="usr",
+        owner_id="owner-1",
+        experience_id="exp-1",
+    )
+
+    assert isinstance(result, Err)
+    assert result.error.code == "repair_exhausted"
+    assert calls == 3
+
+
+async def test_a_structural_failure_keeps_the_budget_of_one(
+    monkeypatch: pytest.MonkeyPatch, _logged: AsyncMock
+) -> None:
+    """A missing required field is a different kind of wrong from copy that ran
+    twelve characters long, and a third call at it is the retry loop the cap
+    exists to stop. `test_repair_exhausted_...` covers the not-JSON case; this
+    covers a well-formed response of the wrong shape."""
+    calls = 0
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        nonlocal calls
+        calls += 1
+        return httpx.Response(200, content=_sse(_chunk(json.dumps({}), "stop")))
+
+    _install_transport(monkeypatch, handler)
+
+    result = await complete(
+        phase="build",
+        schema=_Capped,
+        system="sys",
+        user="usr",
+        owner_id="owner-1",
+        experience_id="exp-1",
+    )
+
+    assert isinstance(result, Err)
+    assert calls == 2
+
+
+def test_repair_exhaustion_reports_the_fields_but_never_their_values() -> None:
+    """`repair_exhausted` used to discard the second ValidationError entirely,
+    which is most of why the truncation defect stayed invisible for two
+    sessions. It now names types and locations — and only those: Pydantic's
+    `errors()` carries an `input` key holding the customer's generated copy,
+    and that never reaches a log or an error string
+    (docs/security/tenancy-and-data.md)."""
+    canary = "PROJECT-THUNDERBIRD-launch-copy"
+    try:
+        _Capped(text=canary)
+    except ValidationError as e:
+        described = complete_module._describe(e)
+    assert "string_too_long" in described
+    assert "text" in described
+    assert "THUNDERBIRD" not in described
