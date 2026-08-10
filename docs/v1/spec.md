@@ -24,11 +24,11 @@ This is not a style preference. It is the load-bearing constraint — editing, d
 
 | Axis | Decision | Why |
 |---|---|---|
-| First user | Marketers / product launches | High design standards, real budget, values wow |
-| Positioning | Presentation framing, web-experience reality | Bigger market; see Risk 3 |
-| Delivery | Live URL, embed, fullscreen + keyboard | Fullscreen is ~50 lines and keeps "presentation" honest |
+| ~~First user~~ | ~~Marketers / product launches~~ → **founders and salespeople pitching live** | ~~High design standards, real budget, values wow~~ **Superseded 2026-08-10.** The new wedge keeps every property that made the old one right — design standards, budget, output that maps to money — and adds the one the product was actually built for: the person is *in the room*. See [../v2/presentation.md](../v2/presentation.md). **[market.md](market.md) has not been re-researched against it** |
+| ~~Positioning~~ | ~~Presentation framing, web-experience reality~~ → **presentation framing, presentation reality** | ~~Bigger market; see Risk 3~~ **Superseded 2026-08-10.** This row is the origin of the drift. It licensed a scrolling page for two releases while the word "presentation" did the marketing, and Risk 3 below correctly predicted the bill |
+| Delivery | Live URL, embed, fullscreen + keyboard | Fullscreen is ~50 lines and keeps "presentation" honest. **Still true, and no longer the whole answer** — a shared link now opens as a deck, and offline and PDF arrive in [../v2/plan/20-offline-and-export.md](../v2/plan/20-offline-and-export.md) |
 | Runtime | Typed primitives + sandboxed custom slots | 90% structure, 10% surprise |
-| Unit | Scroll sections first | Matches wedge and delivery; slides is a playback mode later |
+| ~~Unit~~ | ~~Scroll sections first~~ → **slides first, scroll as the handout** | ~~Matches wedge and delivery; slides is a playback mode later~~ **Superseded 2026-08-10.** The inversion cost nothing structurally: `mode` already existed, the scene tree did not change, and the scrolling view survives as a secondary handout. What it cost was two releases of composition work aimed at a frame that was never bounded |
 | Editing | Select → property panel → element-scoped prompt | ~1/5 the cost of a design canvas, covers ~90% of edits |
 | Brand | Brand kit is a v1 primitive | Marketers cannot ship off-brand. Table stakes, not a feature |
 | Intake | Import / prompt / AI-led Q&A → Brief | Meets users wherever their content already lives |
@@ -176,6 +176,8 @@ Charts · PDF/PPTX export · speaker notes / presenter view · collaboration · 
 **2. AI-invented marketing claims.** Marketers cannot ship copy the AI made up. Intake captures *approved* messaging; the build phase arranges it and must not embellish. Enforced in the build prompt and reviewable at the outline gate.
 
 **3. "Presentation" framing sets expectations v1 won't meet.** PPTX, PDF, speaker notes will all be asked for in week one. Fullscreen + keyboard nav is the minimum that keeps the word honest; messaging carries the rest. Have a real answer ready, not "coming soon."
+
+**Resolved 2026-08-10 by paying it rather than managing it.** This risk was written as a messaging problem and it was a product problem. The answer is no longer that fullscreen keeps the word honest — it is that the word is now accurate: slides are the default, PDF and an offline file ship in [../v2/plan/20-offline-and-export.md](../v2/plan/20-offline-and-export.md), speaker notes and presenter view in [../v2/plan/19-presenter-view.md](../v2/plan/19-presenter-view.md). **Editable `.pptx` is still refused**, and now for a researched reason rather than a scheduling one: lossy web-to-PowerPoint conversion is the category's most-complained-about feature, and what it loses — custom fonts, texture, motion — is exactly what this product is made of ([../v2/presentation.md](../v2/presentation.md) → "Getting it out of the product").
 
 **4. The art-direction layer is unproven until there are two.** v1 ships one, so the central claim — that variety is cheap — is asserted, not demonstrated. First priority after v1 is art direction #2, and if it requires renderer changes, the abstraction is wrong.
 

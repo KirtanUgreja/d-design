@@ -2,7 +2,15 @@
 
 > Refused twice, in v1 and again in v2, on the grounds that real charting is a product inside the product. That reasoning was about a *charting tool*. This builds a chart **primitive** — five marks, no data editor, no library, and numbers that have to come from somewhere.
 
-**Depends on:** [04](04-three-art-directions.md), [14](14-texture-without-gradient.md) · **Blocks:** — · **Spec step:** delta — see [../spec.md](../spec.md) → "Composition deltas"
+**Depends on:** [04](04-three-art-directions.md), [14](14-texture-without-gradient.md), [18](18-presentation-frame.md) · **Blocks:** — · **Spec step:** delta — see [../spec.md](../spec.md) → "Composition deltas"
+
+> **A chart on a slide is a different object from a chart on a page** ([../presentation.md](../presentation.md), 2026-08-10), and the difference sharpens this phase's existing constraints rather than adding new ones.
+>
+> **It is read in seconds, from the back of a room.** A page chart can carry a dozen series and reward study; a slide chart makes one point and is gone. That is an argument for fewer marks and larger type, and it makes the five-mark limit look generous rather than restrictive. **If a chart needs a legend to be understood, it is the wrong chart for a slide** — label the marks directly.
+>
+> **It has to survive four aspect ratios.** A chart is the primitive most likely to break at 21:9, because axis labels and tick density are exactly the things that stop fitting when vertical room disappears. [18](18-presentation-frame.md) is therefore a dependency, and this phase's verification runs the preflight rather than eyeballing one viewport.
+>
+> **`source` matters more, not less.** An unsourced number on a launch page is bad. An unsourced number a founder says out loud to an investor, from their own slide, is worse — and [19](19-presenter-view.md)'s speaker notes are where the provenance should surface, so the presenter can answer *"where's that from?"* without leaving the deck.
 
 ---
 

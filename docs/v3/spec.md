@@ -2,33 +2,39 @@
 
 ## Theme
 
-v1 makes an experience. v2 makes it anything. **v3 makes it alive** — derived from a reference, personalized per viewer, current with real data, fluent in twelve languages, and dimensional.
+v1 makes an experience. v2 makes it anything. **v3 makes it alive** — personalized per viewer, current with real data, fluent in twelve languages, and dimensional.
 
 This is the release that goes in front of real users.
+
+> **AI-derived art direction left this release on 2026-08-10.** It is now v2 phase [21](../v2/plan/21-art-direction-engine.md), and its design doc moved to [../v2/art-direction-engine.md](../v2/art-direction-engine.md) unchanged. The reason is in [../v2/presentation.md](../v2/presentation.md) → "The art direction stops coming off a shelf": a shelf of three hand-authored art directions is a theme picker, and shipping one to users while the engine waited a whole release was the mistake. Everything below that referenced derivation as a v3 feature has been corrected in place; the *pipeline* description of it survives here because the shape did not change, only the release.
+>
+> **Two consequences for this release.** The fetch worker and its network isolation are now v2 infrastructure rather than v3's, which removes work from here. And the mitigation below that reads *"AI-derived ADs and localization ride on systems that already exist"* loses half its subject — the earliest, most reversible feature in v3 is now localization alone.
 
 ## The top risk, stated first
 
 **No external user will have touched this product before v3 ships.**
 
-That decision was raised twice and confirmed twice, so it is the plan. But it means every assumption in v1, v2, and v3 compounds unvalidated for the entire build. If the wedge is wrong, or the editing model is wrong, or marketers don't want any of this, you find out at the end.
+That decision was raised twice and confirmed twice, so it is the plan. But it means every assumption in v1, v2, and v3 compounds unvalidated for the entire build. If the wedge is wrong, or the editing model is wrong, or founders and salespeople don't want any of this, you find out at the end.
 
 Two mitigations, both cheap, neither requiring a schedule change:
 
 - **The bets tables stay live.** v2's bets table and this document's are the list of things to check the day the first user arrives. Re-read them before building anything that depends on them.
-- **v3 is ordered so the earliest features are the most reversible.** AI-derived ADs and localization ride on systems that already exist. 3D and analytics — the two hardest to unwind — come last, so a change of mind at any point costs the least.
+- **v3 is ordered so the earliest features are the most reversible.** Localization rides on systems that already exist. 3D and analytics — the two hardest to unwind — come last, so a change of mind at any point costs the least.
 
-If you ever want to shorten the loop, the natural cut point is after localization: derived ADs, reskin, and twelve languages is already a product worth showing someone.
+If you ever want to shorten the loop, the natural cut point is after localization: generated art directions, reskin, a deck you can present, and twelve languages is already a product worth showing someone.
+
+**The top risk got smaller on 2026-08-10, and it is worth saying why rather than only that.** Pulling the art-direction engine into v2 means the release users first meet is no longer *"three looks and a scrolling page"*. It also means the wedge changed — from marketers publishing launch pages to founders and salespeople pitching live ([../v2/presentation.md](../v2/presentation.md)) — and **that** is now the compounding assumption to check first the day a real user arrives. The market research in [../v1/market.md](../v1/market.md) does not cover it.
 
 ## The features
 
 | | What it is |
 |---|---|
-| **AI-derived art direction** | Drop a screenshot, URL, moodboard, or description → a full art direction. [ai-art-direction.md](ai-art-direction.md) |
+| ~~**AI-derived art direction**~~ | **Moved to v2** ([../v2/plan/21-art-direction-engine.md](../v2/plan/21-art-direction-engine.md)). Drop a screenshot, URL, moodboard, or description → three full art directions. [../v2/art-direction-engine.md](../v2/art-direction-engine.md) |
 | **Personalization** | Signed per-recipient links; company, logo, industry woven in. [personalization.md](personalization.md) |
 | **Analytics** | Who opened, how far they got, whether they reached the CTA. [personalization.md](personalization.md) |
 | **Instant localization** | One experience, twelve languages, transcreated to fit the design. [localization.md](localization.md) |
 | **Live data** | Stats bound to Airtable/Notion, server-fetched and cached. [live-data.md](live-data.md) |
-| **3D scenes** | Scroll-driven WebGL, styled by the art direction. [dimensional.md](dimensional.md) |
+| **3D scenes** | WebGL styled by the art direction — **driven by slide advance**, not scroll, since the pivot. [dimensional.md](dimensional.md) |
 | **Pricing** | Free to generate, pay to publish |
 | **AI transparency compliance** | Machine-readable marking of generated content — legally required, in force since 2 Aug 2026. [compliance.md](compliance.md) |
 
@@ -38,13 +44,13 @@ Marketplace moves to **v4**. Its gate was real users, and by this timeline there
 
 | Axis | Decision | Why |
 |---|---|---|
-| AD derivation | Abstract qualities only — never fonts, exact colors, or layouts | A cloning tool is a plagiarism machine with your name on it |
-| AD inputs | Screenshot · URL · moodboard · description | All four fill the same four control axes from v2 |
+| ~~AD derivation~~ | **Moved to v2.** Abstract qualities only — never fonts, exact colors, or layouts | A cloning tool is a plagiarism machine with your name on it. The rule is unchanged; only the release is ([../v2/plan/21-art-direction-engine.md](../v2/plan/21-art-direction-engine.md)) |
+| ~~AD inputs~~ | **Moved to v2.** Screenshot · URL · moodboard · description · brand kit | All of them fill the same four control axes |
 | Personalization | Signed per-recipient links | No tracking scripts, no URL tampering, matches how ABM already works |
 | Personalized fields | Named fields, AI-suggested at build | Bounded and reviewable; never regenerate scenes per viewer |
 | Analytics | Aggregate by default, identified opt-in | Keeps the wow, puts the compliance burden on the publisher |
 | Live data | Server-side, cached, read-only | Values are baked in at publish, so live data adds **zero** requests to the page |
-| Data sources | Airtable / Notion | Where marketing teams actually track work |
+| Data sources | Airtable / Notion | Where teams actually track work. **Re-check against the new wedge** — a founder pitching metrics may live in Stripe or a warehouse, not Airtable |
 | Localization | Transcreate to fit the budget | Only possible because budgets exist. The design never breaks |
 | Locale delivery | Locale-prefixed URLs, auto-detect on top | Auto-detect needs somewhere to redirect *to* |
 | Locale support | Per-script fonts + RTL mirroring | Without both, everything outside Latin looks broken |
@@ -99,7 +105,7 @@ Four presentation decisions ride on top of that shape without changing it, and t
 
 | v2 said | v3 says | Why |
 |---|---|---|
-| ADs are hand-authored or control-authored | Also AI-derived | Derivation fills the same four axes |
+| ~~ADs are hand-authored or control-authored~~ | ~~Also AI-derived~~ — **both happened in v2** | The three hand-authored ADs became the engine's exemplars rather than the user's menu |
 | 4 token groups | 5 — adds `environment` | 3D needs styling or it looks pasted in |
 | `type` has one font stack | Per-script font stacks | Your display font has no Japanese |
 | 18 primitives | 19 — adds `Model3D` | Live data and personalization are *props*, not primitives |
@@ -117,7 +123,7 @@ Four presentation decisions ride on top of that shape without changing it, and t
 
 **Transcreation** is a fifth phase, running at publish: source tree + target locale + target AD budgets → per-locale tree. Not a translation call — a rewrite-to-fit call. It runs **in the `jobs` worker** as a PGQueuer job, because twelve locales is minutes of work and it must enqueue in the same transaction as the publish that triggered it ([../techstack/backend.md](../techstack/backend.md)).
 
-**Derivation** is its own phase: reference input → the four control-axis values → `ArtDirection` → linter. If the linter rejects it, the derivation retries once with the failures as context, exactly like scene repair. When the input is a URL, the capture runs **in the fetch worker** — the quarantined container — because it is the product pointing a browser at an address a stranger chose ([ai-art-direction.md](ai-art-direction.md)).
+**Derivation** is its own phase: reference input → the four control-axis values → `ArtDirection` → linter. If the linter rejects it, the derivation retries once with the failures as context, exactly like scene repair. When the input is a URL, the capture runs **in the fetch worker** — the quarantined container — because it is the product pointing a browser at an address a stranger chose ([ai-art-direction.md](../v2/art-direction-engine.md)).
 
 **Personalization** is not a generation phase. Fields are substituted at render, never generated per viewer.
 

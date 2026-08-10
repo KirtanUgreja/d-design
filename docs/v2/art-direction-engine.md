@@ -1,10 +1,16 @@
-# AI-Derived Art Direction
+# The Art Direction Engine
 
-Drop in a reference. Get a complete art direction. The single biggest demo moment in the product.
+Drop in a brand, a site, or a reference. Get three complete art directions, made for this deck. Pick one. The single biggest demo moment in the product — and, since 2026-08-10, the product's actual differentiator rather than a feature of it.
+
+> **Moved here from `v3/ai-art-direction.md` on 2026-08-10.** Everything below is unchanged in substance; two things changed around it.
+>
+> **It is not a v3 feature.** A shelf of three hand-authored art directions is a theme picker — the thing this product exists to not be — and at scale it produces public, branded collisions on decks where money is at stake. `cinematic-dark`, `editorial-light` and `bold-brutalist` were built to prove the format has range, they have, and they now become **the engine's exemplars rather than the user's menu**. The argument is in [presentation.md](presentation.md) → "The art direction stops coming off a shelf"; the build plan is [plan/21-art-direction-engine.md](plan/21-art-direction-engine.md).
+>
+> **The output is three, not one.** Derivation was specified as a single reference producing a single art direction on demand. The product shape is three candidates spread deliberately across the four control axes, each rendered live on three real slides from the user's own deck. Three near-identical options is worse than one — it asks for a choice that does not exist. The distance between the three exemplars is the benchmark the spread is measured against.
 
 ## It is not a new system
 
-v2 gave users four control axes. Derivation is **the AI filling in those same four controls**, then running the same linter, producing the same `ArtDirection` record.
+v2 gave four control axes. Derivation is **the AI filling in those same four controls**, then running the same linter, producing the same `ArtDirection` record.
 
 ```
 reference ──▶ { density, contrast, typeCharacter, motionEnergy } ──▶ ArtDirection ──▶ linter

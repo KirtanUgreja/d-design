@@ -2,6 +2,14 @@
 
 Researched August 2026. This document exists because the v1 spec makes claims about competitors, and those claims should be grounded in what actually happened to them.
 
+> **Half of this document went out of date on 2026-08-10, and it is the half about *us*.** The wedge moved from marketers publishing launch pages to **founders and salespeople pitching live** ([../v2/presentation.md](../v2/presentation.md)).
+>
+> **What survives, and it is the important part.** The Gamma and Tome findings are unaffected — they are about what happened to two companies, and the Tome lesson (*"building AI for everyone at once is fundamentally flawed"*) argues *for* the new wedge exactly as it argued for the old one. A narrow, high-stakes, budget-holding role is still the correction Tome made two years too late. The wedge got narrower, not broader.
+>
+> **What does not survive.** The section below that reframes the competitive set as Framer, Vev, Readymag and Webflow was reasoning from URL-and-embed delivery. A deck someone stands up and presents has a different neighbourhood: **Pitch, Canva, Beautiful.ai, Figma Slides, Plus AI, and PowerPoint itself.** None of that has been researched, and it is the largest open risk in the v2 release.
+>
+> **One 2026 finding arrived with the pivot and belongs here.** Gamma's most-cited defect across reviews is that its PowerPoint export breaks — text shifts, spacing changes, fonts substitute — and the named cause is structural: its layouts are optimised for vertical cards and do not convert cleanly into fixed 16:9 slides. It also cannot work offline at all. Both are consequences of a page-shaped product being asked to behave like a deck, and both are inherited by anything built page-first. **That is the sharpest "why not Gamma" answer this document has ever had**, and it is a better one than "creative ceiling" because a user can feel it in week one.
+
 ## The category has one clear winner and one clear casualty
 
 **Gamma** — ~$100M ARR (Oct 2025), $2.1B valuation, ~70M users, ~600K paying subscribers, **profitable since 2023**, ~50 employees, and only ~$23M raised before its Series B. It now positions explicitly as "replacing PowerPoint for the AI era."

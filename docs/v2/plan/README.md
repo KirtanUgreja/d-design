@@ -1,6 +1,6 @@
 # v2 Implementation Plan
 
-> Eighteen phases from one art direction to three, a reskin that breaks nothing, a pipeline that looks at what it made, and output that survives being looked at. Every phase is one sitting's work, has a gate in and a gate out, and cannot start before the phase it depends on is green.
+> Twenty-five phases from one art direction to an engine that generates them, from a scrolling page to a deck someone stands up and presents, a reskin that breaks nothing, and a pipeline that looks at what it made. Every phase is one sitting's work, has a gate in and a gate out, and cannot start before the phase it depends on is green.
 
 **Status of the whole build lives in the table below. Status of the work *inside* a phase lives in that phase's Exit gate checklist.** Two places, no overlap — the table says which phase you are in, the checklist says how far through it you are. Do not copy status between them.
 
@@ -20,7 +20,7 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 07 | [Reskin](07-reskin.md) | 7 | not started |
 | 08 | [The reskin transition](08-reskin-transition.md) | 8 | not started |
 | 09 | [Visual verification](09-visual-verification.md) | 9 | not started |
-| 10 | [Slides mode](10-slides-mode.md) | 12 | not started |
+| 10 | [Presentation playback](10-slides-mode.md) | 12 | not started |
 | 11 | [Range: motion and compare](11-range.md) | 10, 11 | not started |
 | 12 | [Seven primitives](12-primitives.md) | 13 | not started |
 | 13 | [The scene as a stage](13-scene-fit.md) | delta | **done** |
@@ -28,6 +28,13 @@ This plan implements [../spec.md](../spec.md) → Build order. It adds nothing t
 | 15 | [Images that exist](15-images.md) | delta | **done** |
 | 16 | [Charts](16-charts.md) | delta | not started |
 | 17 | [Composition](17-composition.md) | delta | not started |
+| 18 | [The presentation frame](18-presentation-frame.md) | pivot | not started |
+| 19 | [Presenter view and speaker notes](19-presenter-view.md) | pivot | not started |
+| 20 | [Offline and export](20-offline-and-export.md) | pivot | not started |
+| 21 | [The art direction engine](21-art-direction-engine.md) | pivot | not started |
+| 22 | [Deck length](22-deck-length.md) | pivot | not started |
+| 23 | [Phone remote](23-phone-remote.md) | pivot | not started |
+| 24 | [The font registry](24-font-registry.md) | variety | not started |
 
 Statuses are `not started` · `in progress` · `done` · `blocked — <why>`. Update this table when a phase changes state, and nothing else. A phase is `done` only when its Exit gate checklist is fully ticked — not when the code appears to work.
 
@@ -61,31 +68,73 @@ They exist because four defects were visible in the output and none of them was 
 1. **A token read is the exercise working; a branch is the abstraction failing.** v1's original test — "if it requires *any* renderer change, the abstraction is wrong" — was too blunt. Two renderer files changed for AD #2 and both were a hardcoded value becoming a token, which is what the layer's own rules instruct. Phase 04's exit gate uses the sharpened test.
 2. **The values a system holds globally are the ones it holds because it only ever had one instance.** Four of the seven things AD #2 cost were exactly that shape. Expect `bold-brutalist` to find more, and treat finding them as the phase succeeding.
 
+## Phase 24, and the measurement that produced it
+
+**Added 2026-08-10, after the variety promise was counted for the first time** ([../variety.md](../variety.md)). It is the only phase in this plan that exists because of a *measurement* rather than a defect someone saw or a feature someone wanted.
+
+The count: **6 font families, 6 layouts, 6 texture kinds**, and **53% of an art direction is byte-identical across all three shipped ones**. Typography and layout carry more visual identity than anything else in design, and they are the two smallest axes in the system. Gamma ships 25+ themes against this.
+
+**That reframes [21](21-art-direction-engine.md) rather than replacing it.** The engine was going to generate on colour and rhythm — the continuous axes, and the ones a viewer attributes to *"the brand"* anyway. Generating a fourth palette does not fix sameness while every deck shares one of six typefaces. So [24](24-font-registry.md) widens the axis that matters, [21](21-art-direction-engine.md) gains a structured sampler because [the model will not supply diversity by itself](../variety.md), and [17](17-composition.md) carries the layout half.
+
+**[24](24-font-registry.md) blocks [21](21-art-direction-engine.md)** for a reason worth stating once: a sampler cannot draw a font pair the registry does not hold. Building the engine against six families is building it against its ceiling.
+
+## The six phases added by the presentation pivot
+
+**Added 2026-08-10**, when the product's framing was re-tested and failed. The argument is in [../presentation.md](../presentation.md) and is not repeated here; what belongs in a plan is what it costs and where it goes.
+
+They are numbered last for the same reason 13–17 were: **a phase number is a filename, not a position.** The dependency graph below is the authority on order.
+
+| # | What it is | Why it is not optional |
+|---|---|---|
+| [18](18-presentation-frame.md) | Fluid tokens driven by the stage's smaller axis; the 4:3–21:9 guarantee | Every fluid `preferred` in the product is width-driven, which overflows at 21:9. This is a live defect, not a feature |
+| [19](19-presenter-view.md) | AI-drafted speaker notes, presenter view, timer | `Scene.notes` has existed since v1 and has never been written to. Presenter view without notes is an empty box |
+| [20](20-offline-and-export.md) | One-file offline bundle, PDF | The two things the category is worst at, and both are cheap here *because* the renderer is pure |
+| [21](21-art-direction-engine.md) | Brand or reference → three generated art directions | A shelf of three is a theme picker. This is the release's actual differentiator |
+| [22](22-deck-length.md) | Talk length and slide count at intake | The Director currently has no target and optimises for narrative alone |
+| [23](23-phone-remote.md) | Advance from a phone | Wanted, and last, because it is the only one that cannot work offline |
+
+**One of these is a defect and five are features, and the ordering respects that.** [18](18-presentation-frame.md) goes first because the 21:9 overflow is true of the code that exists today and gets more expensive with every art direction authored against the wrong axis — exactly the argument that put [13](13-scene-fit.md), [14](14-texture-without-gradient.md) and [15](15-images.md) before [04](04-three-art-directions.md).
+
+**[21](21-art-direction-engine.md) sits behind [17](17-composition.md) on purpose, and the reason is a real open question.** If generated decks still look alike because every slide is centred text, a fourth generated palette changes nothing — the sameness is layout, and [17](17-composition.md) is the fix. Building the engine first would answer the wrong question expensively. Look at the output after 17 before starting 21.
+
 ## Dependency graph
 
 ```
-00 foundations (render service · published schema · migrations)
+00 foundations (render service · published schema · migrations · fetch worker)
  └─ 01 AD format v2
      ├─ 02 motion as an axis ─────────────────────┐
-     ├─ 13 scene fit ───────────────┐             │
-     ├─ 14 texture (no gradient) ───┤             │
-     │        └─ 15 images ─────────┤             │
-     ├─ 03 AD linter ───────────────┤             │
-     │       (+ 14's neon bounds)   ▼             │
-     └──────────────────▶ 04 three art directions │
-                                │  │  │           │
-       ┌────────────────────────┘  │  └───────────┼────────┐
-       ▼                           ▼              ▼        ▼
- 05 budgets in            16 charts        06 version   11 range
- the pipeline           17 composition       history  (motion 2-4,
-                     (also needs 13,14,15)      │        compare)
-                                │               ▼
-                                │         07 reskin ──┬─────────┐
-                                │               │     │         │
-                                ▼               ▼     ▼         ▼
-                          09 visual   08 transition  10 slides mode
-                          verification
-                                            12 primitives (after 04)
+     ├─ 13 scene fit ───────┬───────┐             │
+     │    └─ 18 frame ──────┤       │             │
+     ├─ 14 texture ─────────┤       │             │
+     │        └─ 15 images ─┤       │             │
+     ├─ 03 AD linter ───────┤       │             │
+     │       (+ 14's bounds)▼       │             │
+     ├─ 24 font registry ───┼───────┼──┐          │
+     └──────────▶ 04 three art directions ────────┤
+                       │  │  │                    │
+     ┌─────────────────┘  │  └──────────┬─────────┼──────┐
+     ▼                    ▼             ▼         ▼      ▼
+ 05 budgets        16 charts       06 version  11 range  │
+ in the pipeline   17 composition    history            │
+     │                  │  │            │               │
+     │                  │  └─▶ 21 AD engine             │
+     │                  │      (also needs 03, 24)      │
+     ▼                  ▼            (also needs 03)    │
+ 09 visual        07 reskin ──┬────────┐                │
+ verification           │     │        │                │
+                        ▼     ▼        ▼                ▼
+                 08 transition │   10 presentation playback
+                               │        (needs 13 + 18)
+                               │             │
+                               │    ┌────────┼────────┬──────────┐
+                               │    ▼        ▼        ▼          ▼
+                               │  19 presenter  20 offline   22 deck
+                               │   view + notes  + export     length
+                               │        │
+                               │        ▼
+                               │   23 phone remote
+                               │
+                          12 primitives (after 04)
 ```
 
 **Order matters more here than it did in v1.** Steps 04–05 exist to break step 01. A format that has only ever expressed the art direction it was extracted from is not a format; it is that art direction with extra syntax. Do not build reskin before all three art directions exist — reskin against one AD is untestable, and the third AD is what tells you the format is wrong while changing it is still cheap.
@@ -97,14 +146,25 @@ The two that land after 04 do so for the opposite reason: [16](16-charts.md) and
 **Recommended build order**, which is the graph flattened:
 
 ```
-13a · 00 · 14 · 15 · 13b · 01 · 02 · 03 · 04 · 17 · 05 · 16 · 06 · 07 · 08 · 09 · 10 · 11 · 12
+13a · 00 · 14 · 15 · 13b · 18 · 01 · 02 · 03 · 04 · 17 · 24 · 21 · 05 · 16 · 06 · 07 · 08 · 09
+                                                                    · 10 · 22 · 19 · 20 · 11 · 12 · 23
 ```
+
+**Three things about that order are deliberate and worth defending before anyone reorders it.**
+
+**[18](18-presentation-frame.md) lands with the scene-fit work, not with the presentation features.** It is the same kind of item as [13](13-scene-fit.md) — a frame defect visible in code that already runs — and it changes every art direction's `preferred` values. Authoring or re-authoring an AD before it means doing that work twice, which is precisely the mistake [13](13-scene-fit.md), [14](14-texture-without-gradient.md) and [15](15-images.md) were moved ahead of [04](04-three-art-directions.md) to avoid.
+
+**[21](21-art-direction-engine.md) lands immediately after [17](17-composition.md)** and before the reskin chain, because [17](17-composition.md) is what answers *is the sameness colour or layout?* — and because a generated art direction is the single strongest test of the reskin guarantee that follows it. An engine that produces ADs which cannot reskin an existing deck has found a format bug, and finding it before [07](07-reskin.md) is cheaper than after.
+
+**The live-room features come last as a block**, after playback exists. Five small features that each fail in public is a product's worth of edges, and there is no way to judge whether presenter view or the timer is right without a deck to present. [23](23-phone-remote.md) is dead last and is the one to drop if the release is running long.
 
 **[13](13-scene-fit.md) splits, and its first half went first.** The graph above shows 13 hanging off 01, which was drawn reflexively and is not true of the code: the fit shell is three `Rhythm` tokens, four CSS variables and two component edits, all in files that exist today. Only section 9 of that phase — viewport overflow reporting — needs a headless layout and therefore [00](00-foundations.md)'s `render` service. `13a` is the shell and is **done**; `13b` is the overflow half and waits.
 
 It was built out of order on purpose. The defect it fixes is the one visible in the generated output, and 00 and 01 deliver nothing anyone can look at. Nothing is built twice — 01's job is migrating v1's format into v2's, and three more tokens is that job. **Check the other arrows in this graph the same way before treating one as a cost**; at least one more of them is a reflex rather than a dependency.
 
 [17](17-composition.md) sits immediately after 04 because it is the phase that decides whether the three art directions look like three designs or three colour schemes, and that is a judgement best made while all three are still fresh and cheap to change.
+
+**[24](24-font-registry.md) sits between [17](17-composition.md) and [21](21-art-direction-engine.md)**, and it is the cheapest large win in the release. It is mechanical — licence checks and pair authoring — and depends on nothing the engine does, so it can also be picked up in the background whenever the build stalls on something else. It blocks [21](21-art-direction-engine.md) because a sampler cannot draw a font pair the registry does not hold.
 
 ## The one hard gate
 

@@ -2,7 +2,15 @@
 
 > The release where the pipeline starts looking at what it made. Pydantic proves a tree is valid; nothing yet proves it is not broken on screen. A `for` loop with a literal limit of 1, about forty lines, and the one place in this product that will look agent-shaped.
 
-**Depends on:** [07](07-reskin.md) · **Blocks:** — · **Spec step:** 9
+**Depends on:** [07](07-reskin.md), [17](17-composition.md), [18](18-presentation-frame.md) · **Blocks:** — · **Spec step:** 9
+
+> **The presentation pivot widened what this loop has to look at** ([../presentation.md](../presentation.md), 2026-08-10), and the widening is multiplicative, so it needs deciding rather than absorbing.
+>
+> **The critic looks at slides, at four aspect ratios.** A screenshot of a scrolling page was one image per scene. A deck is one image per slide per ratio, which is 4× the images before a single art direction is added — and with three generated candidates from [21](21-art-direction-engine.md) it is 12×. **Do not run the critic at every ratio.** [18](18-presentation-frame.md)'s preflight already answers *does it fit* mechanically and far more cheaply; the critic answers *is it composed*, and that question only needs asking once per slide, at 16:9. Reach for another ratio only when the preflight flags one.
+>
+> **Two new questions belong in the critic's list**, both from defects the pivot makes visible: *does this slide read at a glance, from the back of a room* — a slide is looked at for seconds, not minutes, which a page critic has no reason to ask — and *does this slide look like the last three*, which is the sameness question [17](17-composition.md) exists for and the one no per-image check can catch. The second needs the critic to see a sequence, not a slide.
+>
+> **A generated art direction is the loop's hardest input and its best test.** Every art direction the critic has ever seen was authored by a person who looked at it. From [21](21-art-direction-engine.md) that stops being true, and this loop becomes the only thing between a model-authored art direction and a user's pitch. Its questions should be extended by whatever [21](21-art-direction-engine.md)'s thirty-candidate review turns up.
 
 ---
 
@@ -139,7 +147,7 @@ This matters because the critic reads a screenshot of **user content**, which me
 | Not built | Trigger |
 |---|---|
 | More than one revision | Never, without a ledger-grade argument. The limit is the thing that keeps this from being an agent |
-| A beauty score | Never. [../../v3/ai-art-direction.md](../../v3/ai-art-direction.md) holds the same line for derived art directions |
+| A beauty score | Never. [../art-direction-engine.md](../art-direction-engine.md) holds the same line for derived art directions |
 | Critic on every edit | Cost and latency. It runs on generation and on reskin, which is where layout breaks |
 | Multi-viewport review | v3, with the localization work that makes it matter. One viewport, chosen and pinned, until then |
 | Persisting screenshots for a review UI | When someone wants to audit a run. It is user content and it needs a lifecycle before it needs a feature |

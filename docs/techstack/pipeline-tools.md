@@ -8,7 +8,7 @@ What the model is allowed to call, and the loop that lets it look at what it mad
 
 That is a good rule and it is not the rule people usually think it is. Read it precisely: it forbids **side effects**, not tools. A tool that reads the user's own brand kit and returns four hex codes mutates nothing, reaches nothing, and cannot be turned into an action by an attacker — because there is no action behind it.
 
-The distinction matters because a strong finding from [../v3/ai-art-direction.md](../v3/ai-art-direction.md) applies to the whole pipeline, not just derivation:
+The distinction matters because a strong finding from [../v2/art-direction-engine.md](../v2/art-direction-engine.md) applies to the whole pipeline, not just derivation:
 
 > **Giving the model tools to iteratively analyze, crop, and visually verify its own work is a markedly more cost-effective lever than raising thinking effort.**
 
@@ -104,7 +104,7 @@ Narrow, checkable questions. A vision model asked "is this good?" returns flatte
 - Does this scene look meaningfully different from the previous one?
 - Does the emphasis land where the scene's intent says it should?
 
-Structural questions with defensible answers. **Beauty is not among them** — the linter has no opinion on beauty ([../v3/ai-art-direction.md](../v3/ai-art-direction.md)) and neither does this. It catches broken, not boring.
+Structural questions with defensible answers. **Beauty is not among them** — the linter has no opinion on beauty ([../v2/art-direction-engine.md](../v2/art-direction-engine.md)) and neither does this. It catches broken, not boring.
 
 ### One revision, then accept
 
@@ -149,4 +149,4 @@ The loop is a v2 feature at the earliest, and it should be, because it cannot be
 |---|---|
 | **v1** | Tier-0 reads only — `get_brand_kit`, `list_assets`, `get_constraints`. Small, immediately useful, and `list_assets` closes an actual gap |
 | **v2** | The visual loop, arriving with the third art direction — which is when layout breakage across ADs becomes a real and frequent problem |
-| **v3** | The same critic, applied to derived art directions ([../v3/ai-art-direction.md](../v3/ai-art-direction.md)) and to localized layouts, where twelve languages multiply the ways a layout can break |
+| **v3** | The same critic, applied to derived art directions ([../v2/art-direction-engine.md](../v2/art-direction-engine.md)) and to localized layouts, where twelve languages multiply the ways a layout can break |

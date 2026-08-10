@@ -107,31 +107,38 @@ Each AD names a `defaultMotion`, so the pairing stays curated. The other eleven 
 
 ---
 
-## Slides mode
+## Presentation and the handout
 
-Deferred from v1. Same tree, different playback.
+**Presentation is the default and the handout is the alternate.** This section was written as *"slides mode, deferred from v1"* — a mode you switch into. That was inverted on 2026-08-10; the argument is in [presentation.md](presentation.md) and only the outcome is recorded here.
 
-**One scene = one slide.** No content changes, no second authoring pass, no auto-splitting into narratively stupid places.
+Same tree, two playbacks. **One scene = one slide.** No content changes, no second authoring pass, no auto-splitting into narratively stupid places.
 
 What changes:
 
-| | Scroll | Slides |
+| | Handout (scroll) | **Presentation (default)** |
 |---|---|---|
 | Motion trigger | 25% in viewport | on advance |
-| Durations | full | ~30% shorter — a slide advance is a beat, not a journey |
+| Durations | full | ~30% shorter — an advance is a beat, not a journey |
 | Parallax | on | off entirely |
-| Scene padding | `clamp(6rem, 14vh, 12rem)` | collapsed to fit viewport |
-| Navigation | scroll | arrow keys, clicker, click (from v1) |
+| Scene padding | `clamp(6rem, 14cqmin, 12rem)` | collapsed to the stage |
+| Frame | `fit` table, floored at `100svh` | every slide is the stage |
+| Navigation | scroll | arrow keys, click, clicker, phone |
 
-Each `MotionVocabulary` carries a `slidesVariant` holding the retimed values. Slides mode is a lookup, not a code path.
+Each `MotionVocabulary` carries a `slidesVariant` holding the retimed values. **Playback is a lookup, not a code path.**
 
-### Overflow, again
+### Overflow, again — and the verdict differs
 
-Content that fits a tall scroll scene may not fit a fixed viewport. **Reuse `OverflowReport`** — same type, same banner, same shorten-with-AI affordance, computed against viewport height instead of character budget.
+Content that fits a tall handout scene may not fit a stage. **Reuse `OverflowReport`** — same type, same banner, same shorten-with-AI affordance, computed against the stage rather than a character budget, at [plan/18-presentation-frame.md](plan/18-presentation-frame.md)'s four aspect ratios.
 
-Two features, one mechanism. If slides mode needs its own overflow concept, one of the two designs is wrong.
+Three features, one mechanism. If presentation appears to need its own overflow concept, one of the three designs is wrong.
 
-### ScrollSequence in slides mode
+What *does* differ is the consequence. In the handout a tall scene grows — ugly, survivable. On a slide there is nowhere to grow, so overflow is a blocking defect and the banner says so in those terms. Same measurement, different verdict.
+
+### The mode is pinned at publish
+
+Like the art direction and its version, and for the same reason. An experience published as a scrolling page does not become a deck overnight because the product's default changed. Existing rows are never migrated.
+
+### ScrollSequence in presentation mode
 
 A scroll-driven image sequence has no scroll to drive it. It degrades to a single representative frame, and the editor says so when the user switches modes. See [primitives.md](primitives.md).
 

@@ -1,8 +1,16 @@
 # Phase 17 — Composition
 
-> Framing, texture and imagery fix a scene. This fixes the **sequence** — hierarchy inside a scene, variety between scenes, and the editorial furniture that makes a generated page read as art-directed rather than assembled. It is the phase that answers "the design is fine and the deck is still boring."
+> Framing, texture and imagery fix a scene. This fixes the **sequence** — hierarchy inside a slide, variety between slides, and the editorial furniture that makes a generated deck read as art-directed rather than assembled. It is the phase that answers "the design is fine and the deck is still boring."
 
-**Depends on:** [04](04-three-art-directions.md), [13](13-scene-fit.md), [14](14-texture-without-gradient.md), [15](15-images.md) · **Blocks:** [09](09-visual-verification.md) · **Spec step:** delta — see [../spec.md](../spec.md) → "Composition deltas"
+**Depends on:** [04](04-three-art-directions.md), [13](13-scene-fit.md), [14](14-texture-without-gradient.md), [15](15-images.md), [18](18-presentation-frame.md) · **Blocks:** [09](09-visual-verification.md), [21](21-art-direction-engine.md) · **Spec step:** delta — see [../spec.md](../spec.md) → "Composition deltas"
+
+> **The presentation pivot made this phase easier and more important, in that order** ([../presentation.md](../presentation.md), 2026-08-10).
+>
+> **Easier, because composition now has a frame.** Every constraint below — one anchor per scene, asymmetric splits, the ground cycle — assumes something to compose *inside*. On a scrolling page that frame was whatever the reader's window happened to be, so the constraints were hopes. On a slide it is the stage, bounded and known at four aspect ratios, so they are checkable. [18](18-presentation-frame.md) is therefore a dependency, not a neighbour: composing against `8vw` composes against the wrong axis.
+>
+> **More important, because it now gates [21](21-art-direction-engine.md).** The open question the whole pivot turns on is whether generated decks look alike because of *colour* or because of *layout*. If every slide is still centred text, three generated art directions collide exactly as three hand-authored ones do, and the engine will have been built to answer the wrong question. **Look at the output of this phase before starting 21.** That judgement is this phase's real exit condition and no checklist item can stand in for it.
+>
+> **One thing got harder.** "Variety between scenes" was previously variety a reader met one at a time while scrolling. In a deck the audience sees slides in quick succession and a presenter clicks through them in a rehearsal — sameness that was diffuse on a page is *concentrated* here, and much more obvious. That is a better test, and it will fail more often.
 
 > **Phase 04 handed this phase two things, one of them measured.**
 >

@@ -21,11 +21,13 @@ This is not vanity. It is the same reason [../v1/spec.md](../v1/spec.md) makes R
 
 So the target is not maximum appeal. It is:
 
-> Irresistible to a marketer with a launch in three weeks and a budget. Mildly intimidating to everyone else.
+> Irresistible to a founder pitching on Thursday. Mildly intimidating to everyone else.
 
-**The test, applied to any page:** would this make a student want to sign up *more* than it makes a demand-gen lead want to sign up? If yes, it is wrong, however beautiful.
+**Updated 2026-08-10 with the wedge** ([../v2/presentation.md](../v2/presentation.md)). It used to read *"a marketer with a launch in three weeks and a budget"*. The shape of the test is unchanged and so is Tome's lesson — narrow, high-stakes, budget-holding — but the person is now in a room, and *Thursday* does work *three weeks* did not: the deadline is the emotion.
 
-Practically that means the work shown is commercial work — launches, product pages, investor updates — never "my travel photos" or "a deck about my thesis". It means the copy names a job, a deadline, and a stakeholder. It means we never optimize for "free forever" traffic.
+**The test, applied to any page:** would this make a student want to sign up *more* than it makes a founder three days from a raise want to sign up? If yes, it is wrong, however beautiful.
+
+Practically that means the work shown is commercial work — investor decks, sales pitches, launches — never "my travel photos" or "a deck about my thesis". It means the copy names a job, a deadline, and a stakeholder. It means we never optimize for "free forever" traffic.
 
 **Forces:** every showcase piece, every screenshot, every example prompt is B2B launch work.
 **Prevents:** the exact failure mode that killed a better-funded competitor in this category.
@@ -102,7 +104,9 @@ Four of those rows are now automated for the artifact, and it is worth knowing w
 
 Linear and Vercel sell tools, so their pages show product UI. **Our differentiator is not the tool, it is what comes out of it.** [../v1/market.md](../v1/market.md) is explicit that the gap against Gamma is *creative ceiling*, not speed — and a screenshot of an editor cannot show a ceiling.
 
-So the hero is the output: a real, live, published experience, in the page, scrolling and animating exactly as a recipient would see it. Not a picture of one.
+So the hero is the output: a real, published **deck**, in the page, advancing and animating exactly as a room would see it. Not a picture of one.
+
+**Changed 2026-08-10.** This read *"scrolling and animating exactly as a recipient would see it"*, which was the drift showing up in our own marketing. The artefact advances now, and the hero should let a visitor click through it — which is a better hero anyway, because clicking is the product's actual gesture and scrolling was everyone's.
 
 We can do this cheaply for a reason baked into the architecture: a published artifact is **static HTML on a CDN with almost no JS** ([../techstack/frontend.md](../techstack/frontend.md)), so embedding real work costs approximately nothing per visitor.
 

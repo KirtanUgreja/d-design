@@ -6,6 +6,16 @@ v1 proves an experience can be generated, edited, and published. **v2 proves it 
 
 Same content, same scene tree, radically different experiences — switched with one click. That is the feature no template tool can copy, because they never separated content from styling in the first place.
 
+## The pivot, 2026-08-10
+
+**The artefact is a presentation, and the art direction is generated rather than chosen from a shelf.** Two corrections, made after this spec was written and before most of it was built. Both are recorded here and argued in full in [presentation.md](presentation.md); nothing below them was deleted, because most of this release is unaffected.
+
+**1. A deck, not a page.** The product had been drifting into a scrolling web page that could be presented — a drift that was never argued for, only inherited from v1's *"scroll sections first"*. The re-test failed on three counts: the category's loudest complaint (Gamma's broken PowerPoint export) is *caused* by page-shaped layouts meeting slide-shaped output; composition needs a bounded frame to be checkable at all; and the live room is the harder case nobody has made beautiful. The scene tree does not change, rule 7 does not change, and the token layer does not change shape. What changes is the default, the frame, and five features the room demands.
+
+**2. The shelf becomes an engine.** Three hand-authored art directions over six layouts is a theme picker, and at scale it produces public, branded collisions. `cinematic-dark`, `editorial-light` and `bold-brutalist` were built to prove the format has range, and they have. They now become the **engine's exemplars** rather than the **user's choices** — the user gets three art directions generated for their deck, from their brand or a reference. The design was v3's `ai-art-direction.md` and is now [art-direction-engine.md](art-direction-engine.md); phase [21](plan/21-art-direction-engine.md) builds it.
+
+**The wedge moved with it.** The user is no longer a marketer publishing a launch page; it is a **founder or salesperson pitching live**, where the deck decides money. That invalidates the comparison set in [../v1/market.md](../v1/market.md) — Framer and Vev are no longer the neighbours; Pitch, Canva, Beautiful.ai and PowerPoint are — and that research has not been redone. It is the largest open risk in this release.
+
 ## The honest caveat
 
 **v2 is being specified before v1 has a single user.** Every pre-launch v2 is partly wrong, because the thing users complain about is never the thing you predicted.
@@ -28,9 +38,15 @@ So this doc separates two kinds of statement.
 | | What would disprove it |
 |---|---|
 | 7 new primitives, and *these* 7 | Users ask for three others and ignore five of these |
-| Slides mode demand | Nobody presents live; everyone shares links |
-| Users want AD *controls* rather than curated choices | Marketers pick from a list and never touch a slider |
+| ~~Slides mode demand~~ | ~~Nobody presents live; everyone shares links~~ |
+| ~~Users want AD *controls* rather than curated choices~~ | ~~Marketers pick from a list and never touch a slider~~ |
 | Compare view | Users decide from thumbnails and never open it |
+| **Fluid slides can be guaranteed across 4:3–21:9** | A real room breaks a slide the four-ratio preflight passed. The retreat is a fixed 16:9 canvas, and it must be taken deliberately ([presentation.md](presentation.md) → Risks) |
+| **Three generated art directions beat three curated ones** | Users regenerate repeatedly, or pick the same character every time and wanted a shelf after all. **Already weakened on 2026-08-10** — see [variety.md](variety.md): the engine as specified generates on the wrong axis, and the model mode-collapses on exactly this task |
+| **A structured sampler defeats mode collapse** | Thirty candidates from ten briefs still cluster. This is the load-bearing bet of [variety.md](variety.md) and it is untested |
+| **Founders and salespeople will pay for this** | The wedge moved on 2026-08-10 and the market research did not move with it |
+
+**Two bets were retired rather than tested, and the honesty matters more than the tidiness.** "Nobody presents live" was resolved by deciding the product is for people who do — that is a *decision*, not evidence, and if it is wrong the whole presentation set is wrong with it. "Users want controls rather than curated choices" was superseded by a third option neither side of the bet contained: **generated choices**, which are neither a slider nor a shelf.
 
 ## Locked decisions
 
@@ -39,14 +55,25 @@ So this doc separates two kinds of statement.
 | Theme | Creative range explodes | The abstraction is unproven with one AD (v1 Risk 4) |
 | Headline feature | One-click reskin | Makes the abstraction visible to users, not just architects |
 | AD scope | **Tokens only** | Any AD must work with any experience, or reskin can't be guaranteed |
-| AD authoring | 3 hand-authored, then user controls | Hand-authoring is the prerequisite, not a competing option |
-| AI-derived AD | **v3** | Needs the token schema battle-tested by hand and by users first |
+| AD authoring | 3 hand-authored, **then generated** | Hand-authoring is the prerequisite, not a competing option — and having served as the prerequisite, the three become exemplars rather than choices |
+| ~~AI-derived AD~~ → **the AD engine** | **This release**, after [17](plan/17-composition.md) | ~~Needs the token schema battle-tested by hand and by users first~~ — the format has now been battle-tested by three hand-authored ADs, which is what [04](plan/04-three-art-directions.md) was for. Waiting for *users* to test it meant shipping a theme picker to them first ([21](plan/21-art-direction-engine.md)) |
+| **The artefact** | **A presentation, played as slides** | The unit is a slide and the room is the design target ([presentation.md](presentation.md)) |
+| **The frame** | **Fluid, guaranteed 4:3 → 21:9** | Filling the screen is the better artefact than a letterboxed fixed canvas; the four-ratio preflight is the price ([18](plan/18-presentation-frame.md)) |
+| **The scrolling page** | Kept as a **handout**, never the default | It already works, so it costs nothing — but it is not designed for and not sold |
+| **Export** | **PDF now, `.pptx` on evidence only** | Lossy web-to-PowerPoint conversion is the category's most-complained-about feature, and the losses are exactly what this product is made of ([20](plan/20-offline-and-export.md)) |
+| **Offline** | **A one-file download**, not a service worker | A service worker fails silently when storage is cleared, and it fails on stage |
+| **Speaker notes** | **AI-drafted, grounded in the Brief** | The field has existed since v1; presenter view without it is an empty box. Risk 2 applies twice over, because notes get read aloud |
+| **Deck length** | **The user's**, asked at intake | *"Make me a deck"* has no correct length; *"I have five minutes"* does ([22](plan/22-deck-length.md)) |
 | Marketplace | **v3+**, gated on real users | A designer channel with no designers is an empty room |
 | Motion | Independent axis from visual AD | Cheapest range multiplier available |
 | Content fit | Per-AD character budgets, flagged overflow | Never silently rewrite approved marketing copy |
 | AD versioning | Pinned at publish, opt-in upgrade | A live launch page must not restyle itself overnight |
 | History | Auto-snapshot at milestones + named saves | Scene trees are small JSON; storing 50 costs nothing |
-| Slides mode | One scene = one slide, motion retimed | No content changes, no second authoring pass |
+| ~~Slides mode~~ → **presentation playback** | One scene = one slide, motion retimed — **and it is the default** | No content changes, no second authoring pass. The inversion is [presentation.md](presentation.md) |
+| **Variety** | **A measured claim with a gate**, not an aspiration | Asserted for three releases and never counted. It was counted on 2026-08-10 and the plan failed it ([variety.md](variety.md)) |
+| **Diversity source** | **A structured sampler**, never the model's imagination | LLMs mode-collapse intra- and inter-model, structured output makes it worse, and temperature does not help ([21](plan/21-art-direction-engine.md)) |
+| **Component / UI libraries** | **Refused in the artifact.** Headless-only, and anything in our own chrome | A library component carries styling the AD cannot reach, which ends reskin — and shared libraries are *why* every SaaS site looks alike ([variety.md](variety.md)) |
+| **Font registry** | **6 families → 40+, vetted pairs** | Typography carries the most identity and had the fewest values in the system ([24](plan/24-font-registry.md)) |
 | Gradients | **Banned in the artifact**, not only in our chrome | Principle 5's list was always right; it was scoped to the wrong surface ([plan/14](plan/14-texture-without-gradient.md)) |
 | Texture | Print-derived — halftone, hatch, dither, weave, grain, rule. Stepped, never ramped | The replacement has to be better than what it replaces, or the ban costs quality |
 | Scene fit | An AD lookup from layout, floored at `100svh`, `proximity` snap | Composition assumes a frame. Nothing ever defined one |
@@ -66,7 +93,11 @@ Per the versioning convention, v1 docs stay as the record of what was believed. 
 | Motion vocabulary belongs to the art direction | Motion is a **separate selectable axis** | Decoupling multiplies range for near-zero cost |
 | 11 primitives | 18 primitives | Structural range to match stylistic range |
 | No version history | Auto-snapshots + named saves | Reskin makes it a hard dependency |
-| `mode: 'scroll' \| 'slides'`, scroll rendered only | Both render | Makes the presentation framing finally honest |
+| `mode: 'scroll' \| 'slides'`, scroll rendered only | Both render, and **`slides` is the default** | Makes the presentation framing finally honest — and then makes it the product ([presentation.md](presentation.md)) |
+| Fluid values are driven by viewport width (`8vw`) | Driven by the smaller axis of the **stage** (`8cqmin`) | Width-driven type grows at exactly the moment a wide-and-short screen runs out of height. Container units also make the editor canvas and the presenter preview correct for free ([18](plan/18-presentation-frame.md)) |
+| Art directions are picked from a list of three | **Generated, three per deck**, from a brand or a reference | A shelf of three produces public branded collisions at scale ([21](plan/21-art-direction-engine.md)) |
+| `Scene.notes` exists and is unused | AI-drafted, budgeted, reviewable, never audience-facing | Presenter view is the surface that makes the field mean something ([19](plan/19-presenter-view.md)) |
+| The deck is as long as the narrative wants | As long as the **user's talk** | The Director gains a target it can plan to ([22](plan/22-deck-length.md)) |
 | Schema validation is the whole quality gate | The schema parse **plus a visual critic** | Pydantic proves valid, never good. Layout breakage across ADs is invisible to a validator |
 | AD token values are hand-authored by you | Partly **user-controlled**, and validated by grammar before becoming CSS | The first release where a token value is untrusted input |
 
@@ -113,11 +144,13 @@ The APCA one is the only entry on this list that *adds* a requirement rather tha
 
 ```
                         ┌── art direction (tokens) ──┐
-scene tree ─────────────┤                            ├──▶ SceneRenderer
-(unchanged from v1)     ├── motion vocabulary ───────┤
-                        └── playback mode ───────────┘
-                              scroll | slides
+scene tree ─────────────┤    generated, 3 per deck   │
+(unchanged from v1)     ├── motion vocabulary ───────┤──▶ SceneRenderer ──▶ stage
+                        └── playback mode ───────────┘                      (4:3 … 21:9)
+                            slides (default) | scroll
 ```
+
+The **stage** is the fourth thing between the tree and the screen and the only one added by the pivot. It is a size container, it lives in `present/`, and the renderer does not know it exists — which is what keeps rule 6 true across the editor canvas, the published deck, the `render` service and the presenter preview.
 
 The scene tree does not change. Three independent axes now sit between it and the renderer, and any combination is valid. That property is what makes reskin safe, and it survives only if **art directions stay tokens-only** — the moment an AD can add a layout or a component, "any AD works with any experience" becomes a lie.
 
@@ -204,8 +237,15 @@ experiences         + motion_vocabulary, + art_direction is now {id, version}
 9. **Visual verification loop** — render, screenshot, critic, one revision. Wire it to reskin first, where it earns its cost immediately
 10. Compare view
 11. Remaining motion vocabularies: `editorial-restrained`, `mechanical-snap`, `physics-playful`
-12. Slides mode — reuses the overflow mechanism from step 7
+12. **Presentation playback** — one scene, one slide, advance. Reuses the overflow mechanism from step 7 and the frame from the pivot list below
 13. The 7 primitives, in order of real demand
+
+**Six pivot steps interleave rather than append**, and [plan/README.md](plan/README.md) → "Dependency graph" is the authority on where:
+
+- **The presentation frame** lands with the scene-fit work, *before* step 1 — it changes every art direction's `preferred` values, so authoring against the old axis means authoring twice ([plan/18-presentation-frame.md](plan/18-presentation-frame.md))
+- **The art direction engine** lands immediately after composition and *before* reskin — composition answers whether the sameness is colour or layout, and a generated AD is the hardest test reskin will ever get ([plan/21-art-direction-engine.md](plan/21-art-direction-engine.md))
+- **Deck length, presenter view, offline and export** follow step 12, because none of them can be judged without a deck to present ([22](plan/22-deck-length.md), [19](plan/19-presenter-view.md), [20](plan/20-offline-and-export.md))
+- **Phone remote** is last and is the one to drop if the release runs long ([23](plan/23-phone-remote.md))
 
 **Five composition deltas interleave with this list rather than appending to it** ([plan/README.md](plan/README.md) → "Dependency graph" is the authority). Scene fit, the texture vocabulary and images land **between steps 1 and 3**, because each adds tokens and an art direction authored before they exist has to be re-authored after them. Composition lands immediately after step 5, and charts after it — both are three-art-direction problems, and building either against one AD bakes that AD's opinions into a default.
 

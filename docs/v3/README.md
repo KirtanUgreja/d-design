@@ -1,6 +1,8 @@
 # v3 — the wow release
 
-> Derived, personalized, live, multilingual, dimensional. The first version a person outside this project ever opens.
+> Personalized, live, multilingual, dimensional. The first version a person outside this project ever opens.
+
+> **Derivation left on 2026-08-10.** AI-derived art direction was v3's headline feature; it is now v2 phase [21](../v2/plan/21-art-direction-engine.md) and its design doc lives at [../v2/art-direction-engine.md](../v2/art-direction-engine.md). The product also became a **presentation** rather than a scrolling page ([../v2/presentation.md](../v2/presentation.md)), which changes what several features below mean — 3D is driven by slide advance rather than scroll, and the wedge is a founder or salesperson pitching rather than a marketer publishing. Rows affected are marked in place.
 
 **Start here:** [spec.md](spec.md) → "The top risk, stated first".
 
@@ -13,7 +15,7 @@ v3 is also where the product stops being a private tool and becomes a thing with
 | Doc | What's in it |
 |---|---|
 | [spec.md](spec.md) | Theme, the top risk, the feature set, 14 locked decisions, platform and regulatory reality, the deltas from v2, build order, verification, 6 risks |
-| [ai-art-direction.md](ai-art-direction.md) | Deriving an AD from a reference — the four input types, what is extracted, what is refused, and why priors matter more than the vision model |
+| ~~ai-art-direction.md~~ → [../v2/art-direction-engine.md](../v2/art-direction-engine.md) | **Moved to v2.** Deriving an AD from a reference — the four input types, what is extracted, what is refused, and why priors matter more than the vision model. Left here as a pointer because half this corpus links to it |
 | [personalization.md](personalization.md) | Signed per-recipient links, the 5 fields that vary, analytics, and why `recipient_id` is nullable |
 | [localization.md](localization.md) | Transcreation within a budget, per-script fonts, RTL, locale delivery — 12 languages that never break the layout |
 | [live-data.md](live-data.md) | Server-fetched bindings that keep the published page network-silent |
@@ -27,16 +29,16 @@ v3 is also where the product stops being a private tool and becomes a thing with
 | The legal obligation, and the penalty | [compliance.md](compliance.md) → "What changed on 2 August 2026" (€15M or 3% of global turnover) |
 | Why the EXIF strip and C2PA collide | [compliance.md](compliance.md) → "What this product has to do" |
 | Whether translations count as AI-generated content | [compliance.md](compliance.md) — yes, explicitly. And [localization.md](localization.md) → "The review gate is also the compliance gate" |
-| How a reference becomes an art direction | [ai-art-direction.md](ai-art-direction.md) → "It is not a new system" (it fills v2's four control axes) |
-| Why the tool refuses to copy fonts and colors | [ai-art-direction.md](ai-art-direction.md) → "What is extracted, and what is refused" |
-| Why derivation quality comes from hand-authored ADs, not the model | [ai-art-direction.md](ai-art-direction.md) → "Priors" |
+| How a reference becomes an art direction | [../v2/art-direction-engine.md](../v2/art-direction-engine.md) → "It is not a new system" (it fills v2's four control axes) |
+| Why the tool refuses to copy fonts and colors | [../v2/art-direction-engine.md](../v2/art-direction-engine.md) → "What is extracted, and what is refused" |
+| Why derivation quality comes from hand-authored ADs, not the model | [../v2/art-direction-engine.md](../v2/art-direction-engine.md) → "Priors" |
 | Recipient token design, and how tokens leak in practice | [personalization.md](personalization.md) → "Signed per-recipient links", then [../security/content-and-web.md](../security/content-and-web.md) |
 | Why translation is done inside a character budget | [localization.md](localization.md) → "Transcreation, not translation" |
 | What RTL costs, and the `transform` exception | [localization.md](localization.md) → "RTL — mostly free, if the renderer was authored correctly" |
 | Which script needs which font, and why fallbacks matter | [localization.md](localization.md) → "Per-script fonts" |
 | How live data stays compatible with a near-silent page | [live-data.md](live-data.md) → "The boundary problem, solved by fetching elsewhere" |
 | What a published page is actually allowed to request | [personalization.md](personalization.md) → "One static artifact, fields fetched at view" (exactly two endpoints) |
-| Why URL input is the most dangerous feature in the product | [ai-art-direction.md](ai-art-direction.md) → "URL input is the product pointing a browser at an address a stranger chose" |
+| Why URL input is the most dangerous feature in the product | [../v2/art-direction-engine.md](../v2/art-direction-engine.md) → "URL input is the product pointing a browser at an address a stranger chose" |
 | Which runtime a given piece of v3 work runs in | [../techstack/backend.md](../techstack/backend.md) → "The five runtimes" |
 | 3D performance budgets and the fallback chain | [dimensional.md](dimensional.md) → "Performance" (WebGPU → WebGL2 → poster) |
 | Why image-to-3D of real products is refused | [dimensional.md](dimensional.md) → "Assets — never generate the product" |
@@ -48,7 +50,7 @@ Worth noticing across these documents, because it is the same rule each time and
 
 - **v1** refuses AI-generated imagery of the customer's product
 - **v3** refuses image-to-3D of real products ([dimensional.md](dimensional.md))
-- **v3** refuses to clone a reference's fonts, colors, and layouts ([ai-art-direction.md](ai-art-direction.md))
+- **v3** refuses to clone a reference's fonts, colors, and layouts ([../v2/art-direction-engine.md](../v2/art-direction-engine.md))
 
 > **Arrange what the user gave you. Never invent the subject.**
 

@@ -23,7 +23,7 @@ Stated so the seam has something concrete to be neutral about, not as a recommen
 
 Two structural notes that outlast the specific names:
 
-- **Vision is no longer scarce.** ~67 models have vision, and **28 of those are open-weight and self-hostable**. Art-direction derivation ([../v3/ai-art-direction.md](../v3/ai-art-direction.md)) is not gated on a single vendor.
+- **Vision is no longer scarce.** ~67 models have vision, and **28 of those are open-weight and self-hostable**. Art-direction derivation ([../v2/art-direction-engine.md](../v2/art-direction-engine.md)) is not gated on a single vendor.
 - **Pricing models are diverging.** Some providers are moving from token meters to task quotas (Kimi Code bills 300–1,200 calls per 5-hour window). Cost accounting that assumes per-token billing will eventually mismeasure. Log both calls and tokens.
 
 ## What actually constrains the choice here

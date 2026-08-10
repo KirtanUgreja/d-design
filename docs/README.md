@@ -1,8 +1,10 @@
 # d-design docs
 
-> Design corpus for an AI presentation-experience engine. 49 documents plus a 13-file build plan, nothing built yet. Every directory has a README that routes to the exact file you need.
+> Design corpus for an AI presentation engine. Every directory has a README that routes to the exact file you need.
 
-**New here?** Read [v1/scene-schema.md](v1/scene-schema.md) first. Everything else depends on that shape.
+**The artefact is a deck someone stands up and presents**, and its art direction is generated rather than picked from a shelf. Both were decided on 2026-08-10, correcting a drift into a scrolling web page; read [v2/presentation.md](v2/presentation.md) before anything that touches layout, playback or the wedge.
+
+**New here?** Read [v2/presentation.md](v2/presentation.md) for what the product is, then [v1/scene-schema.md](v1/scene-schema.md) for the shape everything else depends on.
 
 **Writing code?** Read [coderules/README.md](coderules/README.md) first. Eleven non-negotiables, and two of them prevent silent cross-tenant bugs.
 
@@ -19,13 +21,20 @@ Three kinds of directory, and the difference matters when you are looking for so
 | Directory | | What it answers |
 |---|---|---|
 | [v1/](v1/README.md) | versioned | Generate, edit, publish — **shipped**, with two art directions. Its `plan/` holds the twelve-phase build and its status |
-| [v2/](v2/README.md) | versioned | Creative range — same content, radically different experiences. Its `plan/` holds the thirteen-phase build |
-| [v3/](v3/README.md) | versioned | The wow release: derived, personalized, live, multilingual, dimensional |
+| [v2/](v2/README.md) | versioned | Creative range, **the presentation pivot**, and the art-direction engine. Its `plan/` holds the twenty-four-phase build |
+| [v3/](v3/README.md) | versioned | The wow release: personalized, live, multilingual, dimensional. ~~Derived~~ — the AD engine moved to v2 |
 | [techstack/](techstack/README.md) | current | Where every piece runs, which model, what the AI may call |
 | [security/](security/README.md) | current | Threat model and every control, gated to the version that needs it |
 | [coderules/](coderules/README.md) | current | How the code stays consistent when an AI writes most of it |
 | [design/](design/README.md) | current | How **our own** app and website look and feel — not what the engine produces |
 | [reviews/](reviews/README.md) | dated | What we showed people, and the prompt that produced it |
+
+**Two files sit at the root of `docs/` rather than in a directory**, because they are about the corpus rather than about a version of the product:
+
+| | |
+|---|---|
+| [versions.md](versions.md) | **How a version is documented** — the required files, what each owns, the phase anatomy, and when to start a version fresh instead of extending one |
+| [findings.md](findings.md) | **Evidence, not direction.** Measured facts, model behaviour, the category, platform status with dates, and the process lessons — everything that stays true regardless of what the product becomes |
 
 ## Find it fast
 

@@ -4,6 +4,14 @@
 
 **Depends on:** [04](04-three-art-directions.md) · **Blocks:** [07](07-reskin.md) · **Spec step:** pipeline delta
 
+> **Three changes from the presentation pivot** ([../presentation.md](../presentation.md), 2026-08-10). None of them changes this phase's mechanism; all three change what it is budgeting.
+>
+> **A budget is now bounded by a stage, not by taste.** A character cap was a design judgement about elegance on a page. On a slide there is a hard ceiling — content either fits the frame at 4:3 through 21:9 or it does not — so [18](18-presentation-frame.md)'s preflight is the ground truth a budget should be calibrated against. **The budget's job is to make overflow rare; the preflight's job is to catch it.** If a budget passes copy the preflight then rejects, the budget is wrong and this is where to fix it.
+>
+> **Speaker notes get a budget too.** [19](19-presenter-view.md) adds AI-drafted notes, and a note nobody can scan in the two seconds before advancing is not a note. It is measured by what fits presenter view without scrolling, and it belongs in `budgets` alongside every other text field rather than in a constant somewhere in `present/`.
+>
+> **The art direction may be *generated* rather than chosen.** [21](21-art-direction-engine.md) means the AD picked at the outline gate can be one of three made for this deck. That changes nothing here structurally — a generated AD carries `budgets` like any other — but it does mean this phase must not assume the AD id is one of three known values. If anything in the Build path switches on `ArtDirectionId`, it breaks at 21.
+
 ---
 
 ## Search

@@ -13,13 +13,16 @@
 │  headline, one line                  │
 │  ▸ Watch it build      Start         │
 ├──────────────────────────────────────┤
-│   [ REAL PUBLISHED ARTIFACT ]        │
-│   scrolls + animates in place        │
+│   [ REAL PUBLISHED DECK ]            │
+│   advances + animates in place       │
+│   ‹ › to click through it            │
 │   click → opens its real URL         │
 └──────────────────────────────────────┘
 ```
 
-Not a screenshot, not a mockup, not a tilted browser frame with fake traffic lights. The thing itself, at the top of the page, behaving exactly as a recipient's would.
+Not a screenshot, not a mockup, not a tilted browser frame with fake traffic lights. The thing itself, at the top of the page, behaving exactly as it would in a room.
+
+**Changed 2026-08-10 with the pivot** ([../v2/presentation.md](../v2/presentation.md)). The hero used to scroll. It advances now, and the visitor advances it — which is a stronger hero than the old one, because clicking through a deck is the product's own gesture and a visitor who clicks twice has already used the product. Autoplay stays banned (principle 5); the deck sits on slide one until someone moves it.
 
 **Why this is affordable:** a published artifact is static HTML on a CDN with almost no JS ([../techstack/frontend.md](../techstack/frontend.md)). Embedding real work costs approximately nothing per visitor and scales to any amount of traffic. The most convincing asset we have is also the cheapest one we own.
 
@@ -118,7 +121,7 @@ Every piece is commercial launch work. No travel decks, no thesis defences ([pri
 
 **The paywall is on publishing, not generating.**
 
-Let people generate and see the quality; charge when they need the URL. This inverts the usual AI-product paywall on purpose: quality is our entire argument, and putting our argument behind a credit card is backwards. It also matches where the value actually lands — a marketer's deliverable is a link they can send, not a file they made.
+Let people generate and see the quality; charge when they need the URL. This inverts the usual AI-product paywall on purpose: quality is our entire argument, and putting our argument behind a credit card is backwards. It also matches where the value actually lands — the deliverable is a deck they can stand up and present and a link they can send afterwards, not a file they made.
 
 **The plan shape is not this document's to decide.** [../v3/spec.md](../v3/spec.md) locks it: free is generate, edit, preview, and **one** published experience on a subdomain carrying the badge; paid is custom domain, no badge, embed, unlimited published, and every v3 feature. This document owns how that is *presented* and the four decisions below, which the plan shape does not determine.
 

@@ -1,6 +1,16 @@
 # d-design
 
-AI presentation-experience engine. The AI emits **content + intent**; a separate art-direction token layer resolves intent into type, spacing, color, easing, duration. **The AI never writes styling.** That one constraint is what makes editing safe, reskin cheap, and the product boundary real.
+AI presentation engine. The AI emits **content + intent**; a separate art-direction token layer resolves intent into type, spacing, color, easing, duration. **The AI never writes styling.** That one constraint is what makes editing safe, reskin cheap, and the product boundary real.
+
+**The artefact is a deck someone stands up and presents.** Decided 2026-08-10, correcting a two-release drift into a scrolling web page that could be presented. One scene is one slide; the slide is fluid and fills the screen, guaranteed at 4:3 → 21:9; the scrolling view survives as a secondary handout. The scene tree, rule 7 and the token layer are unchanged by this — what changed is the default, the frame, and the wedge, which is now **founders and salespeople pitching live** rather than marketers publishing launch pages. Read `docs/v2/presentation.md` before touching the renderer, the plan, or anything about layout.
+
+**Art directions are generated, not curated.** The three hand-authored ones proved the format has range and are now the engine's **exemplars**, not the user's menu — a user gets three art directions generated for their deck from a brand or a reference. `docs/v2/art-direction-engine.md`, built in `docs/v2/plan/21-art-direction-engine.md`. **From that phase a token value is untrusted input**, so the AD linter is a security boundary and not only a quality tool.
+
+**Variety is a measured claim, not an aspiration** — `docs/v2/variety.md`, and read it before any work aimed at "making output less samey". Three things it settles:
+
+- **Diversity comes from a structured sampler, never from asking a model for three of something.** LLMs mode-collapse intra- and inter-model, structured JSON output makes it worse, and temperature does not help. The sampler picks the discrete identity axes; the model fills the continuous values.
+- **Typography and layout carry identity and are the smallest axes in the system** — 6 font families, 6 layouts, 6 texture kinds, and half of every art direction is identical across all three. Widening the font registry is the cheapest large win available.
+- **No component or UI library in the artifact, ever** — it carries styling the art direction cannot reach, which ends reskin, and shared libraries are *why* every SaaS site looks alike. Headless (Radix, Base UI) is fine because it has no visual opinion; anything at all is fine in our own chrome.
 
 **Status: v1 is done — twelve phases built, and the acceptance run passes.** One sitting, unassisted: a prompt becomes a Brief, an editable outline, streamed scenes, an experience you edit two ways and publish, present fullscreen and embed. Every box in `docs/v1/plan/README.md` → "v1 is done when" is ticked, with what the run found written underneath it — including two real bugs it caught in code that was already written, reviewed and tested. The eval corpus is green: 5/5 golden briefs, 7/7 injection payloads. Deferred rather than missed: the design pass on Intake and the outline gate, which are correct but not yet crafted (see each phase's exit gate).
 
@@ -48,7 +58,9 @@ Paths are **pointers, not imports** — read the file when the task touches it. 
 | Where something runs or deploys | `docs/techstack/infrastructure.md` |
 | "Why was this chosen?" | `docs/techstack/decisions.md` |
 | The scene tree | `docs/v1/scene-schema.md` |
-| What to build next | `docs/v1/spec.md` → Build order |
+| **Slides, the stage, aspect ratios, presenting, export** | `docs/v2/presentation.md` |
+| **Generating an art direction from a brand or reference** | `docs/v2/art-direction-engine.md` |
+| What to build next | `docs/v2/plan/README.md` → Status and build order |
 
 ## Non-negotiable
 
