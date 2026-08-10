@@ -103,7 +103,7 @@ There is a genuine middle option if the gate ever feels slow: run Oxlint as a fa
 
 **pytest** in `api`; **Vitest** in the TypeScript repos. `node:test` is stdlib and faster on raw unit throughput, which normally settles it — but it has no watch mode, no snapshots, and no real React Testing Library story, and the TypeScript tests are mostly renderer and component tests. Rung 3 of the ladder says use the stdlib; rung 3 also says use it when it *does the job*, and here it does not.
 
-What gets tested is unchanged and deliberately narrow ([ai-authorship.md](ai-authorship.md), [../v1/spec.md](../v1/spec.md)): the schema round-trip, the golden-brief pipeline run, the block patch, the no-styling backstop, the AD linter — **plus the two the language split added**, the codegen no-diff check and the cross-language fixture round-trip ([python.md](python.md)). Renderer quality is a human judgment and gets a visual check, not a snapshot — a snapshot test on a design surface fails on every intentional improvement and teaches you to update it without looking.
+What gets tested is unchanged and deliberately narrow ([ai-authorship.md](ai-authorship.md), `v1/spec.md`): the schema round-trip, the golden-brief pipeline run, the block patch, the no-styling backstop, the AD linter — **plus the two the language split added**, the codegen no-diff check and the cross-language fixture round-trip ([python.md](python.md)). Renderer quality is a human judgment and gets a visual check, not a snapshot — a snapshot test on a design surface fails on every intentional improvement and teaches you to update it without looking.
 
 ## What is NOT gated
 

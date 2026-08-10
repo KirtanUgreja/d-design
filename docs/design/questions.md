@@ -35,7 +35,7 @@ The one section that must be settled in v1, because it leaks into every string, 
 
 ## §2 Positioning and the promise
 
-Constrained by [../v1/market.md](../v1/market.md) — the wedge is locked, only its expression is open.
+Constrained by `v1/market.md` — the wedge is locked, only its expression is open.
 
 | # | Question | Default |
 |---|---|---|
@@ -46,7 +46,7 @@ Constrained by [../v1/market.md](../v1/market.md) — the wedge is locked, only 
 | 17 | Lead with speed or with quality? | Quality. Speed is table stakes since Gamma; quality is the wedge |
 | 18 | Lead with beauty or with "stays editable"? | Beauty. Editability is the objection, and objections go second |
 | 19 | Do we say "no design skills needed"? | No. That sentence recruits the audience that killed Tome |
-| 20 | Do we promise on-brand output? | Yes, prominently. Marketers cannot ship off-brand ([../v1/spec.md](../v1/spec.md)) |
+| 20 | Do we promise on-brand output? | Yes, prominently. Marketers cannot ship off-brand (`v1/spec.md`) |
 | 21 | Does the headline name a job or a deadline? | Yes. "Launch in three weeks" is a better qualifier than any form field |
 | 22 | Do we say "no templates"? | Yes. Sharpest two words we have |
 | 23 | Do we explain publicly that the AI never writes styling? | Yes, as a feature — *the AI writes the story, a design system does the styling*. It is why the output does not look generated |
@@ -147,7 +147,7 @@ Principle 7. The constraint that makes this section interesting: a real generati
 | 75 | Do we label it a recording? | Yes, plainly. Principle 10, and the label costs nothing because the scenes are genuinely generated |
 | 76 | Anonymous live generation, ever? | No through v3. Revisit only with a hard per-IP cap, a kill switch, and a bill alarm |
 | 77 | A playground with pre-baked briefs? | Yes at v3 — pick one of three briefs, watch its recorded run. Three recordings, zero marginal cost |
-| 78 ★ | Can a visitor edit the demo artifact without an account? | **Yes.** Property-panel edits are local patches with no model call ([../v1/plan/09-editor.md](../v1/plan/09-editor.md)). Letting someone change real copy on a real artifact, in the browser, for free, is the strongest thing we can offer and it costs nothing |
+| 78 ★ | Can a visitor edit the demo artifact without an account? | **Yes.** Property-panel edits are local patches with no model call (`v1/plan/09-editor.md`). Letting someone change real copy on a real artifact, in the browser, for free, is the strongest thing we can offer and it costs nothing |
 | 79 | Does the free demo include an AI edit? | No. That is a model call. Show a recorded one |
 | 80 | Do we demo the outline gate? | Yes. It is the trust feature, and no competitor has one |
 | 81 | Do we demo the sandboxed Slot? | Yes, quietly, without the word "sandbox" |
@@ -169,7 +169,7 @@ Principle 7. The constraint that makes this section interesting: a real generati
 | 90 | Side-by-side against Gamma? | Yes, but as two live URLs, not a doctored screenshot. Same brief, both tools, both linked |
 | 91 | Do we publish what the product cannot do? | Yes. No PPTX, no charts, one signature moment. Naming limits early is how we survive Risk 3 |
 | 92 | A security page? | Yes at v3. We have unusually good material for one |
-| 93 | Do we disclose AI use on artifacts? | Yes, and it is not optional — [../v3/compliance.md](../v3/compliance.md) |
+| 93 | Do we disclose AI use on artifacts? | Yes, and it is not optional — `v3/compliance.md` |
 | 94 | Do we say who built it? | Yes. Solo and opinionated is an asset with this buyer, not a liability |
 | 95 | Do we talk about the stack? | Only in the essay. Buyers do not care and it invites the wrong audience |
 | 96 | Do we show the eval numbers? | Not publicly. Repair rate is an internal instrument ([../techstack/ai-stack.md](../techstack/ai-stack.md)) |
@@ -189,7 +189,7 @@ The sharpest constraint in this section is not design: **a brief is a customer's
 | 101 | Do we seed it with our own work? | Yes, marked as ours. Honesty costs nothing and the work is real |
 | 102 | Can a visitor fork a showcase piece? | v3, and only into their own account with their own copy |
 | 103 | Do published pages link back to us? | Only via the badge. No injected backlinks |
-| 104 | Is the badge removable? | On a paid tier, yes. Trapping a marketer's client work behind our logo loses the account. **The AI-content disclosure in the same mark is not removable** ([../v3/compliance.md](../v3/compliance.md)) — one boolean, two very different meanings |
+| 104 | Is the badge removable? | On a paid tier, yes. Trapping a marketer's client work behind our logo loses the account. **The AI-content disclosure in the same mark is not removable** (`v3/compliance.md`) — one boolean, two very different meanings |
 | 105 | Are showcase pieces the live customer URL or a copy? | A copy we host. Their URL can change or go down and take our showcase with it |
 | 106 | Do we ever showcase without asking because it is public anyway? | No. Public does not mean endorsed, and this buyer talks to other buyers |
 
@@ -197,15 +197,15 @@ The sharpest constraint in this section is not design: **a brief is a customer's
 
 ## §10 Pricing
 
-[../v1/spec.md](../v1/spec.md) defers the *price*, not the page. These decide the page.
+`v1/spec.md` defers the *price*, not the page. These decide the page.
 
 | # | Question | Default |
 |---|---|---|
 | 107 ★ | What is behind the paywall — generating, or publishing? | **Publishing.** Let them generate and see the quality; charge when they need the URL. It inverts the usual AI-product paywall and it is the single highest-leverage pricing decision here |
 | 108 | Seats or usage? | Seats, with a generous generation allowance. Marketers cannot forecast usage and hate metering |
 | 109 | Credits UI? | Avoid credits entirely if possible. Opaque credit balances are the most-complained-about pattern in AI pricing |
-| 110 | Do we show the AI cost honestly? | Not on the pricing page. Internally it decides the tiers ([../v1/ai-pipeline.md](../v1/ai-pipeline.md)) |
-| 111 | Free tier? | **Narrower than it sounds, and already locked in [../v3/spec.md](../v3/spec.md):** free is generate, edit, preview, and one published experience on a subdomain with the badge. Not free-forever unlimited. The reverse trial sits on top — full features for 14 days, then that restricted plan, which keeps published pages alive |
+| 110 | Do we show the AI cost honestly? | Not on the pricing page. Internally it decides the tiers (`v1/ai-pipeline.md`) |
+| 111 | Free tier? | **Narrower than it sounds, and already locked in `v3/spec.md`:** free is generate, edit, preview, and one published experience on a subdomain with the badge. Not free-forever unlimited. The reverse trial sits on top — full features for 14 days, then that restricted plan, which keeps published pages alive |
 | 112 | Why a reverse trial? | It converts comparably to a free trial with freemium's signup volume, and AI-native products convert notably better on this shape than general SaaS |
 | 113 | Card up front? | No. Card at publish. Consistent with 107 |
 | 114 | Annual discount? | Two months. Standard, not a differentiator |
@@ -262,7 +262,7 @@ Research floor: median self-serve time-to-value is ~11 minutes, top performers u
 
 ## §13 Intake
 
-The app's front door ([../v1/plan/08-intake.md](../v1/plan/08-intake.md)). Import is deferred, so v1 is prompt plus AI-led Q&A.
+The app's front door (`v1/plan/08-intake.md`). Import is deferred, so v1 is prompt plus AI-led Q&A.
 
 | # | Question | Default |
 |---|---|---|
@@ -270,12 +270,12 @@ The app's front door ([../v1/plan/08-intake.md](../v1/plan/08-intake.md)). Impor
 | 146 | How many questions does the AI ask? | Three to five, with visible progress. Never open-ended, never more than five |
 | 147 | Can you skip straight to generate? | Yes, always. The interview improves output; it must not gate it |
 | 148 | Does it look like a chat UI? | No. Bubbles set chat expectations we will not meet, and a chat log is not a Brief |
-| 149 ★ | Does the Brief stay visible and editable? | Yes, permanently. It is the approved-claims record, and Risk 2 in [../v1/spec.md](../v1/spec.md) is about invented claims |
+| 149 ★ | Does the Brief stay visible and editable? | Yes, permanently. It is the approved-claims record, and Risk 2 in `v1/spec.md` is about invented claims |
 | 150 | Do we show which claims came from them versus the model? | Yes. This is the trust feature marketers will actually talk about |
 | 151 | URL paste? | Allowed as CTA destinations only. Nothing is fetched in v1 — a URL in the Brief is a string, not a request |
-| 152 | File upload for source material? | Deferred with import ([../v1/plan/08-intake.md](../v1/plan/08-intake.md)). Do not build the UI for it now |
+| 152 | File upload for source material? | Deferred with import (`v1/plan/08-intake.md`). Do not build the UI for it now |
 | 153 | Paste-a-document textarea? | Allowed. It is just text and it needs no fetch worker |
-| 154 | Character limits on the prompt? | Yes, generous and visible. Caps are already a schema concern ([../v1/scene-schema.md](../v1/scene-schema.md)) |
+| 154 | Character limits on the prompt? | Yes, generous and visible. Caps are already a schema concern (`v1/scene-schema.md`) |
 | 155 | Autosave the brief? | Yes, continuously |
 | 156 | Start from an existing experience? | Yes, v3. It is how a customer makes their second one |
 | 157 | Templates or starting points? | No. "No templates" is our positioning; a template picker contradicts the homepage |
@@ -285,12 +285,12 @@ The app's front door ([../v1/plan/08-intake.md](../v1/plan/08-intake.md)). Impor
 
 ## §14 The outline gate
 
-The human approval step ([../v1/plan/07-director.md](../v1/plan/07-director.md)). Nobody else in this category has one, so there is no convention to follow.
+The human approval step (`v1/plan/07-director.md`). Nobody else in this category has one, so there is no convention to follow.
 
 | # | Question | Default |
 |---|---|---|
 | 159 | How is the outline presented? | Scene cards with their intent label and the headline. Not a bulleted list — it should already feel spatial |
-| 160 | Can you reorder scenes? | Yes, drag. Intent decouples from position ([../v1/plan/01-scene-schema.md](../v1/plan/01-scene-schema.md)); the hook stays first and the editor refuses that drag |
+| 160 | Can you reorder scenes? | Yes, drag. Intent decouples from position (`v1/plan/01-scene-schema.md`); the hook stays first and the editor refuses that drag |
 | 161 | Add and delete scenes? | Yes, both |
 | 162 | Edit copy at the outline stage? | Yes. Fixing a headline here is far cheaper than after the build |
 | 163 | Show estimated time or cost? | Time as a range. Never a fake percentage |
@@ -311,7 +311,7 @@ Principle 3 names this the highest-leverage motion design in the app. It is fort
 | 169 ★ | What is on screen while it builds? | **The scenes themselves, full size, appearing in place as they arrive.** Not a progress bar next to a spinner. The SSE stream already delivers whole validated scenes ([../techstack/frontend.md](../techstack/frontend.md)) |
 | 170 | Is the outline visible ahead of the build? | Yes, ghosted. Watching known slots fill is dramatically better than watching an unknown list grow |
 | 171 | How does each scene arrive? | With the artifact's own motion vocabulary, not chrome animation. The reveal you watch is the reveal your audience gets |
-| 172 | Do we surface repairs? | No. The `repair` event is instrumentation ([../v1/spec.md](../v1/spec.md)). Showing users a self-correction is honesty nobody asked for and it undermines the moment |
+| 172 | Do we surface repairs? | No. The `repair` event is instrumentation (`v1/spec.md`). Showing users a self-correction is honesty nobody asked for and it undermines the moment |
 | 173 | Abort control? | Yes, prominent. Aborting a bad direction early is the stated reason streaming exists |
 | 174 | Failure at scene 6 of 8? | Keep the five, offer to continue. Never discard completed work |
 | 175 | Sound? | No |
@@ -360,7 +360,7 @@ Principle 8. The most important ten questions in this document, because this is 
 | 200 | Do we teach "emphasis" as the replacement vocabulary? | Yes. It is intent, it is in the schema, and it is the concept that makes the constraint learnable |
 | 201 | Can power users see the resolved tokens? | Yes, read-only. Seeing the system is disarming; editing it is the whole product's collapse |
 | 202 | What if they type "make the headline smaller" into the AI edit? | The model has no field for it, so it must **refuse well** and offer emphasis instead. That refusal copy is a designed artifact, not an error string |
-| 203 | Is there ever an escape hatch? | One per experience, and it is the Slot — sandboxed, generated, not hand-edited ([../v1/plan/11-visuals-and-slot.md](../v1/plan/11-visuals-and-slot.md)) |
+| 203 | Is there ever an escape hatch? | One per experience, and it is the Slot — sandboxed, generated, not hand-edited (`v1/plan/11-visuals-and-slot.md`) |
 | 204 | CSS or HTML export? | No. It is the fastest route to becoming a worse Webflow |
 | 205 | Do we call it a constraint publicly? | Yes, and we lead with it. A constraint you hide is a limitation; a constraint you explain is a philosophy |
 | 206 | Do we measure reaching-for-the-picker? | Yes — see #273. It is the best single signal in the product |
@@ -379,7 +379,7 @@ Principle 8. The most important ten questions in this document, because this is 
 | 212 | Custom domain? | v3, top self-serve tier |
 | 213 | Unpublish? | Yes, instant, and it really removes the page |
 | 214 | Republish after edits? | Explicit. A live launch page must never change because someone typed in the editor |
-| 215 | Version history? | Not in v1 ([../v1/plan/09-editor.md](../v1/plan/09-editor.md)). Undo is per-session |
+| 215 | Version history? | Not in v1 (`v1/plan/09-editor.md`). Undo is per-session |
 | 216 | Slack and LinkedIn preview quality? | Treat as a launch requirement. A bad unfurl on the buyer's own share is a product failure |
 | 217 | QR code for in-person? | Cheap, and marketers at events will use it. Low priority, high delight |
 | 218 | Analytics summary? | v3, when the beacon exists. It is a thing we sell, not a thing we bolt on |
@@ -395,14 +395,14 @@ Twelve screens nobody designs and everybody sees. Rule 10 in [../../AGENTS.md](.
 | 219 | Quota exceeded? | Says what ran out, when it resets, and what still works. Never a raw 429 |
 | 220 | The model refused? | Plain language, no apology theatre, and an actionable next step |
 | 221 | Generation failed entirely? | Keep the brief and the outline. Retrying must not mean re-typing |
-| 222 | Upload rejected? | Each of the six controls needs its own human sentence ([../v1/plan/10-brand-and-uploads.md](../v1/plan/10-brand-and-uploads.md)). "Invalid file" is not one |
+| 222 | Upload rejected? | Each of the six controls needs its own human sentence (`v1/plan/10-brand-and-uploads.md`). "Invalid file" is not one |
 | 223 | Do we ever show internal error classes? | Never. They are logged, not displayed ([../security/operations.md](../security/operations.md)) |
 | 224 | Offline? | The editor holds state and says so. It should not silently lose a patch |
 | 225 | Session expired mid-edit? | Preserve the tree, re-auth in place |
 | 226 | 404 on an unpublished or deleted artifact? | A designed page. It is a page a customer's audience will hit |
 | 227 | Kill switch active? | An honest maintenance state on the generation path only. Editing and publishing keep working |
 | 228 | Rate limited? | Same shape as quota. Never silent |
-| 229 | A scene fails validation after an edit? | Reject the patch, keep the previous tree, say which rule ([../v1/plan/09-editor.md](../v1/plan/09-editor.md)) |
+| 229 | A scene fails validation after an edit? | Reject the patch, keep the previous tree, say which rule (`v1/plan/09-editor.md`) |
 | 230 | Zero-state of the artifact list? | One sentence and the prompt box. Not an illustration of an empty box |
 
 ---
@@ -433,11 +433,11 @@ Twelve screens nobody designs and everybody sees. Rule 10 in [../../AGENTS.md](.
 | 243 | Visible focus? | Everywhere, and it is one of the two jobs of the accent colour |
 | 244 | What does a screen reader announce on the canvas? | Genuinely open. Default: the canvas is a document, announced structurally, with selection as an application region. Worth real research |
 | 245 | Editor at 200% zoom? | Must work. Panels collapse, canvas stays true-scale |
-| 246 | Logical properties in our chrome too? | Yes. Free now, and it makes a v3 RTL UI a `dir` attribute ([../v3/localization.md](../v3/localization.md)) |
+| 246 | Logical properties in our chrome too? | Yes. Free now, and it makes a v3 RTL UI a `dir` attribute (`v3/localization.md`) |
 | 247 | UI language? | English through v3. The *output* is multilingual long before the chrome is |
 | 248 | Contrast of the accent? | Must pass at its smallest use, not its largest |
 | 249 | Motion preferences in the editor? | Respected — including in the generation watch, which is the hardest one to get right |
-| 250 | Is artifact accessibility this directory's problem? | No. It belongs to [../v1/art-direction.md](../v1/art-direction.md). Do not duplicate the rules here |
+| 250 | Is artifact accessibility this directory's problem? | No. It belongs to `v1/art-direction.md`. Do not duplicate the rules here |
 
 ---
 
@@ -460,7 +460,7 @@ Twelve screens nobody designs and everybody sees. Rule 10 in [../../AGENTS.md](.
 
 | # | Question | Default |
 |---|---|---|
-| 259 | Where does AI disclosure appear on artifacts? | Designed into the footer of the published page, not bolted on. The EU AI Act has been in force since 2 August 2026 ([../v3/compliance.md](../v3/compliance.md)) |
+| 259 | Where does AI disclosure appear on artifacts? | Designed into the footer of the published page, not bolted on. The EU AI Act has been in force since 2 August 2026 (`v3/compliance.md`) |
 | 260 | Who owns making it not ugly? | This directory. A compliance element designed by a lawyer is how the whole page loses its finish |
 | 261 | Do we promise not to train on customer content? | Yes, prominently. It is a headline-level trust claim with this buyer |
 | 262 | Do we say briefs are treated as embargoed? | Yes, and in those words. It is true ([../security/tenancy-and-data.md](../security/tenancy-and-data.md)) and no competitor says it |

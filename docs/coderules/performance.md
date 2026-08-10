@@ -14,8 +14,8 @@ Three, and they are the whole list. Everything else is cold, and cold code shoul
 
 The thing a viewer waits on, and the thing a marketer's audience judges. Non-negotiable, because it is not an optimization — it is the product working.
 
-- Published pages are **static artifacts, not routes**. The `render` service produces the HTML once at publish and `jobs` writes it to S3; CloudFront serves it. No server, no DB query, no LLM call per view ([../techstack/infrastructure.md](../techstack/infrastructure.md)). [../v3/live-data.md](../v3/live-data.md) bakes live values in at render precisely so this stays true.
-- **Images and video are the weight**, not the code. Enforce dimension caps, serve compressed, lazy-load below the fold. `ScrollSequence` and 3D carry hard budgets — see [../v3/dimensional.md](../v3/dimensional.md).
+- Published pages are **static artifacts, not routes**. The `render` service produces the HTML once at publish and `jobs` writes it to S3; CloudFront serves it. No server, no DB query, no LLM call per view ([../techstack/infrastructure.md](../techstack/infrastructure.md)). `v3/live-data.md` bakes live values in at render precisely so this stays true.
+- **Images and video are the weight**, not the code. Enforce dimension caps, serve compressed, lazy-load below the fold. `ScrollSequence` and 3D carry hard budgets — see `v3/dimensional.md`.
 - **Fonts** are the other weight. Subset per script, `font-display: swap`, preload the display face.
 - **Hydration is the only JavaScript**, and it is a deliberate spend ([../techstack/frontend.md](../techstack/frontend.md)): React and Motion ship so that published motion is the same code as edited motion. Nothing else is allowed to join them — no analytics SDK, no tag manager, no third-party script. The budget is already committed.
 - **The page must be complete before hydration.** Text, images, and layout are in the HTML; reveals animate *in* from a visible resting state, never *out* of `opacity: 0`. A page that is blank until JS arrives has traded a real guarantee for an animation.
@@ -25,7 +25,7 @@ The thing a viewer waits on, and the thing a marketer's audience judges. Non-neg
 
 The wait between prompt and page. Perceived speed matters more than wall-clock here.
 
-- **Stream scene by scene.** The user watches the experience assemble and can abort a bad direction early. This is a perceived-performance decision from [../v1/ai-pipeline.md](../v1/ai-pipeline.md), and it beats any raw-speed optimization.
+- **Stream scene by scene.** The user watches the experience assemble and can abort a bad direction early. This is a perceived-performance decision from `v1/ai-pipeline.md`, and it beats any raw-speed optimization.
 - **Build scenes in parallel** where the director's layout assignment removes cross-scene dependency.
 - **Model choice is the real lever:** fast model for director and edit, strong model only for build. Optimizing prompt tokens matters more than optimizing any code around the call — and which model goes where is an eval result, not a guess ([../techstack/ai-stack.md](../techstack/ai-stack.md)).
 - **Never block the stream on verification.** The visual critic ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)) runs *behind* the stream: the scene appears as soon as it validates, and a correction surfaces afterwards if needed. Waiting on a render and a vision call before showing anything would spend the perceived-speed win on a quality gain nobody can see happening.
@@ -34,8 +34,8 @@ The wait between prompt and page. Perceived speed matters more than wall-clock h
 
 Direct manipulation must feel instant, or the editing model that justifies the whole product falls flat.
 
-- Editing patches **one block** and re-renders the minimum. Never regenerate or re-render the whole tree on a keystroke — the patch shape from [../v1/scene-schema.md](../v1/scene-schema.md) exists for this.
-- The reskin transition is the one place to spend real animation effort ([../v2/transformations.md](../v2/transformations.md)); animate only visible scenes, swap off-screen ones instantly.
+- Editing patches **one block** and re-renders the minimum. Never regenerate or re-render the whole tree on a keystroke — the patch shape from `v1/scene-schema.md` exists for this.
+- The reskin transition is the one place to spend real animation effort (`v2/transformations.md`); animate only visible scenes, swap off-screen ones instantly.
 - Debounce AI-assisted edits; do not fire a model call per keystroke.
 
 ## Two platform features that do this work for you
@@ -56,7 +56,7 @@ Do not hand-write `useMemo` unless the compiler demonstrably skipped something a
 
 Next.js 16's Cache Components replace route-segment revalidation config with an explicit `"use cache"` directive plus `cacheLife()`. Under `cacheComponents`, the old route-segment config is deprecated, so this is the model to author against from the start rather than migrate to later.
 
-It is a good fit here because the product's caching story is genuinely mixed and was always going to need this granularity: a published experience is static and should be cached hard, its live-data bindings have a real TTL ([../v3/live-data.md](../v3/live-data.md)), and the editor is fully dynamic. One directive at the component that owns each of those beats a per-route setting that has to describe all three.
+It is a good fit here because the product's caching story is genuinely mixed and was always going to need this granularity: a published experience is static and should be cached hard, its live-data bindings have a real TTL (`v3/live-data.md`), and the editor is fully dynamic. One directive at the component that owns each of those beats a per-route setting that has to describe all three.
 
 Turbopack is the default builder in 16 (2–5× faster builds). Nothing to decide — just do not fight it.
 

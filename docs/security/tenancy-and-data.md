@@ -158,4 +158,4 @@ The same rule applies to application logs and error reporting: scrub scene conte
 
 Enabling it makes the publisher a data controller with consent, retention, and deletion obligations. The product surfaces that at the moment of opting in, not in a support article afterwards.
 
-See [../v3/personalization.md](../v3/personalization.md) for the product-side treatment.
+See `v3/personalization.md` for the product-side treatment.

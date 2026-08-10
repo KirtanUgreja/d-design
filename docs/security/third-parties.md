@@ -27,7 +27,7 @@ That last line is the finding, and it is OpenRouter's own documented behavior: *
 |---|---|
 | **Zero Data Retention** | ZDR routes only to endpoints whose provider will not store the data, and a ZDR provider cannot train on it either. Configurable **account-wide, per model group, and per request** (`zdr`). **It is a setting, not a default** |
 | **Prompt logging** | Opt-in. Enabling it grants OpenRouter an *irrevocable right to commercial use* of those inputs and outputs. **Never enable it on this account** |
-| **EU in-region routing** | Available on enterprise. Prompts and completions stay inside the EU — relevant given the customer base implied by [../v3/localization.md](../v3/localization.md) and the AI Act posture in [../v3/compliance.md](../v3/compliance.md) |
+| **EU in-region routing** | Available on enterprise. Prompts and completions stay inside the EU — relevant given the customer base implied by `v3/localization.md` and the AI Act posture in `v3/compliance.md` |
 
 ### The rules
 
@@ -42,7 +42,7 @@ That last line is the finding, and it is OpenRouter's own documented behavior: *
 
 Not bureaucracy — a legal obligation the moment there are EU publishers, and a question every serious customer will ask.
 
-**Under GDPR Article 28 you are a processor** (your publishers are the controllers for their recipients, per [../v3/personalization.md](../v3/personalization.md)). That means: authorization before engaging a subprocessor, equivalent data-protection obligations flowed down, and **you remain liable for their compliance.**
+**Under GDPR Article 28 you are a processor** (your publishers are the controllers for their recipients, per `v3/personalization.md`). That means: authorization before engaging a subprocessor, equivalent data-protection obligations flowed down, and **you remain liable for their compliance.**
 
 | Subprocessor | Sees | Sensitivity |
 |---|---|---|

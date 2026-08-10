@@ -23,7 +23,7 @@ Stated so the seam has something concrete to be neutral about, not as a recommen
 
 Two structural notes that outlast the specific names:
 
-- **Vision is no longer scarce.** ~67 models have vision, and **28 of those are open-weight and self-hostable**. Art-direction derivation ([../v2/art-direction-engine.md](../v2/art-direction-engine.md)) is not gated on a single vendor.
+- **Vision is no longer scarce.** ~67 models have vision, and **28 of those are open-weight and self-hostable**. Art-direction derivation (`v2/art-direction-engine.md`) is not gated on a single vendor.
 - **Pricing models are diverging.** Some providers are moving from token meters to task quotas (Kimi Code bills 300–1,200 calls per 5-hour window). Cost accounting that assumes per-token billing will eventually mismeasure. Log both calls and tokens.
 
 ## What actually constrains the choice here
@@ -38,7 +38,7 @@ Under OpenRouter this matters more than it would with decoder-enforced structure
 
 **3. Vision quality, for v3 only.** AD derivation and the visual verification loop ([pipeline-tools.md](pipeline-tools.md)) need a model that reads type character, density, and spatial rhythm from an image. Distinct capability, distinct evaluation, possibly a distinct model.
 
-**4. Cost, last.** At roughly $0.20 per experience ([../v1/ai-pipeline.md](../v1/ai-pipeline.md)), token cost is not this product's constraint and never has been. Cost matters for the *cheap* phases — Director, Intake, Edit run often and are structurally simple — and it is close to irrelevant for Build, where quality is everything.
+**4. Cost, last.** At roughly $0.20 per experience (`v1/ai-pipeline.md`), token cost is not this product's constraint and never has been. Cost matters for the *cheap* phases — Director, Intake, Edit run often and are structurally simple — and it is close to irrelevant for Build, where quality is everything.
 
 > The one-line rule: **spend on Build, economise everywhere else, and let evals decide where the line falls.**
 
@@ -70,7 +70,7 @@ The generalisable rule: **when a route bills hidden tokens out of the visible bu
 
 This is the real gap the model question exposes. Model-neutrality without evals is not a strategy.
 
-**v1 already specifies the dataset and does not call it one.** [../v1/spec.md](../v1/spec.md)'s verification step — *"5 golden briefs → run Director + Build → assert 100% schema-valid output"* — is a golden dataset. Growing it into a proper eval set is the highest-leverage AI work in the project after the renderer itself.
+**v1 already specifies the dataset and does not call it one.** `v1/spec.md`'s verification step — *"5 golden briefs → run Director + Build → assert 100% schema-valid output"* — is a golden dataset. Growing it into a proper eval set is the highest-leverage AI work in the project after the renderer itself.
 
 ### The three layers
 

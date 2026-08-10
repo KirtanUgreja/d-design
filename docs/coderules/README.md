@@ -94,5 +94,5 @@ Where a rule would add ceremony, it is not here. There is no coverage target, no
 |---|---|
 | [../techstack/README.md](../techstack/README.md) | What the code actually runs on — these rules are downstream of those choices |
 | [../security/README.md](../security/README.md) | Where rules 9 and 10 come from, and what they are defending |
-| [../v1/scene-schema.md](../v1/scene-schema.md) | The shape rule 7 protects |
+| `v1/scene-schema.md` | The shape rule 7 protects |
 

@@ -1,79 +1,45 @@
 # d-design docs
 
-> Design corpus for an AI presentation engine. Every directory has a README that routes to the exact file you need.
+> The corpus was cleared on 2026-08-10. What remains is everything true regardless of what the product turns out to be. **The product itself is being re-decided from the vision up, and no version directory exists yet.**
 
-**The artefact is a deck someone stands up and presents**, and its art direction is generated rather than picked from a shelf. Both were decided on 2026-08-10, correcting a drift into a scrolling web page; read [v2/presentation.md](v2/presentation.md) before anything that touches layout, playback or the wedge.
+## What happened, and why nothing here describes the product
 
-**New here?** Read [v2/presentation.md](v2/presentation.md) for what the product is, then [v1/scene-schema.md](v1/scene-schema.md) for the shape everything else depends on.
+Four directories were deleted: `v1/`, `v2/`, `v3/` and `reviews/`. They were not wrong so much as *layered* — three releases of decisions, each correcting the one before, with the corrections marked in strikethrough until finding the live decision meant reading the history of a dead one.
 
-**Writing code?** Read [coderules/README.md](coderules/README.md) first. Eleven non-negotiables, and two of them prevent silent cross-tenant bugs.
+The judgement behind it: a product whose *"who is this for, and what is the artefact"* has changed is not a document that needs correcting. Improving it incrementally converges on a better version of the wrong thing.
 
-## How this is organized
+**Everything deleted is in git history** — its last state is the commit immediately before this one, which includes the presentation pivot and the variety measurement made just before the clear. Nothing was lost; it was moved out of the way.
 
-Three kinds of directory, and the difference matters when you are looking for something.
+## What survives, and why
 
-**Versioned** — what gets built, and when. A decision recorded in `v1/` stays as the record of what was believed at the time; when `v2/` changes it, `v2/` says so. Do not read a version directory as current truth without checking whether a later one supersedes it.
+**Current** — kept because it is about how code is written, what can attack it, what runs where, and how our own surfaces look. None of that is a product decision.
 
-**Cross-cutting** — true across all versions, kept current rather than versioned. If these disagree with a version directory, these win.
+| Directory | What it answers |
+|---|---|
+| [coderules/](coderules/README.md) | How the code stays consistent when an AI writes most of it. The eleven non-negotiables live here |
+| [security/](security/README.md) | Threat model and every control, routed by threat |
+| [techstack/](techstack/README.md) | Where every piece runs, which model, what the AI may call, and why each was chosen |
+| [design/](design/README.md) | How **our own** app and website look and feel — never what the engine produces |
 
-**Dated** — a record of what was said on a day, superseded by nothing and superseding nothing. Never cite one as truth.
-
-| Directory | | What it answers |
-|---|---|---|
-| [v1/](v1/README.md) | versioned | Generate, edit, publish — **shipped**, with two art directions. Its `plan/` holds the twelve-phase build and its status |
-| [v2/](v2/README.md) | versioned | Creative range, **the presentation pivot**, and the art-direction engine. Its `plan/` holds the twenty-four-phase build |
-| [v3/](v3/README.md) | versioned | The wow release: personalized, live, multilingual, dimensional. ~~Derived~~ — the AD engine moved to v2 |
-| [techstack/](techstack/README.md) | current | Where every piece runs, which model, what the AI may call |
-| [security/](security/README.md) | current | Threat model and every control, gated to the version that needs it |
-| [coderules/](coderules/README.md) | current | How the code stays consistent when an AI writes most of it |
-| [design/](design/README.md) | current | How **our own** app and website look and feel — not what the engine produces |
-| [reviews/](reviews/README.md) | dated | What we showed people, and the prompt that produced it |
-
-**Two files sit at the root of `docs/` rather than in a directory**, because they are about the corpus rather than about a version of the product:
+**Root files** — about the corpus, not about a version of the product.
 
 | | |
 |---|---|
-| [versions.md](versions.md) | **How a version is documented** — the required files, what each owns, the phase anatomy, and when to start a version fresh instead of extending one |
-| [findings.md](findings.md) | **Evidence, not direction.** Measured facts, model behaviour, the category, platform status with dates, and the process lessons — everything that stays true regardless of what the product becomes |
+| [versions.md](versions.md) | **How a version is documented.** The required files, what each owns, the phase anatomy, the conventions, and when to start fresh instead of extending. Read this before writing the next version directory |
+| [findings.md](findings.md) | **Evidence, not direction.** Measured facts about this codebase, LLM behaviour, the category, platform status with dates, and the process lessons. Nothing here says what to build |
 
-## Find it fast
+## What comes next
 
-Route by the question you arrived with, not by the topic name.
+A new version directory, written after the vision is settled rather than before. [versions.md](versions.md) specifies its shape; [findings.md](findings.md) is the evidence it should not have to rediscover.
 
-| If you need… | Go to |
-|---|---|
-| The scene tree — types, blocks, layouts, validation | [v1/scene-schema.md](v1/scene-schema.md) |
-| How art direction tokens work | [v1/art-direction.md](v1/art-direction.md), then [v2/art-direction-system.md](v2/art-direction-system.md) for the full format |
-| The four AI phases, and what a generation costs | [v1/ai-pipeline.md](v1/ai-pipeline.md) |
-| Which model, and how it is chosen | [techstack/ai-stack.md](techstack/ai-stack.md) |
-| What tools the AI may call | [techstack/pipeline-tools.md](techstack/pipeline-tools.md) |
-| Why the AI never writes styling | [v1/spec.md](v1/spec.md) → "The bet" |
-| What we are building, in what order | Each version's `spec.md` → "Build order" |
-| The phase-by-phase plan for actually building v1 | [v1/plan/README.md](v1/plan/README.md) |
-| Every locked decision, and its rejected alternative | Each version's `spec.md` → "Locked decisions", and [techstack/decisions.md](techstack/decisions.md) |
-| Where a piece of infrastructure runs | [techstack/infrastructure.md](techstack/infrastructure.md) |
-| Whether something is a security risk | [security/README.md](security/README.md) — it routes by threat |
-| A rule about how to write the code | [coderules/README.md](coderules/README.md) |
-| How our own site and app should look | [design/principles.md](design/principles.md) — and note it is *not* the art direction |
-| An open product-design decision, with a recommended default | [design/questions.md](design/questions.md) |
-| Why a competitor died | [v1/market.md](v1/market.md) |
-| The legal obligations | [v3/compliance.md](v3/compliance.md) — EU AI Act, in force since 2 Aug 2026 |
+**Two constraints on whatever gets decided**, and both are facts rather than opinions:
 
-## Reading order
-
-If you are coming to this cold and want the argument rather than the reference:
-
-1. [v1/spec.md](v1/spec.md) — the problem, the bet, and the locked decisions
-2. [v1/scene-schema.md](v1/scene-schema.md) — the IR everything else is built on
-3. [v1/art-direction.md](v1/art-direction.md) — the layer that makes the bet work
-4. [v2/spec.md](v2/spec.md) — what proves the abstraction was real
-5. [v3/spec.md](v3/spec.md) — what real users will actually see
-
-Then [techstack/README.md](techstack/README.md) for how it runs, and [security/README.md](security/README.md) for what can go wrong.
+- **The code exists.** A Python API, a TypeScript renderer, a Pydantic-owned schema, a working pipeline, three art directions and a passing acceptance run. Docs describing a product that ignores all of it are a rewrite rather than a plan — which may be the right call, but it should be a decision rather than something discovered in week three.
+- **~180 source files carry comments pointing at the deleted docs.** They explain *why* code looks the way it does, and they now point into git history. Leave them: rewriting 180 files of comments before the product is decided is churn. They get corrected as the code is touched.
 
 ## Conventions
 
-- **Every directory has a README, and it lists every file in that directory.** If a file exists and its README does not mention it, the README is wrong.
-- **Every cross-document claim is a link.** Nothing important is asserted twice in two places; one document owns it and the others point.
-- **Superseded decisions are marked, not deleted.** See the *What this supersedes* table in [techstack/decisions.md](techstack/decisions.md).
-- **Research is dated.** Sections marked *(researched August 2026)* are point-in-time and will go stale; treat version numbers and CVE floors as needing re-checking rather than trusting.
+- **Every directory has a README, and it lists every file in that directory.** Enforced by `./scripts/check-docs.sh`, which must pass before any commit touching `.md`
+- **Every cross-document claim is a link.** One document owns a fact; the others point at it
+- **Research is dated.** A platform or market claim without a date is unverifiable a year later
+- **Paths in `AGENTS.md` are pointers, not imports.** Never prefix with `@` — that inlines the whole corpus into every session

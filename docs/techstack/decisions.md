@@ -91,7 +91,7 @@ The largest reversal in this repository. An earlier lock read *"Everything stays
 
 **The residual:** repeated repair cycles burn tokens. Denial of wallet, already covered by quotas and the kill switch.
 
-**Revisit when:** Build's repair rate is materially worse than a direct Anthropic call. That number is already in `generations` ([../v1/ai-pipeline.md](../v1/ai-pipeline.md)) — watch it from the first generation. The seam exists so that moving one phase is a config change.
+**Revisit when:** Build's repair rate is materially worse than a direct Anthropic call. That number is already in `generations` (`v1/ai-pipeline.md`) — watch it from the first generation. The seam exists so that moving one phase is a config change.
 
 ### 3. Client-side personalization ends `connect-src 'none'`
 
@@ -109,23 +109,23 @@ Earlier documents locked decisions this directory reverses. Recorded here rather
 
 | Was | Now | Where it was |
 |---|---|---|
-| Postgres in Docker → **Supabase** | Docker → **RDS/Aurora** | [../v1/spec.md](../v1/spec.md) |
+| Postgres in Docker → **Supabase** | Docker → **RDS/Aurora** | `v1/spec.md` |
 | **Supabase Auth**, RLS via `auth.uid()` | **Better Auth**, RLS via `current_setting('app.user_id')` | [../security/tenancy-and-data.md](../security/tenancy-and-data.md) |
-| `storage.ts`: local disk → **Supabase Storage** | local disk → **S3** (MinIO locally) | [../v1/spec.md](../v1/spec.md) |
+| `storage.ts`: local disk → **Supabase Storage** | local disk → **S3** (MinIO locally) | `v1/spec.md` |
 | **Supabase client** in the dependency baseline | Removed | [../coderules/dependencies.md](../coderules/dependencies.md) |
 | `anon` role has zero grants | **No anonymous role exists.** Nothing but the server connects | [../security/tenancy-and-data.md](../security/tenancy-and-data.md) |
 | One isolated worker | **Two workers**, split on trust | [../security/infrastructure.md](../security/infrastructure.md) |
 | Published pages served from an origin | **Static S3 artifacts**, no origin | [../security/content-and-web.md](../security/content-and-web.md) |
 | `connect-src 'none'` | Two exact endpoints | [../security/content-and-web.md](../security/content-and-web.md) |
-| Anthropic API called directly | **OpenRouter** behind a seam, no preferred vendor | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
-| Shape violations are **unrepresentable** — the decoder prevents a hex code | **The schema parse is the only gate.** The decoder shifts the odds where the route enforces natively | [../v1/scene-schema.md](../v1/scene-schema.md) |
-| PDFs go to the model as a document block | Extracted in the **fetch worker** first; model-native reading is the documented fallback | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
-| Prompt caching is one mechanism with one discount | Activation, discount rate, and minimum prefix all **vary by route** | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
+| Anthropic API called directly | **OpenRouter** behind a seam, no preferred vendor | `v1/ai-pipeline.md` |
+| Shape violations are **unrepresentable** — the decoder prevents a hex code | **The schema parse is the only gate.** The decoder shifts the odds where the route enforces natively | `v1/scene-schema.md` |
+| PDFs go to the model as a document block | Extracted in the **fetch worker** first; model-native reading is the documented fallback | `v1/ai-pipeline.md` |
+| Prompt caching is one mechanism with one discount | Activation, discount rate, and minimum prefix all **vary by route** | `v1/ai-pipeline.md` |
 | Generation has **no tools** | No tools **with side effects**; read-only tools tiered | [../security/prompt-injection.md](../security/prompt-injection.md) |
-| ~$0.20 per experience | ~$0.40 once the visual loop is on | [../v1/ai-pipeline.md](../v1/ai-pipeline.md) |
+| ~$0.20 per experience | ~$0.40 once the visual loop is on | `v1/ai-pipeline.md` |
 | Publishing renders on Vercel | ~~job worker~~ → the **`render` service** | [backend.md](backend.md) |
-| **TypeScript everywhere** — app, both workers, the pipeline | **Python** backend (`api`, `jobs`); TypeScript for `web`, `render`, fetch worker | [ai-stack.md](ai-stack.md), [../v1/spec.md](../v1/spec.md) |
-| **Zod is the source of truth** for the `Scene` shape | **Pydantic** is; Zod and TS types are generated from it | [../coderules/typescript.md](../coderules/typescript.md), [../v1/scene-schema.md](../v1/scene-schema.md) |
+| **TypeScript everywhere** — app, both workers, the pipeline | **Python** backend (`api`, `jobs`); TypeScript for `web`, `render`, fetch worker | [ai-stack.md](ai-stack.md), `v1/spec.md` |
+| **Zod is the source of truth** for the `Scene` shape | **Pydantic** is; Zod and TS types are generated from it | [../coderules/typescript.md](../coderules/typescript.md), `v1/scene-schema.md` |
 | Drizzle is the ORM | **SQLAlchemy + Alembic** for app tables; Drizzle keeps **auth tables only** | [backend.md](backend.md) |
 | **pg-boss** for jobs | **PGQueuer** | [backend.md](backend.md) |
 | Plain `fetch` for the model seam | Plain **`httpx`**; Instructor is the upgrade path, not the Vercel AI SDK | [ai-stack.md](ai-stack.md) |
@@ -147,7 +147,7 @@ Deliberately unresolved, with the condition that would resolve each:
 | **Buying commercial type** | v2's three ADs make the difference visible. The highest-leverage money in the product, deferred not refused |
 | **Branch-per-preview databases** | Migrations against one shared dev DB start hurting |
 | **Cloudflare for SaaS** | Custom domains pass roughly fifty and ACM's SAN limits bite |
-| **Pricing and plan limits** | [../v3/spec.md](../v3/spec.md) — quota *enforcement* is built; the numbers are not chosen |
+| **Pricing and plan limits** | `v3/spec.md` — quota *enforcement* is built; the numbers are not chosen |
 | **MFA rollout** | Better Auth ships it. Accounts hold integration credentials from day one, which argues for sooner than v3 |
 | **The product's name** | Before phase 09. `d-design` describes the repository; the editor is where user-facing strings start accumulating and renaming after that is an audit ([../design/brand.md](../design/brand.md)) |
 | **The chrome accent hue** | With the first real screen. The constraint is decided — one accent, roughly two uses, never violet or a gradient — and the hue is not |

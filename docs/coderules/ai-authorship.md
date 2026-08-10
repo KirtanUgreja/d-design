@@ -76,7 +76,7 @@ Everything else — intake forms, settings UI, the outline editor — gets a ski
 
 CircleCI's 2026 data: feature-branch throughput up 59% year over year, while median main-branch throughput *fell*. Teams got much faster at producing code and no faster at deciding it was safe to merge.
 
-Solo, that bottleneck is one person, and it is the actual limit on this project's speed — not typing, not model latency, not tokens ([../v1/ai-pipeline.md](../v1/ai-pipeline.md) puts a full experience at ~$0.20).
+Solo, that bottleneck is one person, and it is the actual limit on this project's speed — not typing, not model latency, not tokens (`v1/ai-pipeline.md` puts a full experience at ~$0.20).
 
 Two consequences, and they are why [tooling.md](tooling.md) exists in the form it does:
 

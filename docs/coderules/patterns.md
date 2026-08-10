@@ -17,7 +17,7 @@ Backstop: a runtime walk over every generated tree rejects any string value matc
 const PRESENTATIONAL = /#[0-9a-f]{3,8}\b|[\d.]+(px|rem|em|pt|ms|s)\b|\b(rgb|hsl|cubic-bezier)\(/i;
 ```
 
-**The rule for when the backstop fires:** it means the schema has a gap a value slipped through — add the missing concept to the art direction, never add an exception to the check. The check is allowed to be strict because there is never a legitimate reason for AI output to contain these tokens. See [../v1/scene-schema.md](../v1/scene-schema.md).
+**The rule for when the backstop fires:** it means the schema has a gap a value slipped through — add the missing concept to the art direction, never add an exception to the check. The check is allowed to be strict because there is never a legitimate reason for AI output to contain these tokens. See `v1/scene-schema.md`.
 
 This is the product's spine. It does not get loosened for a convenient feature. A `styleOverride` field is the single change that would unravel editing, reskin, and the whole art-direction abstraction at once.
 
@@ -158,7 +158,7 @@ v2's visual verification loop ([../techstack/pipeline-tools.md](../techstack/pip
 
 ## 7. Formatting is locale-aware from day one
 
-Numbers, currency, and dates go through `Intl`, never string concatenation. A bound live-data stat must read correctly in German and Japanese ([../v3/localization.md](../v3/localization.md)), and retrofitting locale formatting into hand-built strings is worse than doing it once. This is also an XSS boundary — a formatted value is a text node, never interpolated into markup.
+Numbers, currency, and dates go through `Intl`, never string concatenation. A bound live-data stat must read correctly in German and Japanese (`v3/localization.md`), and retrofitting locale formatting into hand-built strings is worse than doing it once. This is also an XSS boundary — a formatted value is a text node, never interpolated into markup.
 
 ## 8. Comments explain why, not what
 

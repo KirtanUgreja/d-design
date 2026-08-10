@@ -84,7 +84,7 @@ An honest list, because a threat model that only lists strengths is marketing.
 2b. **The build pipeline skips every control in this directory.** Prompt-injection defenses, RLS, the sandbox, the fetch worker's isolation — all of them assume the running code is the code you wrote, and CI is where that assumption is made. It is also the surface an automated attacker reaches most cheaply, because misconfigured OIDC trust policies are enumerable from outside. See [build-pipeline.md](build-pipeline.md).
 3. **Business-logic flaws have no scanner and no pattern.** An agent that reasons about *your* system finds the quota that resets on a boundary, the entitlement checked in one path and not another, the state machine that allows publish-before-payment. Nothing in the automated suite looks for these. This is the class most likely to actually get you, and the only defense is that the logic be simple enough to be obviously correct — which is an argument for [../coderules/README.md](../coderules/README.md), not for a security tool.
 
-   **That third example is not hypothetical here.** The pricing model is free-to-generate, paid-to-publish ([../v3/spec.md](../v3/spec.md)), which makes publish-before-payment the product's actual state machine rather than an illustration. It comes with two neighbours in the same class: a free tier that generates has a metered cost per request and no payment attached to it, and a plan that lapses without unpublishing means entitlement and visibility are separate states that can disagree. All three are checked at the data layer, in one place, failing closed — and all three are worth an hour of deliberately trying to break, since no tool will do it for you.
+   **That third example is not hypothetical here.** The pricing model is free-to-generate, paid-to-publish (`v3/spec.md`), which makes publish-before-payment the product's actual state machine rather than an illustration. It comes with two neighbours in the same class: a free tier that generates has a metered cost per request and no payment attached to it, and a plan that lapses without unpublishing means entitlement and visibility are separate states that can disagree. All three are checked at the data layer, in one place, failing closed — and all three are worth an hour of deliberately trying to break, since no tool will do it for you.
 4. **Prompt injection is unsolved and will stay unsolved.** The posture here is containment, not prevention, and that is a deliberate bet that containment is achievable where prevention is not.
 
 ## OWASP mapping
@@ -103,7 +103,7 @@ Anchoring to a published taxonomy is how you find the thing you did not think of
 | LLM06 Excessive Agency | Structurally absent — generation has no tools ([prompt-injection.md](prompt-injection.md), Defense 5) |
 | LLM07 System Prompt Leakage | Assumed to leak. The prompt contains no secret; the controls do not depend on it staying hidden |
 | LLM08 Vector & Embedding Weaknesses | Not applicable — no vector store |
-| LLM09 Misinformation | The claims rule and the outline gate. Also a product rule ([../v1/spec.md](../v1/spec.md)) |
+| LLM09 Misinformation | The claims rule and the outline gate. Also a product rule (`v1/spec.md`) |
 | LLM10 Unbounded Consumption | [infrastructure.md](infrastructure.md) — denial of wallet |
 
 ### OWASP Top 10 for Agentic Applications (2026)

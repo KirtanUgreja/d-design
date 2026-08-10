@@ -8,7 +8,7 @@
 
 The product claims AI-generated experiences can be genuinely beautiful. **Our own surfaces are the first sample of that claim anyone sees.** A visitor who lands on a stock SaaS page has already been shown the counter-argument before reading the headline.
 
-This is not vanity. It is the same reason [../v1/spec.md](../v1/spec.md) makes Risk 1 the top risk: if the design isn't good, the runtime and the pipeline are worthless. Our front door is the second instance of that same risk.
+This is not vanity. It is the same reason `v1/spec.md` makes Risk 1 the top risk: if the design isn't good, the runtime and the pipeline are worthless. Our front door is the second instance of that same risk.
 
 **Forces:** design attention on the site is not overhead to be minimized. It is the demo.
 **Prevents:** shipping a Tailwind template that quietly disproves the thesis.
@@ -17,13 +17,13 @@ This is not vanity. It is the same reason [../v1/spec.md](../v1/spec.md) makes R
 
 ## 2. Aim the appeal
 
-**"Make it more appealing" is a dangerous instruction in this specific product.** [../v1/market.md](../v1/market.md) records what happened to the last company that followed it: Tome was beautiful, reached millions of users, attracted Gen Z, students, freelancers and artists — people who loved it and would not pay — and shut down at ~$4M ARR. Its own retrospective: *"building AI for everyone at once is fundamentally flawed."*
+**"Make it more appealing" is a dangerous instruction in this specific product.** `v1/market.md` records what happened to the last company that followed it: Tome was beautiful, reached millions of users, attracted Gen Z, students, freelancers and artists — people who loved it and would not pay — and shut down at ~$4M ARR. Its own retrospective: *"building AI for everyone at once is fundamentally flawed."*
 
 So the target is not maximum appeal. It is:
 
 > Irresistible to a founder pitching on Thursday. Mildly intimidating to everyone else.
 
-**Updated 2026-08-10 with the wedge** ([../v2/presentation.md](../v2/presentation.md)). It used to read *"a marketer with a launch in three weeks and a budget"*. The shape of the test is unchanged and so is Tome's lesson — narrow, high-stakes, budget-holding — but the person is now in a room, and *Thursday* does work *three weeks* did not: the deadline is the emotion.
+**Updated 2026-08-10 with the wedge** (`v2/presentation.md`). It used to read *"a marketer with a launch in three weeks and a budget"*. The shape of the test is unchanged and so is Tome's lesson — narrow, high-stakes, budget-holding — but the person is now in a room, and *Thursday* does work *three weeks* did not: the deadline is the emotion.
 
 **The test, applied to any page:** would this make a student want to sign up *more* than it makes a founder three days from a raise want to sign up? If yes, it is wrong, however beautiful.
 
@@ -68,7 +68,7 @@ Near-monochrome UI. One accent, used almost nowhere. The canvas supplies all the
 
 The visual language of "AI product, built fast" is now instantly legible to exactly the audience we want, and it reads as *unserious*. We are selling design judgment. Shipping the defaults is a confession that we have none.
 
-> **This list governs the artifact, not only our chrome.** It was written about the marketing site and the app, it lives in `docs/design/`, and for the whole of v1 it was read as being about our surfaces — while the renderer shipped a coloured radial bloom behind every hero and four of five visual generators built from gradients. Nobody decided the output was exempt; the filing decided it. A page we generate for a customer carries our judgement more directly than our own homepage does, so it is held to this table at least as hard. v2 phases [../v2/plan/14-texture-without-gradient.md](../v2/plan/14-texture-without-gradient.md) and [../v2/plan/17-composition.md](../v2/plan/17-composition.md) are where the artifact is brought into line, and rules 18–21 in [../v2/plan/README.md](../v2/plan/README.md) are where the first four rows below become greppable rather than aspirational.
+> **This list governs the artifact, not only our chrome.** It was written about the marketing site and the app, it lives in `docs/design/`, and for the whole of v1 it was read as being about our surfaces — while the renderer shipped a coloured radial bloom behind every hero and four of five visual generators built from gradients. Nobody decided the output was exempt; the filing decided it. A page we generate for a customer carries our judgement more directly than our own homepage does, so it is held to this table at least as hard. v2 phases `v2/plan/14-texture-without-gradient.md` and `v2/plan/17-composition.md` are where the artifact is brought into line, and rules 18–21 in `v2/plan/README.md` are where the first four rows below become greppable rather than aspirational.
 
 **Banned outright** — not "used sparingly", banned:
 
@@ -102,7 +102,7 @@ Four of those rows are now automated for the artifact, and it is worth knowing w
 
 ## 6. Show the artifact, not the app
 
-Linear and Vercel sell tools, so their pages show product UI. **Our differentiator is not the tool, it is what comes out of it.** [../v1/market.md](../v1/market.md) is explicit that the gap against Gamma is *creative ceiling*, not speed — and a screenshot of an editor cannot show a ceiling.
+Linear and Vercel sell tools, so their pages show product UI. **Our differentiator is not the tool, it is what comes out of it.** `v1/market.md` is explicit that the gap against Gamma is *creative ceiling*, not speed — and a screenshot of an editor cannot show a ceiling.
 
 So the hero is the output: a real, published **deck**, in the page, advancing and animating exactly as a room would see it. Not a picture of one.
 
@@ -117,7 +117,7 @@ We can do this cheaply for a reason baked into the architecture: a published art
 
 ## 7. The demo must cost nothing and be unabusable
 
-An experience costs ~$0.20 to generate, ~$0.40 with v2's verification loop, and takes tens of seconds ([../v1/ai-pipeline.md](../v1/ai-pipeline.md)). Anonymous "type a prompt, watch it build" on the homepage is therefore a bill and an abuse surface with a public front end — and [../security/adversarial-ai.md](../security/adversarial-ai.md) has a name for that shape.
+An experience costs ~$0.20 to generate, ~$0.40 with v2's verification loop, and takes tens of seconds (`v1/ai-pipeline.md`). Anonymous "type a prompt, watch it build" on the homepage is therefore a bill and an abuse surface with a public front end — and [../security/adversarial-ai.md](../security/adversarial-ai.md) has a name for that shape.
 
 The lazy answer is also the better demo:
 
@@ -125,7 +125,7 @@ The lazy answer is also the better demo:
 |---|---|
 | **Published examples** | Real artifacts, real URLs, static on a CDN. Zero marginal cost, infinite scale |
 | **A recorded generation** | The SSE event log of a real run — `scene`, `repair`, `done` — captured once and replayed client-side. It looks *identical* to a live generation because it is the same event stream, and it costs one model call ever |
-| **A real generation** | Behind signup, metered, quota'd, kill-switchable ([../v1/plan/06-model-seam-and-build.md](../v1/plan/06-model-seam-and-build.md)) |
+| **A real generation** | Behind signup, metered, quota'd, kill-switchable (`v1/plan/06-model-seam-and-build.md`) |
 
 The recorded replay is the interesting one. It is honest — those scenes really were generated — it never fails on stage, and it is the closest thing to letting someone feel the product before they own an account.
 
@@ -136,7 +136,7 @@ The recorded replay is the interesting one. It is honest — those scenes really
 
 ## 8. Design the absence of the colour picker
 
-Users will look for a font size and a colour picker. They will not find them, **and they cannot** — the property panel is generated from a schema with no presentational fields, so the control is not hidden, it is unrepresentable ([../v1/plan/09-editor.md](../v1/plan/09-editor.md)).
+Users will look for a font size and a colour picker. They will not find them, **and they cannot** — the property panel is generated from a schema with no presentational fields, so the control is not hidden, it is unrepresentable (`v1/plan/09-editor.md`).
 
 That is the product's spine, and it is also the moment a first-time user decides whether this is a tool or a toy. **Nothing is more important in the app's UX than making that absence read as luxury rather than as a missing feature.**
 
@@ -149,7 +149,7 @@ Undesigned, it is a bug report. Designed, it is the pitch: *you cannot make this
 
 ## 9. Our brand is not `cinematic-dark`. Our site is the gallery wall
 
-If our site *is* the art direction, we have shown that the product makes exactly one thing — which is precisely the accusation this product levels at template tools ([../v1/spec.md](../v1/spec.md)). The abstraction claim is already unproven with one art direction (Risk 4); a site wearing that art direction makes it look like a skin, not a layer.
+If our site *is* the art direction, we have shown that the product makes exactly one thing — which is precisely the accusation this product levels at template tools (`v1/spec.md`). The abstraction claim is already unproven with one art direction (Risk 4); a site wearing that art direction makes it look like a skin, not a layer.
 
 **The frame: our surfaces are the gallery wall, the output is the art.** Gallery walls are quiet, bright, and typographic on purpose — and a dark, cinematic, motion-heavy artifact hung on a quiet wall reads as *work*, while the same artifact on a dark, glowing site reads as *theme*.
 
@@ -162,7 +162,7 @@ It also solves principle 5 for free. Going dark-and-atmospheric on our own site 
 
 ## 10. Nothing on our surfaces may be a claim the product can't back
 
-Every number, badge, logo, and superlative maps to something shipped and verified. No customer logos before customers. No "10,000 teams". No before/after that we staged. [../v3/compliance.md](../v3/compliance.md) makes some of this a legal obligation rather than a taste one — AI-generated content carries disclosure duties, and that is a design constraint on the artifact *and* on the page that markets it.
+Every number, badge, logo, and superlative maps to something shipped and verified. No customer logos before customers. No "10,000 teams". No before/after that we staged. `v3/compliance.md` makes some of this a legal obligation rather than a taste one — AI-generated content carries disclosure duties, and that is a design constraint on the artifact *and* on the page that markets it.
 
 The competitive claim in particular has to be demonstrated, never asserted: "Gamma's output looks like Gamma" is a sentence anyone can write. Two live URLs side by side is an argument.
 
@@ -175,7 +175,7 @@ The competitive claim in particular has to be demonstrated, never asserted: "Gam
 
 Design early, build when a version needs it — the same rule [../security/README.md](../security/README.md) uses. v1 has one local user, no auth, no deployment ([../techstack/infrastructure.md](../techstack/infrastructure.md)), so a marketing site built in v1 is a site with no product behind it and no URL to put it on.
 
-But the parts that are expensive to retrofit get decided in v1 anyway, for the same reason CSS logical properties do ([../v1/spec.md](../v1/spec.md)): name, vocabulary, voice, and the app chrome's palette all leak into hundreds of strings and components, and changing them later is an audit rather than an edit.
+But the parts that are expensive to retrofit get decided in v1 anyway, for the same reason CSS logical properties do (`v1/spec.md`): name, vocabulary, voice, and the app chrome's palette all leak into hundreds of strings and components, and changing them later is an audit rather than an edit.
 
 The gating table is in [README.md](README.md).
 
@@ -188,7 +188,7 @@ The gating table is in [README.md](README.md).
 
 The end state is obvious and worth naming as a goal rather than discovering as an irony: **our marketing site should eventually be an experience this product generated.** That is the most convincing possible demonstration and the most brutal possible dogfood.
 
-It is not a v1 goal. The renderer has 11 primitives and one art direction; a marketing site needs navigation, a pricing table, and a footer, none of which are in [../v1/scene-schema.md](../v1/scene-schema.md), and none of which should be added to it to serve our own website.
+It is not a v1 goal. The renderer has 11 primitives and one art direction; a marketing site needs navigation, a pricing table, and a footer, none of which are in `v1/scene-schema.md`, and none of which should be added to it to serve our own website.
 
 | Rung | When |
 |---|---|

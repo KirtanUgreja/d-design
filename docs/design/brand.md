@@ -12,7 +12,7 @@ Three reasons, in order of how much they matter:
 
 | | |
 |---|---|
-| **It makes the output read as work, not as theme** | A `cinematic-dark` artifact on a quiet bright wall is a piece of work. The same artifact on a dark, atmospheric site is the site's theme, and the product looks like it makes one thing — the exact accusation this product levels at template tools ([../v1/spec.md](../v1/spec.md)) |
+| **It makes the output read as work, not as theme** | A `cinematic-dark` artifact on a quiet bright wall is a piece of work. The same artifact on a dark, atmospheric site is the site's theme, and the product looks like it makes one thing — the exact accusation this product levels at template tools (`v1/spec.md`) |
 | **It is the shortest path away from the slop aesthetic** | Dark leads to glow, glow leads to gradient, gradient leads to violet. Editorial has no such gravity. The banned list in [principles.md](principles.md) becomes easy to obey instead of a constant fight |
 | **It survives v2** | v2 ships three art directions, at least one of them light. A dark site would then be arguing for one of our three looks. A neutral wall argues for none of them, which is the honest position |
 
@@ -22,7 +22,7 @@ Three reasons, in order of how much they matter:
 
 ### The collision this decision walks into
 
-**v2's second hand-authored art direction is called `editorial-light`** ([../v2/spec.md](../v2/spec.md), build order step 4). Our wall is light and editorial. If those two converge, principle 9 fails in a subtler and more damaging way than the one it was written to prevent: the site is no longer wearing `cinematic-dark`, it is wearing art direction #2, and "this product makes exactly one thing" comes back as "this product has a house style."
+**v2's second hand-authored art direction is called `editorial-light`** (`v2/spec.md`, build order step 4). Our wall is light and editorial. If those two converge, principle 9 fails in a subtler and more damaging way than the one it was written to prevent: the site is no longer wearing `cinematic-dark`, it is wearing art direction #2, and "this product makes exactly one thing" comes back as "this product has a house style."
 
 It is cheap to prevent at authoring time and expensive to discover afterwards, so it is a constraint on **`editorial-light`**, not on the wall:
 
@@ -30,7 +30,7 @@ It is cheap to prevent at authoring time and expensive to discover afterwards, s
 - **Different ground.** If ours is warm paper, `editorial-light` is cool or bright white, or the reverse. Not both warm
 - **Different accent behaviour.** Ours appears twice on a screen. An art direction is allowed to be much louder, and here it should be
 
-**The test, available now rather than at v2 step 4** — `editorial-light` was hand-authored during v1 as the answer to Risk 4 ([../v1/art-direction.md](../v1/art-direction.md) → "The result"), and it was authored against the three constraints above. One of them had to be resolved against a conflicting sketch: [../v2/art-direction-system.md](../v2/art-direction-system.md) proposes a *warm* off-white ground, and this document requires the opposite. This document won, and the v2 plan records the sketch as superseded. **The test itself:** put `editorial-light` in the editor canvas with our chrome around it. If a stranger cannot tell which pixels are the product and which are the artifact, one of the two has to move — and it is the wall that moves, because the art direction is the thing we sell.
+**The test, available now rather than at v2 step 4** — `editorial-light` was hand-authored during v1 as the answer to Risk 4 (`v1/art-direction.md` → "The result"), and it was authored against the three constraints above. One of them had to be resolved against a conflicting sketch: `v2/art-direction-system.md` proposes a *warm* off-white ground, and this document requires the opposite. This document won, and the v2 plan records the sketch as superseded. **The test itself:** put `editorial-light` in the editor canvas with our chrome around it. If a stranger cannot tell which pixels are the product and which are the artifact, one of the two has to move — and it is the wall that moves, because the art direction is the thing we sell.
 
 ---
 
@@ -42,12 +42,12 @@ It is cheap to prevent at authoring time and expensive to discover afterwards, s
 
 | Rule | Why |
 |---|---|
-| No `deck`, `slide`, `present`, `show` | The product drifts from presentation to web experience by v3 ([../v1/spec.md](../v1/spec.md), Risk 3). A name that fixes it to slides ages badly |
+| No `deck`, `slide`, `present`, `show` | The product drifts from presentation to web experience by v3 (`v1/spec.md`, Risk 3). A name that fixes it to slides ages badly |
 | No `AI`, no `.ai` | Everyone has it, it says nothing, and it dates the product to this exact wave |
 | No `-ify`, `-ly`, `-r`, invented compound | These read as 2014 and they signal "built fast" — the same tell as a violet gradient |
 | One word, pronounceable, spellable on a phone call | A marketer says this name out loud to a stakeholder |
 | Not a verb we need for the UI | `generate` and `publish` must stay available as plain verbs |
-| Survives being said next to Gamma, Framer, Webflow | That is the comparison set ([../v1/market.md](../v1/market.md)) |
+| Survives being said next to Gamma, Framer, Webflow | That is the comparison set (`v1/market.md`) |
 
 ### Three directions, with candidates
 
@@ -74,7 +74,7 @@ Domains unverified — treat these as prompts for the direction, not a shortlist
 
 ### What the name blocks
 
-Nothing in the build. But settle it before phase 09 in [../v1/plan/README.md](../v1/plan/README.md), because the editor is the first place user-facing strings accumulate, and renaming across a UI is exactly the audit this section exists to avoid.
+Nothing in the build. But settle it before phase 09 in `v1/plan/README.md`, because the editor is the first place user-facing strings accumulate, and renaming across a UI is exactly the audit this section exists to avoid.
 
 ---
 
@@ -89,7 +89,7 @@ Type is most of why anything looks expensive, and [../techstack/frontend.md](../
 | **Mono** | Only for the recorded prompt and any code sample. Not a design element |
 | **Never** | Inter, Geist, or a default-tracked variable grotesk as the whole identity. Not because they are bad — because they are the uniform |
 
-**Our faces must differ from every art direction's faces.** [../v3/localization.md](../v3/localization.md) requires each art direction to declare a face per script; if our chrome shares one, the chrome starts looking like an art direction and principle 9 quietly fails.
+**Our faces must differ from every art direction's faces.** `v3/localization.md` requires each art direction to declare a face per script; if our chrome shares one, the chrome starts looking like an art direction and principle 9 quietly fails.
 
 **Licensing is simpler here than for the output.** Fonts in our chrome are served to visitors of our site, not redistributed to our customers' audiences — so a normal webfont licence is fine, and the open-licence constraint in [../techstack/frontend.md](../techstack/frontend.md) does not bind this decision.
 
@@ -168,4 +168,4 @@ Principle 4 says the chrome must not compete with the canvas. That is testable, 
 | [principles.md](principles.md) | Principle 5 is the banned-pattern list this document assumes and does not repeat |
 | [website.md](website.md) | Where the identity is first spent |
 | [app.md](app.md) | Where it has to survive eight hours of use |
-| [../v1/art-direction.md](../v1/art-direction.md) | The *other* design system. Nothing here may reference its tokens |
+| `v1/art-direction.md` | The *other* design system. Nothing here may reference its tokens |

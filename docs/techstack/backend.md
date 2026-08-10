@@ -191,7 +191,7 @@ Output that fails the parse is rejected, repaired once, and then fails visibly. 
 
 The residual is real but small: an attacker who fully controls model output can drive repeated repair cycles and burn tokens — denial of wallet, already covered by quotas and the kill switch.
 
-**The metric that decides whether this was right is the repair rate**, already tracked in [../v1/ai-pipeline.md](../v1/ai-pipeline.md)'s `generations` table. Watch it from the first generation. If Build's repair rate is materially worse than a direct Anthropic call, move that one phase behind the seam — the seam exists for exactly this, and nothing else in the pipeline changes.
+**The metric that decides whether this was right is the repair rate**, already tracked in `v1/ai-pipeline.md`'s `generations` table. Watch it from the first generation. If Build's repair rate is materially worse than a direct Anthropic call, move that one phase behind the seam — the seam exists for exactly this, and nothing else in the pipeline changes.
 
 Two things the seam must not hide: **prompt caching** behavior and **cost per phase**. Both vary by route and both are load-bearing for the ~$0.20-per-experience figure. Log them per call.
 

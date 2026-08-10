@@ -55,7 +55,7 @@ Unchanged in substance from the Zod-first design, restated because the mechanism
 
 | | |
 |---|---|
-| **Shape** — fields, types, discriminators | Carried by the generated JSON Schema. Enforced by Pydantic on the response; the decoder only shifts the odds ([../v1/ai-pipeline.md](../v1/ai-pipeline.md)) |
+| **Shape** — fields, types, discriminators | Carried by the generated JSON Schema. Enforced by Pydantic on the response; the decoder only shifts the odds (`v1/ai-pipeline.md`) |
 | **Character caps** — `Headline ≤ 60`, `Body ≤ 240` | **Do not survive.** Structured-output implementations widely ignore `minLength`/`maxLength`. Keep them on the Pydantic field anyway — they cost nothing and they are what does the rejecting — and state every budget in the prompt as a hard number, because prompting is the only portable lever on length |
 | **Semantic rules** — one `Headline` per scene, region validity, claim provenance | Pydantic validators plus the post-build checks |
 

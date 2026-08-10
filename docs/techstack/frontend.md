@@ -18,7 +18,7 @@ The alternative — render to HTML and ship a small hand-written IntersectionObs
 
 **Progressive enhancement is the floor.** The page must be readable and complete before hydration — text, images, and layout are in the HTML. If JS never arrives, a viewer sees a finished page without motion, not an empty one. Reveals animate *in* from a visible resting state, never *out* of `opacity: 0`, because an unhydrated `opacity: 0` is a blank page.
 
-CSS scroll-driven animations (~84% support, not yet Baseline) are the progressive-enhancement path already noted in [../v1/art-direction.md](../v1/art-direction.md) — worth adopting for the simple reveals once Firefox ships, because it moves work off the main thread. Not a reason to change the architecture now.
+CSS scroll-driven animations (~84% support, not yet Baseline) are the progressive-enhancement path already noted in `v1/art-direction.md` — worth adopting for the simple reveals once Firefox ships, because it moves work off the main thread. Not a reason to change the architecture now.
 
 ### What talks to the network
 
@@ -61,7 +61,7 @@ The property panel, outline editor, brand kit, and settings are the cold 90% of 
 
 ### Streaming: SSE over a Route Handler
 
-Generation streams scene by scene, so the user watches the experience assemble and can abort a bad direction early — a perceived-performance decision from [../v1/ai-pipeline.md](../v1/ai-pipeline.md).
+Generation streams scene by scene, so the user watches the experience assemble and can abort a bad direction early — a perceived-performance decision from `v1/ai-pipeline.md`.
 
 A `ReadableStream` from an App Router route, `EventSource` in the client. No dependency.
 
@@ -75,7 +75,7 @@ event: done    data: { "count": 8 }
 
 You write the reconnect logic. That is a few lines, and it is the only thing the platform does not give you.
 
-**Serialize the good streams to a file.** Because the events are whole validated scenes rather than tokens, an event log replayed client-side drives the same renderer and is indistinguishable from a live run. That makes it three things at once for the price of writing a file: the marketing site's demo ([../design/website.md](../design/website.md)), a way to develop the generation-watch UI without spending a model call per reload, and a regression fixture for the renderer. Keep them versioned alongside the golden briefs ([../v1/plan/06-model-seam-and-build.md](../v1/plan/06-model-seam-and-build.md)).
+**Serialize the good streams to a file.** Because the events are whole validated scenes rather than tokens, an event log replayed client-side drives the same renderer and is indistinguishable from a live run. That makes it three things at once for the price of writing a file: the marketing site's demo ([../design/website.md](../design/website.md)), a way to develop the generation-watch UI without spending a model call per reload, and a regression fixture for the renderer. Keep them versioned alongside the golden briefs (`v1/plan/06-model-seam-and-build.md`).
 
 ## Fonts
 
@@ -83,7 +83,7 @@ Fontsource, open-license families, self-hosted on `assets.<domain>` — which th
 
 **Licensing is the reason, not cost.** These fonts are served to your customers' audiences, not to you. That is redistribution, and it makes the licence terms a product constraint rather than a developer detail. Open licences are unambiguous about it; a webfont licence bought per-domain is not, and a product whose whole feature is *publishing to arbitrary domains* would be in permanent violation.
 
-Noto covers all four scripts v3 needs — Latin, CJK, Arabic, Cyrillic — which matters because [../v3/localization.md](../v3/localization.md) requires each art direction to declare a face per script that preserves its *character*. A missing CJK face flattens three distinct art directions into one generic one.
+Noto covers all four scripts v3 needs — Latin, CJK, Arabic, Cyrillic — which matters because `v3/localization.md` requires each art direction to declare a face per script that preserves its *character*. A missing CJK face flattens three distinct art directions into one generic one.
 
 Subset per script, `font-display: swap`, preload the display face.
 

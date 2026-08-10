@@ -2,25 +2,24 @@
 
 AI presentation engine. The AI emits **content + intent**; a separate art-direction token layer resolves intent into type, spacing, color, easing, duration. **The AI never writes styling.** That one constraint is what makes editing safe, reskin cheap, and the product boundary real.
 
-**The artefact is a deck someone stands up and presents.** Decided 2026-08-10, correcting a two-release drift into a scrolling web page that could be presented. One scene is one slide; the slide is fluid and fills the screen, guaranteed at 4:3 → 21:9; the scrolling view survives as a secondary handout. The scene tree, rule 7 and the token layer are unchanged by this — what changed is the default, the frame, and the wedge, which is now **founders and salespeople pitching live** rather than marketers publishing launch pages. Read `docs/v2/presentation.md` before touching the renderer, the plan, or anything about layout.
+> **The product is being re-decided from the vision up, as of 2026-08-10.** The `v1/`, `v2/` and `v3/` documentation was deleted — not because it was wrong, but because three releases of layered corrections had made the live decisions hard to find, and the framing underneath them was being changed rather than corrected. Everything is in git history.
+>
+> **Do not infer product direction from the code.** The code is the record of a plan that is currently under revision. Ask before building anything that assumes a wedge, a surface, or a roadmap.
+>
+> `docs/versions.md` is the shape the next version directory takes. `docs/findings.md` is the evidence it should not have to rediscover — measurements, model behaviour, the category, dated platform facts.
 
-**Art directions are generated, not curated.** The three hand-authored ones proved the format has range and are now the engine's **exemplars**, not the user's menu — a user gets three art directions generated for their deck from a brand or a reference. `docs/v2/art-direction-engine.md`, built in `docs/v2/plan/21-art-direction-engine.md`. **From that phase a token value is untrusted input**, so the AD linter is a security boundary and not only a quality tool.
+## What exists in the code, factually
 
-**Variety is a measured claim, not an aspiration** — `docs/v2/variety.md`, and read it before any work aimed at "making output less samey". Three things it settles:
+This part is not in question — it runs, and the acceptance run passes.
 
-- **Diversity comes from a structured sampler, never from asking a model for three of something.** LLMs mode-collapse intra- and inter-model, structured JSON output makes it worse, and temperature does not help. The sampler picks the discrete identity axes; the model fills the continuous values.
-- **Typography and layout carry identity and are the smallest axes in the system** — 6 font families, 6 layouts, 6 texture kinds, and half of every art direction is identical across all three. Widening the font registry is the cheapest large win available.
-- **No component or UI library in the artifact, ever** — it carries styling the art direction cannot reach, which ends reskin, and shared libraries are *why* every SaaS site looks alike. Headless (Radix, Base UI) is fine because it has no visual opinion; anything at all is fine in our own chrome.
+- **The pipeline works end to end.** A prompt becomes a Brief, an editable outline, streamed scenes, an experience you edit two ways, publish, present fullscreen and embed. Eval corpus green: 5/5 golden briefs, 7/7 injection payloads.
+- **Three art directions**, `cinematic-dark`, `editorial-light` and `bold-brutalist`, rendering the same fixture tree with **no branch in the renderer**. Rows in `art_directions`, not TypeScript constants.
+- **Eleven primitives, six layouts, six texture kinds, six font families** — see `docs/findings.md` for what that measures out to, which is smaller than it sounds.
+- **Two languages.** `api` and `jobs` are Python (FastAPI); `web`, `render` and the fetch worker are TypeScript. **Pydantic owns the `Scene` schema** — the Zod validator and its types are generated from it and never hand-edited. See `docs/techstack/decisions.md` → "The Python backend move".
 
-**Status: v1 is done — twelve phases built, and the acceptance run passes.** One sitting, unassisted: a prompt becomes a Brief, an editable outline, streamed scenes, an experience you edit two ways and publish, present fullscreen and embed. Every box in `docs/v1/plan/README.md` → "v1 is done when" is ticked, with what the run found written underneath it — including two real bugs it caught in code that was already written, reviewed and tested. The eval corpus is green: 5/5 golden briefs, 7/7 injection payloads. Deferred rather than missed: the design pass on Intake and the outline gate, which are correct but not yet crafted (see each phase's exit gate).
-
-**Art direction #2 is built, and the central claim held.** `editorial-light` renders the same fixture tree as a printed spread where `cinematic-dark` renders a black stage — one switch apart on `/dev/primitives`, with **no branch added to the renderer**. Two renderer files did change, both replacing a hardcoded value with a token, which is what this layer's rules instruct; the sharpened test for #3 is in `docs/v1/art-direction.md` → "The result", along with everything #2 cost. `docs/` is the spec; `docs/v1/plan/README.md` is the build status. Start at `docs/README.md`.
-
-**Two languages.** `api` and `jobs` are Python (FastAPI); `web`, `render`, and the fetch worker are TypeScript. **Pydantic owns the `Scene` schema** — the Zod validator and its types are generated from it and are never hand-edited. See `docs/techstack/decisions.md` → "The Python backend move".
+**~180 source files carry comments pointing at the deleted docs.** They explain why code looks the way it does and now point into git history. Leave them; they get corrected as the code is touched.
 
 ## Layout and commands
-
-One repo, two project roots. `render`, `jobs` and the fetch worker are v2/v3 and get their own directories when they arrive.
 
 ```
 api/    Python. lib/ db/ schema/ routes/ features/ migrations/ tests/   → uv
@@ -57,10 +56,10 @@ Paths are **pointers, not imports** — read the file when the task touches it. 
 | Prompts, models, evals, AI tools | `docs/techstack/ai-stack.md`, `docs/techstack/pipeline-tools.md` |
 | Where something runs or deploys | `docs/techstack/infrastructure.md` |
 | "Why was this chosen?" | `docs/techstack/decisions.md` |
-| The scene tree | `docs/v1/scene-schema.md` |
-| **Slides, the stage, aspect ratios, presenting, export** | `docs/v2/presentation.md` |
-| **Generating an art direction from a brand or reference** | `docs/v2/art-direction-engine.md` |
-| What to build next | `docs/v2/plan/README.md` → Status and build order |
+| Our own app and site — **never the engine's output** | `docs/design/README.md` |
+| Writing the next version's docs | `docs/versions.md` |
+| "Do we already know this?" | `docs/findings.md` |
+| **What to build next** | **Not written yet.** The vision is being settled first — ask |
 
 ## Non-negotiable
 

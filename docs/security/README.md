@@ -150,8 +150,8 @@ Two are worth reading even if you skip the rest. [ai-built-app-failures.md](ai-b
 |---|---|
 | [../techstack/README.md](../techstack/README.md) | The runtime topology every control in this directory assumes |
 | [../coderules/patterns.md](../coderules/patterns.md) | The rules that make these controls mechanical — the tenant wrapper, failing closed, the model seam |
-| [../v3/compliance.md](../v3/compliance.md) | Legal obligations, which are adjacent to but distinct from security |
-| [../v3/personalization.md](../v3/personalization.md) | The product side of recipient tokens and identified tracking |
+| `v3/compliance.md` | Legal obligations, which are adjacent to but distinct from security |
+| `v3/personalization.md` | The product side of recipient tokens and identified tracking |
 
 **Fail closed on anything that grants; fail open on anything that merely displays.** A quota check that cannot run refuses. A 3D model that cannot load shows a poster. This is OWASP's newest category and this product has an unusual number of fallback paths — see [infrastructure.md](infrastructure.md).
 

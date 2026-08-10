@@ -4,15 +4,15 @@
 
 ### AI presentation-experience engine
 
-**Brief in, immersive scrolling experience out** — published as a URL, an embed, or fullscreen.
+**Brief in, presentation out** — published as a URL, an embed, or fullscreen.
 
 *The AI emits content and intent. It never writes styling.*
 
 <br/>
 
 <img src="https://img.shields.io/badge/status-v1%20shipped-4ADE80?style=for-the-badge&labelColor=08090B" alt="Status: v1 shipped">
-<img src="https://img.shields.io/badge/next-v2%20planned%20%C2%B7%2013%20phases-F4B740?style=for-the-badge&labelColor=08090B" alt="Next: v2 planned, 13 phases">
-<img src="https://img.shields.io/badge/spec-84%20documents-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Spec: 84 documents">
+<img src="https://img.shields.io/badge/next-vision%20under%20revision-F4B740?style=for-the-badge&labelColor=08090B" alt="Next: vision under revision">
+<img src="https://img.shields.io/badge/docs-cross--cutting%20only-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Docs: cross-cutting only">
 <img src="https://img.shields.io/badge/builder-solo%20%2B%20AI-A78BFA?style=for-the-badge&labelColor=08090B" alt="Builder: solo + AI">
 
 <br/><br/>
@@ -26,7 +26,14 @@
 > [!NOTE]
 > **v1 is built and its acceptance run passes.** A prompt becomes a Brief, an editable outline, streamed scenes, an experience you edit two ways and publish — presented fullscreen or embedded. **Two art directions ship**, which is the falsification test v1's own Risk 4 demanded: the same scene tree renders as a black cinematic stage and as a printed editorial spread, one switch apart, with no branch in the renderer.
 >
-> `docs/` is the specification — 84 documents, ~13,000 lines, covering the product, the stack, the threat model, and the rules the code must follow. Start at [`docs/README.md`](docs/README.md); build status lives in [`docs/v1/plan/README.md`](docs/v1/plan/README.md) and the next release is planned in [`docs/v2/plan/README.md`](docs/v2/plan/README.md).
+> `docs/` holds the stack, the threat model, and the rules the code must follow. Start at [`docs/README.md`](docs/README.md).
+
+> [!WARNING]
+> **The product is being re-decided from the vision up, as of 2026-08-10.** The `v1/`, `v2/` and `v3/` documentation was deleted — three releases of layered corrections had made the live decisions harder to find than the dead ones, and the framing underneath was being changed rather than patched. **Everything is in git history.**
+>
+> What survives is what does not depend on the answer: `coderules/`, `security/`, `techstack/`, `design/`, plus [`docs/versions.md`](docs/versions.md) (how a version is documented) and [`docs/findings.md`](docs/findings.md) (the evidence — measurements, model behaviour, the category, dated platform facts).
+>
+> **Everything below this line describes the code that exists and still runs.** The roadmap and the wedge are the parts under revision, and they are marked.
 
 ---
 
@@ -375,18 +382,18 @@ Publishing renders the scene tree to HTML and writes it to S3. There is no route
 
 <table>
 <tr><th align="left">Directory</th><th align="left">Kind</th><th align="left">What it covers</th><th align="center">Docs</th></tr>
-<tr><td>📘 <a href="docs/v1/README.md"><b>v1</b></a></td><td><i>versioned</i></td><td>Generate, edit, publish — <b>shipped</b>. Includes the twelve-phase build plan</td><td align="center">20</td></tr>
-<tr><td>📗 <a href="docs/v2/README.md"><b>v2</b></a></td><td><i>versioned</i></td><td>Creative range — same content, radically different experiences. Includes the thirteen-phase plan</td><td align="center">19</td></tr>
-<tr><td>📙 <a href="docs/v3/README.md"><b>v3</b></a></td><td><i>versioned</i></td><td>Derived, personalized, live, multilingual, dimensional</td><td align="center">8</td></tr>
+<tr><td>🧭 <a href="docs/versions.md"><b>versions.md</b></a></td><td><b>current</b></td><td>How a version is documented — required files, phase anatomy, when to start fresh</td><td align="center">1</td></tr>
+<tr><td>🔬 <a href="docs/findings.md"><b>findings.md</b></a></td><td><b>current</b></td><td>Evidence, not direction — measurements, model behaviour, the category, dated platform facts</td><td align="center">1</td></tr>
+<tr><td>🎨 <a href="docs/design/README.md"><b>design</b></a></td><td><b>current</b></td><td>How <b>our own</b> app and site look — never what the engine produces</td><td align="center">6</td></tr>
 <tr><td>🧰 <a href="docs/techstack/README.md"><b>techstack</b></a></td><td><b>current</b></td><td>Where every piece runs, which model, what the AI may call</td><td align="center">7</td></tr>
 <tr><td>🛡️ <a href="docs/security/README.md"><b>security</b></a></td><td><b>current</b></td><td>Threat model and every control, gated to the version that needs it</td><td align="center">12</td></tr>
 <tr><td>📐 <a href="docs/coderules/README.md"><b>coderules</b></a></td><td><b>current</b></td><td>How the code stays consistent when an AI writes most of it</td><td align="center">9</td></tr>
 </table>
 
-Version directories record **what was believed at the time**; the cross-cutting ones are kept current. Where they disagree, the cross-cutting ones win — and [`docs/techstack/decisions.md`](docs/techstack/decisions.md) lists every supersession.
+**No version directory currently exists.** The next one is written after the vision is settled; [`docs/versions.md`](docs/versions.md) specifies its shape. [`docs/techstack/decisions.md`](docs/techstack/decisions.md) still lists every stack supersession.
 
 > [!IMPORTANT]
-> **Read [`docs/v1/scene-schema.md`](docs/v1/scene-schema.md) first.** Everything else depends on that shape.
+> **The scene tree is defined in `api/schema/scene.py`**, and Pydantic is the source of truth. The prose that described it went with the version directories; the code did not.
 
 ---
 
@@ -420,7 +427,9 @@ flowchart LR
 | **later** | Charts · PDF/PPTX export · speaker notes · collaboration · freeform canvas | Each is a product inside the product |
 
 > [!CAUTION]
-> **Users arrive after v3 — that is the project's top risk.** v1 and v2 assumptions compound unvalidated for the entire build. The *bets* tables in [`v2/spec.md`](docs/v2/spec.md) and [`v3/spec.md`](docs/v3/spec.md) are the checklist for the day the first user shows up. The natural early exit is after v3 step 4: derived ADs plus twelve languages is already worth showing someone.
+> **This roadmap is under revision as of 2026-08-10 and is shown as the record of what was planned, not what is planned.** v1 is built and its acceptance run passes — that part is fact. Everything from v2 rightward is being re-decided.
+>
+> The risk that drove the revision has not changed and is worth keeping in view: **no external user has touched this product**, so every assumption compounds unvalidated. That is an argument for shortening the path to a first user, whatever the new plan turns out to be.
 
 ---
 
@@ -454,9 +463,10 @@ d-design/
 ├── README.md            you are here
 ├── AGENTS.md            the contract — 11 rules + a task→doc routing table
 ├── CLAUDE.md            one line: @AGENTS.md
-├── docs/                the specification (47 documents)
-│   ├── v1/ v2/ v3/                        versioned — what was believed at the time
-│   └── techstack/ security/ coderules/    cross-cutting — kept current
+├── docs/
+│   ├── versions.md  findings.md           how a version is documented · the evidence
+│   └── techstack/ security/ coderules/ design/   cross-cutting — kept current
+│                                          (v1/ v2/ v3/ deleted 2026-08-10 — see git)
 ├── scripts/
 │   ├── check-docs.sh    every link resolves, every file is indexed
 │   └── hooks/           project-level enforcement
@@ -469,13 +479,13 @@ d-design/
 
 ### Scope, honestly
 
-**Wedge:** marketers building product launches &nbsp;·&nbsp; **Delivery:** live URL, embed, fullscreen<br/>
+**Wedge:** under revision as of 2026-08-10 &nbsp;·&nbsp; **Delivery:** live URL, embed, fullscreen<br/>
 **Builder:** solo, with AI assistance — so v1 shipped the smallest thing that could prove the bet, end to end
 
 <br/>
 
 *Gamma reached ~$100M ARR by making presentations **faster**.*<br/>
 *This bets that people will pay for presentations that are **better**.*<br/>
-*Tome bet the same thing and lost — [read why](docs/v1/market.md) before building.*
+*Tome bet the same thing and lost — see [`docs/findings.md`](docs/findings.md) → "The category" before building.*
 
 </div>

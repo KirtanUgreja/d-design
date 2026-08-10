@@ -8,7 +8,7 @@
 
 What this is built with, where each piece runs, and why.
 
-The *language* half of the stack was settled in [../v1/spec.md](../v1/spec.md) and [../coderules/](../coderules/README.md), and has since been **reversed** — the backend is Python and this directory now owns that decision ([decisions.md](decisions.md) → "The Python backend move"). This directory also settles the **operational** half — hosting, workers, storage, delivery, auth, jobs — which earlier docs assumed without naming. The security docs already relied on some of it: an "isolated worker with no route to the VPC", a CDN in front of published pages. Those were requirements with no implementation. Now they have one.
+The *language* half of the stack was settled in `v1/spec.md` and [../coderules/](../coderules/README.md), and has since been **reversed** — the backend is Python and this directory now owns that decision ([decisions.md](decisions.md) → "The Python backend move"). This directory also settles the **operational** half — hosting, workers, storage, delivery, auth, jobs — which earlier docs assumed without naming. The security docs already relied on some of it: an "isolated worker with no route to the VPC", a CDN in front of published pages. Those were requirements with no implementation. Now they have one.
 
 ## The shape
 
@@ -155,7 +155,7 @@ Several of these decisions supersede things earlier docs locked. The reversals a
 - **Published pages are static artifacts**, not server routes
 - **Model calls go through OpenRouter**, so the schema constraint is enforced by the schema parse rather than by the decoder
 
-Two of those trade away a guarantee — the Python move and OpenRouter. It is deliberate, the reasoning is in [backend.md](backend.md), and the metric that tells you whether it was right — the repair rate — already exists in [../v1/ai-pipeline.md](../v1/ai-pipeline.md).
+Two of those trade away a guarantee — the Python move and OpenRouter. It is deliberate, the reasoning is in [backend.md](backend.md), and the metric that tells you whether it was right — the repair rate — already exists in `v1/ai-pipeline.md`.
 
 ## Connects to
 
@@ -164,4 +164,4 @@ Two of those trade away a guarantee — the Python move and OpenRouter. It is de
 | [../coderules/README.md](../coderules/README.md) | The rules these choices imply, including the two new non-negotiables |
 | [../security/README.md](../security/README.md) | Every control assumes this topology — especially the two-worker split |
 | [../security/third-parties.md](../security/third-parties.md) | The data-flow consequence of routing model calls through OpenRouter |
-| [../v1/spec.md](../v1/spec.md) | The language half of the stack, settled earlier |
+| `v1/spec.md` | The language half of the stack, settled earlier |

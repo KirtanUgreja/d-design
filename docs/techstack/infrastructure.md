@@ -121,7 +121,7 @@ jobs         # v3 — PGQueuer
 fetch        # v3 — the quarantined worker, on its own network
 ```
 
-Everything runs offline. The point is not convenience — it is that **`storage.ts` talks to the S3 API locally and in production**, so the one abstraction with a planned second implementation ([../v1/spec.md](../v1/spec.md)) has one implementation after all. MinIO is not a mock; it speaks the same protocol.
+Everything runs offline. The point is not convenience — it is that **`storage.ts` talks to the S3 API locally and in production**, so the one abstraction with a planned second implementation (`v1/spec.md`) has one implementation after all. MinIO is not a mock; it speaks the same protocol.
 
 Same for KMS via LocalStack: the envelope-encryption code path is exercised in development rather than first tried in production, which is where a crypto path should never be first tried.
 
@@ -129,7 +129,7 @@ Same for KMS via LocalStack: the envelope-encryption code path is exercised in d
 
 ### The topology is local before it is deployed
 
-**Everything in this document above "Local development" lands at v3 step 11 — the last step, after every feature works** ([../v3/spec.md](../v3/spec.md) → "Why topology is first and deployment is last"). What lands at v3 **step 0** is the *topology*: the same four processes, the same trust boundaries, in Compose.
+**Everything in this document above "Local development" lands at v3 step 11 — the last step, after every feature works** (`v3/spec.md` → "Why topology is first and deployment is last"). What lands at v3 **step 0** is the *topology*: the same four processes, the same trust boundaries, in Compose.
 
 That distinction is the whole reordering. The dependencies that force infrastructure early are dependencies on processes and APIs — a fetch worker that exists, a job worker that runs, an S3-shaped storage call — and Compose satisfies all of them. Nothing in the feature build depends on Amazon specifically.
 
@@ -160,4 +160,4 @@ v1 is single-user with local Postgres, no accounts, no publishing to strangers, 
 
 Everything in this document lands with **v3** — the release that has real users, which is the same boundary every other v3 control sits on ([../security/README.md](../security/README.md)) — and within v3 it lands **last**, at step 11, after every feature has been verified against the local topology.
 
-The long pole in this project is the renderer and whether it produces something genuinely beautiful ([../v1/spec.md](../v1/spec.md), Risk 1). A perfect VPC does not move that risk at all.
+The long pole in this project is the renderer and whether it produces something genuinely beautiful (`v1/spec.md`, Risk 1). A perfect VPC does not move that risk at all.

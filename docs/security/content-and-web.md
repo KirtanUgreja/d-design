@@ -32,7 +32,7 @@ base-uri    'none';
 form-action 'none';
 ```
 
-`connect-src` is load-bearing and it is **two exact paths — not `'self'`, not a host**. Live data is still baked in server-side ([../v3/live-data.md](../v3/live-data.md)), so nothing about the content requires network. Two product features do: per-recipient field substitution on `/r/` pages and the analytics beacon.
+`connect-src` is load-bearing and it is **two exact paths — not `'self'`, not a host**. Live data is still baked in server-side (`v3/live-data.md`), so nothing about the content requires network. Two product features do: per-recipient field substitution on `/r/` pages and the analytics beacon.
 
 This is weaker than the original `connect-src 'none'`, and the weakening is recorded deliberately in [../techstack/decisions.md](../techstack/decisions.md) rather than absorbed quietly. The guarantee is now *"this page talks to two endpoints you own and nothing else"*, and the browser test in [testing.md](testing.md) asserts exactly that — two requests, no more. It comes back to `'none'` if analytics ever moves to CDN access logs and personalization to per-recipient pre-rendering.
 
@@ -74,7 +74,7 @@ Static publishing removed the origin server behind `pages.<domain>` — and move
 
 ### `/r/fields` — the one that returns PII
 
-Takes a recipient token, returns five personalization fields: a name and a company at minimum ([../v3/personalization.md](../v3/personalization.md)). **The token is the entire authentication**, and the response is personal data.
+Takes a recipient token, returns five personalization fields: a name and a company at minimum (`v3/personalization.md`). **The token is the entire authentication**, and the response is personal data.
 
 | | |
 |---|---|
@@ -191,7 +191,7 @@ Every uploaded file is hostile until proven otherwise.
 >
 > SVG also carries a **denial-of-service** shape distinct from XSS: billion-laughs entity expansion, deeply nested groups, and pathological filter chains. Next.js shipped a CVE in July 2026 for exactly this — CPU exhaustion at `/_next/image` from malicious SVG. Cap entity expansion and nesting depth at sanitization, and keep SVG out of any image-optimization path.
 
-**GLB/USDZ** (v3) parse in an isolated worker with triangle, texture, and file-size caps enforced *before* full decode. Draco and meshopt compression are decompression-bomb vectors with the same shape as image bombs. Failure produces the poster frame that [../v3/dimensional.md](../v3/dimensional.md) already requires.
+**GLB/USDZ** (v3) parse in an isolated worker with triangle, texture, and file-size caps enforced *before* full decode. Draco and meshopt compression are decompression-bomb vectors with the same shape as image bombs. Failure produces the poster frame that `v3/dimensional.md` already requires.
 
 ## Custom domains
 

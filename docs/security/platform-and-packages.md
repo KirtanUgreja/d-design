@@ -141,7 +141,7 @@ Not a lockfile — a set of statements about what is known-bad, to be re-checked
 | **Python** | Current stable, security-supported line | Same reasoning. An EOL minor gets no patches at all |
 | **Agent frameworks** | **Not present.** Grepped in CI | Not a floor — an absence. See above and [../coderules/dependencies.md](../coderules/dependencies.md) |
 | **`sharp` / libvips** | Latest | Native decoder against hostile input |
-| **Three.js + loaders** | Latest (v3) | `WebGPURenderer` needs r171+ anyway ([../v3/dimensional.md](../v3/dimensional.md)) |
+| **Three.js + loaders** | Latest (v3) | `WebGPURenderer` needs r171+ anyway (`v3/dimensional.md`) |
 
 **The floors are a starting point, not the control.** The control is that CI fails on a known-critical advisory and that the four untrusted-input parsers above are watched by name. A table in a document goes stale; a failing build does not.
 

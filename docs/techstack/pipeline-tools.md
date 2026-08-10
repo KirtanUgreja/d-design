@@ -8,7 +8,7 @@ What the model is allowed to call, and the loop that lets it look at what it mad
 
 That is a good rule and it is not the rule people usually think it is. Read it precisely: it forbids **side effects**, not tools. A tool that reads the user's own brand kit and returns four hex codes mutates nothing, reaches nothing, and cannot be turned into an action by an attacker — because there is no action behind it.
 
-The distinction matters because a strong finding from [../v2/art-direction-engine.md](../v2/art-direction-engine.md) applies to the whole pipeline, not just derivation:
+The distinction matters because a strong finding from `v2/art-direction-engine.md` applies to the whole pipeline, not just derivation:
 
 > **Giving the model tools to iteratively analyze, crop, and visually verify its own work is a markedly more cost-effective lever than raising thinking effort.**
 
@@ -78,7 +78,7 @@ The schema parse proves the tree is *valid*. Nothing currently proves it is *goo
 
 ### Why this is credible
 
-2026 research converges on it, and one paper describes this product's architecture almost exactly. **GameUIAgent** decouples generative creativity from deterministic rendering via a **Design Spec JSON intermediate representation**, then closes the loop with an independent vision-model reflection step. That is the `Scene` IR plus the pure renderer plus a critic — the bet in [../v1/spec.md](../v1/spec.md) arrived at independently, with the missing third piece attached.
+2026 research converges on it, and one paper describes this product's architecture almost exactly. **GameUIAgent** decouples generative creativity from deterministic rendering via a **Design Spec JSON intermediate representation**, then closes the loop with an independent vision-model reflection step. That is the `Scene` IR plus the pure renderer plus a critic — the bet in `v1/spec.md` arrived at independently, with the missing third piece attached.
 
 **"Coding with Eyes"** reports the same result for GUI code generally: visual feedback eliminates a class of defect that one-shot generation structurally cannot catch, because the generator never sees the rendered output.
 
@@ -104,7 +104,7 @@ Narrow, checkable questions. A vision model asked "is this good?" returns flatte
 - Does this scene look meaningfully different from the previous one?
 - Does the emphasis land where the scene's intent says it should?
 
-Structural questions with defensible answers. **Beauty is not among them** — the linter has no opinion on beauty ([../v2/art-direction-engine.md](../v2/art-direction-engine.md)) and neither does this. It catches broken, not boring.
+Structural questions with defensible answers. **Beauty is not among them** — the linter has no opinion on beauty (`v2/art-direction-engine.md`) and neither does this. It catches broken, not boring.
 
 ### One revision, then accept
 
@@ -122,7 +122,7 @@ Not the fetch worker: a schema-validated scene tree with no presentational value
 | **Latency** | A render and a vision call per scene, which is why it runs *after* the scene streams to the editor, not before |
 | **Verdict** | At $0.40 an experience this is not a cost decision. It is a quality decision with a rounding error attached |
 
-**It streams optimistically.** The scene appears in the editor as soon as it validates; the visual check runs behind it and surfaces a correction if needed. Blocking the stream on a vision call would trade the perceived-speed win from [../v1/ai-pipeline.md](../v1/ai-pipeline.md) for a quality gain the user cannot see happening.
+**It streams optimistically.** The scene appears in the editor as soon as it validates; the visual check runs behind it and surfaces a correction if needed. Blocking the stream on a vision call would trade the perceived-speed win from `v1/ai-pipeline.md` for a quality gain the user cannot see happening.
 
 ## Security consequences
 
@@ -137,9 +137,9 @@ Three, and none of them move the tier-2 line.
 ## What this changes elsewhere
 
 - **[../security/prompt-injection.md](../security/prompt-injection.md), Defense 5** — restated from "no tools" to "no tools with side effects", with the three tiers as the test. The tripwire is unchanged
-- **[../v1/ai-pipeline.md](../v1/ai-pipeline.md)** — cost per experience roughly doubles when the visual loop is on
+- **`v1/ai-pipeline.md`** — cost per experience roughly doubles when the visual loop is on
 - **[../security/testing.md](../security/testing.md)** — the injection corpus gains a case: a payload aimed at the critic
-- **[../v1/scene-schema.md](../v1/scene-schema.md)** — asset selection now has a defined mechanism (`list_assets`, selection by id) rather than an unstated one
+- **`v1/scene-schema.md`** — asset selection now has a defined mechanism (`list_assets`, selection by id) rather than an unstated one
 
 ## Build order
 
@@ -149,4 +149,4 @@ The loop is a v2 feature at the earliest, and it should be, because it cannot be
 |---|---|
 | **v1** | Tier-0 reads only — `get_brand_kit`, `list_assets`, `get_constraints`. Small, immediately useful, and `list_assets` closes an actual gap |
 | **v2** | The visual loop, arriving with the third art direction — which is when layout breakage across ADs becomes a real and frequent problem |
-| **v3** | The same critic, applied to derived art directions ([../v2/art-direction-engine.md](../v2/art-direction-engine.md)) and to localized layouts, where twelve languages multiply the ways a layout can break |
+| **v3** | The same critic, applied to derived art directions (`v2/art-direction-engine.md`) and to localized layouts, where twelve languages multiply the ways a layout can break |
