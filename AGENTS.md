@@ -74,4 +74,6 @@ These governed the deleted codebase and are the **starting point** for the next 
 
 **Never:** give the AI a tool with side effects · authorize in middleware alone · log prompts, scene content, or recipient fields · hand-edit generated code · **install an agent framework** (LangGraph, CrewAI, Pydantic AI, …) — see `docs/techstack/ai-stack.md`.
 
+**Commits:** subject ≤72 chars with no trailing period; a body saying what was wrong and what the project can do now; one block per file with a `path:lines · symbol()` anchor and what changed there. **No `Co-Authored-By`, no `Signed-off-by`, no tool attribution.** Full rule and the reason line numbers are paired with symbol names: `docs/coderules/commits.md`, enforced by `scripts/hooks/commit-msg`.
+
 **Docs:** editing any `.md` means `./scripts/check-docs.sh` must still pass.

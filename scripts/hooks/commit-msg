@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+# The commit-message gate. docs/coderules/commits.md is the rule; this is the
+# half of it a script can check.
+#
+# It checks shape, never substance. Whether the "why" is any good is the only
+# part that matters and no hook will ever know — so this file deliberately
+# stays small rather than growing heuristics that guess at prose quality.
+#
+# **No bash 4 builtins.** macOS ships bash 3.2 and that is what
+# `#!/usr/bin/env bash` resolves to here, so `mapfile` and friends are not
+# available. The first draft of this file used `mapfile`; it did not exist,
+# the array stayed empty, the subject read as empty, and the hook exited 0 on
+# every message including the ones it was written to reject. It failed *open*
+# and looked installed — the same failure `checks/invariants.sh` carries a
+# comment about. Prefer `head`/`sed`/`tail` over anything version-dependent,
+# and see the self-test at the bottom of this file.
+
+set -uo pipefail
+
+msg_file=${1:-}
+[ -f "$msg_file" ] || exit 0
+
+# What will actually be stored: comments stripped, trailing blanks removed.
+clean=$(grep -v '^#' "$msg_file" | sed -e :a -e '/^[[:space:]]*$/{$d;N;ba' -e '}')
+
+subject=$(printf '%s\n' "$clean" | head -n 1)
+second=$(printf '%s\n' "$clean" | sed -n '2p')
+body=$(printf '%s\n' "$clean" | tail -n +2)
+
+# An empty message aborts the commit anyway; let git say so in its own words.
+[ -n "$subject" ] || exit 0
+
+# Generated messages are exempt. Merge, revert, fixup and squash subjects are
+# written by git or by convention, and rejecting them trains the bypass this
+# file depends on you not learning.
+case $subject in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *|amend!\ *) exit 0 ;;
+esac
+
+fail=0
+note() { printf '  x %s\n' "$1" >&2; fail=1; }
+
+# --- subject -----------------------------------------------------------------
+
+if [ "${#subject}" -gt 72 ]; then
+  note "subject is ${#subject} characters, limit is 72"
+  note "   $subject"
+fi
+
+case $subject in
+  *.) note "subject ends in a period — it is a title, not a sentence" ;;
+esac
+
+# A non-empty second line means the body started without a blank line.
+if [ -n "$(printf '%s' "$second" | tr -d '[:space:]')" ]; then
+  note "no blank line after the subject"
+fi
+
+# --- trailers ----------------------------------------------------------------
+#
+# Dropped deliberately: git already records an author in its own metadata, and
+# a trailer naming a tool answers a question nobody asked. commits.md -> "No
+# trailers, and what that does not mean".
+
+if printf '%s\n' "$clean" | grep -qiE '^(co-authored-by|signed-off-by):|generated with'; then
+  note "attribution trailer present — commits.md forbids them"
+fi
+
+# --- the file list -----------------------------------------------------------
+#
+# Multi-file commits only. A one-file change with an obvious reason may be one
+# line: a rule that makes a typo fix expensive gets bypassed on the typo fix,
+# and then on everything after it.
+
+staged=$(git diff --cached --name-only --diff-filter=ACMRD 2>/dev/null)
+count=$(printf '%s\n' "$staged" | grep -c '[^[:space:]]')
+
+if [ "$count" -gt 1 ]; then
+  if [ -z "$(printf '%s' "$body" | tr -d '[:space:]')" ]; then
+    note "$count files changed with no body — say why, and name them (commits.md)"
+  else
+    # One staged path named anywhere is the floor, not the target. commits.md
+    # asks for a block per file; this only catches the message that names none,
+    # because requiring all of them would fail every legitimate codemod.
+    found=0
+    while IFS= read -r f; do
+      [ -n "$f" ] || continue
+      if printf '%s\n' "$body" | grep -qF "$f" ||
+         printf '%s\n' "$body" | grep -qF "$(basename "$f")"; then
+        found=1
+        break
+      fi
+    done <<EOF
+$staged
+EOF
+    [ "$found" -eq 1 ] || note "$count files changed and the message names none of them"
+  fi
+fi
+
+if [ "$fail" -ne 0 ]; then
+  printf '\ncommit message rejected — docs/coderules/commits.md\n' >&2
+  exit 1
+fi
+
+exit 0

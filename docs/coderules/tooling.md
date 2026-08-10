@@ -1,6 +1,8 @@
 # Tooling
 
-The rules above only hold if something enforces them. Two things do: a pre-commit gate, and an instruction file that carries the rules into every AI session.
+The rules above only hold if something enforces them. Three things do: a pre-commit gate, a `commit-msg` gate on what the commit *says* ([commits.md](commits.md)), and an instruction file that carries the rules into every AI session.
+
+> **A hook that fails open is worse than no hook.** The `commit-msg` gate was written using `mapfile`, which is bash 4 and does not exist on macOS's bash 3.2. The array stayed empty, the subject read as empty, and it exited 0 on every message it was written to reject — while looking installed. Prefer `head`/`sed`/`tail` over version-dependent builtins in anything under `scripts/hooks/`, and test a new hook against a case it must **reject** before believing it works.
 
 ## The pre-commit gate
 

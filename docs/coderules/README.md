@@ -30,6 +30,7 @@ It also happens to be the right defense against how this code gets written. Most
 | [performance.md](performance.md) | Clarity first, measure before optimizing, the real hot paths |
 | [ai-authorship.md](ai-authorship.md) | What goes wrong when Claude writes most of it, and what to do about it |
 | [tooling.md](tooling.md) | The pre-commit gate, the linter choice, and the instruction file that carries these rules into every AI session |
+| [commits.md](commits.md) | What a commit message must say, why line numbers are paired with symbol names, and what the `commit-msg` hook enforces |
 
 ## Non-negotiables
 
