@@ -46,6 +46,8 @@ CI runs the same gate plus the test suites and the dependency-advisory check, so
 
 ## What CI runs, across five repos
 
+> **No CI exists right now.** The workflow was deleted on 2026-08-10 with the codebase — it ran the gate against `api/` and `web/`, neither of which is here. This section is the specification for what to rebuild, not a description of what runs. The local hook in `scripts/hooks/pre-commit` is the only gate today, which means a bypass of it is currently caught by nothing.
+
 The gate above is per-commit and fast. CI adds the things that are too slow or need a browser, and it now spans five repos ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
 
 | | |

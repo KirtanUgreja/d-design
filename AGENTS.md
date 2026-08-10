@@ -20,17 +20,17 @@ A working system, deleted deliberately rather than abandoned: a FastAPI backend 
 | `docs/design/` | How **our own** app and site look — never what an engine produces |
 | `docs/versions.md` | The shape the next version directory takes. Read before writing it |
 | `docs/findings.md` | Evidence, not direction — measurements, model behaviour, the category, dated platform facts |
-| `scripts/` | `check-docs.sh` works today; the gate and invariants dispatch on staged paths and pass with no code |
-| `docker-compose.yml` | Postgres and MinIO. The `render` service went with the codebase |
-| `.github/workflows/gate.yml` | CI. **Same repo, same history** — new code is pushed here |
+| `scripts/` | `check-docs.sh` works today. The gate and invariants pass on an empty tree and start guarding again the moment code returns |
 
 ## Commands that work today
 
 ```
+./scripts/setup.sh               installs the git hooks — run once per clone
 ./scripts/check-docs.sh          every link resolves, every file is indexed
 ./scripts/hooks/pre-commit       the gate, on demand
-docker compose up -d             Postgres + MinIO
 ```
+
+There is no local infrastructure and no CI. `docker-compose.yml` and the CI workflow were deleted with the codebase — both were specific to the stack that is gone, and both get rewritten for whatever comes next.
 
 `.env` at the repo root holds the preserved `OPENROUTER_API_KEY`. It is gitignored.
 

@@ -75,10 +75,12 @@ It is checkable, and in the deleted codebase it was checked — a test walked ev
 ## Working here today
 
 ```
+./scripts/setup.sh               installs the git hooks — run once per clone
 ./scripts/check-docs.sh          every link resolves, every file is indexed
 ./scripts/hooks/pre-commit       the gate, on demand
-docker compose up -d             Postgres + MinIO
 ```
+
+No local infrastructure, no CI. Both were specific to the deleted stack and get rewritten for whatever comes next.
 
 ```
 d-design/
@@ -86,9 +88,7 @@ d-design/
 ├── AGENTS.md            the contract — rules + a task→doc routing table
 ├── CLAUDE.md            one line: @AGENTS.md
 ├── docs/                what survives a vision change
-├── scripts/             check-docs · the gate · invariants · hooks
-├── docker-compose.yml   Postgres + MinIO
-└── .github/workflows/   CI — same repo, same history
+└── scripts/             setup · check-docs · the gate · invariants · hooks
 ```
 
 ---
