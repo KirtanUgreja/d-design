@@ -1,6 +1,0 @@
-
-
-# Stray pytest run from the wrong working directory. `api` is the Python
-# project root; a cache anywhere else is a mistake, and this stops it becoming
-# a committed one.
-.pytest_cache/

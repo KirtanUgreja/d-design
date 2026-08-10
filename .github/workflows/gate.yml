@@ -3,7 +3,15 @@ name: gate
 on:
   push:
     branches: [main]
+    # Scoped to the source trees on 2026-08-10, when the codebase was deleted.
+    # Both jobs below `cd` into api/ and web/, so with no code every run fails
+    # on a missing directory — a red badge that means "there is nothing here"
+    # rather than "something broke". A path filter is the honest version: no
+    # source touched, no gate to run. Delete these two `paths:` blocks the day
+    # a source tree returns, or the gate silently stops guarding it.
+    paths: ['api/**', 'web/**', '.github/workflows/**']
   pull_request:
+    paths: ['api/**', 'web/**', '.github/workflows/**']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

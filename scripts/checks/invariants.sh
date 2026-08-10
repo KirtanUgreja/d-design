@@ -26,6 +26,19 @@ note() { printf '  ✗ %s\n' "$1" >&2; fail=1; }
 # passed check 9 by not existing yet. `--exclude-standard` keeps `.gitignore`
 # honoured, so `node_modules` and `.next` stay out.
 mine() { git ls-files --cached --others --exclude-standard -- "$@"; }
+
+# No source tree, no invariants to check. The codebase was deleted on
+# 2026-08-10 and several checks below assert that something *exists* — a
+# tenant wrapper, an Alembic `include_object` — so with no code they fail
+# rather than pass, which is a false alarm on an empty repo rather than a
+# real finding. The moment `api/` or `web/` returns, so does every check.
+#
+# This guard is deliberately narrow: it triggers only when BOTH roots are
+# absent. A half-deleted tree is a real problem and still fails loudly.
+if [ ! -d api ] && [ ! -d web ]; then
+  printf '  - no api/ or web/ tree; invariants skipped (see AGENTS.md)\n'
+  exit 0
+fi
 # Success means "found something", decided by whether there was output — not by
 # the pipeline's exit code.
 #
