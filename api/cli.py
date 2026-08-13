@@ -19,9 +19,12 @@ import sys
 from pathlib import Path
 
 from ai.complete import ModelError, make_seam
+from ai.images import make_image_seam
 from lib.result import Err
 from pipeline.interview.interview import run_interview
 from pipeline.mapping.mapping import run_mapping
+from pipeline.slide_builder.slide_builder import run_build
+from schema.deck import Deck
 from schema.outline import Brief, Outline
 
 
@@ -92,6 +95,14 @@ def main(argv: list[str] | None = None) -> int:
     mapping.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
     mapping.add_argument("--out", default="deck.json", help="Where to write the mapped Deck")
 
+    build = sub.add_parser("build", help="Build every slide of a mapped Deck, one call each")
+    build.add_argument("--deck", default="deck.json", help="The mapped Deck file")
+    build.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
+    build.add_argument("--image-model", default="openai/dall-e-3", help="OpenRouter image model id")
+    build.add_argument(
+        "--out", default="built.json", help="Where to write the built Deck + image assets"
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "interview":
@@ -145,6 +156,29 @@ def main(argv: list[str] | None = None) -> int:
             encoding="utf8",
         )
         print(f"Mapped {len(deck.slides)} slides -> {args.out}")
+        return 0
+
+    if args.command == "build":
+        try:
+            raw = json.loads(Path(args.deck).read_text(encoding="utf8"))
+        except (FileNotFoundError, json.JSONDecodeError) as exc:
+            print(f"cannot read deck {args.deck}: {exc}", file=sys.stderr)
+            return 1
+        deck = Deck.model_validate(raw)
+        seam = make_seam()
+        image_seam = make_image_seam()
+        result = run_build(deck, seam, image_seam, model=args.model, image_model=args.image_model)
+
+        if isinstance(result, Err):
+            _show_error(result.error)
+            return 1
+
+        built = result.value
+        # The image assets are data URIs, kept beside the deck (the schema has
+        # no field for them; the exporter inlines them in phase 05).
+        payload = {"deck": built.deck.model_dump(), "images": built.images}
+        Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
+        print(f"Built {len(built.deck.slides)} slides ({len(built.images)} images) -> {args.out}")
         return 0
 
     parser.print_help()
