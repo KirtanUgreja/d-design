@@ -23,6 +23,7 @@ from ai.images import make_image_seam
 from lib.result import Err
 from pipeline.interview.interview import run_interview
 from pipeline.mapping.mapping import run_mapping
+from pipeline.review.review import revise_slide
 from pipeline.slide_builder.slide_builder import run_build
 from schema.deck import Deck
 from schema.outline import Brief, Outline
@@ -103,6 +104,16 @@ def main(argv: list[str] | None = None) -> int:
         "--out", default="built.json", help="Where to write the built Deck + image assets"
     )
 
+    review = sub.add_parser(
+        "review",
+        help="Regenerate one slide with written feedback (the human review loop)",
+    )
+    review.add_argument("--built", default="built.json", help="The built Deck + images file")
+    review.add_argument("--slide", type=int, required=True, help="1-based slide index to revise")
+    review.add_argument("--feedback", required=True, help="The reviewer's written feedback")
+    review.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
+    review.add_argument("--out", default="built.json", help="Where to write the revised built Deck")
+
     args = parser.parse_args(argv)
 
     if args.command == "interview":
@@ -179,6 +190,36 @@ def main(argv: list[str] | None = None) -> int:
         payload = {"deck": built.deck.model_dump(), "images": built.images}
         Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
         print(f"Built {len(built.deck.slides)} slides ({len(built.images)} images) -> {args.out}")
+        return 0
+
+    if args.command == "review":
+        try:
+            raw = json.loads(Path(args.built).read_text(encoding="utf8"))
+        except (FileNotFoundError, json.JSONDecodeError) as exc:
+            print(f"cannot read built deck {args.built}: {exc}", file=sys.stderr)
+            return 1
+        built = raw["deck"]
+        images = raw.get("images", {})
+        deck = Deck.model_validate(built)
+        seam = make_seam()
+        result = revise_slide(deck, args.slide - 1, args.feedback, seam, model=args.model)
+
+        if isinstance(result, Err):
+            _show_error(result.error)
+            return 1
+
+        revised = result.value
+        # Replace the slide in place; the review loop is slide-by-slide.
+        slides = deck.model_dump()["slides"]
+        slides[args.slide - 1] = revised.model_dump()
+        payload = {
+            "deck": Deck.model_validate(
+                {"family_id": deck.family_id, "slides": slides}
+            ).model_dump(),
+            "images": images,
+        }
+        Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
+        print(f"Revised slide {args.slide} -> {args.out}")
         return 0
 
     parser.print_help()
