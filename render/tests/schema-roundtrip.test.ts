@@ -87,9 +87,9 @@ const goldenDeck = {
           chart_type: 'bar',
           title: 'Recall by format',
           series: [
-            ['Editorial', 92.0],
-            ['Template', 41.0],
-            ['Longform', 78.0],
+            { label: 'Editorial', value: 92.0 },
+            { label: 'Template', value: 41.0 },
+            { label: 'Longform', value: 78.0 },
           ],
         },
       ],

@@ -6,7 +6,17 @@ check both rely on.
 
 from __future__ import annotations
 
-from schema.deck import ChartBlock, Cta, Deck, ImageBlock, QuoteBlock, Slide, StatBlock, TextBlock
+from schema.deck import (
+    ChartBlock,
+    ChartSeries,
+    Cta,
+    Deck,
+    ImageBlock,
+    QuoteBlock,
+    Slide,
+    StatBlock,
+    TextBlock,
+)
 
 
 def golden_deck() -> Deck:
@@ -86,7 +96,11 @@ def golden_deck() -> Deck:
                         kind="chart",
                         chart_type="bar",
                         title="Recall by format",
-                        series=[("Editorial", 92.0), ("Template", 41.0), ("Longform", 78.0)],
+                        series=[
+                            ChartSeries(label="Editorial", value=92.0),
+                            ChartSeries(label="Template", value=41.0),
+                            ChartSeries(label="Longform", value=78.0),
+                        ],
                     ),
                 ],
                 motion_intent="none",
@@ -173,7 +187,11 @@ GOLDEN_DECK_JSON: dict[str, object] = {
                     "kind": "chart",
                     "chart_type": "bar",
                     "title": "Recall by format",
-                    "series": [["Editorial", 92.0], ["Template", 41.0], ["Longform", 78.0]],
+                    "series": [
+                        {"label": "Editorial", "value": 92.0},
+                        {"label": "Template", "value": 41.0},
+                        {"label": "Longform", "value": 78.0},
+                    ],
                 },
             ],
             "motion_intent": "none",

@@ -41,6 +41,45 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 T = TypeVar("T", bound=BaseModel)
 
 
+def _strict_schema(schema: object) -> object:
+    """Make a JSON Schema strict for providers that require it.
+
+    Strict structured-output providers (OpenRouter passing through to
+    OpenAI/Azure) reject a schema where any object lacks
+    ``additionalProperties: false`` OR where any property is absent from
+    ``required``. Pydantic's ``model_json_schema()`` emits neither for
+    optional fields. Recursively walk the schema:
+
+    - add ``additionalProperties: false`` to every object (including $defs)
+    - add every property key to ``required``
+
+    The Pydantic side still enforces true optionality: a model that omits a
+    field the schema marked required fails ``model_validate`` on our side, so
+    the provider's strictness and our validation are both preserved.
+    """
+    if isinstance(schema, dict):
+        out: dict[str, object] = {}
+        for key, value in schema.items():
+            if key == "$defs" and isinstance(value, dict):
+                out[key] = {k: _strict_schema(v) for k, v in value.items()}
+            else:
+                out[key] = _strict_schema(value)
+        if schema.get("type") == "object":
+            if "additionalProperties" not in schema:
+                out["additionalProperties"] = False
+            props = schema.get("properties")
+            if isinstance(props, dict):
+                required = set(
+                    schema.get("required", []) if isinstance(schema.get("required"), list) else []
+                )
+                required.update(props.keys())
+                out["required"] = sorted(required)
+        return out
+    if isinstance(schema, list):
+        return [_strict_schema(v) for v in schema]
+    return schema
+
+
 @dataclass(frozen=True)
 class ModelError:
     """An expected model-call failure: refusal, malformed output, transport."""
@@ -119,12 +158,15 @@ class Seam:
             # The schema is the structured-output constraint. Enforced by
             # model_validate on the response regardless of what the provider
             # does with strict: true (backend.md -> "It costs a guarantee").
+            # Pydantic's model_json_schema() does not emit
+            # additionalProperties:false; strict structured-output providers
+            # require it on every object, so it is added here before sending.
             "response_format": {
                 "type": "json_schema",
                 "json_schema": {
                     "name": schema.__name__,
                     "strict": True,
-                    "schema": schema.model_json_schema(),
+                    "schema": _strict_schema(schema.model_json_schema()),
                 },
             },
         }

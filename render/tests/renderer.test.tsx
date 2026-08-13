@@ -103,8 +103,8 @@ describe('DeckRenderer', () => {
         chart_type: 'bar',
         title: 'Growth',
         series: [
-          ['Q1', 10],
-          ['Q2', 25],
+          { label: 'Q1', value: 10 },
+          { label: 'Q2', value: 25 },
         ],
       },
     ];

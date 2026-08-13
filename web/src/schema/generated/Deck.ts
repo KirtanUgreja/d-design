@@ -7,14 +7,16 @@
  */
 import { z } from 'zod';
 
+const ChartSeriesSchema = z.object({
+  label: z.string().min(1).max(80),
+  value: z.number(),
+});
+
 const ChartBlockSchema = z.object({
   kind: z.literal('chart'),
   chart_type: z.union([z.literal('bar'), z.literal('line'), z.literal('donut')]),
   title: z.string().min(1).max(120),
-  series: z
-    .array(z.tuple([z.string(), z.number()]))
-    .min(1)
-    .max(12),
+  series: z.array(ChartSeriesSchema).min(1).max(12),
 });
 
 const CtaSchema = z.object({
@@ -91,6 +93,8 @@ export const DeckSchema = z.object({
 });
 
 export type Deck = z.infer<typeof DeckSchema>;
+
+export type ChartSeries = z.infer<typeof ChartSeriesSchema>;
 
 export type ChartBlock = z.infer<typeof ChartBlockSchema>;
 

@@ -59,16 +59,16 @@ export function QuoteBlockView({ block }: BlockProps) {
 
 export function ChartBlockView({ block }: BlockProps) {
   const chart = block as ChartBlock;
-  const max = Math.max(...chart.series.map(([, v]) => v), 1);
+  const max = Math.max(...chart.series.map((s) => s.value), 1);
   return (
     <span className="dds-chart" data-chart={chart.chart_type}>
       <span className="dds-chart__title">{chart.title}</span>
       <span className="dds-chart__body">
-        {chart.series.map(([label, value]) => (
-          <span key={label} className="dds-chart__row">
-            <span className="dds-chart__label">{label}</span>
+        {chart.series.map((s) => (
+          <span key={s.label} className="dds-chart__row">
+            <span className="dds-chart__label">{s.label}</span>
             <span className="dds-chart__track">
-              <span className="dds-chart__fill" style={{ width: `${(value / max) * 100}%` }} />
+              <span className="dds-chart__fill" style={{ width: `${(s.value / max) * 100}%` }} />
             </span>
           </span>
         ))}

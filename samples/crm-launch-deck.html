@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Launch Deck for CRM for Agencies</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:; script-src 'unsafe-inline'; connect-src 'none';">
+<style>
+:root {
+--dds-font-display: 'Nunito', system-ui, sans-serif;
+--dds-font-body: 'Nunito', system-ui, sans-serif;
+--dds-radius: 0px;
+--dds-space: 8px;
+--dds-ink: #1a1a2e;
+--dds-paper: #fdf2e9;
+--dds-accent: #e63946;
+--dds-texture: flat;
+}
+/* The renderer's stylesheet — the design family is the only styling.
+ *
+ * patterns.md rule 1 seen from the renderer side: the model emits *what* is on
+ * the slide; these rules apply *how it looks* from the family tokens. No
+ * Tailwind, no inline hex — the CSS custom properties in tokens.ts are the
+ * single source of visual truth.
+ *
+ * Progressive enhancement (frontend.md): the markup is complete without JS.
+ * Reveals are a class-level enhancement that starts from the resting state.
+ */
+
+.dds-deck {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--dds-font-body);
+  color: var(--dds-ink);
+  background: var(--dds-paper);
+  line-height: 1.5;
+}
+
+.dds-slide {
+  min-height: 100vh;
+  padding: clamp(2rem, 6vw, 5rem);
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+}
+
+.dds-slide__inner {
+  max-width: 64rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* --- typography -------------------------------------------------------- */
+
+.dds-text {
+  display: block;
+}
+
+.dds-text--headline {
+  font-family: var(--dds-font-display);
+  font-size: clamp(2.5rem, 6vw, 5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  margin: 0 0 1.5rem;
+}
+
+.dds-text--eyebrow {
+  font-family: var(--dds-font-display);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.85rem;
+  margin-bottom: 1.25rem;
+  opacity: 0.7;
+}
+
+.dds-text--body {
+  font-size: clamp(1.1rem, 1.6vw, 1.4rem);
+  max-width: 42rem;
+}
+
+.dds-text--caption {
+  font-size: 0.9rem;
+  opacity: 0.6;
+}
+
+/* --- blocks ------------------------------------------------------------ */
+
+.dds-stat {
+  display: inline-flex;
+  flex-direction: column;
+  margin-right: 2.5rem;
+}
+
+.dds-stat__value {
+  font-family: var(--dds-font-display);
+  font-size: clamp(2.5rem, 5vw, 4rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.dds-stat__label {
+  font-size: 0.9rem;
+  opacity: 0.65;
+}
+
+.dds-quote {
+  display: block;
+  font-family: var(--dds-font-display);
+  font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+  font-style: italic;
+  max-width: 46rem;
+}
+
+.dds-quote__attr {
+  display: block;
+  font-style: normal;
+  font-size: 1rem;
+  opacity: 0.6;
+  margin-top: 1rem;
+}
+
+.dds-chart__title {
+  font-family: var(--dds-font-display);
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  display: block;
+}
+
+.dds-chart__row {
+  display: grid;
+  grid-template-columns: 10rem 1fr;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.dds-chart__label {
+  font-size: 0.9rem;
+  opacity: 0.75;
+}
+
+.dds-chart__track {
+  background: color-mix(in srgb, var(--dds-ink) 12%, transparent);
+  height: 0.5rem;
+  border-radius: 999px;
+  display: block;
+}
+
+.dds-chart__fill {
+  display: block;
+  height: 100%;
+  background: var(--dds-accent);
+  border-radius: 999px;
+}
+
+.dds-image {
+  display: block;
+}
+
+.dds-image img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.dds-image--hero img,
+.dds-image--background img {
+  width: 100%;
+  object-fit: cover;
+}
+
+.dds-image__placeholder {
+  display: block;
+  padding: 3rem;
+  border: 1px dashed color-mix(in srgb, var(--dds-ink) 40%, transparent);
+  opacity: 0.6;
+}
+
+.dds-cta {
+  display: inline-block;
+  margin-top: 2rem;
+  padding: 0.8rem 1.75rem;
+  background: var(--dds-accent);
+  color: var(--dds-paper);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* --- archetype frames -------------------------------------------------- */
+
+.dds-slide--opener.dds-slide--centered .dds-slide__inner {
+  text-align: center;
+}
+
+.dds-slide--opener.dds-slide--centered .dds-text--body {
+  margin: 0 auto;
+}
+
+.dds-slide--section .dds-slide__inner {
+  max-width: 40rem;
+}
+
+.dds-slide--quote .dds-slide__inner {
+  text-align: center;
+}
+
+.dds-slide--quote .dds-quote {
+  margin: 0 auto;
+}
+
+.dds-slide--stats .dds-slide__inner,
+.dds-slide--columns .dds-slide__inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.dds-slide--split .dds-slide__inner {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3rem;
+}
+
+.dds-slide--list .dds-slide__inner {
+  max-width: 44rem;
+}
+
+.dds-slide--closer.dds-slide--centered .dds-slide__inner {
+  text-align: center;
+}
+
+.dds-slide--closer.dds-slide--centered .dds-text--body {
+  margin: 0 auto;
+}
+
+/* --- texture (per family, set via data-family) -------------------------- */
+
+.dds-deck[data-family] {
+  /* families set these via tokens.ts; texture is applied here */
+}
+
+.dds-deck[data-family='brutalist-stencil'] .dds-text--headline {
+  text-transform: uppercase;
+}
+
+.dds-deck[data-family='neo-noir'] .dds-slide {
+  border-top: 1px solid color-mix(in srgb, var(--dds-ink) 20%, transparent);
+}
+
+.dds-deck[data-family='scientific'] .dds-stat__value::after,
+.dds-deck[data-family='tech-minimal'] .dds-stat__value::after {
+  content: '';
+  display: block;
+  width: 2.5rem;
+  height: 3px;
+  background: var(--dds-accent);
+  margin-top: 0.5rem;
+}
+
+.dds-deck[data-family='vivid-flat'] .dds-slide {
+  background: var(--dds-paper);
+}
+
+/* Reveal is an enhancement; the resting state is fully visible. */
+.dds-deck[data-motion='none'] [data-reveal] {
+  opacity: 1;
+}
+
+</style>
+</head>
+<body>
+<div class="dds-present">
+<div class="dds-deck" style="--dds-family:vivid-flat" data-family="vivid-flat"><section class="dds-slide dds-slide--opener dds-slide--centered" aria-label="Launch Deck for CRM for Agencies" data-archetype="opener"><div class="dds-slide__inner"><span class="dds-text dds-text--headline" data-reveal="rise">Introducing Our CRM for Agencies</span></div></section><section class="dds-slide dds-slide--statement dds-slide--centered" aria-label="Overview of Our CRM Solution" data-archetype="statement"><div class="dds-slide__inner"><span class="dds-text dds-text--headline" data-reveal="rise">Launching a CRM for agencies that tracks clients, scope and billing.</span></div></section><section class="dds-slide dds-slide--section dds-slide--centered" aria-label="Current Market Need" data-archetype="section"><div class="dds-slide__inner"><span class="dds-text dds-text--headline" data-reveal="rise">Challenges Agencies Face</span><span class="dds-text dds-text--body" data-reveal="rise">Agencies require streamlined tracking of clients and billing processes.</span></div></section><section class="dds-slide dds-slide--columns dds-slide--two" aria-label="Customer Validation" data-archetype="columns"><div class="dds-slide__inner"><span class="dds-text dds-text--headline" data-reveal="rise">Validation of Demand</span><span class="dds-text dds-text--body" data-reveal="rise">We already have three named customers.</span><span class="dds-text dds-text--body" data-reveal="rise">There is a waitlist of 40 potential users interested in our CRM.</span></div></section><section class="dds-slide dds-slide--list dds-slide--numbered" aria-label="Product Features" data-archetype="list"><div class="dds-slide__inner"><span class="dds-text dds-text--headline" data-reveal="rise">Key Features of Our CRM</span><span class="dds-text dds-text--body" data-reveal="rise">The CRM tracks client interactions, project scope, and billing efficiently.</span></div></section><section class="dds-slide dds-slide--statement dds-slide--left" aria-label="Launch Strategy" data-archetype="statement"><div class="dds-slide__inner"><span class="dds-text dds-text--headline" data-reveal="rise">Our Launch Approach</span><span class="dds-text dds-text--body" data-reveal="rise">The goal is to achieve 20 pilot signups.</span></div></section><section class="dds-slide dds-slide--split dds-slide--side-by-side" aria-label="Design and Brand Identity" data-archetype="split"><div class="dds-slide__inner"><span class="dds-text dds-text--headline" data-reveal="rise">Visual Elements of Our Product</span><span class="dds-text dds-text--body" data-reveal="rise">The brand kit features warm neutrals and one terracotta accent with serif display fonts.</span></div></section><section class="dds-slide dds-slide--quote-image dds-slide--side-by-side" aria-label="Typography and Design Philosophy" data-archetype="quote-image"><div class="dds-slide__inner"><span class="dds-text dds-text--headline" data-reveal="rise">Typography and Design Philosophy</span><span class="dds-quote"><span class="dds-quote__text">The typography includes sans serif for body text, presenting a calm and confident feel.</span><span class="dds-quote__attr">— Design Philosophy</span></span></div></section><section class="dds-slide dds-slide--closer dds-slide--centered" aria-label="Next Steps" data-archetype="closer"><div class="dds-slide__inner"><span class="dds-text dds-text--headline" data-reveal="rise">Get Involved with Our Pilot</span><span class="dds-text dds-text--body" data-reveal="rise">Join our pilot program today and help lead the future of CRM for agencies!</span><a class="dds-cta" href="https://example.com/pilot-signup">Sign Up Now</a></div></section></div>
+</div>
+<div class="dds-nav" aria-label="Slide navigation">
+  <button id="dds-prev" aria-label="Previous slide">Prev</button>
+  <span id="dds-counter">1 / 9</span>
+  <button id="dds-next" aria-label="Next slide">Next</button>
+</div>
+<script>
+(function () {
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.dds-slide'));
+  var current = 0;
+  var counter = document.getElementById('dds-counter');
+  var prevBtn = document.getElementById('dds-prev');
+  var nextBtn = document.getElementById('dds-next');
+
+  function show(i) {
+    current = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach(function (s, idx) {
+      s.style.display = idx === current ? '' : 'none';
+    });
+    if (counter) counter.textContent = (current + 1) + ' / ' + slides.length;
+  }
+
+  function next() { show(current + 1); }
+  function prev() { show(current - 1); }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); next(); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); prev(); }
+    else if (e.key === 'Home') { e.preventDefault(); show(0); }
+    else if (e.key === 'End') { e.preventDefault(); show(slides.length - 1); }
+  });
+
+  var touchX = null;
+  document.addEventListener('touchstart', function (e) { touchX = e.touches[0].clientX; });
+  document.addEventListener('touchend', function (e) {
+    if (touchX === null) return;
+    var dx = e.changedTouches[0].clientX - touchX;
+    if (Math.abs(dx) > 40) { dx < 0 ? next() : prev(); }
+    touchX = null;
+  });
+
+  if (prevBtn) prevBtn.addEventListener('click', prev);
+  if (nextBtn) nextBtn.addEventListener('click', next);
+
+  show(0);
+})();
+</script>
+</body>
+</html>

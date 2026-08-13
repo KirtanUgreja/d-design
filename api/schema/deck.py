@@ -60,6 +60,16 @@ class QuoteBlock(BaseModel):  # type: ignore[explicit-any]  # pydantic stubs are
     attribution: str = Field(min_length=1, max_length=120)
 
 
+class ChartSeries(BaseModel):  # type: ignore[explicit-any]  # pydantic stubs are untyped
+    """One series point in a chart. A small object, not a positional tuple —
+    tuples emit prefixItems, which strict structured-output providers reject
+    (array schema missing items). An object survives strict providers and is
+    clearer than a bare pair."""
+
+    label: str = Field(min_length=1, max_length=80)
+    value: float
+
+
 class ChartBlock(BaseModel):  # type: ignore[explicit-any]  # pydantic stubs are untyped
     """A chart is spec'd here (what it says) and built in the slide builder
     (how it looks). v1 ships bars, lines and donuts; the rest is v2."""
@@ -67,8 +77,7 @@ class ChartBlock(BaseModel):  # type: ignore[explicit-any]  # pydantic stubs are
     kind: Literal["chart"]
     chart_type: Literal["bar", "line", "donut"]
     title: str = Field(min_length=1, max_length=120)
-    # Each series is (label, value). The renderer owns the visual encoding.
-    series: list[tuple[str, float]] = Field(min_length=1, max_length=12)
+    series: list[ChartSeries] = Field(min_length=1, max_length=12)
 
 
 SlideBlock = ImageBlock | TextBlock | StatBlock | QuoteBlock | ChartBlock

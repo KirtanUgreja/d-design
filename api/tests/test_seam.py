@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 
 import httpx
 
-from ai.complete import MAX_REPAIR_RETRIES, Seam
+from ai.complete import MAX_REPAIR_RETRIES, Seam, _strict_schema
 from lib.result import Err, Ok
 from schema.outline import Outline
 
@@ -116,3 +116,38 @@ def test_repair_resends_with_correction_context() -> None:
     assert isinstance(last, dict)
     assert last["role"] == "user"
     assert "did not match the required schema" in last["content"]
+
+
+def test_strict_schema_adds_additional_properties_false() -> None:
+    """Strict providers reject any object without additionalProperties:false,
+    and require every property key in `required`. The seam must add both to
+    every object, including $defs, before sending."""
+    schema = {
+        "type": "object",
+        "properties": {"slides": {"type": "array", "items": {"$ref": "#/$defs/Slide"}}},
+        "$defs": {"Slide": {"type": "object", "properties": {"title": {"type": "string"}}}},
+    }
+    strict = _strict_schema(schema)
+    assert isinstance(strict, dict)
+    assert strict["additionalProperties"] is False
+    assert strict["required"] == ["slides"]
+    slide = strict["$defs"]["Slide"]
+    assert isinstance(slide, dict)
+    assert slide["additionalProperties"] is False
+    assert slide["required"] == ["title"]
+
+
+def test_request_carries_strictified_schema() -> None:
+    """The schema actually sent to the provider is the strictified one."""
+    transport = StubTransport([_ok_response(_outline_payload())])
+    seam = Seam(transport=transport, api_key="test-key")
+    seam.complete(phase="interview", schema=Outline, system="s", user="u", model="m")
+    sent = transport.calls[0]["json"]
+    assert isinstance(sent, dict)
+    response_format = sent["response_format"]
+    assert isinstance(response_format, dict)
+    json_schema = response_format["json_schema"]
+    assert isinstance(json_schema, dict)
+    schema = json_schema["schema"]
+    assert isinstance(schema, dict)
+    assert schema["additionalProperties"] is False
