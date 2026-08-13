@@ -6,8 +6,8 @@
 |---|---|
 | [00 — foundations](00-foundations.md) | done |
 | [01 — schema](01-schema.md) | done |
-| [02 — interview](02-interview.md) | in progress |
-| [03 — mapping](03-mapping.md) | not started |
+| [02 — interview](02-interview.md) | done |
+| [03 — mapping](03-mapping.md) | in progress |
 | [04 — slide-builder](04-slide-builder.md) | not started |
 | [05 — export](05-export.md) | not started |
 | [06 — renderer](06-renderer.md) | not started |
