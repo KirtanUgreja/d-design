@@ -21,7 +21,8 @@ from pathlib import Path
 from ai.complete import ModelError, make_seam
 from lib.result import Err
 from pipeline.interview.interview import run_interview
-from schema.outline import Brief
+from pipeline.mapping.mapping import run_mapping
+from schema.outline import Brief, Outline
 
 
 def _parse_brief(args: argparse.Namespace) -> Brief:
@@ -62,7 +63,7 @@ def _print_outline(outline: object) -> None:
 
 
 def _show_error(error: ModelError) -> None:
-    print(f"interview failed ({error.kind}): {error.detail}", file=sys.stderr)
+    print(f"pipeline failed ({error.kind}): {error.detail}", file=sys.stderr)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -82,6 +83,14 @@ def main(argv: list[str] | None = None) -> int:
     interview.add_argument(
         "--out", default="outline.json", help="Where to write the approved outline"
     )
+
+    mapping = sub.add_parser("mapping", help="Turn an approved outline into a per-slide Deck")
+    mapping.add_argument("--outline", default="outline.json", help="The approved outline file")
+    mapping.add_argument(
+        "--family", default=None, help="Design family id (default: deterministic pick)"
+    )
+    mapping.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
+    mapping.add_argument("--out", default="deck.json", help="Where to write the mapped Deck")
 
     args = parser.parse_args(argv)
 
@@ -114,6 +123,28 @@ def main(argv: list[str] | None = None) -> int:
             encoding="utf8",
         )
         print(f"Approved. Wrote {args.out}")
+        return 0
+
+    if args.command == "mapping":
+        try:
+            raw = json.loads(Path(args.outline).read_text(encoding="utf8"))
+        except (FileNotFoundError, json.JSONDecodeError) as exc:
+            print(f"cannot read outline {args.outline}: {exc}", file=sys.stderr)
+            return 1
+        outline = Outline.model_validate(raw)
+        seam = make_seam()
+        result = run_mapping(outline, seam, model=args.model, family_id=args.family)
+
+        if isinstance(result, Err):
+            _show_error(result.error)
+            return 1
+
+        deck = result.value
+        Path(args.out).write_text(
+            json.dumps(deck.model_dump(), indent=2),
+            encoding="utf8",
+        )
+        print(f"Mapped {len(deck.slides)} slides -> {args.out}")
         return 0
 
     parser.print_help()
