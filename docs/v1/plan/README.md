@@ -9,8 +9,8 @@
 | [02 — interview](02-interview.md) | done |
 | [03 — mapping](03-mapping.md) | done |
 | [04 — slide-builder](04-slide-builder.md) | done |
-| [05 — export](05-export.md) | not started |
-| [06 — renderer](06-renderer.md) | in progress |
+| [05 — export](05-export.md) | in progress |
+| [06 — renderer](06-renderer.md) | done |
 | [07 — visual-review](07-visual-review.md) | not started |
 | [08 — acceptance](08-acceptance.md) | not started |
 

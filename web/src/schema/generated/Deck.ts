@@ -91,3 +91,17 @@ export const DeckSchema = z.object({
 });
 
 export type Deck = z.infer<typeof DeckSchema>;
+
+export type ChartBlock = z.infer<typeof ChartBlockSchema>;
+
+export type Cta = z.infer<typeof CtaSchema>;
+
+export type ImageBlock = z.infer<typeof ImageBlockSchema>;
+
+export type QuoteBlock = z.infer<typeof QuoteBlockSchema>;
+
+export type TextBlock = z.infer<typeof TextBlockSchema>;
+
+export type StatBlock = z.infer<typeof StatBlockSchema>;
+
+export type Slide = z.infer<typeof SlideSchema>;

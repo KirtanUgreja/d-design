@@ -27,3 +27,7 @@ export const OutlineSchema = z.object({
 });
 
 export type Outline = z.infer<typeof OutlineSchema>;
+
+export type OutlineClaim = z.infer<typeof OutlineClaimSchema>;
+
+export type OutlineSection = z.infer<typeof OutlineSectionSchema>;

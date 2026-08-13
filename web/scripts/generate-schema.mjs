@@ -192,8 +192,14 @@ function emit(shape) {
   for (const name of ordered) {
     parts.push(`const ${name}Schema = ${zodFromJsonSchema(defs[name], defs)};`);
   }
+  // The root schema plus the named sub-schemas, so consumers can type a Slide
+  // or a block without re-deriving it. The sub-schemas are exports too — the
+  // renderer imports Slide from here.
   parts.push(`export const ${shape}Schema = ${zodFromJsonSchema(root, defs)};`);
   parts.push(`export type ${shape} = z.infer<typeof ${shape}Schema>;`);
+  for (const name of ordered) {
+    parts.push(`export type ${name} = z.infer<typeof ${name}Schema>;`);
+  }
 
   return prettierFormat(`${HEADER}import { z } from 'zod';\n\n${parts.join('\n\n')}\n`);
 }

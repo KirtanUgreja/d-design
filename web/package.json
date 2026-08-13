@@ -12,11 +12,15 @@
     "schema:check": "node scripts/generate-schema.mjs --check"
   },
   "dependencies": {
+    "react": "^19",
+    "react-dom": "^19",
     "zod": "^4"
   },
   "devDependencies": {
     "@eslint/js": "^9",
     "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-plugin-boundaries": "^5",
     "globals": "^15",

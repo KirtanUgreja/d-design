@@ -23,3 +23,5 @@ export const BriefSchema = z.object({
 });
 
 export type Brief = z.infer<typeof BriefSchema>;
+
+export type BrandKit = z.infer<typeof BrandKitSchema>;

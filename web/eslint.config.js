@@ -33,4 +33,33 @@ export default tseslint.config(
       'boundaries/ignore': ['src/schema/generated/**', '**/*.test.ts', '**/*.test.tsx'],
     },
   },
+  {
+    // Renderer core purity (patterns.md rule 2, tooling.md lint table):
+    // no mode prop, no process.env, no typeof window, no Tailwind classes
+    // inside the renderer — the design family's tokens are the only styling.
+    files: ['src/features/renderer/**/*.ts', 'src/features/renderer/**/*.tsx'],
+    rules: {
+      'no-restricted-properties': [
+        'error',
+        {
+          object: 'process',
+          property: 'env',
+          message: 'The renderer core is pure — no process.env (patterns.md rule 2).',
+        },
+        {
+          property: 'mode',
+          message:
+            'The renderer core has no mode prop — behavior is injected (patterns.md rule 2).',
+        },
+      ],
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector:
+            "BinaryExpression[operator='typeof'][right.type='Identifier'][right.name='window']",
+          message: 'The renderer core is pure — no typeof window (patterns.md rule 2).',
+        },
+      ],
+    },
+  },
 );
