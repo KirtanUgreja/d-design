@@ -114,6 +114,15 @@ def main(argv: list[str] | None = None) -> int:
     review.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
     review.add_argument("--out", default="built.json", help="Where to write the revised built Deck")
 
+    acceptance = sub.add_parser(
+        "acceptance",
+        help="Run the golden briefs and assert schema-validity + variety (the fingerprint gate)",
+    )
+    acceptance.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
+    acceptance.add_argument(
+        "--out", default="acceptance.json", help="Where to write the acceptance report"
+    )
+
     args = parser.parse_args(argv)
 
     if args.command == "interview":
@@ -221,6 +230,36 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
         print(f"Revised slide {args.slide} -> {args.out}")
         return 0
+
+    if args.command == "acceptance":
+        from pipeline.acceptance.acceptance import (
+            acceptance_summary,
+            run_acceptance_brief,
+        )
+        from pipeline.acceptance.briefs import GOLDEN_BRIEFS
+
+        seam = make_seam()
+        results = []
+        failures = []
+        for brief in GOLDEN_BRIEFS:
+            result = run_acceptance_brief(brief, seam, model=args.model)
+            if isinstance(result, Err):
+                failures.append({"topic": brief.topic, "error": result.error.detail})
+            else:
+                results.append(result.value)
+
+        passed, report = acceptance_summary(results)
+        payload = {
+            "passed": passed,
+            "report": report,
+            "briefs": len(GOLDEN_BRIEFS),
+            "succeeded": len(results),
+            "failures": failures,
+        }
+        Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
+        print(report)
+        print(f"acceptance: {len(results)}/{len(GOLDEN_BRIEFS)} briefs -> {args.out}")
+        return 0 if passed else 1
 
     parser.print_help()
     return 1

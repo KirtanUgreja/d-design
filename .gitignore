@@ -27,6 +27,7 @@ render/dist/
 
 # Eval run output — uploaded as a CI artifact, never committed
 api/eval-results.json
+api/acceptance.json
 
 # Local env
 .env
