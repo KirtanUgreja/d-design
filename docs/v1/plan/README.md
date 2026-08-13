@@ -4,8 +4,8 @@
 
 | Phase | Status |
 |---|---|
-| [00 — foundations](00-foundations.md) | not started |
-| [01 — schema](01-schema.md) | not started |
+| [00 — foundations](00-foundations.md) | done |
+| [01 — schema](01-schema.md) | in progress |
 | [02 — interview](02-interview.md) | not started |
 | [03 — mapping](03-mapping.md) | not started |
 | [04 — slide-builder](04-slide-builder.md) | not started |

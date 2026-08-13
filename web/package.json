@@ -1,0 +1,28 @@
+{
+  "name": "@d-design/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --check .",
+    "test": "vitest run",
+    "schema:generate": "node scripts/generate-schema.mjs",
+    "schema:check": "node scripts/generate-schema.mjs --check"
+  },
+  "dependencies": {
+    "zod": "^4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9",
+    "@types/node": "^22",
+    "eslint": "^9",
+    "eslint-plugin-boundaries": "^5",
+    "globals": "^15",
+    "prettier": "^3",
+    "typescript": "^5",
+    "typescript-eslint": "^8",
+    "vitest": "^3"
+  }
+}
