@@ -15,7 +15,7 @@ Already decided, no justification needed — these are the stack. **Two language
 | | For |
 |---|---|
 | FastAPI | The backend framework |
-| **Pydantic (v2)** | Schemas and validation, **the source of truth for `Scene`**. Also produces the model's JSON Schema — see [python.md](python.md) |
+| **Pydantic (v2)** | Schemas and validation, **the source of truth for `Deck`**. Also produces the model's JSON Schema — see [python.md](python.md) |
 | SQLAlchemy (async) + Alembic | Typed SQL and migrations, over the application tables |
 | `httpx` | The model seam, and every outbound HTTP call |
 | PGQueuer | Background jobs in the database you already have (v3) |
@@ -33,8 +33,8 @@ Already decided, no justification needed — these are the stack. **Two language
 | **`@d-design/schema`** | Generated types and Zod validator. **Generated — never hand-edited** ([typescript.md](typescript.md)) |
 | Zod (**v4**) | The runtime the generated validator needs |
 | Drizzle | Typed SQL and migrations, **auth tables only** |
-| **Motion** (`motion`, import `motion/react`) | Motion, driven by the art-direction vocabulary. **Not `framer-motion`** — renamed in 2025, now maintained independently at motion.dev; the old package still installs but is no longer actively developed |
-| Tailwind | App chrome only — never the art direction (that is CSS variables) |
+| **Motion** (`motion`, import `motion/react`) | Motion, driven by the design-family vocabulary. **Not `framer-motion`** — renamed in 2025, now maintained independently at motion.dev; the old package still installs but is no longer actively developed |
+| Tailwind | App chrome only — never a design family (that is CSS variables) |
 | Better Auth | Accounts, sessions, OAuth, MFA (v3). Users live in your own Postgres, in `web` |
 | Zustand | Editor state — one mutable document, undo/redo |
 | Motion, Tailwind | See below |
@@ -42,7 +42,7 @@ Already decided, no justification needed — these are the stack. **Two language
 | React Email | Auth email templates, next to the auth code that sends them (v3) |
 | Sentry | Errors, **both languages** — **configure scrubbing before the first event**, see [../security/operations.md](../security/operations.md) |
 | Promptfoo · Langfuse (self-hosted) | Evals and tracing ([../techstack/ai-stack.md](../techstack/ai-stack.md)) |
-| **Pillow** (`api`) | Upload re-encode: strips EXIF, kills polyglots, normalizes to PNG/JPEG, and enforces the pixel cap through `MAX_IMAGE_PIXELS` before an allocator is asked for anything. Not `sharp`, which `v1/plan/10-brand-and-uploads.md` named — that file predates the Python backend move, and the pipeline lives beside the `assets` table now. **Moves to the fetch worker with the rest of the pipeline in v3** |
+| **Pillow** (`api`) | Brand-kit upload re-encode (v3): strips EXIF, kills polyglots, normalizes to PNG/JPEG, and enforces the pixel cap through `MAX_IMAGE_PIXELS` before an allocator is asked for anything. Not `sharp`, which an earlier file named — that file predates the Python backend move. **Runs in the worker that handles hostile bytes** |
 | **defusedxml** (`api`) | SVG entity-expansion refusal. The billion-laughs family is a denial-of-service shape distinct from SVG XSS, and it happens *in the parser*, before an allowlist has an element to inspect — so it needs a parser that refuses entity declarations rather than a sanitizer that removes them. Pure-stdlib wrapper, no transitive tree |
 | **python-multipart** (`api`) | FastAPI's own requirement for `UploadFile`; a form parser is not something to write |
 
@@ -92,31 +92,18 @@ sharp (or platform image API) — server-side image re-encode/EXIF strip (v1) �
 a DOM sanitizer for SVG (v1) — SVG sanitization is a moving target against a
   motivated attacker; this is the one place NOT to write our own.
 stripe — billing (v3) — never hand-roll payments.
-@fontsource/fraunces, @fontsource/inter (v1, phase 04) — self-hosted, open-
-  license type for cinematic-dark's FONT_REGISTRY. techstack/frontend.md
-  already committed to Fontsource for licensing reasons (these faces are
-  redistributed to a customer's published-page audience, not just used by
-  our own app) — installing the two families FONT_REGISTRY already names is
-  that decision, not a new one.
-@fontsource/newsreader, @fontsource/archivo (v1, art direction #2) — the same
-  decision, for editorial-light's two faces. They have to be different families
-  from cinematic-dark's, not different sizes of them: docs/design/brand.md
-  requires art direction #2's display face to differ from both #1's and our own
-  chrome's, which is the constraint that stopped the font registry being
-  global. Open license, self-hosted, same reason as above.
-@fontsource/syne, @fontsource/space-grotesk (v2, phase 04) — the same decision
-  a third time, for `bold-brutalist`. Syne is here for one reason and it is a
-  weight: it is the only registered family that self-hosts above 600, and
-  `clamp(4rem, 12vw, 14rem)` set at 500 is a large thin headline rather than a
-  brutalist one. Both OFL-1.1, both different families from the four already
-  registered and from our own chrome's, which is the same brand.md constraint
-  that stopped the font registry being global in v1.
-  **These two are what made `weights` per-family.** The registry had carried
-  `[400, 500, 600]` for every entry, which read as a property of the registry
-  and was in fact a property of four families that happened to want the same
-  three. Syne ships one weight here and Space Grotesk three, so a published
-  page pays for the faces it sets rather than for the shape of the first two
-  art directions.
+@fontsource/* (v1, per design family) — self-hosted, open-license type for the
+  design-family registry. techstack/frontend.md commits to Fontsource for a
+  licensing reason that survives the vision change: these faces are embedded in
+  a deck the customer redistributes, so the licence must permit bundling in a
+  downloadable file. OFL-1.1 does; a webfont licence bought per-domain does not.
+  The v1 registry (~10-15 families) seeds a handful of open families; the set
+  grows as the family count does (v2). The constraint from docs/design/brand.md
+  — our chrome's face must differ from every family's — still applies.
+  **Families, not art directions.** The old registry had three fixed art
+  directions each with two faces. The new registry is a combinatorial space of
+  families; the type-pairing axis is where identity lives most (findings.md),
+  so the face budget follows the family count, not a fixed set.
 esbuild (v2, phase 00) — bundles the `render` service, JSX included — Node 26
   strips TypeScript types natively, so a plain .ts service would need no build
   at all, but it does not transform JSX and the renderer is entirely .tsx. A
@@ -128,12 +115,11 @@ playwright (v2, phase 00) — headless Chromium for the screenshot service —
   already a devDependency in web for the e2e suite; this makes it a runtime
   dependency of the one service whose job is driving a browser. Writing our own
   is not a sentence anyone would finish.
-@fontsource/* in render (v2, phase 00; six families since phase 04) — the same
-  families web installs —
+@fontsource/* in render (v2, phase 00) — the same families web installs —
   the screenshot document inlines the real woff2 as data URIs, because
   `setContent` gives the page no base URL and a missing face falls back
-  silently to Times. A fallback face measures differently, which makes phase
-  09's critic review the wrong image and phase 13's overflow arithmetic wrong.
+  silently to Times. A fallback face measures differently, which makes the
+  vision critic review the wrong image and the PDF print measure wrong.
   `render/src/fonts.ts` throws rather than degrading, so the duplicate
   declaration cannot rot quietly.
 server-only (v1, phase 05) — the marker structure.md already mandates for

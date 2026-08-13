@@ -12,9 +12,9 @@ d-design-api/           PYTHON      api + jobs — two entry points, one codebas
   db/tenant.py                      as_user — one of two            │  @d-design/schema
                                                                     │  (types + Zod)
 d-design-web/           TYPESCRIPT  editor, renderer, Better Auth ◀──┤
-d-design-render/        TYPESCRIPT  scene tree → HTML, Playwright ◀──┤
+d-design-render/        TYPESCRIPT  deck tree → HTML, Playwright ◀──┤
 d-design-fetch/         TYPESCRIPT  hostile input only            ◀──┘
-d-design-schema/        GENERATED   published artifact — never hand-edited
+d-design-schema/        GENERATED   the generated types — never hand-edited
 ```
 
 **`api` and `jobs` are one codebase with two entry points.** The worker is not a separate project — it imports the same features, the same data modules, and the same seam. Same relationship the app and job worker used to have, moved to the other language.
@@ -93,14 +93,14 @@ It arrives in v3 ([../design/website.md](../design/website.md)) and it belongs i
 Two boundaries it must not cross, both of which look like conveniences at the time:
 
 - **Marketing pages do not import feature internals.** They are the thinnest routes in the codebase. If one needs a database read, it is asking for a product surface and belongs in the app
-- **Our chrome's design tokens are not the art direction's.** Tailwind for one, CSS custom properties for the other, and no file imports both ([../techstack/frontend.md](../techstack/frontend.md)). The lint rule already scoped to `renderer/` is what keeps the boundary from eroding in the easy direction; nothing yet stops the hard direction, which is a marketing page reaching for an art-direction variable because it looked right
+- **Our chrome's design tokens are not a design family's.** Tailwind for one, CSS custom properties for the other, and no file imports both ([../techstack/frontend.md](../techstack/frontend.md)). The lint rule already scoped to `renderer/` is what keeps the boundary from eroding in the easy direction; nothing yet stops the hard direction, which is a marketing page reaching for a family variable because it looked right
 
 The recorded SSE event logs the marketing demo replays are **fixtures, not code** — `evals/recordings/`, next to the golden briefs, imported by nothing.
 
 ## Files
 
-- **One primary export per file, named for the file.** `scene-renderer.tsx` exports `SceneRenderer`. `build.py` exports `run_build`. Grep finds it, imports are predictable, no grab-bag files.
-- **kebab-case TypeScript filenames** (`scene-renderer.tsx`), **snake_case Python filenames** (`generation_data.py`). Each language's own convention — fighting either buys nothing.
+- **One primary export per file, named for the file.** `deck-renderer.tsx` exports `DeckRenderer`. `build.py` exports `run_build`. Grep finds it, imports are predictable, no grab-bag files.
+- **kebab-case TypeScript filenames** (`deck-renderer.tsx`), **snake_case Python filenames** (`generation_data.py`). Each language's own convention — fighting either buys nothing.
 - **PascalCase** for components, types, and Pydantic models. **camelCase** in TypeScript, **snake_case** in Python, for functions and variables. One rule per language, no per-file debate.
 - **Colocate.** A module, its test, and the types it owns live side by side. No distant `__tests__/` or `types/` tree.
 - **No barrels except the feature public API.** The only `index.ts` / re-exporting `__init__.py` files are the ones that *are* a feature's surface. No re-export chains that hide where a thing actually lives.

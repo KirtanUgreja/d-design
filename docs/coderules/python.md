@@ -27,12 +27,12 @@ Three rules on top of `strict = true`, each the Python spelling of a TypeScript 
 
 **This is the load-bearing section of the Python move.** [../techstack/decisions.md](../techstack/decisions.md) records why it exists; this is how it works.
 
-Pydantic owns the `Scene` shape. Everything else is generated from it.
+Pydantic owns the `Deck` shape. Everything else is generated from it.
 
 ```
-schema/scene.py           ← the one definition, hand-written
+schema/deck.py           ← the one definition, hand-written
    │
-   ├─ Scene.model_json_schema()   ─▶ the model's structured-output constraint
+   ├─ Deck.model_json_schema()   ─▶ the model's structured-output constraint
    │                                  (in-process, never travels)
    │
    └─ CI ─▶ JSON Schema ─▶ TypeScript types
@@ -55,11 +55,11 @@ Unchanged in substance from the Zod-first design, restated because the mechanism
 
 | | |
 |---|---|
-| **Shape** — fields, types, discriminators | Carried by the generated JSON Schema. Enforced by Pydantic on the response; the decoder only shifts the odds (`v1/ai-pipeline.md`) |
+| **Shape** — fields, types, discriminators | Carried by the generated JSON Schema. Enforced by Pydantic on the response; the decoder only shifts the odds (`docs/v1/plan/01-schema.md`) |
 | **Character caps** — `Headline ≤ 60`, `Body ≤ 240` | **Do not survive.** Structured-output implementations widely ignore `minLength`/`maxLength`. Keep them on the Pydantic field anyway — they cost nothing and they are what does the rejecting — and state every budget in the prompt as a hard number, because prompting is the only portable lever on length |
-| **Semantic rules** — one `Headline` per scene, region validity, claim provenance | Pydantic validators plus the post-build checks |
+| **Semantic rules** — one `Headline` per slide, region validity, claim provenance | Pydantic validators plus the post-build checks |
 
-**Keep a discriminated union off the schema root.** `Block` is a tagged union and it is nested inside `Scene`, which is an object — that is the shape strict structured-output validators handle cleanly. It is a constraint on how the schema is written down rather than a limitation, so it is written down rather than rediscovered.
+**Keep a discriminated union off the schema root.** `SlideBlock` is a tagged union and it is nested inside `Deck`, which is an object — that is the shape strict structured-output validators handle cleanly. It is a constraint on how the schema is written down rather than a limitation, so it is written down rather than rediscovered.
 
 ## Trust boundaries: one parse, at entry
 
@@ -111,7 +111,7 @@ Two specifics worth knowing before they cost an afternoon:
 
 ## No classes for data
 
-Pydantic models and dataclasses for data; functions that transform them for behaviour. A `Scene` is data, not an object with methods.
+Pydantic models and dataclasses for data; functions that transform them for behaviour. A `Deck` is data, not an object with methods.
 
 Classes are fine where identity and lifecycle genuinely matter — a client, a connection pool, a context manager. They are not a namespace. A class whose methods never touch `self` is a module with extra syntax.
 
@@ -124,7 +124,7 @@ This is the same rule as [typescript.md](typescript.md)'s "no classes for data",
 Three that only exist because of the language split, and all three are cheap:
 
 - [ ] **Regenerating `@d-design/schema` from Pydantic produces no diff.** The gate rule, as a test
-- [ ] **A `Scene` fixture round-trips through both validators** — Pydantic and the generated Zod — with the same verdict on the same input. This is what would actually catch a codegen bug
+- [ ] **A `Deck` fixture round-trips through both validators** — Pydantic and the generated Zod — with the same verdict on the same input. This is what would actually catch a codegen bug
 - [ ] **`current_setting('app.user_id')` on a connection where it was never set fails**, rather than matching everything ([patterns.md](patterns.md) rule 4)
 
 No coverage threshold. The ponytail rule holds: one runnable check per non-trivial branch, none for trivial code.

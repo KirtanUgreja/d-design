@@ -16,7 +16,7 @@ TypeScript repos  (husky + lint-staged)   Python repo  (pre-commit)
                                           4. schema    — regenerate; FAIL ON DIFF
 ```
 
-**Step 4 is the one that did not exist before and is the most important thing on this page.** The `Scene` schema lives in Pydantic and TypeScript consumes a generated copy ([python.md](python.md)). If the generated output can drift from its source, the single-source rule is a comment rather than a fact. The gate regenerates and fails if the result differs from what is committed — which makes "one source of truth" true by construction across a language boundary, the same way `z.infer` used to make it true within one.
+**Step 4 is the one that did not exist before and is the most important thing on this page.** The `Deck` schema lives in Pydantic and TypeScript consumes a generated copy ([python.md](python.md)). If the generated output can drift from its source, the single-source rule is a comment rather than a fact. The gate regenerates and fails if the result differs from what is committed — which makes "one source of truth" true by construction across a language boundary, the same way `z.infer` used to make it true within one.
 
 Formatting stops being a decision — Prettier and Ruff own it, there is nothing to discuss and nothing to be inconsistent about. The whole point is to move consistency out of your head and into a hook that cannot be forgotten under deadline pressure.
 
@@ -56,8 +56,8 @@ The gate above is per-commit and fast. CI adds the things that are too slow or n
 |---|---|
 | **Every repo** | The gate · tests · dependency advisories · duplication report ([ai-authorship.md](ai-authorship.md)) |
 | **`api`** | pytest · **schema regenerates with no diff** · **the cross-language fixture round-trip** ([python.md](python.md)) · Promptfoo structural evals · injection corpus · the fail-closed suite (make each check raise, assert refusal) |
-| **`web`** | Playwright — sandbox escape, the two-requests `connect-src` assertion, cross-origin behaviour · build-output grep for key-shaped strings |
-| **`render`** | Renders every primitive under every art direction and diffs nothing — it is a visual check with a human, not a snapshot suite |
+| **`web`** | Playwright — the zero-requests `connect-src` assertion from `file://`, cross-origin behaviour · build-output grep for key-shaped strings |
+| **`render`** | Renders every block type under every design family and diffs nothing — it is a visual check with a human, not a snapshot suite |
 | **fetch worker** | SSRF suite including socket-level unreachability — a test of the network, not the code |
 | **Schema publish** | On merge to `api`: generate, version-bump, publish `@d-design/schema` via OIDC. **Consumers are bumped in the same session** ([typescript.md](typescript.md)) |
 | **Terraform** | `plan` on PR, `apply` on merge. A security-group change should be at least as visible as an auth-check change, since nothing type-checks it |
@@ -74,7 +74,7 @@ The pipeline's quality has no type system behind it, so it needs its own gate �
 
 | | Runs | Gates? |
 |---|---|---|
-| **Structural evals** — valid `Scene` JSON, no presentational values, every `CTA.href` from the Brief, budgets respected, the injection corpus | Every PR | **Yes. Hard fail** |
+| **Structural evals** — valid `Deck` JSON, no presentational values, every CTA destination from the outline, budgets respected, the injection corpus | Every PR | **Yes. Hard fail** |
 | **Quality scoring** — layout variety, copy fidelity, motion appropriateness | Nightly | **No. Tracked as a trend** |
 
 **A probabilistic judge must never block a merge.** It will fail on a good change eventually, and the first time someone overrides it to ship, the gate is decoration. Watch the trend and investigate a drop instead. This is the same split the injection suite already uses — structural assertions absolute, model-dependent ones measured as a rate ([../security/testing.md](../security/testing.md)).

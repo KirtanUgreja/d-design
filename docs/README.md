@@ -1,6 +1,6 @@
 # d-design docs
 
-> The corpus was cleared on 2026-08-10. What remains is everything true regardless of what the product turns out to be. **The product itself is being re-decided from the vision up, and no version directory exists yet.**
+> The corpus was cleared on 2026-08-10 and **re-decided on 2026-08-13**. The product is now an **AI-designed HTML presentation** that exports as a **single self-contained `.html` file running offline** — built by a per-slide generative pipeline, not a fixed template. The new vision lives in [v1/](v1/README.md), [v2/](v2/README.md) and [v3/](v3/README.md).
 
 ## What happened, and why nothing here describes the product
 
@@ -9,6 +9,8 @@ Four directories were deleted: `v1/`, `v2/`, `v3/` and `reviews/`. They were not
 The judgement behind it: a product whose *"who is this for, and what is the artefact"* has changed is not a document that needs correcting. Improving it incrementally converges on a better version of the wrong thing.
 
 **Everything deleted is in git history** — its last state is the commit immediately before this one, which includes the presentation pivot and the variety measurement made just before the clear. Nothing was lost; it was moved out of the way.
+
+**The new vision (2026-08-13) re-decided the product.** The old system was a schema-valid `Scene` tree rendered through three fixed "art directions" — which was still a skeleton the model filled in. The new product is different: the design system is **generated per deck** from a combinatorial registry, each slide is **generated individually**, and the artefact is a **downloadable single-file HTML** that runs offline. The old three-art-direction approach is gone — it is precisely what the user deleted it for.
 
 ## What survives, and why
 
@@ -30,12 +32,11 @@ The judgement behind it: a product whose *"who is this for, and what is the arte
 
 ## What comes next
 
-A new version directory, written after the vision is settled rather than before. [versions.md](versions.md) specifies its shape; [findings.md](findings.md) is the evidence it should not have to rediscover.
+The vision is settled (2026-08-13). [v1/](v1/README.md) is the build; [versions.md](versions.md) specifies its shape; [findings.md](findings.md) is the evidence it should not have to rediscover.
 
-**Two constraints on whatever gets decided**, and both are facts rather than opinions:
+**The one constraint on the build**, and it is a fact rather than an opinion:
 
-- **The code exists.** A Python API, a TypeScript renderer, a Pydantic-owned schema, a working pipeline, three art directions and a passing acceptance run. Docs describing a product that ignores all of it are a rewrite rather than a plan — which may be the right call, but it should be a decision rather than something discovered in week three.
-- **~180 source files carry comments pointing at the deleted docs.** They explain *why* code looks the way it does, and they now point into git history. Leave them: rewriting 180 files of comments before the product is decided is churn. They get corrected as the code is touched.
+- **The old code is a different product.** It was a schema-valid `Scene` tree rendered through three fixed art directions — precisely the "same skeleton, different skin" problem this product exists to solve. Nothing from the old codebase is a starting point. Recover a specific piece from git only if it is deliberately chosen, never because it happens to be there.
 
 ## Conventions
 

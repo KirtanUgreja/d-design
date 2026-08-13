@@ -1,8 +1,14 @@
 # d-design
 
-> **The repository has no product code.** It was deleted on 2026-08-10, along with the `v1/`, `v2/` and `v3/` documentation, because the product is being re-decided from the vision up rather than corrected. Everything is in git history — the last commit before the clear holds the whole working system.
->
-> **Do not scaffold, plan, or assume a direction.** There is no roadmap, no wedge, and no chosen artefact right now. If a task seems to require one, ask instead of picking.
+> **The product is being re-decided from the vision up — and it was re-decided on 2026-08-13.** The repository has no product code yet. The new vision lives in `docs/v1/`, `docs/v2/`, `docs/v3/`; the previous codebase was deleted because it embodied a plan under revision.
+
+## What the product is now
+
+**An AI-designed HTML presentation** that exports as a **single self-contained `.html` file that runs offline** — zero network requests, fonts embedded, motion inlined. The user gives a topic, slide count, and (optionally) a brand kit; an AI-led interview iterates until they are satisfied; a mapping pass converts the outline into a per-slide spec; a build pass generates each slide individually; the result exports as one offline HTML file.
+
+**The core claim it exists to prove: it does not look AI-made.** Not by adding "more creative" prompts, but structurally — the design system is generated per deck from a combinatorial registry, and each slide is generated individually, so no fixed skeleton, no repeated frame, no template look. The old three-"art-direction" system was exactly the disease, and it is gone.
+
+**The spine that survives:** strict types both sides · one schema parse at entry · `Result` for expected failures · feature folders with public APIs · no dependency without a ledger line · pure mode-free renderer · AI output carries no presentational values · ORM in feature data modules · one tenant wrapper per language · fail closed · the gate is green. The *product* changed; the *discipline* did not.
 
 ## What was here, so nobody rebuilds it by accident
 
@@ -21,6 +27,14 @@ A working system, deleted deliberately rather than abandoned: a FastAPI backend 
 | `docs/versions.md` | The shape the next version directory takes. Read before writing it |
 | `docs/findings.md` | Evidence, not direction — measurements, model behaviour, the category, dated platform facts |
 | `scripts/` | `check-docs.sh` works today. The gate and invariants pass on an empty tree and start guarding again the moment code returns |
+
+## What the new vision adds
+
+The product is now an **offline single-file HTML deck**, generated per-slide, no fixed skeleton. Three things follow that the old corpus did not have:
+
+- **The design system is generated per deck from a combinatorial registry** — not three fixed art directions. Diversity is structural, measured by a fingerprint, gated in CI. See `docs/v1/`, `docs/v2/`.
+- **The artefact is a downloadable `.html` file that runs offline with zero network requests** — `connect-src 'none'`. See `docs/v1/plan/05-export.md`, `docs/v3/plan/18-hosting.md`.
+- **The pipeline is four plain sequential AI calls, no agent framework.** The "different skills and plugins" live in the prompt/design-tool layer, not a runtime agent graph. See `docs/techstack/ai-stack.md`.
 
 ## Commands that work today
 
@@ -48,7 +62,7 @@ Paths are **pointers, not imports** — read the file when the task touches it. 
 | "Why was this chosen?" | `docs/techstack/decisions.md` |
 | Writing the next version's docs | `docs/versions.md` |
 | "Do we already know this?" | `docs/findings.md` |
-| **What to build next** | **Nothing is decided. Ask.** |
+| **What to build next** | **`docs/v1/` — the plan. Read `docs/v1/README.md`, then `docs/v1/spec.md`** |
 
 ## The non-negotiables
 

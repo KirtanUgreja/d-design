@@ -123,9 +123,7 @@ Generation is the most expensive operation in the product, and the free tier giv
 
 The kill switch is the one that matters. Quotas and rate limits are bypassable in ways you have not thought of; a global spend ceiling that halts generation fails safe regardless of how it was reached. Build it early — it is a config flag and a check, not a system.
 
-Related cost paths: the build phase runs one call per scene, so a 12-scene experience is 12 calls; transcreation multiplies by locale count; reskin re-runs transcreation for every locale. **Warn before a reskin on a multi-locale experience** — it is the single most expensive user action in the product, and a user clicking it repeatedly is indistinguishable from an attack.
-
-Live data refreshes on a schedule rather than per view, which decouples cost from traffic entirely. Keep it that way.
+Related cost paths: the slide builder runs one call per slide, so a 12-slide deck is 12 calls, plus image generations where the builder decides a slide wants one; reskin re-runs the slide builder. **Warn before a reskin on a large deck** — it is the single most expensive user action in the product, and a user clicking it repeatedly is indistinguishable from an attack.
 
 ## Billing and entitlements
 
@@ -145,12 +143,12 @@ Live data refreshes on a schedule rather than per view, which decouples cost fro
 | Integration OAuth tokens | Envelope-encrypted, decrypted only in the fetch worker |
 | Signing keys | Rotatable. Recipient tokens are stored-random, so rotation does not invalidate campaigns |
 
-Nothing in the `generations` table, application logs, or error reporting carries prompt content, scene content, or recipient fields. Error trackers are the most common accidental leak, because they capture request bodies by default.
+Nothing in the generation records, application logs, or error reporting carries prompt content, deck content, or recipient fields. Error trackers are the most common accidental leak, because they capture request bodies by default.
 
 ## Availability
 
 Not a primary concern for this product — a launch page being briefly unreachable is bad, not catastrophic — but two cheap things:
 
-**Published pages are static after render.** They do not query the database or an LLM per view, so traffic on a viral launch page costs nothing and cannot exhaust a connection pool.
+**Hosted decks are static after render.** They do not query the database or an LLM per view, so traffic on a viral launch page costs nothing and cannot exhaust a connection pool.
 
-**The editor degrades independently of published pages.** If generation is down, published experiences keep serving. Keep those paths separate; it costs nothing at the start and is expensive to untangle later.
+**The editor degrades independently of hosted decks.** If generation is down, hosted decks (v3) keep serving — and downloaded files always work. Keep those paths separate; it costs nothing at the start and is expensive to untangle later.

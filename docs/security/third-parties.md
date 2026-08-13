@@ -2,7 +2,7 @@
 
 Where customer data actually goes.
 
-[tenancy-and-data.md](tenancy-and-data.md) says **no prompts, no outputs** — and means it about *your* logs. But every prompt goes to a model provider by definition, every error goes to Sentry, every published page sits in someone's object store. The rule covered the half of the problem you control and was silent on the half you do not.
+[tenancy-and-data.md](tenancy-and-data.md) says **no prompts, no outputs** — and means it about *your* logs. But every prompt goes to a model provider by definition, every error goes to Sentry, every hosted deck (v3) sits in someone's object store. The rule covered the half of the problem you control and was silent on the half you do not.
 
 This matters more here than in most products because of what the data is: **a customer's unreleased launch messaging, frequently under embargo.** Plausibly the most confidential thing they will ever hand a vendor.
 
@@ -27,7 +27,7 @@ That last line is the finding, and it is OpenRouter's own documented behavior: *
 |---|---|
 | **Zero Data Retention** | ZDR routes only to endpoints whose provider will not store the data, and a ZDR provider cannot train on it either. Configurable **account-wide, per model group, and per request** (`zdr`). **It is a setting, not a default** |
 | **Prompt logging** | Opt-in. Enabling it grants OpenRouter an *irrevocable right to commercial use* of those inputs and outputs. **Never enable it on this account** |
-| **EU in-region routing** | Available on enterprise. Prompts and completions stay inside the EU — relevant given the customer base implied by `v3/localization.md` and the AI Act posture in `v3/compliance.md` |
+| **EU in-region routing** | Available on enterprise. Prompts and completions stay inside the EU — relevant given the AI Act posture in `docs/v3/spec.md` |
 
 ### The rules
 
@@ -42,12 +42,12 @@ That last line is the finding, and it is OpenRouter's own documented behavior: *
 
 Not bureaucracy — a legal obligation the moment there are EU publishers, and a question every serious customer will ask.
 
-**Under GDPR Article 28 you are a processor** (your publishers are the controllers for their recipients, per `v3/personalization.md`). That means: authorization before engaging a subprocessor, equivalent data-protection obligations flowed down, and **you remain liable for their compliance.**
+**Under GDPR Article 28 you are a processor** (your publishers are the controllers for their audiences — the deck they ship is their launch communication). That means: authorization before engaging a subprocessor, equivalent data-protection obligations flowed down, and **you remain liable for their compliance.**
 
 | Subprocessor | Sees | Sensitivity |
 |---|---|---|
-| **OpenRouter + routed providers** | Briefs, scene content, transcreation source and target | **Highest.** Embargoed customer messaging |
-| **AWS** (RDS, S3, Fargate, KMS) | Everything at rest, including `recipients` | Highest, but encrypted and under your keys |
+| **OpenRouter + routed providers** | Interview answers, deck content, image-generation prompts | **Highest.** Embargoed customer messaging |
+| **AWS** (RDS, S3, Fargate, KMS) | Everything at rest | Highest, but encrypted and under your keys |
 | **Vercel** | Requests to the app, including editor traffic | High |
 | **Better Auth** | Self-hosted — users are in *your* Postgres | None. Not a subprocessor, which is a point in its favour |
 | **Resend** | Email addresses, and recipient links if delivery is ever added | Medium |
@@ -70,9 +70,9 @@ Two properties follow, and both are worth stating on the trust page rather than 
 
 Named separately because it is configuration rather than architecture, which means it fails silently and by default.
 
-Error trackers capture request bodies. A request body here is a Brief. Scrubbing is server-side, configured **before the first event is sent**, and verified by looking at real captured events rather than by reading the config.
+Error trackers capture request bodies. A request body here is an interview. Scrubbing is server-side, configured **before the first event is sent**, and verified by looking at real captured events rather than by reading the config.
 
-The check already exists in [testing.md](testing.md) — *"`generations`, app logs, and error reports contain no prompt, scene, or recipient content"*. This is the doc that says why it is on that list.
+The check already exists in [testing.md](testing.md) — *"`generations`, app logs, and error reports contain no prompt, deck, or recipient content"*. This is the doc that says why it is on that list.
 
 ## What to do about the ones you cannot avoid
 

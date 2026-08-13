@@ -24,42 +24,38 @@ This rule costs nothing here because the architecture already puts data access i
 
 | Advisory class | Why it matters here |
 |---|---|
-| **Cache confusion — CVE-2026-64647 / 64648** | Cached responses shared between users under specific caching conditions. This product serves **per-recipient personalized pages**. See the section below; this is the highest-severity interaction in the document |
-| **Image Optimization DoS via malicious SVG** — CVE-2026-64644 | CPU exhaustion at `/_next/image` on self-hosted deployments. **This product accepts SVG uploads.** Two features that are individually fine and hostile together |
-| **SSRF via `rewrites()` / `redirects()`** | A rule building its destination hostname from request-controlled input becomes SSRF (rewrites) or open redirect (redirects). Custom domains are exactly the feature that invites dynamic rewrite rules |
+| **Cache confusion — CVE-2026-64647 / 64648** | Cached responses shared between users under specific caching conditions. **The v1 artefact is a local file — it is never cached by a shared cache.** A hosted URL (v3) is static bytes with no per-viewer variation. See the section below |
+| **Image Optimization DoS via malicious SVG** — CVE-2026-64644 | CPU exhaustion at `/_next/image` on self-hosted deployments. **Brand-kit upload (v3) accepts SVG.** Two features that are individually fine and hostile together |
+| **SSRF via `rewrites()` / `redirects()`** | A rule building its destination hostname from request-controlled input becomes SSRF (rewrites) or open redirect (redirects). Custom domains (v3) are exactly the feature that invites dynamic rewrite rules |
 | **Auth bypass via App Router segment-prefetch** | Same lesson as CVE-2025-29927 — route-level access control is fragile in ways the data layer is not |
 | **Unbounded Server Action payloads (Edge)** — CVE-2026-64646 | Memory exhaustion. Server Actions need explicit size limits |
-| **XSS via CSP nonces and `beforeInteractive` scripts** | Interacts with the published-page CSP in [content-and-web.md](content-and-web.md) |
+| **XSS via CSP nonces and `beforeInteractive` scripts** | Interacts with the deck CSP in [content-and-web.md](content-and-web.md) |
 
 **Minimum versions: 15.5.21 or 16.2.11**, which cover both the May and July 2026 sets.
 
 ### Two decisions that fall out of this
 
-**Disable remote image optimization.** All images in this product are self-hosted on `assets.<domain>` and re-encoded at upload ([content-and-web.md](content-and-web.md)). `/_next/image` fetching arbitrary remote URLs is a feature this product does not need, and it is simultaneously an SSRF surface and the SVG DoS surface above. Turning off what you do not use is the cheapest control available. `sharp`-based optimization of already-trusted, already-re-encoded local assets is fine; the remote fetch path is not.
+**Disable remote image optimization.** All images in this product are either generated (embedded as data URIs) or uploaded (re-encoded at ingest, v3 — [content-and-web.md](content-and-web.md)). `/_next/image` fetching arbitrary remote URLs is a feature this product does not need, and it is simultaneously an SSRF surface and the SVG DoS surface above. Turning off what you do not use is the cheapest control available. Optimization of already-trusted, already-re-encoded local assets is fine; the remote fetch path is not.
 
-**Never let a request-controlled value into a rewrite destination.** Custom-domain routing maps a verified hostname to an experience id via a database lookup — never by constructing a destination from the incoming `Host` header. The hostname grammar validation in [content-and-web.md](content-and-web.md) is the second layer; the lookup is the first.
+**Never let a request-controlled value into a rewrite destination.** Custom-domain routing (v3) maps a verified hostname to a deck id via a database lookup — never by constructing a destination from the incoming `Host` header. The hostname grammar validation in [content-and-web.md](content-and-web.md) is the second layer; the lookup is the first.
 
 ## Cache poisoning and web cache deception
 
-Serious enough to be its own section, and this is where the personalization feature and the CDN meet.
+Serious enough to be its own section, and the v1 artefact nearly eliminates it.
 
-**Web cache deception** exploits a disagreement between the cache and the origin about what a URL is. The classic form: request `/r/<token>/nonexistent.css`. The origin's router ignores the trailing segment and serves the personalized page; the CDN sees a `.css` extension, decides it is a static asset, and caches it under a URL with **no session and no token binding**. The attacker then fetches the same URL and receives another recipient's page. Research has extracted account details, session tokens, private messages, and payment data this way from major platforms.
+**The offline file (v1) is not cached by anything.** It is a local `.html` file served from `file://` or sent as an attachment — there is no CDN, no shared cache, no URL to deceive. The class does not exist for the primary artefact.
 
-Applied here, the payload is a named prospect's personalized page and, through it, a working recipient token.
+**The hosted URL (v3) is static bytes with no per-viewer variation.** It is the same single-file HTML served from S3+CloudFront. There is no recipient token, no session, no cookie that varies a response — the personalization features that made cache deception valuable are gone with the old served-page product. A poisoned entry would serve every viewer the same bytes, which is bad but not a privacy breach.
 
-**Cache poisoning** is the mirror image: get an attacker-controlled response stored under a key that legitimate viewers will request. On a static published page served from a CDN — which is exactly this product's serving model — a poisoned entry is served to every viewer of a customer's launch page.
-
-The controls, in dependency order:
+The controls that remain, in dependency order:
 
 | | |
 |---|---|
-| **Never cache `/r/[token]` responses** | `Cache-Control: private, no-store` on every personalized response. The cheapest and most complete control — there is nothing to poison or deceive if nothing is stored |
-| **Cache key includes the full path** | No extension-based or prefix-based caching rule that treats a dynamic route as a static asset |
-| **The origin rejects trailing-segment variants** | `/r/<token>/anything` is a 404, not a lenient match. The deception requires the origin to be more forgiving than the cache — so do not be forgiving |
+| **The hosted deck is keyed by path alone** | No cookies, no auth, no per-viewer variation — which is what makes it safe to cache hard. Preserve that property deliberately; the day a hosted deck varies by *anything*, this section applies again |
 | **No unkeyed request header changes the response** | If a header genuinely must vary the response, it goes in `Vary`. Never vary on `X-Forwarded-Host` or any other client-controlled header |
-| **Static published pages are keyed by path alone** | No cookies, no auth, no per-viewer variation — which is what makes them safe to cache hard. Preserve that property deliberately; the day a published page varies by *anything*, this section applies to it too |
+| **The origin rejects trailing-segment variants** | `/deck/<id>/anything` is a 404, not a lenient match. The deception requires the origin to be more forgiving than the cache — so do not be forgiving |
 
-`Referrer-Policy: no-referrer` and `X-Robots-Tag: noindex` already protect recipient tokens from leaking outward ([content-and-web.md](content-and-web.md)). This section closes the inward path — the token leaking to someone who never received the link.
+If a hosted-URL analytics or personalization feature ever reintroduces per-viewer variation, the full old treatment — `Cache-Control: private, no-store`, `X-Robots-Tag: noindex`, token-safe referrer handling — comes back with it.
 
 ## The packages that touch untrusted input
 
@@ -141,7 +137,7 @@ Not a lockfile — a set of statements about what is known-bad, to be re-checked
 | **Python** | Current stable, security-supported line | Same reasoning. An EOL minor gets no patches at all |
 | **Agent frameworks** | **Not present.** Grepped in CI | Not a floor — an absence. See above and [../coderules/dependencies.md](../coderules/dependencies.md) |
 | **`sharp` / libvips** | Latest | Native decoder against hostile input |
-| **Three.js + loaders** | Latest (v3) | `WebGPURenderer` needs r171+ anyway (`v3/dimensional.md`) |
+| **Three.js + loaders** | Latest (v3) | Only if 3D blocks become a feature; the v1 artefact embeds images and fonts only |
 
 **The floors are a starting point, not the control.** The control is that CI fails on a known-critical advisory and that the four untrusted-input parsers above are watched by name. A table in a document goes stale; a failing build does not.
 

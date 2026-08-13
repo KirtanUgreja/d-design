@@ -10,7 +10,7 @@
 
 **One source of truth, everything else derived.**
 
-Pydantic models define the shapes; the model's JSON Schema comes from `model_json_schema()`, and TypeScript types plus a Zod validator are **generated** from the same source into `@d-design/schema`. Never written twice, in either language. The scene schema has no field for a hex code, so the "AI emits no styling" rule is enforced by the type system before any check runs. The renderer is one pure function, so editor and published output cannot drift.
+Pydantic models define the shapes; the model's JSON Schema comes from `model_json_schema()`, and TypeScript types plus a Zod validator are **generated** from the same source into `@d-design/schema`. Never written twice, in either language. The `Deck` schema has no field for a hex code, so the "AI emits no styling" rule is enforced by the type system before any check runs. The renderer is one pure function, so editor and export cannot drift.
 
 Every rule in this directory is an application of that idea: make the wrong thing unrepresentable, and you never have to police it.
 
@@ -60,7 +60,7 @@ Rules 9 and 10 came from the security and tech-stack work rather than from taste
 | The server/client boundary — `server-only`, taint, Server Actions | [structure.md](structure.md) → "The server/client boundary" |
 | Naming and file conventions | [structure.md](structure.md) → "Files" |
 | Which Python, and what the type checker is set to | [python.md](python.md) → "Strict, and what that means here" |
-| **Where the `Scene` schema lives and how it crosses languages** | [python.md](python.md) → "The schema is the source of truth" |
+| **Where the `Deck` schema lives and how it crosses languages** | [python.md](python.md) → "The schema is the source of truth" |
 | `Result` in Python | [python.md](python.md) → "Errors" |
 | Which TypeScript, and the TS 7 compiler-API caveat | [typescript.md](typescript.md) → "Which TypeScript — and the one thing that breaks" |
 | How TypeScript types are derived now | [typescript.md](typescript.md) → "Types come from the generated schema" |
@@ -95,5 +95,5 @@ Where a rule would add ceremony, it is not here. There is no coverage target, no
 |---|---|
 | [../techstack/README.md](../techstack/README.md) | What the code actually runs on — these rules are downstream of those choices |
 | [../security/README.md](../security/README.md) | Where rules 9 and 10 come from, and what they are defending |
-| `v1/scene-schema.md` | The shape rule 7 protects |
+| `v1/plan/01-schema.md` | The shape rule 7 protects |
 

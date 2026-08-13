@@ -19,12 +19,12 @@ The one section that must be settled in v1, because it leaks into every string, 
 | # | Question | Default |
 |---|---|---|
 | 1 ★ | Is `d-design` the product name, or a repo placeholder? | Placeholder. It describes the repo, not the product |
-| 2 | Must the name survive the presentation→web-experience drift? | Yes. No `deck`, `slide`, `present`, or `AI` in the name |
+| 2 | Must the name survive the presentation→web-experience drift? | Yes. No `deck`, `slide`, `present`, or `AI` in the *name* (they are fine as descriptors of what the file is) |
 | 3 | Is a matching `.com` a hard requirement? | Yes, or one clean word on `.co`. Never a hyphen |
-| 4 ★ | What do we call the thing it makes, in the UI? | `experience` matches the schema but is vague to a marketer. Recommend the UI says **launch page** and the schema keeps `Experience` |
-| 5 | What do we call a `Scene` in the UI? | Scene. It is not a slide and should never be called one |
-| 6 | Do we ever use the word "slide"? | Only in paid search and one SEO page. Never in product |
-| 7 | Is "art direction" user-facing? | Yes. It is the differentiator, and teaching the buyer the concept is most of the sale |
+| 4 ★ | What do we call the thing it makes, in the UI? | A **deck**. It is what the user actually has — a deck, in a file, presented slide by slide |
+| 5 | What do we call a slide in the UI? | Slide. It is honest, it is what the user presents, and the old "never say slide" rule died with the old product |
+| 6 | Do we ever use the word "slide"? | Yes, freely. The product is a deck of slides, presented |
+| 7 | Is "art direction" user-facing? | No. It is the *design family*, and the user-facing concept is "a design system for your deck." Teaching the buyer that two decks never look alike is most of the sale |
 | 8 | Does "AI" appear in the headline? | No. Everyone says it, so it says nothing |
 | 9 | The verb for generating? | "Generate". Honest and expected. Do not invent a cute verb |
 | 10 | Does the AI have a persona or a name? | No. Personas invite chat, and this is not a chat product |
@@ -35,16 +35,16 @@ The one section that must be settled in v1, because it leaks into every string, 
 
 ## §2 Positioning and the promise
 
-Constrained by `v1/market.md` — the wedge is locked, only its expression is open.
+Constrained by `v1/spec.md` — the wedge is locked (a marketer with a launch in three weeks), only its expression is open.
 
 | # | Question | Default |
 |---|---|---|
-| 13 ★ | The one-sentence promise? | Something in the shape of *"Your launch messaging, art-directed into a page you can send."* Needs your voice, not mine |
-| 14 | Which category do we claim? | Launch experiences. Not presentations, not websites |
+| 13 ★ | The one-sentence promise? | Something in the shape of *"Your launch messaging, designed into a deck you can download and present offline."* Needs your voice, not mine |
+| 14 | Which category do we claim? | AI-designed decks. The offline single-file artefact is the differentiator, not the category |
 | 15 | Do we name Gamma on the homepage? | No. On one comparison page, yes |
-| 16 | Do we admit Framer and Webflow are the real comparison set? | Yes, on the comparison page. It flatters the buyer and it is true |
+| 16 | Do we admit Framer and Webflow are the real comparison set? | No — those are website builders. Gamma, Canva, and Beautiful.ai are the deck-tool comparison set |
 | 17 | Lead with speed or with quality? | Quality. Speed is table stakes since Gamma; quality is the wedge |
-| 18 | Lead with beauty or with "stays editable"? | Beauty. Editability is the objection, and objections go second |
+| 18 | Lead with beauty or with "runs offline"? | Beauty. Offline is the objection-answer; the beauty is the reason to care |
 | 19 | Do we say "no design skills needed"? | No. That sentence recruits the audience that killed Tome |
 | 20 | Do we promise on-brand output? | Yes, prominently. Marketers cannot ship off-brand (`v1/spec.md`) |
 | 21 | Does the headline name a job or a deadline? | Yes. "Launch in three weeks" is a better qualifier than any form field |
@@ -78,12 +78,12 @@ Principle 9: our surfaces are the gallery wall, the output is the art. Every def
 | # | Question | Default |
 |---|---|---|
 | 33 ★ | Light or dark for our own surfaces? | **Light / warm neutral.** A dark, glowing site is one step from the banned list, and it makes a dark artifact read as theme rather than work |
-| 34 | Is the editor chrome light too? | Yes. A light frame around a `cinematic-dark` canvas is a gallery frame. Re-check when v2 adds a light art direction |
+| 34 | Is the editor chrome light too? | Yes. A light frame around a dark-family deck is a gallery frame. Re-check when v2 grows the registry with light families |
 | 35 | How many accent colours? | One, used for almost nothing — focus rings and the primary action |
 | 36 ★ | Which accent family? | Not purple, not pink, not neon, not a gradient. Recommend a deep ink or an oxide red. Your call decides the whole palette |
 | 37 | Display typeface? | A licensed editorial face with real character. Not Inter, not Geist, not a variable grotesk at default tracking |
 | 38 | Do we buy type for our own brand? | Yes. [../techstack/frontend.md](../techstack/frontend.md) already calls type the highest-leverage money in the product. This is the cheapest possible way to not look default |
-| 39 | Can our brand share a face with an art direction? | No. Our chrome must be visibly not-the-product |
+| 39 | Can our brand share a face with a design family? | No. Our chrome must be visibly not-the-product |
 | 40 | Logo: wordmark or mark? | Wordmark only. A mark is a v3 problem and usually a distraction before then |
 | 41 | Do we have a motion signature? | Yes, and it is restraint. Our chrome barely moves; the canvas moves |
 | 42 | Layout system? | Asymmetric, with a real baseline rhythm. Five centred `max-w-3xl` sections is the banned pattern |
@@ -131,7 +131,7 @@ Principle 6: show the artifact, not the app.
 | 68 | Time-to-first-output-pixel budget? | Under 1.5s on 4G. The proof cannot arrive late |
 | 69 | Browser chrome frame around it? | No. Banned pattern. One line of text showing the URL is enough |
 | 70 | A/B test the hero? | Not before there is v3 traffic to test with |
-| 71 | Does the hero rotate art directions? | From v2, yes — same content, different art direction, on a control. That is the abstraction claim demonstrated in four seconds |
+| 71 | Does the hero rotate design families? | From v2, yes — same content, different design family, on a control. That is the abstraction claim demonstrated in four seconds |
 | 72 | JS disabled? | Already handled: artifacts are progressively enhanced ([../techstack/frontend.md](../techstack/frontend.md)) |
 
 ---
@@ -147,10 +147,10 @@ Principle 7. The constraint that makes this section interesting: a real generati
 | 75 | Do we label it a recording? | Yes, plainly. Principle 10, and the label costs nothing because the scenes are genuinely generated |
 | 76 | Anonymous live generation, ever? | No through v3. Revisit only with a hard per-IP cap, a kill switch, and a bill alarm |
 | 77 | A playground with pre-baked briefs? | Yes at v3 — pick one of three briefs, watch its recorded run. Three recordings, zero marginal cost |
-| 78 ★ | Can a visitor edit the demo artifact without an account? | **Yes.** Property-panel edits are local patches with no model call (`v1/plan/09-editor.md`). Letting someone change real copy on a real artifact, in the browser, for free, is the strongest thing we can offer and it costs nothing |
+| 78 ★ | Can a visitor edit the demo deck without an account? | **Yes (v2).** Editor edits are local patches with no model call (`docs/v2/plan/12-editor.md`). Letting someone change real copy on a real deck, in the browser, for free, is the strongest thing we can offer and it costs nothing |
 | 79 | Does the free demo include an AI edit? | No. That is a model call. Show a recorded one |
 | 80 | Do we demo the outline gate? | Yes. It is the trust feature, and no competitor has one |
-| 81 | Do we demo the sandboxed Slot? | Yes, quietly, without the word "sandbox" |
+| 81 | Do we demo the generation watch? | Yes, quietly — it is the wow moment |
 | 82 | Third-party interactive-demo tooling? | No. Our product is the demo. A Guideflow tour of a design product is an admission |
 | 83 | A video? | One 60-second film, muted, captioned, click-to-play |
 | 84 | GIFs? | No. Weight, and they make good design look bad |
@@ -164,12 +164,12 @@ Principle 7. The constraint that makes this section interesting: a real generati
 | 85 | Customer logos? | None until there are customers who agreed. Principle 10 |
 | 86 | Testimonials? | Real, named, with role and company. Zero generated avatars |
 | 87 | Case study format? | Brief in, artifact out, one number if there is one. Not a narrative |
-| 88 | Which metrics can we claim? | Only what the analytics beacon actually measures from v3 — scroll depth, CTA reach, duration ([../techstack/frontend.md](../techstack/frontend.md)) |
+| 88 | Which metrics can we claim? | Only what we can actually measure. In v1 the deck is offline (`connect-src 'none'`) — there is no beacon. Analytics on a hosted deck is a v3 question, and it must not break the zero-network guarantee ([../techstack/frontend.md](../techstack/frontend.md)) |
 | 89 | A "made with" badge on published artifacts? | Yes, small, removable on a paid tier. It is the only free acquisition loop this product has — and it shares its space with a legally required disclosure, so design them as one mark ([website.md](website.md)) |
-| 90 | Side-by-side against Gamma? | Yes, but as two live URLs, not a doctored screenshot. Same brief, both tools, both linked |
-| 91 | Do we publish what the product cannot do? | Yes. No PPTX, no charts, one signature moment. Naming limits early is how we survive Risk 3 |
+| 90 | Side-by-side against Gamma? | Yes, but as two live decks, not a doctored screenshot. Same brief, both tools, both linked |
+| 91 | Do we publish what the product cannot do? | Yes. In v1: no PPTX, no hosted URL, no editor (it is v2). Naming limits early is how we survive the "give me a link" objection |
 | 92 | A security page? | Yes at v3. We have unusually good material for one |
-| 93 | Do we disclose AI use on artifacts? | Yes, and it is not optional — `v3/compliance.md` |
+| 93 | Do we disclose AI use on artifacts? | Yes, and it is not optional — `docs/v3/spec.md` |
 | 94 | Do we say who built it? | Yes. Solo and opinionated is an asset with this buyer, not a liability |
 | 95 | Do we talk about the stack? | Only in the essay. Buyers do not care and it invites the wrong audience |
 | 96 | Do we show the eval numbers? | Not publicly. Repair rate is an internal instrument ([../techstack/ai-stack.md](../techstack/ai-stack.md)) |
@@ -183,13 +183,13 @@ The sharpest constraint in this section is not design: **a brief is a customer's
 | # | Question | Default |
 |---|---|---|
 | 97 ★ | How does work enter the showcase? | Explicit written per-artifact release, after their launch is public. Never a checkbox at signup, never opt-out |
-| 98 | Do we show the brief next to the artifact? | Only with separate consent. The brief is more sensitive than the output |
-| 99 | Filter by art direction? | From v2, yes. It is the clearest way to show range |
+| 98 | Do we show the brief next to the artifact? | Only with separate consent. The interview is more sensitive than the output |
+| 99 | Filter by design family? | From v2, yes. It is the clearest way to show range |
 | 100 | Minimum pieces to launch a showcase? | Six. Fewer looks like we have three customers |
 | 101 | Do we seed it with our own work? | Yes, marked as ours. Honesty costs nothing and the work is real |
 | 102 | Can a visitor fork a showcase piece? | v3, and only into their own account with their own copy |
-| 103 | Do published pages link back to us? | Only via the badge. No injected backlinks |
-| 104 | Is the badge removable? | On a paid tier, yes. Trapping a marketer's client work behind our logo loses the account. **The AI-content disclosure in the same mark is not removable** (`v3/compliance.md`) — one boolean, two very different meanings |
+| 103 | Do hosted decks link back to us? | Only via the badge. No injected backlinks |
+| 104 | Is the badge removable? | On a paid tier, yes. Trapping a marketer's client work behind our logo loses the account. **The AI-content disclosure in the same mark is not removable** (`docs/v3/spec.md`) — one boolean, two very different meanings |
 | 105 | Are showcase pieces the live customer URL or a copy? | A copy we host. Their URL can change or go down and take our showcase with it |
 | 106 | Do we ever showcase without asking because it is public anyway? | No. Public does not mean endorsed, and this buyer talks to other buyers |
 
@@ -201,17 +201,17 @@ The sharpest constraint in this section is not design: **a brief is a customer's
 
 | # | Question | Default |
 |---|---|---|
-| 107 ★ | What is behind the paywall — generating, or publishing? | **Publishing.** Let them generate and see the quality; charge when they need the URL. It inverts the usual AI-product paywall and it is the single highest-leverage pricing decision here |
+| 107 ★ | What is behind the paywall — generating, or publishing? | **Publishing (v3).** Let them generate and see the quality; charge when they need the hosted URL or the team. The single-file download is the free wow; the URL is the paid convenience. It inverts the usual AI-product paywall and it is the single highest-leverage pricing decision here |
 | 108 | Seats or usage? | Seats, with a generous generation allowance. Marketers cannot forecast usage and hate metering |
 | 109 | Credits UI? | Avoid credits entirely if possible. Opaque credit balances are the most-complained-about pattern in AI pricing |
-| 110 | Do we show the AI cost honestly? | Not on the pricing page. Internally it decides the tiers (`v1/ai-pipeline.md`) |
-| 111 | Free tier? | **Narrower than it sounds, and already locked in `v3/spec.md`:** free is generate, edit, preview, and one published experience on a subdomain with the badge. Not free-forever unlimited. The reverse trial sits on top — full features for 14 days, then that restricted plan, which keeps published pages alive |
+| 110 | Do we show the AI cost honestly? | Not on the pricing page. Internally it decides the tiers (`docs/v1/spec.md`) |
+| 111 | Free tier? | **Narrower than it sounds, and already locked in `v3/spec.md`:** free is generate, edit, preview, and download; one hosted URL with the badge is the paid entry. Not free-forever unlimited. The reverse trial sits on top — full features for 14 days, then that restricted plan |
 | 112 | Why a reverse trial? | It converts comparably to a free trial with freemium's signup volume, and AI-native products convert notably better on this shape than general SaaS |
-| 113 | Card up front? | No. Card at publish. Consistent with 107 |
+| 113 | Card up front? | No. Card at the hosted URL (v3). Consistent with 107 |
 | 114 | Annual discount? | Two months. Standard, not a differentiator |
 | 115 | Enterprise "contact us"? | Not before v3. It is a tier for a sales motion we do not have |
 | 116 | What happens at the limit? | Fails closed and says so plainly. Rule 10 in [../../AGENTS.md](../../AGENTS.md) |
-| 117 | Do published pages die when a plan lapses? | No. Killing a customer's live launch page is a lawsuit and a Twitter thread. Downgrade the badge, keep the page |
+| 117 | Do hosted decks die when a plan lapses? | No. Killing a customer's live launch URL is a lawsuit and a Twitter thread. Downgrade the badge, keep the deck |
 | 118 | Custom domain — which tier? | The top self-serve tier, v3 |
 | 119 | Is pricing on the nav? | Yes. Hiding pricing signals enterprise sales and repels self-serve |
 | 120 | Do we publish prices at all? | Yes. Every one of them |
@@ -262,22 +262,23 @@ Research floor: median self-serve time-to-value is ~11 minutes, top performers u
 
 ## §13 Intake
 
-The app's front door (`v1/plan/08-intake.md`). Import is deferred, so v1 is prompt plus AI-led Q&A.
+The app's front door (`docs/v1/plan/02-interview.md`). Import is deferred, so v1 is prompt plus AI-led Q&A.
 
 | # | Question | Default |
 |---|---|---|
 | 145 ★ | Prompt box, guided Q&A, or a form? | Prompt box first, then a **short structured interview** — not a chat. Chat implies memory and invites off-task use |
 | 146 | How many questions does the AI ask? | Three to five, with visible progress. Never open-ended, never more than five |
 | 147 | Can you skip straight to generate? | Yes, always. The interview improves output; it must not gate it |
-| 148 | Does it look like a chat UI? | No. Bubbles set chat expectations we will not meet, and a chat log is not a Brief |
-| 149 ★ | Does the Brief stay visible and editable? | Yes, permanently. It is the approved-claims record, and Risk 2 in `v1/spec.md` is about invented claims |
+| 148 | Does it look like a chat UI? | No. Bubbles set chat expectations we will not meet, and a chat log is not an interview |
+| 149 ★ | Does the interview stay visible and editable? | Yes, permanently. It is the approved-claims record, and Risk 2 in `v1/spec.md` is about invented claims |
+| 150 | Can a visitor generate without an account? | In v1 there are no accounts — the flow is open. A hosted editor with auth is v3 |
 | 150 | Do we show which claims came from them versus the model? | Yes. This is the trust feature marketers will actually talk about |
-| 151 | URL paste? | Allowed as CTA destinations only. Nothing is fetched in v1 — a URL in the Brief is a string, not a request |
-| 152 | File upload for source material? | Deferred with import (`v1/plan/08-intake.md`). Do not build the UI for it now |
+| 151 | URL paste? | Allowed as CTA destinations only. Nothing is fetched in v1 — a URL the user types is a string, not a request |
+| 152 | File upload for source material? | Deferred to v3 (brand-kit upload). Do not build the UI for it now |
 | 153 | Paste-a-document textarea? | Allowed. It is just text and it needs no fetch worker |
-| 154 | Character limits on the prompt? | Yes, generous and visible. Caps are already a schema concern (`v1/scene-schema.md`) |
-| 155 | Autosave the brief? | Yes, continuously |
-| 156 | Start from an existing experience? | Yes, v3. It is how a customer makes their second one |
+| 154 | Character limits on the prompt? | Yes, generous and visible. Caps are already a schema concern (`docs/v1/plan/01-schema.md`) |
+| 155 | Autosave the interview? | Yes, continuously |
+| 156 | Start from an existing deck? | Yes, v3. It is how a customer makes their second one |
 | 157 | Templates or starting points? | No. "No templates" is our positioning; a template picker contradicts the homepage |
 | 158 | Voice input? | No |
 
@@ -285,13 +286,13 @@ The app's front door (`v1/plan/08-intake.md`). Import is deferred, so v1 is prom
 
 ## §14 The outline gate
 
-The human approval step (`v1/plan/07-director.md`). Nobody else in this category has one, so there is no convention to follow.
+The human approval step (`v1/plan/02-interview.md`). Nobody else in this category has one, so there is no convention to follow.
 
 | # | Question | Default |
 |---|---|---|
-| 159 | How is the outline presented? | Scene cards with their intent label and the headline. Not a bulleted list — it should already feel spatial |
-| 160 | Can you reorder scenes? | Yes, drag. Intent decouples from position (`v1/plan/01-scene-schema.md`); the hook stays first and the editor refuses that drag |
-| 161 | Add and delete scenes? | Yes, both |
+| 159 | How is the outline presented? | Slide cards with their intent label and the headline. Not a bulleted list — it should already feel spatial |
+| 160 | Can you reorder slides? | Yes, drag. The outline's structure is what it is; reordering does not make the content a lie |
+| 161 | Add and delete slides? | Yes, both |
 | 162 | Edit copy at the outline stage? | Yes. Fixing a headline here is far cheaper than after the build |
 | 163 | Show estimated time or cost? | Time as a range. Never a fake percentage |
 | 164 | One-click approve? | Yes, and it is the primary action on the screen |
@@ -308,17 +309,17 @@ Principle 3 names this the highest-leverage motion design in the app. It is fort
 
 | # | Question | Default |
 |---|---|---|
-| 169 ★ | What is on screen while it builds? | **The scenes themselves, full size, appearing in place as they arrive.** Not a progress bar next to a spinner. The SSE stream already delivers whole validated scenes ([../techstack/frontend.md](../techstack/frontend.md)) |
+| 169 ★ | What is on screen while it builds? | **The slides themselves, full size, appearing in place as they arrive.** Not a progress bar next to a spinner. The SSE stream already delivers whole validated slides ([../techstack/frontend.md](../techstack/frontend.md)) |
 | 170 | Is the outline visible ahead of the build? | Yes, ghosted. Watching known slots fill is dramatically better than watching an unknown list grow |
-| 171 | How does each scene arrive? | With the artifact's own motion vocabulary, not chrome animation. The reveal you watch is the reveal your audience gets |
-| 172 | Do we surface repairs? | No. The `repair` event is instrumentation (`v1/spec.md`). Showing users a self-correction is honesty nobody asked for and it undermines the moment |
+| 171 | How does each slide arrive? | With the deck's own design-family motion, not chrome animation. The reveal you watch is the reveal your audience gets. A slide with an image arrives with its image |
+| 172 | Do we surface repairs? | No. The `repair` event is instrumentation (`docs/v1/spec.md`). Showing users a self-correction is honesty nobody asked for and it undermines the moment |
 | 173 | Abort control? | Yes, prominent. Aborting a bad direction early is the stated reason streaming exists |
-| 174 | Failure at scene 6 of 8? | Keep the five, offer to continue. Never discard completed work |
+| 174 | Failure at slide 6 of 8? | Keep the five, offer to continue. Never discard completed work |
 | 175 | Sound? | No |
 | 176 | Time estimate? | A range that does not lie. No percentage that stalls at 90% |
 | 177 | Can they leave the page? | Yes, and it resumes. Generation is server-side |
 | 178 | Fake progress steps like "writing headline"? | No. Real phase labels only. Invented steps are the most common slop pattern in AI UI |
-| 179 | Does the first scene need to be special? | Yes. It is the single most important frame in the product. Budget time for it specifically |
+| 179 | Does the first slide need to be special? | Yes. It is the single most important frame in the product. Budget time for it specifically |
 | 180 | Mobile? | Watch works, editing does not. See #193 |
 
 ---
@@ -330,7 +331,7 @@ Principle 4: quiet, because it surrounds the thing that is supposed to be beauti
 | # | Question | Default |
 |---|---|---|
 | 181 | Layout? | Outline left, canvas centre, properties right. Boring on purpose |
-| 182 | Does the canvas render at true scale? | Yes. What you edit is byte-for-byte what you publish, and any scaling weakens that |
+| 182 | Does the canvas render at true scale? | Yes. What you edit is byte-for-byte what you export, and any scaling weakens that |
 | 183 | Zoom control? | Fit-width and 100%. Nothing more |
 | 184 | Selection affordance? | A hairline and a label. Not a saturated blue box over a designed page |
 | 185 | Where does the element-scoped prompt live? | Inline, directly under the selected block, always in the same place. It is a primary interaction, not a panel tab |
@@ -339,12 +340,12 @@ Principle 4: quiet, because it surrounds the thing that is supposed to be beauti
 | 188 | Keyboard shortcuts? | Undo, redo, select, escape, present. Not a whole system |
 | 189 | Autosave indicator? | Quiet, and honest about failures |
 | 190 | Present/preview toggle? | Yes, and it is real fullscreen with arrow keys — the thing that keeps the word "presentation" honest |
-| 191 | Scene navigator? | The outline panel doubles as it. Do not build two |
-| 192 | Dark editor option? | Not in v1. One good frame beats two mediocre ones |
+| 191 | Slide navigator? | The outline panel doubles as it. Do not build two |
+| 192 | Dark editor option? | Not in v2. One good frame beats two mediocre ones |
 | 193 | Mobile editor? | View and present only. Editing a design surface on a phone is a different product |
 | 194 | Where does the brand kit live? | One click from the canvas, not buried in settings. It is a v1 primitive |
-| 195 | Where does the art-direction switcher live? | v2. Reserve the space now so it does not get retrofitted into a menu |
-| 196 | Where does publish live? | Top right, always, and it is the only high-emphasis control in the chrome |
+| 195 | Where does the design-family switcher live? | v2. Reserve the space now so it does not get retrofitted into a menu |
+| 196 | Where does export live? | Top right, always, and it is the only high-emphasis control in the chrome. The download is the primary action |
 
 ---
 
@@ -355,34 +356,34 @@ Principle 8. The most important ten questions in this document, because this is 
 | # | Question | Default |
 |---|---|---|
 | 197 ★ | What happens when a user goes looking for styling controls? | They get a designed, positive answer **at the moment of reaching** — inline, once, in the panel where they expected the control. Not a docs page, not a tooltip, not a tour |
-| 198 | What is the copy? | Something in the shape of *"Type, colour and spacing come from the art direction, so this cannot go off-brand. Change the direction, not the pixel."* Needs your voice |
-| 199 | What replaces the picker? | Four visible affordances: art direction, emphasis level, brand kit, reroll. They must look more powerful than what they replace, because they are |
+| 198 | What is the copy? | Something in the shape of *"Type, colour and spacing come from the design family, so this cannot go off-brand. Change the family, not the pixel."* Needs your voice |
+| 199 | What replaces the picker? | Four visible affordances: design family, emphasis level, brand kit, reroll. They must look more powerful than what they replace, because they are |
 | 200 | Do we teach "emphasis" as the replacement vocabulary? | Yes. It is intent, it is in the schema, and it is the concept that makes the constraint learnable |
 | 201 | Can power users see the resolved tokens? | Yes, read-only. Seeing the system is disarming; editing it is the whole product's collapse |
 | 202 | What if they type "make the headline smaller" into the AI edit? | The model has no field for it, so it must **refuse well** and offer emphasis instead. That refusal copy is a designed artifact, not an error string |
-| 203 | Is there ever an escape hatch? | One per experience, and it is the Slot — sandboxed, generated, not hand-edited (`v1/plan/11-visuals-and-slot.md`) |
-| 204 | CSS or HTML export? | No. It is the fastest route to becoming a worse Webflow |
+| 203 | Is there ever an escape hatch? | No. The v1 artefact is the generated HTML file, and it is not hand-editable — hand-editing is how the design family stops being the single source of visual truth |
+| 204 | CSS or HTML authoring? | No. The download is the point, not the canvas. It is the fastest route to becoming a worse Webflow |
 | 205 | Do we call it a constraint publicly? | Yes, and we lead with it. A constraint you hide is a limitation; a constraint you explain is a philosophy |
 | 206 | Do we measure reaching-for-the-picker? | Yes — see #273. It is the best single signal in the product |
 
 ---
 
-## §18 Publish and share
+## §18 Export, and the hosted URL (v3)
 
 | # | Question | Default |
 |---|---|---|
-| 207 | Is the publish moment designed? | Yes. It is one of the three hot surfaces, and it is what gets screenshotted into Slack |
-| 208 | What does the reveal show? | The live URL, large, copyable, with the real page behind it |
-| 209 | OG image for published artifacts? | Auto-screenshot. Playwright is already in the stack ([../techstack/frontend.md](../techstack/frontend.md)) |
+| 207 | Is the export moment designed? | Yes. It is one of the three hot surfaces, and it is what gets screenshotted into Slack |
+| 208 | What does the reveal show? | The **download** — one self-contained `.html` file — large and prominent, with the deck preview behind it. One click to download, one to present, one to send. The hosted URL is v3 |
+| 209 | OG image for hosted decks? | Auto-screenshot (v3). Playwright is already in the stack ([../techstack/frontend.md](../techstack/frontend.md)) |
 | 210 | Password protection? | v3. Launch material is under embargo more often than not |
-| 211 | Embed dialog? | Yes, one snippet, copy button, nothing configurable |
+| 211 | Embed dialog? | v3, with the hosted URL. One snippet, copy button, nothing configurable |
 | 212 | Custom domain? | v3, top self-serve tier |
-| 213 | Unpublish? | Yes, instant, and it really removes the page |
-| 214 | Republish after edits? | Explicit. A live launch page must never change because someone typed in the editor |
-| 215 | Version history? | Not in v1 (`v1/plan/09-editor.md`). Undo is per-session |
-| 216 | Slack and LinkedIn preview quality? | Treat as a launch requirement. A bad unfurl on the buyer's own share is a product failure |
+| 213 | Unpublish? | v3. Instant, and it really removes the URL |
+| 214 | Re-export after edits? | Explicit. A downloaded file never changes under you; a new generation is a new file |
+| 215 | Version history? | Not in v1 (`v2/plan/12-editor.md`). Undo is per-session |
+| 216 | Slack and LinkedIn preview quality? | v3, when the URL exists. Treat as a launch requirement — a bad unfurl on the buyer's own share is a product failure |
 | 217 | QR code for in-person? | Cheap, and marketers at events will use it. Low priority, high delight |
-| 218 | Analytics summary? | v3, when the beacon exists. It is a thing we sell, not a thing we bolt on |
+| 218 | Analytics summary? | v3, if a beacon can exist without breaking the zero-network guarantee. It is a thing we sell, not a thing we bolt on |
 
 ---
 
@@ -394,15 +395,15 @@ Twelve screens nobody designs and everybody sees. Rule 10 in [../../AGENTS.md](.
 |---|---|---|
 | 219 | Quota exceeded? | Says what ran out, when it resets, and what still works. Never a raw 429 |
 | 220 | The model refused? | Plain language, no apology theatre, and an actionable next step |
-| 221 | Generation failed entirely? | Keep the brief and the outline. Retrying must not mean re-typing |
-| 222 | Upload rejected? | Each of the six controls needs its own human sentence (`v1/plan/10-brand-and-uploads.md`). "Invalid file" is not one |
+| 221 | Generation failed entirely? | Keep the interview and the outline. Retrying must not mean re-typing |
+| 222 | Upload rejected? | Each brand-kit control needs its own human sentence (v3, `docs/v3/plan/17-brand-kit-at-scale.md`). "Invalid file" is not one |
 | 223 | Do we ever show internal error classes? | Never. They are logged, not displayed ([../security/operations.md](../security/operations.md)) |
-| 224 | Offline? | The editor holds state and says so. It should not silently lose a patch |
+| 224 | Offline? | The editor (v2) holds state and says so. The deck itself is offline by design — the editor is not |
 | 225 | Session expired mid-edit? | Preserve the tree, re-auth in place |
-| 226 | 404 on an unpublished or deleted artifact? | A designed page. It is a page a customer's audience will hit |
-| 227 | Kill switch active? | An honest maintenance state on the generation path only. Editing and publishing keep working |
+| 226 | 404 on a removed hosted deck? | v3. A designed page — it is a page a customer's audience will hit |
+| 227 | Kill switch active? | An honest maintenance state on the generation path only. Export and the editor keep working |
 | 228 | Rate limited? | Same shape as quota. Never silent |
-| 229 | A scene fails validation after an edit? | Reject the patch, keep the previous tree, say which rule (`v1/plan/09-editor.md`) |
+| 229 | A slide fails validation after an edit? | Reject the patch, keep the previous deck, say which rule (`v2/plan/12-editor.md`) |
 | 230 | Zero-state of the artifact list? | One sentence and the prompt box. Not an illustration of an empty box |
 
 ---
@@ -433,11 +434,11 @@ Twelve screens nobody designs and everybody sees. Rule 10 in [../../AGENTS.md](.
 | 243 | Visible focus? | Everywhere, and it is one of the two jobs of the accent colour |
 | 244 | What does a screen reader announce on the canvas? | Genuinely open. Default: the canvas is a document, announced structurally, with selection as an application region. Worth real research |
 | 245 | Editor at 200% zoom? | Must work. Panels collapse, canvas stays true-scale |
-| 246 | Logical properties in our chrome too? | Yes. Free now, and it makes a v3 RTL UI a `dir` attribute (`v3/localization.md`) |
+| 246 | Logical properties in our chrome too? | Yes. Free now, and it makes a future RTL UI a `dir` attribute |
 | 247 | UI language? | English through v3. The *output* is multilingual long before the chrome is |
 | 248 | Contrast of the accent? | Must pass at its smallest use, not its largest |
 | 249 | Motion preferences in the editor? | Respected — including in the generation watch, which is the hardest one to get right |
-| 250 | Is artifact accessibility this directory's problem? | No. It belongs to `v1/art-direction.md`. Do not duplicate the rules here |
+| 250 | Is artifact accessibility this directory's problem? | No. It belongs to the design family registry and the renderer (`docs/v1/plan/06-renderer.md`). Do not duplicate the rules here |
 
 ---
 
@@ -446,7 +447,7 @@ Twelve screens nobody designs and everybody sees. Rule 10 in [../../AGENTS.md](.
 | # | Question | Default |
 |---|---|---|
 | 251 | Performance budget for the marketing site? | Stricter than the artifact's. We are selling craft |
-| 252 | Analytics on our marketing site? | One cookieless, self-hosted tool. **Never on published artifacts** — that guarantee is a product feature ([../techstack/frontend.md](../techstack/frontend.md)) |
+| 252 | Analytics on our marketing site? | One cookieless, self-hosted tool. **Never on a deck** — the zero-network guarantee is a product feature ([../techstack/frontend.md](../techstack/frontend.md)) |
 | 253 | Cookie banner? | Avoid by not setting cookies. A cookie banner on a design product's homepage is a self-inflicted wound |
 | 254 | Third-party scripts? | None. [../security/third-parties.md](../security/third-parties.md) |
 | 255 | Font loading? | Subset, preload the display face, `font-display: swap` |
@@ -460,8 +461,8 @@ Twelve screens nobody designs and everybody sees. Rule 10 in [../../AGENTS.md](.
 
 | # | Question | Default |
 |---|---|---|
-| 259 | Where does AI disclosure appear on artifacts? | Designed into the footer of the published page, not bolted on. The EU AI Act has been in force since 2 August 2026 (`v3/compliance.md`) |
-| 260 | Who owns making it not ugly? | This directory. A compliance element designed by a lawyer is how the whole page loses its finish |
+| 259 | Where does AI disclosure appear on decks? | Designed into the footer of the deck, not bolted on. The EU AI Act has been in force since 2 August 2026 (`v3/spec.md`) |
+| 260 | Who owns making it not ugly? | This directory. A compliance element designed by a lawyer is how the whole deck loses its finish |
 | 261 | Do we promise not to train on customer content? | Yes, prominently. It is a headline-level trust claim with this buyer |
 | 262 | Do we say briefs are treated as embargoed? | Yes, and in those words. It is true ([../security/tenancy-and-data.md](../security/tenancy-and-data.md)) and no competitor says it |
 | 263 | Privacy policy tone? | Readable. It is a design surface |
@@ -477,14 +478,14 @@ Twelve screens nobody designs and everybody sees. Rule 10 in [../../AGENTS.md](.
 
 | # | Question | Default |
 |---|---|---|
-| 269 | The single activation metric? | **A published artifact within 24 hours of signup.** Not signups, not generations |
-| 270 | Time-to-value target? | Under 90 seconds to first artifact, under 24 hours to first publish |
-| 271 | Do we track the outline-gate approval rate? | Yes. A low rate means the director is bad; a rate near 100% means the gate is theatre |
+| 269 | The single activation metric? | **A deck exported within 24 hours of signup.** Not signups, not generations |
+| 270 | Time-to-value target? | Under 90 seconds to first deck, under 24 hours to first export |
+| 271 | Do we track the outline-gate approval rate? | Yes. A low rate means the interview is bad; a rate near 100% means the gate is theatre |
 | 272 | Do we track abandonment during the generation watch? | Yes, by second. It tells us whether forty seconds is actually tolerable |
 | 273 | Do we track reaching for a styling control? | Yes — every time a user hunts for a colour or size control. It is the best single signal for principle 8 and the cheapest to instrument |
 | 274 | Session recordings? | No. We hold embargoed launch messaging; recording sessions over it is indefensible |
 | 275 | NPS? | No. Ask the one question that matters: did you send it to anyone |
-| 276 | When does our own site become product output? | Hero at v3, showcase at v3, whole site only if it happens without adding a primitive to the schema. **Never bend the scene schema for our own website** |
+| 276 | When does our own site become product output? | Hero at v3, showcase at v3, whole site only if it happens without adding a primitive to the schema. **Never bend the `Deck` schema for our own website** |
 
 ---
 

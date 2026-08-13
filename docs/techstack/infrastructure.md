@@ -9,7 +9,7 @@ Two, split on the trust boundary rather than on the job boundary.
 ```
 d-design-api       PYTHON — the four phases · the model seam · data · jobs · THE SCHEMA
 d-design-web       TS — editor · renderer · Better Auth
-d-design-render    TS — scene tree → HTML · Playwright · the visual loop
+d-design-render    TS — deck tree → HTML · Playwright · the visual loop
 d-design-fetch     TS — the network-isolated fetch worker
 ```
 
@@ -17,7 +17,7 @@ d-design-fetch     TS — the network-isolated fetch worker
 
 **`api` and `jobs` share a repo and a codebase**, two entry points, same models and same seam. Separating them would buy nothing while duplicating everything — the same reasoning the app and job worker used to have, moved to the other language.
 
-The `Scene` schema lives in `d-design-api` as Pydantic and is published as **`@d-design/schema`** — a private npm package of *generated* TypeScript types and a Zod validator — for the three TypeScript repos ([../coderules/python.md](../coderules/python.md)). It is never hand-edited, and the gate fails if regenerating produces a diff. The version pin makes drift explicit rather than silent — the failure mode of a git submodule is a worker quietly sitting on an old commit, which is precisely the drift the one-source-of-truth rule exists to prevent ([../coderules/typescript.md](../coderules/typescript.md)).
+The `Deck` schema lives in `d-design-api` as Pydantic and is published as **`@d-design/schema`** — a private npm package of *generated* TypeScript types and a Zod validator — for the three TypeScript repos ([../coderules/python.md](../coderules/python.md)). It is never hand-edited, and the gate fails if regenerating produces a diff. The version pin makes drift explicit rather than silent — the failure mode of a git submodule is a worker quietly sitting on an old commit, which is precisely the drift the one-source-of-truth rule exists to prevent ([../coderules/typescript.md](../coderules/typescript.md)).
 
 The renderer is **not** shared with the fetch worker, and never should be — that container handles hostile input, and page-making capability does not belong inside the quarantine. It lives in `render`, which has no database access and no model key, and that is what lets publishing and the visual verification loop run without a function-timeout ceiling ([backend.md](backend.md), [pipeline-tools.md](pipeline-tools.md)). `render` and the fetch worker are both Node and both run Playwright, which makes merging them look like a saving; it is the one merge the trust split forbids.
 
@@ -40,7 +40,7 @@ VPC
         · task role: one KMS key for integration credentials, nothing else
 ```
 
-**ECS Fargate**, one task definition per service — `api`, `jobs`, `render`, and the fetch worker. Fargate over App Runner because App Runner hides exactly the networking that is the point; over Lambda because PGQueuer wants a persistent process and 15 minutes does not fit a 12-locale transcreation run.
+**ECS Fargate**, one task definition per service — `api`, `jobs`, `render`, and the fetch worker. Fargate over App Runner because App Runner hides exactly the networking that is the point; over Lambda because PGQueuer wants a persistent process and 15 minutes does not fit a long generation run.
 
 The socket-level unreachability test in [../security/testing.md](../security/testing.md) — *from inside the worker, the metadata IP and a VPC host are unreachable* — is now a test of this configuration rather than of application code. That is the whole point: it asserts the network, and the network cannot be bypassed by a parsing bug.
 
@@ -156,7 +156,7 @@ The temptation to build the infrastructure first should be resisted specifically
 
 **Docker Compose and a dev server. No AWS account.**
 
-v1 is single-user with local Postgres, no accounts, no publishing to strangers, no personalization, no integrations, no 3D. Its verification list asks you to open the published URL in an incognito window, which a dev server satisfies completely.
+v1 is single-user with local Postgres, no accounts, no hosted URLs, no integrations. Its verification list asks you to open the exported deck from `file://` in an incognito window and confirm it works offline with motion, which a dev server satisfies completely.
 
 Everything in this document lands with **v3** — the release that has real users, which is the same boundary every other v3 control sits on ([../security/README.md](../security/README.md)) — and within v3 it lands **last**, at step 11, after every feature has been verified against the local topology.
 

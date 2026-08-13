@@ -6,10 +6,12 @@ Every operational choice, what it beat, and what it cost. The rejected option ma
 
 | Decision | Chosen | Over | Because |
 |---|---|---|---|
+| **Artefact (2026-08-13)** | **A downloadable single-file `.html` deck that runs offline** — `connect-src 'none'`, fonts embedded | A served/published page (the old artefact) | The product re-decided from the vision up: the file is the artefact, the hosted URL is a v3 distribution layer. Reverses the "published pages to S3+CloudFront" framing |
+| **Design system (2026-08-13)** | **Generated per deck from a combinatorial registry** — never a fixed skeleton | Three fixed art directions | The old three-"art-direction" system was exactly the "same skeleton, different skin" problem this product exists to solve. Diversity is structural, measured by a fingerprint |
 | App hosting | **Vercel — `web` only** | Fly, self-hosted, Cloudflare | Next.js's own platform; fastest path solo, and both the dangerous work and the backend moved off it |
 | Backend language | **Python** | TypeScript everywhere | Reverses an earlier lock. AI/ML ecosystem, authoring fluency, and a backend that is not a frontend framework's server half. **Costs a codegen step** — see below |
-| Backend framework | **FastAPI** | Django + Ninja, Litestar | Pydantic-native, so the `Scene` schema and the API contract are the same object. Django's ORM would compete with the SQLAlchemy choice; Litestar's ecosystem is smaller |
-| Workers | **AWS ECS Fargate** | Fly, Railway, Lambda, App Runner | Network isolation becomes a subnet and a security group, not a promise. Lambda's 15-minute ceiling doesn't fit transcreation; App Runner hides the networking that is the point |
+| Backend framework | **FastAPI** | Django + Ninja, Litestar | Pydantic-native, so the `Deck` schema and the API contract are the same object. Django's ORM would compete with the SQLAlchemy choice; Litestar's ecosystem is smaller |
+| Workers | **AWS ECS Fargate** | Fly, Railway, Lambda, App Runner | Network isolation becomes a subnet and a security group, not a promise. Lambda's 15-minute ceiling doesn't fit a long generation run; App Runner hides the networking that is the point |
 | Runtime count | **Five, split on trust and language** | One combined worker; three runtimes | The process holding DB credentials must not be the one parsing an attacker's PDF. `render` is a *language* boundary, not a trust one — named as such so it is not mistaken for a security control |
 | Repos | **One per runtime** | One repo; two repos | The Pydantic→TypeScript schema package becomes a real versioned artifact with an explicit pin, which is what makes the codegen boundary visible |
 | Schema source of truth | **Pydantic** | Zod; a hand-written JSON Schema | The model call happens in Python, so the structured-output constraint should not travel. Reverses v1's Zod-first lock |
@@ -22,14 +24,15 @@ Every operational choice, what it beat, and what it cost. The rejected option ma
 | Jobs | **PGQueuer** | Procrastinate, Celery, pg-boss | Transactional enqueue is the one property pg-boss was chosen for, and PGQueuer is built around it. Procrastinate has more features this project does not need yet; Celery needs Redis and loses the property |
 | Rate limits / quotas | **Postgres atomic counters** | Upstash Redis, platform limits | The quota must be transactional anyway to close the A10 race; one datastore |
 | Model access | **OpenRouter behind a seam** | Anthropic direct, Bedrock, Claude Platform on AWS | Model flexibility and cheap experimentation. **Costs a guarantee** — see below |
+| Image generation | **OpenRouter image models, behind the same seam** | One fixed image vendor; stock-photo APIs | Decks need generated images (backgrounds, heroes, illustrations, chart companions), and "no preferred vendor" applies to image models too. Generated images are new works (no stock-licensing cost) and embed as data URIs (zero-network). **Costs:** image calls are the most expensive per deck — capped, measured in v1, budgeted in v2 |
 | Publish target | **Static artifacts to S3** | Vercel routes with `use cache` | Published pages were always "static after render". Removing the origin removes most of the attack surface |
 | CDN | **CloudFront** | Vercel edge, Cloudflare | One cloud; explicit cache-key policies, which are now a security control |
 | Storage | **S3 + CloudFront** | Supabase Storage, R2 | The workers process every upload and live in AWS |
-| Personalized pages | **Static shell + client-side field fetch** | Per-recipient pre-render; Vercel route | One publish path, one renderer. **Costs `connect-src 'none'`** |
-| Page runtime | **React SSR + hydrate, Motion** | Vanilla reveal runtime, CSS-only, islands | A second motion implementation would drift from the editor. Weight is the cheaper loss |
+| ~~Personalized pages~~ | **Superseded 2026-08-13** — the offline single-file artefact has no per-recipient variation | The personalization feature died with the served-page product |
+| Page runtime | **React renderer + a tiny inlined present/motion runtime in the exported file** | Vanilla reveal runtime, CSS-only, islands | A second motion implementation would drift from the editor. Weight is the cheaper loss |
 | Editor state | **Zustand** | useReducer, Jotai, Immer | One mutable document; undo/redo is the feature that makes AI editing safe to try |
 | App chrome UI | **shadcn/ui** | Radix bare, hand-built, Mantine | Own the code, no runtime dep, accessibility behavior from Radix |
-| Streaming | **SSE over a Route Handler** | AI SDK, polling, WebSocket | The unit is a validated scene, not a token. No library needed |
+| Streaming | **SSE over a Route Handler** | AI SDK, polling, WebSocket | The unit is a validated slide, not a token. No library needed |
 | Fonts | **Fontsource, open licence** | Commercial, Adobe Fonts | Redistribution to customers' audiences makes licensing a product constraint |
 | Screenshots | **Playwright in the fetch worker** | Browserless, ScreenshotOne | The hostile page renders inside the box built for hostile things |
 | Document parsing | **`pdf.js` / `unpdf` in the fetch worker** | Claude native PDF reading | Cheap and local. Highest-CVE dependency class, contained by placement — Claude-native is the documented fallback |
@@ -54,9 +57,9 @@ Every operational choice, what it beat, and what it cost. The rejected option ma
 | ~~Publish render location: job worker~~ | Superseded — see "Publish render" above | | The premise (the job worker ships from the app repo, so it has the renderer) died with the Python move |
 | v1 infrastructure | **None — Docker Compose only** | Full stack from day one | The long pole is the renderer, and a perfect VPC does not move that risk |
 | Our own brand | **Light editorial "gallery wall"** | Wearing `cinematic-dark`; a dark atmospheric site | A site wearing its own art direction proves the product makes one thing. Also the shortest path away from the slop aesthetic ([../design/brand.md](../design/brand.md)) |
-| Marketing hero | **A real embedded published artifact + a recorded generation** | Live anonymous generation; a video; a canned prompt box | Published pages are static, so real work costs nothing per visitor. A recorded SSE log is one model call ever and cannot fail on stage |
+| Marketing hero | **A real exported deck + a recorded generation** | Live anonymous generation; a video; a canned prompt box | A deck is one self-contained file, so real work costs nothing per visitor. A recorded SSE log is one model call ever and cannot fail on stage |
 | Marketing analytics | **Self-hosted, cookieless, marketing site only** | Plausible Cloud, GA4, Fathom | A hosted vendor is a subprocessor decision ([../security/third-parties.md](../security/third-parties.md)). No cookies also means no consent banner |
-| Chrome typography | **Commercially licensed, not shared with any AD** | Reusing the output's open faces; Inter/Geist | Our chrome is not redistributed, so the output's licence constraint does not bind it — and a shared face merges the two design systems |
+| Chrome typography | **Commercially licensed, not shared with any design family** | Reusing the output's open faces; Inter/Geist | Our chrome is not redistributed, so the output's licence constraint does not bind it — and a shared face merges the two design systems |
 
 ## The three decisions that cost something
 
@@ -64,7 +67,7 @@ Everything else is a preference with a defensible rationale. These three trade a
 
 ### 1. The Python backend move
 
-The largest reversal in this repository. An earlier lock read *"Everything stays TypeScript — app, both workers, the pipeline"*, with three reasons: the pipeline is not ML work, the `Scene` schema is Zod and a Pydantic mirror would be a second source of truth, and one language is one toolchain.
+The largest reversal in this repository. An earlier lock read *"Everything stays TypeScript — app, both workers, the pipeline"*, with three reasons: the pipeline is not ML work, the `Deck` schema is Zod and a Pydantic mirror would be a second source of truth, and one language is one toolchain.
 
 **What it buys**, and these are the stated drivers rather than a post-hoc rationale: direct access to the Python AI/ML ecosystem (DSPy/GEPA above all), authoring fluency, a backend framework that is not a frontend framework's server half, and room for Python-shaped services later.
 
@@ -85,23 +88,23 @@ The largest reversal in this repository. An earlier lock read *"Everything stays
 
 ### 2. OpenRouter weakens schema enforcement
 
-[../security/prompt-injection.md](../security/prompt-injection.md) claims *"a fully compromised model can only emit valid Scene JSON."* Under OpenRouter that is no longer enforced by the decoder — `strict: true` support varies by provider, and some treat a schema as a strong hint.
+[../security/prompt-injection.md](../security/prompt-injection.md) claims *"a fully compromised model can only emit valid Deck JSON."* Under OpenRouter that is no longer enforced by the decoder — `strict: true` support varies by provider, and some treat a schema as a strong hint.
 
 **What survives:** the schema parse was always the real gate. Decoder enforcement lowered how *often* the model produced something invalid; it never was the thing that stopped invalid output from being rendered. Output failing the parse is rejected, repaired once, then fails visibly. The claim restates as *"a fully compromised model can only cause a rejected generation"* — same outcome, different route.
 
 **The residual:** repeated repair cycles burn tokens. Denial of wallet, already covered by quotas and the kill switch.
 
-**Revisit when:** Build's repair rate is materially worse than a direct Anthropic call. That number is already in `generations` (`v1/ai-pipeline.md`) — watch it from the first generation. The seam exists so that moving one phase is a config change.
+**Revisit when:** the slide builder's repair rate is materially worse than a direct Anthropic call. That number is tracked from the first generation. The seam exists so that moving one phase is a config change.
 
-### 3. Client-side personalization ends `connect-src 'none'`
+### 3. `connect-src 'none'` is back, because the artefact is a file
 
-A published page was specified to make **zero** outbound requests, enforced by CSP. Two features broke it: the personalization field fetch and the analytics beacon.
+The old product's client-side personalization and analytics beacon ended `connect-src 'none'` — it was weakened to two exact endpoints. The 2026-08-13 vision re-decide removed both features and made the offline single-file deck the artefact, so `connect-src 'none'` is back and it is the product.
 
-**What survives:** `connect-src` names two exact paths — not `'self'`, not a host, two full URLs. The guarantee degrades from *cannot talk to anything* to *can talk to two endpoints you own, and a browser test proves nothing else*.
+**What survives:** the exported deck is a single self-contained `.html` file that talks to *nothing*. Fonts and images embedded as data URIs, motion inlined, `connect-src 'none'`. A browser test asserts zero requests, from `file://`. A hosted URL (v3) serves the same bytes, so the same assertion holds there.
 
-**The residual:** a recipient token now appears in a client-side request, which raises the stakes on `Referrer-Policy: no-referrer` and `Cache-Control: private, no-store`.
+**The residual:** there is no per-recipient personalization and no analytics beacon. Those are v3 product questions, and if they arrive they must not break the zero-network guarantee — the file stays the artefact.
 
-**Revisit when:** if analytics ever moves to CloudFront access logs and personalization to per-recipient pre-rendering, `connect-src 'none'` comes back. Both are viable; neither is worth doing before there are users.
+**Revisit when:** if a hosted-URL analytics feature ever arrives in v3, it must be a decision about the guarantee, not a drift past it.
 
 ## What this supersedes
 
@@ -109,23 +112,24 @@ Earlier documents locked decisions this directory reverses. Recorded here rather
 
 | Was | Now | Where it was |
 |---|---|---|
-| Postgres in Docker → **Supabase** | Docker → **RDS/Aurora** | `v1/spec.md` |
+| Postgres in Docker → **Supabase** | Docker → **RDS/Aurora** | `docs/v1/spec.md` |
 | **Supabase Auth**, RLS via `auth.uid()` | **Better Auth**, RLS via `current_setting('app.user_id')` | [../security/tenancy-and-data.md](../security/tenancy-and-data.md) |
-| `storage.ts`: local disk → **Supabase Storage** | local disk → **S3** (MinIO locally) | `v1/spec.md` |
+| `storage.ts`: local disk → **Supabase Storage** | local disk → **S3** (MinIO locally) | `docs/v1/spec.md` |
 | **Supabase client** in the dependency baseline | Removed | [../coderules/dependencies.md](../coderules/dependencies.md) |
 | `anon` role has zero grants | **No anonymous role exists.** Nothing but the server connects | [../security/tenancy-and-data.md](../security/tenancy-and-data.md) |
 | One isolated worker | **Two workers**, split on trust | [../security/infrastructure.md](../security/infrastructure.md) |
-| Published pages served from an origin | **Static S3 artifacts**, no origin | [../security/content-and-web.md](../security/content-and-web.md) |
-| `connect-src 'none'` | Two exact endpoints | [../security/content-and-web.md](../security/content-and-web.md) |
-| Anthropic API called directly | **OpenRouter** behind a seam, no preferred vendor | `v1/ai-pipeline.md` |
-| Shape violations are **unrepresentable** — the decoder prevents a hex code | **The schema parse is the only gate.** The decoder shifts the odds where the route enforces natively | `v1/scene-schema.md` |
-| PDFs go to the model as a document block | Extracted in the **fetch worker** first; model-native reading is the documented fallback | `v1/ai-pipeline.md` |
-| Prompt caching is one mechanism with one discount | Activation, discount rate, and minimum prefix all **vary by route** | `v1/ai-pipeline.md` |
+| Published pages served from an origin | **A downloadable single-file HTML deck** (2026-08-13) | `docs/v1/plan/05-export.md`, [../security/content-and-web.md](../security/content-and-web.md) |
+| `connect-src 'none'` → two endpoints | **`connect-src 'none'` is back** — the offline file talks to nothing | [../security/content-and-web.md](../security/content-and-web.md) |
+| Three fixed art directions | **A per-deck generated design family registry** (2026-08-13) | `docs/v1/spec.md` |
+| Anthropic API called directly | **OpenRouter** behind a seam, no preferred vendor | `docs/v1/spec.md` |
+| Shape violations are **unrepresentable** — the decoder prevents a hex code | **The schema parse is the only gate.** The decoder shifts the odds where the route enforces natively | `docs/v1/plan/01-schema.md` |
+| PDFs go to the model as a document block | Extracted in the **fetch worker** first; model-native reading is the documented fallback | `docs/v1/spec.md` |
+| Prompt caching is one mechanism with one discount | Activation, discount rate, and minimum prefix all **vary by route** | `docs/v1/spec.md` |
 | Generation has **no tools** | No tools **with side effects**; read-only tools tiered | [../security/prompt-injection.md](../security/prompt-injection.md) |
-| ~$0.20 per experience | ~$0.40 once the visual loop is on | `v1/ai-pipeline.md` |
+| ~$0.20 per experience | **Cost per deck, measured not assumed** — image generation makes it a v1 measurement, a v2 budget | `docs/v1/spec.md` |
 | Publishing renders on Vercel | ~~job worker~~ → the **`render` service** | [backend.md](backend.md) |
-| **TypeScript everywhere** — app, both workers, the pipeline | **Python** backend (`api`, `jobs`); TypeScript for `web`, `render`, fetch worker | [ai-stack.md](ai-stack.md), `v1/spec.md` |
-| **Zod is the source of truth** for the `Scene` shape | **Pydantic** is; Zod and TS types are generated from it | [../coderules/typescript.md](../coderules/typescript.md), `v1/scene-schema.md` |
+| **TypeScript everywhere** — app, both workers, the pipeline | **Python** backend (`api`, `jobs`); TypeScript for `web`, `render`, fetch worker | [ai-stack.md](ai-stack.md), `docs/v1/spec.md` |
+| **Zod is the source of truth** for the `Scene` shape | **Pydantic** is; Zod and TS types are generated from it | [../coderules/typescript.md](../coderules/typescript.md), `docs/v1/plan/01-schema.md` |
 | Drizzle is the ORM | **SQLAlchemy + Alembic** for app tables; Drizzle keeps **auth tables only** | [backend.md](backend.md) |
 | **pg-boss** for jobs | **PGQueuer** | [backend.md](backend.md) |
 | Plain `fetch` for the model seam | Plain **`httpx`**; Instructor is the upgrade path, not the Vercel AI SDK | [ai-stack.md](ai-stack.md) |

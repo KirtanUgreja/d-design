@@ -40,7 +40,7 @@ The rules in this directory were written for clarity. They happen to be exactly 
 | Rule | What it stops |
 |---|---|
 | Types generated from Pydantic ([python.md](python.md)) | The most damaging duplication of all — a second definition of a core shape — is caught by a gate that regenerates and fails on a diff. It used to be *unrepresentable*; across two languages it is *detected*, which is weaker and is why the gate is not optional |
-| One renderer, no mode branches ([patterns.md](patterns.md)) | A second "publish-flavored" renderer, which is precisely the thing an AI would helpfully write |
+| One renderer, no mode branches ([patterns.md](patterns.md)) | A second "export-flavored" renderer, which is precisely the thing an AI would helpfully write |
 | Feature public APIs (`index.ts`) | Gives the model a short, readable catalog of what already exists. A good index is a duplication defense |
 | The dependency ledger ([dependencies.md](dependencies.md)) | Stops the other direction — a package added for something already in the tree |
 | `Result` as the one error type | No parallel error-handling convention per feature |
@@ -62,7 +62,7 @@ The pattern: **make the canonical thing easy to find and the duplicate hard to w
 
 **4. Read the diff where "almost correct" is expensive.** You cannot review everything solo, and pretending otherwise means reviewing nothing. Read these properly; skim the rest:
 
-- **the scene schema** — every downstream guarantee is a consequence of this shape
+- **the `Deck` schema** — every downstream guarantee is a consequence of this shape
 - **Feature data modules** (`*_data.py`, `*.data.ts`) — the service-role filter and the RLS assumption are security-critical, and a missing `where` clause is textbook almost-correct ([../security/tenancy-and-data.md](../security/tenancy-and-data.md))
 - **every `catch`** — a permissive default is the single most reviewable-looking vulnerability there is ([patterns.md](patterns.md), rule 5). Grep for `catch` in a diff and ask what each one grants
 - **the no-styling backstop and the AD linter** — a check that is subtly too permissive still passes its own tests
@@ -76,7 +76,7 @@ Everything else — intake forms, settings UI, the outline editor — gets a ski
 
 CircleCI's 2026 data: feature-branch throughput up 59% year over year, while median main-branch throughput *fell*. Teams got much faster at producing code and no faster at deciding it was safe to merge.
 
-Solo, that bottleneck is one person, and it is the actual limit on this project's speed — not typing, not model latency, not tokens (`v1/ai-pipeline.md` puts a full experience at ~$0.20).
+Solo, that bottleneck is one person, and it is the actual limit on this project's speed — not typing, not model latency, not tokens (`docs/v1/spec.md` notes the cost per deck is measured, not assumed).
 
 Two consequences, and they are why [tooling.md](tooling.md) exists in the form it does:
 

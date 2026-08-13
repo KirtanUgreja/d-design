@@ -30,3 +30,6 @@ api/eval-results.json
 # Local env
 .env
 .env.local
+
+.commandcode
+AGENTS.md

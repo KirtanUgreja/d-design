@@ -6,7 +6,9 @@ Which models, chosen how, measured with what — and why there is no agent frame
 
 **This product should not have a preferred model vendor.** It has a preferred *interface*: a call that takes a prompt and a JSON Schema and returns conforming JSON. Everything behind that is replaceable, and the choice of what sits there is an empirical question with a different answer per phase and a different answer every few months.
 
-That is why [backend.md](backend.md) puts OpenRouter behind a thin seam rather than picking a vendor. The seam is not indecision — it is the recognition that any model named in this document will be wrong within two quarters, and that the thing worth building is the apparatus for switching rather than the conviction about which one.
+**The same stance applies to image generation.** Decks need generated images (backgrounds, heroes, illustrations, chart companions — `docs/v1/spec.md` → Images), and those go through the **OpenRouter image-model route**, behind the same seam. Image quality, schema-adjacent structure (the `image` block), and cost are measured like the text models are; the choice of which image model is an eval result, not a loyalty. The seam is not indecision — it is the recognition that any model named in this document will be wrong within two quarters, and that the thing worth building is the apparatus for switching rather than the conviction about which one.
+
+That is why [backend.md](backend.md) puts OpenRouter behind a thin seam rather than picking a vendor — one seam, text and image routes, same discipline.
 
 **The corollary is that opinions are worthless here and measurements are not.** A model is chosen for a phase because it scored better on your briefs, not because of a benchmark, a launch post, or a reputation. The eval harness below is what makes that sentence actionable; without it, "provider-neutral" just means "picks whatever was in the last blog post."
 
@@ -23,14 +25,14 @@ Stated so the seam has something concrete to be neutral about, not as a recommen
 
 Two structural notes that outlast the specific names:
 
-- **Vision is no longer scarce.** ~67 models have vision, and **28 of those are open-weight and self-hostable**. Art-direction derivation (`v2/art-direction-engine.md`) is not gated on a single vendor.
+- **Vision is no longer scarce.** ~67 models have vision, and **28 of those are open-weight and self-hostable**. The visual critic and the vision-eval of generated images are not gated on a single vendor.
 - **Pricing models are diverging.** Some providers are moving from token meters to task quotas (Kimi Code bills 300–1,200 calls per 5-hour window). Cost accounting that assumes per-token billing will eventually mismeasure. Log both calls and tokens.
 
 ## What actually constrains the choice here
 
 Benchmarks are close to useless for this product because none of them measure the thing it needs. Four criteria do, in order:
 
-**1. Schema conformance rate.** The Build phase emits a `Scene` tree that must satisfy Pydantic. The metric is the **repair rate**, and it is the single number that determines whether a model is usable here. A model that scores brilliantly on reasoning and emits a malformed union discriminator 8% of the time is worse for this job than a cheaper model that never does.
+**1. Schema conformance rate.** The slide builder emits a `Deck` tree that must satisfy Pydantic. The metric is the **repair rate**, and it is the single number that determines whether a model is usable here. A model that scores brilliantly on reasoning and emits a malformed union discriminator 8% of the time is worse for this job than a cheaper model that never does.
 
 Under OpenRouter this matters more than it would with decoder-enforced structured outputs, because enforcement varies by provider ([decisions.md](decisions.md)). Measure it per model *and per route*.
 
@@ -38,9 +40,9 @@ Under OpenRouter this matters more than it would with decoder-enforced structure
 
 **3. Vision quality, for v3 only.** AD derivation and the visual verification loop ([pipeline-tools.md](pipeline-tools.md)) need a model that reads type character, density, and spatial rhythm from an image. Distinct capability, distinct evaluation, possibly a distinct model.
 
-**4. Cost, last.** At roughly $0.20 per experience (`v1/ai-pipeline.md`), token cost is not this product's constraint and never has been. Cost matters for the *cheap* phases — Director, Intake, Edit run often and are structurally simple — and it is close to irrelevant for Build, where quality is everything.
+**4. Cost, last.** At roughly $0.20 per experience under the old pipeline, token cost was not this product's constraint and never has been. Cost matters for the *cheap* phases — Interview, Mapping, Review run often and are structurally simple — and it is close to irrelevant for the slide builder, where quality is everything. Per-slide generation is more calls than the old pipeline; the cost per deck is measured in v1 (`docs/v1/spec.md`) and budgeted in v2.
 
-> The one-line rule: **spend on Build, economise everywhere else, and let evals decide where the line falls.**
+> The one-line rule: **spend on the slide builder, economise everywhere else, and let evals decide where the line falls.**
 
 ### The constraint none of the four predicted: reasoning tokens are billed out of `max_tokens`
 
@@ -76,8 +78,8 @@ This is the real gap the model question exposes. Model-neutrality without evals 
 
 | Layer | What it does | When it runs |
 |---|---|---|
-| **Structural assertions** | Valid `Scene` JSON · no presentational values · every `CTA.href` traces to the Brief · budgets respected | Every PR. **Hard pass/fail** |
-| **Quality scoring** | Rendered output judged on layout variety, copy fidelity to the Brief, motion appropriateness | Nightly, tracked as a trend |
+| **Structural assertions** | Valid `Deck` JSON · no presentational values · every CTA destination traces to the interview/outline · budgets respected · the injection corpus | Every PR. **Hard pass/fail** |
+| **Quality scoring** | Rendered output judged on layout variety, copy fidelity to the outline, motion appropriateness | Nightly, tracked as a trend |
 | **Production tracing** | Repair rate, cost, latency, refusal rate per phase and per model | Continuously |
 
 Layer 1 is deterministic and belongs in CI, gating merges. Layer 2 is probabilistic and must **never** gate a merge — a flaky judge blocking a deploy is how teams learn to skip the gate. Track the trend; investigate a drop.
@@ -104,12 +106,12 @@ Self-hosted Langfuse resolves it, and only if traces are scrubbed and retained d
 |---|---|---|
 | **api** — the four phases, data, quotas, jobs | **Python** | Where the pipeline and the model seam live |
 | **web** — editor, renderer components, auth | **TypeScript** | The renderer is React. It cannot be anything else |
-| **render** — scene tree → HTML, the visual loop | **TypeScript** | It is the renderer, running headless |
+| **render** — deck tree → HTML, the visual loop | **TypeScript** | It is the renderer, running headless |
 | **fetch worker** — hostile input | **TypeScript** | Unchanged. Keeps `unpdf`/`pdf.js` and Playwright as chosen |
 
-**The renderer is why this is not a single-language project and never can be.** It is React, it runs in the browser editor *and* in the publish process, and [../coderules/patterns.md](../coderules/patterns.md) rule 2 requires exactly one implementation of it. A Python renderer would be a second implementation, which is the one thing that rule exists to prevent.
+**The renderer is why this is not a single-language project and never can be.** It is React, it runs in the browser editor *and* in the export process, and [../coderules/patterns.md](../coderules/patterns.md) rule 2 requires exactly one implementation of it. A Python renderer would be a second implementation, which is the one thing that rule exists to prevent.
 
-### The `Scene` schema, which is the whole cost of this move
+### The `Deck` schema, which is the whole cost of this move
 
 The old argument against Python was precise and it was correct: *a Python service would need Pydantic models mirroring the Zod schema — a second definition of the most important shape in the system.* That objection has not been answered by being ignored. It has been answered by **making the second definition a build artifact instead of a file someone maintains.**
 
@@ -160,7 +162,7 @@ LangGraph, CrewAI, Pydantic AI, the OpenAI Agents SDK, Microsoft Agent Framework
 The four phases are a fixed sequence decided by your code, with a human gate in the middle:
 
 ```
-Intake ──▶ Director ──▶ [human approves outline] ──▶ Build ──▶ Edit
+Interview ──▶ Mapping ──▶ [human approves outline] ──▶ Slide builder (per-slide) ──▶ Review
 ```
 
 No autonomous planning, no dynamic tool selection, no multi-agent negotiation, no memory across runs, no self-directed loops. An agent framework's entire value is orchestrating decisions the model makes about *what to do next* — and here your code makes every one of them. Adopting one would mean expressing four sequential function calls as a graph, adding a dependency, a state model, and a debugging surface, and buying nothing.

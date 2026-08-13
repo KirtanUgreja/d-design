@@ -18,7 +18,7 @@ What still has to be decided, because the provider does not decide it for you:
 | **Session invalidation on password change** | Existing sessions end. Otherwise a stolen session survives the user's response to the theft |
 | **Password reset tokens** | Single-use, short-lived, invalidated on use and on password change. Never logged, never in a URL that gets sent to an error tracker |
 | **MFA** | Not v3. Offer it when accounts hold something worth stealing — note that they hold integration credentials from day one, which arguably means sooner |
-| **Enumeration** | Signup, login, and reset return the same response for existing and non-existing addresses. Cheap, and `recipients` makes the address list itself interesting |
+| **Enumeration** | Signup, login, and reset return the same response for existing and non-existing addresses. Cheap, and the account table makes the address list itself interesting |
 
 **Rate-limit the auth endpoints specifically**, separately from the generation quotas. Credential stuffing targets login, not the expensive path, and the volume that constitutes an attack there is much lower.
 
@@ -30,7 +30,7 @@ The account-deletion path is a security control too, not only a privacy one: it 
 
 One sentence, trivially testable, and it removes an entire class of bug.
 
-Anonymous visitors never touch the database — published pages are static artifacts on a CDN with no origin server at all ([../techstack/infrastructure.md](../techstack/infrastructure.md)). RLS then only guards *authenticated* users, and there is no anonymous policy to get subtly wrong, which is where deployments in this shape usually fail: every new table silently needs its anon policy considered, forever.
+Anonymous visitors never touch the database — the v1 artefact is a local file, and a hosted deck (v3) is static on a CDN with no origin server at all ([../techstack/infrastructure.md](../techstack/infrastructure.md)). RLS then only guards *authenticated* users, and there is no anonymous policy to get subtly wrong, which is where deployments in this shape usually fail: every new table silently needs its anon policy considered, forever.
 
 ```sql
 -- the application role can neither bypass RLS nor own schema objects
@@ -58,30 +58,30 @@ Identity comes from a **session variable set per transaction**, not from `auth.u
 If application tables ever become readable from `web`, this stops being a bounded cost and becomes the primary tenant-isolation risk in the system.
 
 ```sql
-alter table experiences enable row level security;
+alter table decks enable row level security;
 
-create policy own_experiences on experiences
+create policy own_decks on decks
   for all to app_user
   using      (owner_id = current_setting('app.user_id')::uuid)
   with check (owner_id = current_setting('app.user_id')::uuid);
 ```
 
-Child tables — `locales`, `snapshots`, `recipients`, `briefs`, `data_sources`, `domains` — scope through the parent:
+Child tables — `brand_kits`, `views`, `domains` — scope through the parent:
 
 ```sql
-create policy own_locales on locales
+create policy own_brand_kits on brand_kits
   for all to app_user
   using (exists (
-    select 1 from experiences e
-    where e.id = locales.experience_id
-      and e.owner_id = current_setting('app.user_id')::uuid
+    select 1 from teams t
+    where t.id = brand_kits.team_id
+      and t.owner_id = current_setting('app.user_id')::uuid
   ));
 ```
 
-`art_directions` is the exception worth care: system ADs are readable by every authenticated user, user-authored ones only by their owner.
+`design_families` is the exception worth care: system families are readable by every authenticated user, user/team-authored ones only by their owner.
 
 ```sql
-create policy read_art_directions on art_directions
+create policy read_design_families on design_families
   for select to app_user
   using (source = 'system'
          or owner_id = current_setting('app.user_id')::uuid);
@@ -102,20 +102,13 @@ Used only in server routes, never reachable from a browser. Two rules:
 1. **Every service-role query carries an explicit filter.** RLS is bypassed for this role, so the filter is the only control left. `where published_at is not null` is doing security work, not just returning fewer rows.
 2. **The service key never reaches the client bundle.** Assert it in the build — grep the output for the key prefix.
 
-## Recipient tokens
+## Hosted-URL security (v3)
 
-`recipients` is the most sensitive table: it holds named contacts at named companies. It is never exposed to anon, and never queried by anything but a single server route that takes a token.
-
-- **128-bit random**, stored — not HMAC-derived. A stored token can be revoked individually without rotating a signing key that would invalidate every campaign at once.
-- **Indexed lookup**, so timing does not vary with position.
-- **Rate-limited** per IP, even though guessing is infeasible. It catches scanners and tells you someone is trying.
-- **Optional per-campaign expiry.**
-
-See [content-and-web.md](content-and-web.md) for the referrer-leak problem, which is how tokens actually escape in practice.
+The v1 artefact is a local file and has no server side. A hosted URL (v3) is static S3+CloudFront serving the same single-file HTML — there is no origin server and no token-carrying route. If a hosted-URL analytics feature ever arrives, it must not break the zero-network guarantee ([content-and-web.md](content-and-web.md)).
 
 ## Integration credentials
 
-Airtable and Notion OAuth tokens grant access to a customer's entire workspace. They are the highest-value secret in the system.
+Airtable and Notion OAuth tokens grant access to a customer's entire workspace. They are the highest-value secret in the system — **this is a v3 feature, not a v1 one.**
 
 **Envelope encryption.** Data key encrypted by a KMS-held master key; ciphertext in `data_sources.credentials_ref`. A database dump yields nothing usable.
 
@@ -127,35 +120,31 @@ Airtable and Notion OAuth tokens grant access to a customer's entire workspace. 
 
 ## Logging
 
-`generations` stores **metadata only**: phase, token counts, repair flag, error class, duration.
+`generations` stores **metadata only**: phase, token counts, repair flag, error class, duration, image-generation count.
 
-**No prompts. No outputs.**
+**No prompts. No outputs. No generated images.**
 
 Prompts contain the customer's unreleased launch messaging — plausibly the most confidential thing they will ever hand you, and often under embargo. It does not belong in a metrics table that exists to answer "what does this cost" and "which validation rules fail most." Both questions are answerable from counts.
 
-The same rule applies to application logs and error reporting: scrub scene content, brief content, and recipient fields before anything leaves the process. Error trackers are a common accidental PII sink.
+The same rule applies to application logs and error reporting: scrub interview content, deck content, and brand-kit values before anything leaves the process. Error trackers are a common accidental PII sink.
 
-**And the same fact governs marketing, which is the leak this section did not anticipate.** A showcase, a case study, and a screenshot in a pitch deck are all publication of the customer's embargoed launch messaging by a route that never touches a log. The rule that follows is stricter than a checkbox at signup and is not negotiable at the moment someone wants a launch asset ([../design/website.md](../design/website.md)): **explicit written release, per artifact, after that customer's launch is already public.** Never opt-out, never "it is on the public internet anyway," and the *brief* requires a separate release from the *output*, because it is the more sensitive of the two — it is the messaging, unshipped, with the arguments still visible.
+**And the same fact governs marketing, which is the leak this section did not anticipate.** A showcase, a case study, and a screenshot in a pitch deck are all publication of the customer's embargoed launch messaging by a route that never touches a log. The rule that follows is stricter than a checkbox at signup and is not negotiable at the moment someone wants a launch asset ([../design/website.md](../design/website.md)): **explicit written release, per artifact, after that customer's launch is already public.** Never opt-out, never "it is on the public internet anyway," and the *interview* requires a separate release from the *output*, because it is the more sensitive of the two — it is the messaging, unshipped, with the arguments still visible.
 
 ## PII and retention
 
 | Data | Retention |
 |---|---|
-| `views` | 12 months, rolling deletion |
-| `recipients` | Until the campaign or account is deleted |
-| Integration credentials | Until disconnected, then revoked and purged |
+| `views` | 12 months, rolling deletion (v3, if hosted analytics exists) |
+| Brand-kit values | Until the account is deleted |
+| Integration credentials | Until disconnected, then revoked and purged (v3) |
 | `generations` metadata | Indefinite — contains no personal data |
 
-**Cascade delete works and is tested.** Deleting an experience removes its locales, snapshots, recipients, and views. Deleting an account removes everything. Write the test that asserts no orphans, because GDPR deletion requests are not the moment to discover a missing foreign key.
+**Cascade delete works and is tested.** Deleting a deck removes its brand-kit mappings and views. Deleting an account removes everything. Write the test that asserts no orphans, because GDPR deletion requests are not the moment to discover a missing foreign key.
 
-**Delete-recipient is a first-class action**, available from the editor, removing or anonymizing their view rows. Retrofitting deletion into an analytics table is genuinely painful — build it with the feature.
-
-**IP addresses are not stored** in `views`. Scroll depth, CTA reach, and duration answer the marketer's questions; the signed link already says who. Anything more is surveillance the product does not need to be valuable.
+**IP addresses are not stored** in `views`. Scroll depth and CTA reach answer the marketer's questions; anything more is surveillance the product does not need to be valuable.
 
 ## Identified tracking
 
-`views.recipient_id` is nullable and **null unless the publisher explicitly enabled identified tracking**. That nullability is the privacy design, not an implementation detail.
+`views.recipient_id` is nullable and **null unless the publisher explicitly enabled identified tracking**. That nullability is the privacy design, not an implementation detail. **This is a v3 question** — the v1 offline deck makes no requests, so there is no tracking to identify. If a hosted-URL analytics feature arrives in v3, it must not break the zero-network guarantee, and identified tracking (if it ever exists) carries the controller obligations below.
 
 Enabling it makes the publisher a data controller with consent, retention, and deletion obligations. The product surfaces that at the moment of opting in, not in a support article afterwards.
-
-See `v3/personalization.md` for the product-side treatment.

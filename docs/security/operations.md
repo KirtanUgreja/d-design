@@ -61,9 +61,9 @@ Each version ships only after the security tests for what it introduced pass, an
 | Version | Gate |
 |---|---|
 | **every release** | Framework and parsers at or above their version floors · fail-closed suite green · no key-shaped string in the build · **ZDR on and prompt logging off** ([third-parties.md](third-parties.md)) · **OIDC trust policies scoped, no wildcard `sub`** ([build-pipeline.md](build-pipeline.md)) · fetch-worker image rebuilt within the patch window |
-| **v1** | Injection corpus green · sandbox-escape tests green · upload tests green · origin separation verified |
-| **v2** | CSS-token-injection tests green · AD linter rejects malformed token grammar |
-| **v3** | Auth suite green (no-session and wrong-tenant on every route) · RLS isolation green · SSRF suite green (including socket-level unreachability and Chromium sandboxing) · **cache-isolation suite green against the real CDN** · **`/r/fields` CORS does not reflect an arbitrary origin** · privacy/retention green · entitlement + webhook tests green · subprocessor list published and current |
+| **v1** | Injection corpus green · the zero-request `connect-src` assertion green from `file://` · the data-URI embedding assertion green · navigation assertions green · upload tests green (v3) |
+| **v2** | CSS-token-injection tests green (v3, with brand-kit upload) · the family registry rejects malformed token grammar |
+| **v3** | Auth suite green (no-session and wrong-tenant on every route) · RLS isolation green · SSRF suite green (including socket-level unreachability and Chromium sandboxing) · **cache-isolation suite green against the real CDN** · privacy/retention green · entitlement + webhook tests green · subprocessor list published and current |
 
 The gate is not "we wrote the tests." It is "the tests are green and the checklist is walked." A skipped gate under deadline pressure is exactly how the control that existed stops existing.
 

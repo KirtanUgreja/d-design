@@ -8,8 +8,8 @@ Five runtimes and two languages. The lines between them are trust boundaries rat
 |---|---|---|---|---|
 | **web** (Vercel) | TypeScript | Editor UI, renderer, **Better Auth**, marketing site | Sessions, **auth tables only** | App-table access, model access, long-running work |
 | **api** (Fargate) | **Python** | The four pipeline phases, the model seam, quotas, enqueue | DB (all app tables), model access | Hostile input, session issuance |
-| **jobs** (Fargate) | **Python** | PGQueuer — transcreation, posters, live-data refresh, retention | DB, model access | Hostile input |
-| **render** (Fargate) | TypeScript | Scene tree → HTML, Playwright, the visual verification loop | The renderer | **DB access, model credentials** |
+| **jobs** (Fargate) | **Python** | PGQueuer — deck regeneration, retention, scheduled work | DB, model access | Hostile input |
+| **render** (Fargate) | TypeScript | Deck tree → HTML, Playwright, the visual verification loop | The renderer | **DB access, model credentials** |
 | **fetch worker** (Fargate) | TypeScript | URL fetch, screenshots, document parsing, integration reads | Integration credentials, egress-only network | **DB access, VPC route, the renderer, secrets beyond its own** |
 
 `api` and `jobs` are **one Python codebase with two entry points** — same models, same data modules, same seam — exactly as the app and job worker were before. Only their process boundary differs.
@@ -20,11 +20,11 @@ Five runtimes and two languages. The lines between them are trust boundaries rat
 
 Both are Node and both drive Playwright, so merging them is the obvious saving. **Do not.** The fetch worker is the container that handles attackers' input; giving it the renderer would put page-making capability inside the quarantine. The trust split is the entire point, and "they share a dependency" is not a reason to collapse it.
 
-`render` receives a **schema-validated scene tree with no presentational values** — trusted input by construction — and holds no database credentials and no model key. Its worst case is producing a wrong page.
+`render` receives a **schema-validated deck tree with no presentational values** — trusted input by construction — and holds no database credentials and no model key. Its worst case is producing a wrong deck.
 
 ### Why two workers
 
-[../security/infrastructure.md](../security/infrastructure.md) called for "a dedicated worker with egress-only networking and no route to the VPC", and separately said that worker holds decrypted integration credentials. But the same document assigns it work with the opposite requirement — transcreation and poster generation need database access and never touch attacker-controlled bytes.
+[../security/infrastructure.md](../security/infrastructure.md) called for "a dedicated worker with egress-only networking and no route to the VPC", and separately said that worker holds decrypted integration credentials. But the same document assigns it work with the opposite requirement — deck regeneration and scheduled work need database access and never touch attacker-controlled bytes.
 
 One process doing both is the exact combination the isolation exists to prevent: **the thing holding database credentials would also be the thing parsing an attacker's PDF and rendering an attacker's webpage.**
 
@@ -135,7 +135,7 @@ The queue is a table in the database you already have. No Redis, no vendor, no s
 
 It replaces pg-boss, which was the same idea in Node and is not reachable from Python. Procrastinate was the other candidate and has more features — periodic tasks, task locks, richer retries. **PGQueuer won on surface area:** the one property that made pg-boss the choice is the one property PGQueuer is built around, and this project does not yet need the rest. If scheduled work outgrows it, Procrastinate is a migration within the same datastore, which is the cheap kind.
 
-Work it runs: transcreation per locale, 3D poster generation, scheduled live-data refresh, retention deletion, custom-domain re-verification.
+Work it runs: deck regeneration jobs, scheduled work, retention deletion, custom-domain re-verification (v3).
 
 It will not scale past one Postgres. That is fine for years, and when it stops being fine the problem is a good one to have.
 
@@ -148,12 +148,12 @@ So publishing moves to the **`render` service**, and there is still exactly one 
 | | |
 |---|---|
 | **`render`** | Publishing, especially multi-locale — no function-timeout ceiling, so a 12-locale publish is one request rather than twelve chunked calls. Also where the visual verification loop runs ([pipeline-tools.md](pipeline-tools.md)), since that needs the renderer and Playwright together |
-| **`web`** (Vercel) | The editor canvas, and single-scene preview renders during generation where latency matters and the work is small |
+| **`web`** (Vercel) | The editor canvas (v2), and single-slide preview renders during generation where latency matters and the work is small |
 | **`jobs`** (Python) | **Orchestrates** a publish; it does not render one. It calls `render` and writes the returned artifact to S3 |
 
 That last row is the shape of the whole architecture in miniature: **Python decides, TypeScript renders.**
 
-`render`'s contract is deliberately tiny — one endpoint, in a validated `Scene[]` plus an `ArtDirection`, out HTML. No database, no model credentials, no auth. A service with one function and no secrets is a service you never have to think about again.
+`render`'s contract is deliberately tiny — one endpoint, in a validated `Deck` plus a `DesignFamily`, out HTML. No database, no model credentials, no auth. A service with one function and no secrets is a service you never have to think about again.
 
 **The fetch worker never gets the renderer.** It is the container that handles hostile input, and giving it the component that produces pages would put page-making capability inside the quarantine. `render` and the fetch worker are both Node and both run Playwright, which makes merging them look like a saving; it is the one merge the trust split forbids.
 
@@ -181,7 +181,7 @@ Model selection, evals, and what the pipeline may call are their own subject: **
 
 **It costs a guarantee, and the trade should be understood rather than discovered.**
 
-OpenRouter's `strict: true` enforcement varies by provider: some guarantee schema-conforming output, some translate the schema into their own format, some treat it as a strong hint. So the claim in [../security/prompt-injection.md](../security/prompt-injection.md) — *"a fully compromised model can only emit valid Scene JSON"* — is no longer enforced by the decoder.
+OpenRouter's `strict: true` enforcement varies by provider: some guarantee schema-conforming output, some translate the schema into their own format, some treat it as a strong hint. So the claim in [../security/prompt-injection.md](../security/prompt-injection.md) — *"a fully compromised model can only emit valid Deck JSON"* — is no longer enforced by the decoder.
 
 **What actually holds, and why the security posture survives:**
 
@@ -191,9 +191,9 @@ Output that fails the parse is rejected, repaired once, and then fails visibly. 
 
 The residual is real but small: an attacker who fully controls model output can drive repeated repair cycles and burn tokens — denial of wallet, already covered by quotas and the kill switch.
 
-**The metric that decides whether this was right is the repair rate**, already tracked in `v1/ai-pipeline.md`'s `generations` table. Watch it from the first generation. If Build's repair rate is materially worse than a direct Anthropic call, move that one phase behind the seam — the seam exists for exactly this, and nothing else in the pipeline changes.
+**The metric that decides whether this was right is the repair rate**, tracked in the generation records. Watch it from the first generation. If the slide builder's repair rate is materially worse than a direct Anthropic call, move that one phase behind the seam — the seam exists for exactly this, and nothing else in the pipeline changes.
 
-Two things the seam must not hide: **prompt caching** behavior and **cost per phase**. Both vary by route and both are load-bearing for the ~$0.20-per-experience figure. Log them per call.
+Two things the seam must not hide: **prompt caching** behavior and **cost per phase**. Both vary by route and both are load-bearing for the cost-per-deck figure. Log them per call.
 
 Per-phase model selection is deliberately unresolved. Decide it with real briefs and a repair rate, not in advance.
 

@@ -8,7 +8,7 @@ The first three protect the *product*: the art-direction abstraction, the edit/p
 
 **AI output carries no presentational values — enforced structurally first, by a runtime check second.**
 
-Structural: block props are typed so a hex code, a pixel value, a font name, or a duration has nowhere to live. The `Scene` schema simply has no field that accepts one. A model that tries to emit `color: '#fff'` produces invalid JSON.
+Structural: block props are typed so a hex code, a pixel value, a font name, or a duration has nowhere to live. The `Deck` schema simply has no field that accepts one. A model that tries to emit `color: '#fff'` produces invalid JSON.
 
 Backstop: a runtime walk over every generated tree rejects any string value matching a presentational pattern, before the tree is stored or rendered.
 
@@ -17,18 +17,18 @@ Backstop: a runtime walk over every generated tree rejects any string value matc
 const PRESENTATIONAL = /#[0-9a-f]{3,8}\b|[\d.]+(px|rem|em|pt|ms|s)\b|\b(rgb|hsl|cubic-bezier)\(/i;
 ```
 
-**The rule for when the backstop fires:** it means the schema has a gap a value slipped through — add the missing concept to the art direction, never add an exception to the check. The check is allowed to be strict because there is never a legitimate reason for AI output to contain these tokens. See `v1/scene-schema.md`.
+**The rule for when the backstop fires:** it means the schema has a gap a value slipped through — add the missing concept to the design family, never add an exception to the check. The check is allowed to be strict because there is never a legitimate reason for AI output to contain these tokens. See `v1/plan/01-schema.md`.
 
-This is the product's spine. It does not get loosened for a convenient feature. A `styleOverride` field is the single change that would unravel editing, reskin, and the whole art-direction abstraction at once.
+This is the product's spine. It does not get loosened for a convenient feature. A `styleOverride` field is the single change that would unravel editing, reskin, and the whole design-family abstraction at once.
 
 ## 2. The renderer core is pure and mode-free
 
-**`SceneRenderer` is a pure function of `(tree, artDirection, motion)`. It contains no knowledge of editor, publish, embed, or fullscreen.**
+**The renderer is a pure function of `(deck, designFamily, motion)`. It contains no knowledge of editor, export, or present.**
 
 ```ts
-function SceneRenderer(props: {
-  scenes: Scene[];
-  artDirection: ArtDirection;
+function DeckRenderer(props: {
+  deck: Deck;
+  designFamily: DesignFamily;
   motion: MotionVocabulary;
 }): ReactNode
 ```
@@ -36,15 +36,14 @@ function SceneRenderer(props: {
 Modes wrap it and inject behavior from outside:
 
 - The **editor** overlays selection, the property panel, and drag handles *around* the rendered output — never by passing `mode="editor"` into the core.
-- **Publish** renders it to static HTML in the job worker and writes the artifact to S3.
-- **Present** wraps it in a fullscreen container with a keydown handler.
-- **Embed** is publish with a different CSP header.
+- **Export** renders it to the single-file HTML (fonts, images, and motion inlined) — `docs/v1/plan/05-export.md`.
+- **Present** wraps it in a fullscreen container with a keydown handler — this ships *inside* the exported file (`docs/v1/plan/06-renderer.md`).
 
-It now runs in **three** processes — the browser (editor), the app server (preview renders), and the job worker (publish, and the visual verification loop). That is three call sites for one function, which is fine, and it raises the stakes on the rule rather than complicating it: a `mode` prop would now have three values to drift between instead of two.
+It runs in the browser (editor, v2) and the export path. That is multiple call sites for one function, which is fine, and it raises the stakes on the rule rather than complicating it: a `mode` prop would have values to drift between instead of none.
 
-The practical form of the ban: **nothing in `renderer/` may read `process.env`, check `typeof window`, or branch on where it is running.** Environment differences are the wrapper's problem. A renderer that behaves differently in the worker than in the browser is a published page that differs from the edited one, which is the exact guarantee the rule exists to protect.
+The practical form of the ban: **nothing in `renderer/` may read `process.env`, check `typeof window`, or branch on where it is running.** Environment differences are the wrapper's problem. A renderer that behaves differently in the export worker than in the browser is an exported deck that differs from the edited one, which is the exact guarantee the rule exists to protect.
 
-A lint rule bans any `mode` prop or mode conditional inside `renderer/`. That ban is what guarantees the promise made across all three specs: what you edit is byte-for-byte what you publish. The moment a branch says `if (mode === 'editor')` inside a block component, edit and publish begin to drift, and the guarantee is gone.
+A lint rule bans any `mode` prop or mode conditional inside `renderer/`. That ban is what guarantees the promise made across all the specs: what you edit is byte-for-byte what you export. The moment a branch says `if (mode === 'editor')` inside a block component, edit and export begin to drift, and the guarantee is gone.
 
 Interaction lives in the wrappers. Rendering lives in the core. They do not mix.
 
@@ -158,7 +157,7 @@ v2's visual verification loop ([../techstack/pipeline-tools.md](../techstack/pip
 
 ## 7. Formatting is locale-aware from day one
 
-Numbers, currency, and dates go through `Intl`, never string concatenation. A bound live-data stat must read correctly in German and Japanese (`v3/localization.md`), and retrofitting locale formatting into hand-built strings is worse than doing it once. This is also an XSS boundary — a formatted value is a text node, never interpolated into markup.
+Numbers, currency, and dates go through `Intl`, never string concatenation. A bound data value must read correctly in the viewer's language, and retrofitting locale formatting into hand-built strings is worse than doing it once. This is also an XSS boundary — a formatted value is a text node, never interpolated into markup.
 
 ## 8. Comments explain why, not what
 
