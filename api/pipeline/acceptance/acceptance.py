@@ -19,7 +19,11 @@ from dataclasses import dataclass
 
 from ai.complete import ModelError, Seam
 from lib.result import Err, Result, ok
-from pipeline.acceptance.fingerprint import deck_fingerprint, distribution_ratio
+from pipeline.acceptance.fingerprint import (
+    chart_type_ratio,
+    deck_fingerprint,
+    distribution_ratio,
+)
 from pipeline.interview.interview import run_interview
 from pipeline.mapping.mapping import run_mapping
 from schema.deck import Deck
@@ -38,6 +42,11 @@ MIN_FINGERPRINT_DISTINCT = 2
 # collapse even though no run tripped.
 MIN_DISTRIBUTION_RATIO = 0.3
 
+# Within a deck with 2+ charts, at least 50% must not be the most-common chart
+# type. A deck that draws the same chart everywhere is a chart collapse (phase
+# 11 — chart variety is part of the fingerprint claim).
+MIN_CHART_RATIO = 0.5
+
 
 @dataclass(frozen=True)
 class AcceptanceResult:
@@ -45,6 +54,7 @@ class AcceptanceResult:
     deck: Deck
     fingerprint: str
     distribution_ratio: float
+    chart_ratio: float
 
 
 def run_acceptance_brief(
@@ -83,6 +93,7 @@ def run_acceptance_brief(
             deck=deck,
             fingerprint=deck_fingerprint(deck),
             distribution_ratio=distribution_ratio(deck),
+            chart_ratio=chart_type_ratio(deck),
         )
     )
 
@@ -114,7 +125,14 @@ def acceptance_summary(
             f"{r.distribution_ratio:.2f}; expected >= {MIN_DISTRIBUTION_RATIO}"
         )
 
+    bad_charts = [r for r in results if r.chart_ratio < MIN_CHART_RATIO]
+    for r in bad_charts:
+        lines.append(
+            f"CHART COLLAPSE: '{r.brief.topic[:40]}' has chart ratio "
+            f"{r.chart_ratio:.2f}; expected >= {MIN_CHART_RATIO}"
+        )
+
     passed = not lines or all(
-        not line.startswith(("FINGERPRINT", "DISTRIBUTION")) for line in lines
+        not line.startswith(("FINGERPRINT", "DISTRIBUTION", "CHART")) for line in lines
     )
     return passed, "\n".join(lines)

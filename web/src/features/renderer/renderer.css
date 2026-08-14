@@ -110,31 +110,15 @@
   display: block;
 }
 
-.dds-chart__row {
-  display: grid;
-  grid-template-columns: 10rem 1fr;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 0.6rem;
-}
-
-.dds-chart__label {
-  font-size: 0.9rem;
-  opacity: 0.75;
-}
-
-.dds-chart__track {
-  background: color-mix(in srgb, var(--dds-ink) 12%, transparent);
-  height: 0.5rem;
-  border-radius: 999px;
+.dds-chart svg {
+  width: 100%;
+  height: auto;
   display: block;
+  color: var(--dds-ink);
 }
 
-.dds-chart__fill {
-  display: block;
-  height: 100%;
-  background: var(--dds-accent);
-  border-radius: 999px;
+.dds-chart svg text {
+  font-family: var(--dds-font-body);
 }
 
 .dds-image {

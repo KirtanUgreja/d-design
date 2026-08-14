@@ -93,7 +93,7 @@ describe('DeckRenderer', () => {
     expect(html).toContain('alt="Hero visual"');
   });
 
-  it('renders a chart from its series', () => {
+  it('renders a chart as SVG from its series', () => {
     const d = deck([{ role: 'headline', span: 'full' }]);
     const first = d.slides[0];
     if (!first) throw new Error('deck has a slide');
@@ -117,8 +117,40 @@ describe('DeckRenderer', () => {
       <DeckRenderer deck={d} motion={familyTokens('editorial-serif')!.motion} />,
     );
     expect(html).toContain('dds-chart');
+    expect(html).toContain('<svg');
     expect(html).toContain('Q1');
     expect(html).toContain('Growth');
+    // No presentational value from the model — colours come from the family
+    // tokens (var() references), never a hex from the deck.
+    expect(html).not.toMatch(/#[0-9a-f]{3,8}/i);
+  });
+
+  it('renders every chart type as SVG without throwing', () => {
+    const motion = familyTokens('editorial-serif')!.motion;
+    for (const chartType of ['bar', 'line', 'donut'] as const) {
+      const d = deck([
+        { role: 'headline', span: 'full' },
+        { role: 'chart', span: 'full' },
+      ]);
+      const first = d.slides[0];
+      if (!first) throw new Error('deck has a slide');
+      first.blocks = [
+        { kind: 'text', style: 'headline', content: 'The data' },
+        {
+          kind: 'chart',
+          chart_type: chartType,
+          title: `A ${chartType} chart`,
+          series: [
+            { label: 'A', value: 10 },
+            { label: 'B', value: 25 },
+            { label: 'C', value: 15 },
+          ],
+        },
+      ];
+      const html = renderToStaticMarkup(<DeckRenderer deck={d} motion={motion} />);
+      expect(html).toContain('<svg');
+      expect(html).toContain(`data-chart="${chartType}"`);
+    }
   });
 
   it('throws on an unknown family (a pipeline bug, not a render choice)', () => {

@@ -15,8 +15,14 @@ from ai.complete import ModelError, Phase, Seam, T
 from lib.result import Ok, Result
 from pipeline.acceptance.acceptance import acceptance_summary, run_acceptance_brief
 from pipeline.acceptance.briefs import GOLDEN_BRIEFS
-from pipeline.acceptance.fingerprint import deck_fingerprint, distribution_ratio
+from pipeline.acceptance.fingerprint import (
+    chart_type_ratio,
+    deck_fingerprint,
+    distribution_ratio,
+)
 from schema.deck import (
+    ChartBlock,
+    ChartSeries,
     Deck,
     ImageBlock,
     LayoutRegion,
@@ -215,10 +221,52 @@ def test_ratio_backstop_flags_a_thin_deck_directly() -> None:
         deck=collapsed,
         fingerprint="x",
         distribution_ratio=distribution_ratio(collapsed),
+        chart_ratio=1.0,  # no charts, so no chart collapse
     )
     passed, report = acceptance_summary([result])
     assert not passed
     assert "DISTRIBUTION COLLAPSE" in report
+
+
+def test_summary_flags_chart_collapse() -> None:
+    # A deck that draws the same chart type everywhere must fail the chart
+    # variety check (phase 11 — chart variety is part of the fingerprint).
+    from pipeline.acceptance.acceptance import AcceptanceResult, acceptance_summary
+
+    collapsed_charts = Deck(
+        family_id="scientific",  # lab grammar allows the chart role
+        slides=[
+            Slide(
+                id=f"s{i}",
+                title="x",
+                layout=_layout("headline", "chart"),
+                blocks=[
+                    TextBlock(kind="text", style="headline", content="H"),
+                    ChartBlock(
+                        kind="chart",
+                        chart_type="bar",
+                        title="Growth",
+                        series=[
+                            ChartSeries(label="Q1", value=1.0),
+                            ChartSeries(label="Q2", value=2.0),
+                        ],
+                    ),
+                ],
+            )
+            for i in range(3)
+        ],
+    )
+    assert chart_type_ratio(collapsed_charts) == 0.0
+    result = AcceptanceResult(
+        brief=_brief(),
+        deck=collapsed_charts,
+        fingerprint="x",
+        distribution_ratio=distribution_ratio(collapsed_charts),
+        chart_ratio=chart_type_ratio(collapsed_charts),
+    )
+    passed, report = acceptance_summary([result])
+    assert not passed
+    assert "CHART COLLAPSE" in report
 
 
 def test_golden_briefs_are_all_valid() -> None:
