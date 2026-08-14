@@ -12,9 +12,9 @@ from ai.complete import ModelError, Seam
 from lib.result import Err, Result, err, ok
 from pipeline.mapping import prompts
 from pipeline.mapping.distribution import distribution_violation
-from schema.archetypes import LAYOUT_ARCHETYPES, archetype_by_id
 from schema.deck import Deck
 from schema.design_families import family_by_id
+from schema.grammars import grammar_for_family
 from schema.no_style import assert_no_presentational_values
 from schema.outline import Outline
 
@@ -40,11 +40,20 @@ def run_mapping(
     if family is None:
         return err(ModelError("invalid", f"unknown family: {family_id}"))
 
+    grammar = grammar_for_family(family)
+    if grammar is None:
+        return err(
+            ModelError(
+                "invalid",
+                f"family '{family_id}' has no grammar for layout character '{family.axis[5]}'",
+            )
+        )
+
     user = prompts.build_user_prompt(
         outline=outline,
         family_id=family.id,
         family_name=family.name,
-        archetypes=LAYOUT_ARCHETYPES,
+        grammar=grammar,
     )
 
     result = seam.complete(
@@ -66,13 +75,16 @@ def run_mapping(
     # for the core bet: a collapsed deck fails even though it is valid JSON.
     assert_no_presentational_values(deck.model_dump())
 
-    # Every layout archetype the model chose must be one the catalogue defines.
+    # The Deck validator enforces grammar-legality; this second line keeps the
+    # mapping pass from trusting it as the only gate (a mapped deck that names
+    # a role the grammar forbids must fail here even if the schema were looser).
     for slide in deck.slides:
-        if archetype_by_id(slide.layout_archetype) is None:
+        if not prompts.slide_fits_grammar(slide, grammar):
             return err(
                 ModelError(
                     "invalid",
-                    f"unknown layout archetype: {slide.layout_archetype}",
+                    f"slide '{slide.id}' layout is not legal in grammar "
+                    f"'{grammar.layout_character}'",
                 )
             )
 

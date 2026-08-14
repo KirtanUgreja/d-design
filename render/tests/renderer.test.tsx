@@ -1,82 +1,83 @@
 /**
- * Renderer tests — the renderer produces HTML for every archetype, and the
- * same (deck, family) input produces stable markup (the byte-identity seed of
- * the editor/export guarantee). No snapshot: we assert structure, not pixels
- * (tooling.md: a snapshot on a design surface fails on every intentional
- * improvement).
+ * Renderer tests — the renderer produces HTML for every region role and span,
+ * and the same (deck, family) input produces stable markup (the byte-identity
+ * seed of the editor/export guarantee). No snapshot: we assert structure, not
+ * pixels (tooling.md: a snapshot on a design surface fails on every
+ * intentional improvement).
+ *
+ * Phase 10: the renderer is grammar-driven — it renders whatever layout the
+ * schema carries, mapping each region to a grid cell. There is no catalogue
+ * of archetypes to enumerate; every region role and span must render.
  */
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 
 import { DeckRenderer } from '@web/features/renderer/index.js';
 import { familyTokens } from '@web/features/design-system/index.js';
-import type { Deck, Slide } from '@web/schema/generated/Deck.js';
+import type { Deck, LayoutRegion, Slide } from '@web/schema/generated/Deck.js';
 
-function slide(id: string, archetype: string, blocks: unknown[]): Slide {
+function slide(id: string, regions: LayoutRegion[], blocks: unknown[]): Slide {
   return {
     id,
     title: `Slide ${id}`,
-    layout_archetype: archetype,
+    layout: { regions },
     blocks: blocks as Slide['blocks'],
   };
 }
 
-function deck(archetypes: string[]): Deck {
+const ALL_ROLES = ['headline', 'body', 'media', 'stats', 'quote', 'chart', 'aside'] as const;
+const ALL_SPANS = ['full', 'two-thirds', 'half', 'third', 'quarter'] as const;
+
+function deck(regions: LayoutRegion[]): Deck {
   return {
     family_id: 'editorial-serif',
-    slides: archetypes.map((a, i) =>
-      slide(`s${i + 1}`, a, [
-        { kind: 'text', style: 'headline', content: `Headline ${i + 1}` },
+    slides: [
+      slide('s1', regions, [
+        { kind: 'text', style: 'headline', content: 'The headline' },
         { kind: 'text', style: 'body', content: 'Some body copy.' },
       ]),
-    ),
+    ],
   };
 }
 
-const ALL_ARCHETYPES = [
-  'opener',
-  'statement',
-  'section',
-  'split',
-  'columns',
-  'list',
-  'stats',
-  'quote',
-  'image',
-  'callout',
-  'quote-image',
-  'closer',
-];
-
 describe('DeckRenderer', () => {
-  it('renders every archetype without throwing', () => {
+  it('renders every region role and span without throwing', () => {
     const motion = familyTokens('editorial-serif')?.motion;
     expect(motion).toBeDefined();
-    const html = renderToStaticMarkup(
-      <DeckRenderer deck={deck(ALL_ARCHETYPES)} motion={motion!} />,
-    );
-    for (const a of ALL_ARCHETYPES) {
-      expect(html).toContain(`dds-slide--${a}`);
+    const allRegions: LayoutRegion[] = [
+      ...ALL_ROLES.map((role) => ({ role, span: 'full' as const })),
+      ...ALL_SPANS.map((span) => ({ role: 'body' as const, span })),
+    ];
+    const html = renderToStaticMarkup(<DeckRenderer deck={deck(allRegions)} motion={motion!} />);
+    for (const role of ALL_ROLES) {
+      expect(html).toContain(`data-role="${role}"`);
+    }
+    for (const span of ALL_SPANS) {
+      expect(html).toContain(`data-span="${span}"`);
     }
   });
 
   it('renders the headline first and the cta', () => {
-    const d = deck(['opener', 'closer']);
-    const closer = d.slides[1];
-    if (!closer) throw new Error('deck has a closer');
-    closer.cta = { label: 'Sign up', destination: 'https://example.com' };
+    const d = deck([{ role: 'headline', span: 'full' }]);
+    const first = d.slides[0];
+    if (!first) throw new Error('deck has a slide');
+    first.cta = { label: 'Sign up', destination: 'https://example.com' };
     const html = renderToStaticMarkup(
       <DeckRenderer deck={d} motion={familyTokens('editorial-serif')!.motion} />,
     );
-    expect(html).toContain('Headline 1');
+    expect(html).toContain('The headline');
     expect(html).toContain('Sign up');
     expect(html).toContain('https://example.com');
   });
 
   it('inlines a generated image as a data URI', () => {
-    const d = deck(['image']);
+    const d = deck([{ role: 'headline', span: 'full' }]);
     const first = d.slides[0];
     if (!first) throw new Error('deck has a slide');
+    first.layout.regions = [
+      { role: 'headline', span: 'full' },
+      { role: 'media', span: 'full' },
+    ];
     first.blocks = [
       { kind: 'text', style: 'headline', content: 'Hero' },
       { kind: 'image', subject: 'A hero visual', role: 'hero', alt: 'Hero visual' },
@@ -93,9 +94,13 @@ describe('DeckRenderer', () => {
   });
 
   it('renders a chart from its series', () => {
-    const d = deck(['stats']);
+    const d = deck([{ role: 'headline', span: 'full' }]);
     const first = d.slides[0];
     if (!first) throw new Error('deck has a slide');
+    first.layout.regions = [
+      { role: 'headline', span: 'full' },
+      { role: 'chart', span: 'full' },
+    ];
     first.blocks = [
       { kind: 'text', style: 'headline', content: 'The data' },
       {
@@ -117,7 +122,7 @@ describe('DeckRenderer', () => {
   });
 
   it('throws on an unknown family (a pipeline bug, not a render choice)', () => {
-    const bad = deck(['opener']);
+    const bad = deck([{ role: 'headline', span: 'full' }]);
     bad.family_id = 'does-not-exist';
     expect(() =>
       renderToStaticMarkup(

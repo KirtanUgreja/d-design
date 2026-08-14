@@ -1,19 +1,66 @@
 """Acceptance tests — the variety metric is the falsifier.
 
 The fingerprint must distinguish two genuinely different decks, detect a
-collapsed deck, and the summary must fail on a single violation. These are the
-"53% identical" measurement made into a gate.
+collapsed deck, and the summary must fail on a single violation. Phase 10: the
+per-slide dimension is the layout signature (generated structure), not a
+catalogue archetype id. These are the "53% identical" measurement made into a
+gate.
 """
 
 from __future__ import annotations
+
+from typing import Literal
 
 from ai.complete import ModelError, Phase, Seam, T
 from lib.result import Ok, Result
 from pipeline.acceptance.acceptance import acceptance_summary, run_acceptance_brief
 from pipeline.acceptance.briefs import GOLDEN_BRIEFS
 from pipeline.acceptance.fingerprint import deck_fingerprint, distribution_ratio
-from schema.deck import Deck, Slide, TextBlock
+from schema.deck import (
+    Deck,
+    ImageBlock,
+    LayoutRegion,
+    LayoutStructure,
+    QuoteBlock,
+    Slide,
+    SlideBlock,
+    TextBlock,
+)
 from schema.outline import Brief, Outline, OutlineClaim, OutlineSection
+
+Role = Literal["headline", "body", "media", "stats", "quote", "chart", "aside"]
+
+
+def _layout(*roles: Role) -> LayoutStructure:
+    """A full-span layout legal in the literary grammar (editorial-serif)."""
+    return LayoutStructure(regions=[LayoutRegion(role=role, span="full") for role in roles])
+
+
+def _slide(index: int, roles: tuple[Role, ...]) -> Slide:
+    """A slide whose blocks fill its layout regions (literary grammar)."""
+    blocks: list[SlideBlock] = [
+        TextBlock(kind="text", style="headline", content=f"Headline {index}")
+    ]
+    for role in roles[1:]:
+        if role == "quote":
+            blocks.append(QuoteBlock(kind="quote", text=f"Quote {index}", attribution="S"))
+        elif role == "media":
+            blocks.append(
+                ImageBlock(
+                    kind="image",
+                    subject=f"Visual {index}",
+                    role="hero",
+                    alt=f"Visual {index}",
+                )
+            )
+        else:
+            blocks.append(TextBlock(kind="text", style="body", content=f"Body {index}"))
+    return Slide(
+        id=f"s{index}",
+        title=f"Slide {index}",
+        layout=_layout(*roles),
+        blocks=blocks,
+    )
 
 
 class FakeSeam(Seam):
@@ -21,8 +68,8 @@ class FakeSeam(Seam):
     for mapping. Deterministic per family, so the fingerprint check is
     meaningful."""
 
-    def __init__(self, archetypes: list[str], family: str = "editorial-serif") -> None:
-        self.archetypes = archetypes
+    def __init__(self, layouts: list[tuple[Role, ...]], family: str = "editorial-serif") -> None:
+        self.layouts = layouts
         self.family = family
 
     def complete(
@@ -53,17 +100,7 @@ class FakeSeam(Seam):
         # mapping
         deck = Deck(
             family_id=self.family,
-            slides=[
-                Slide(
-                    id=f"s{i + 1}",
-                    title=f"Slide {i + 1}",
-                    layout_archetype=a,
-                    blocks=[
-                        TextBlock(kind="text", style="headline", content=f"Headline {i + 1}"),
-                    ],
-                )
-                for i, a in enumerate(self.archetypes)
-            ],
+            slides=[_slide(i + 1, roles) for i, roles in enumerate(self.layouts)],
         )
         return Ok(deck)  # type: ignore[arg-type]
 
@@ -75,121 +112,73 @@ def _brief() -> Brief:
 def test_fingerprint_is_deterministic() -> None:
     deck = Deck(
         family_id="editorial-serif",
-        slides=[
-            Slide(
-                id="s1",
-                title="a",
-                layout_archetype="opener",
-                blocks=[TextBlock(kind="text", style="headline", content="A")],
-            )
-        ],
+        slides=[_slide(1, ("headline", "body"))],
     )
     assert deck_fingerprint(deck) == deck_fingerprint(deck)
 
 
 def test_fingerprint_distinguishes_families() -> None:
     a = deck_fingerprint(
-        Deck(
-            family_id="editorial-serif",
-            slides=[
-                Slide(
-                    id="s1",
-                    title="a",
-                    layout_archetype="opener",
-                    blocks=[TextBlock(kind="text", style="headline", content="A")],
-                )
-            ],
-        )
+        Deck(family_id="editorial-serif", slides=[_slide(1, ("headline", "body"))])
     )
     b = deck_fingerprint(
-        Deck(
-            family_id="brutalist-stencil",
-            slides=[
-                Slide(
-                    id="s1",
-                    title="a",
-                    layout_archetype="opener",
-                    blocks=[TextBlock(kind="text", style="headline", content="A")],
-                )
-            ],
-        )
+        Deck(family_id="brutalist-stencil", slides=[_slide(1, ("headline", "body"))])
     )
     assert a != b
 
 
-def test_fingerprint_distinguishes_archetype_sequences() -> None:
+def test_fingerprint_distinguishes_layout_sequences() -> None:
     a = deck_fingerprint(
-        Deck(
-            family_id="editorial-serif",
-            slides=[
-                Slide(
-                    id="s1",
-                    title="a",
-                    layout_archetype="opener",
-                    blocks=[TextBlock(kind="text", style="headline", content="A")],
-                )
-            ],
-        )
+        Deck(family_id="editorial-serif", slides=[_slide(1, ("headline", "body"))])
     )
     b = deck_fingerprint(
-        Deck(
-            family_id="editorial-serif",
-            slides=[
-                Slide(
-                    id="s1",
-                    title="a",
-                    layout_archetype="closer",
-                    blocks=[TextBlock(kind="text", style="headline", content="A")],
-                )
-            ],
-        )
+        Deck(family_id="editorial-serif", slides=[_slide(1, ("headline", "quote"))])
     )
     assert a != b
 
 
 def test_distribution_ratio_measures_collapse() -> None:
+    varied_layouts: list[tuple[Role, ...]] = [
+        ("headline", "body"),
+        ("headline", "quote"),
+        ("headline", "media"),
+        ("headline",),
+    ]
     varied = Deck(
         family_id="editorial-serif",
-        slides=[
-            Slide(
-                id=f"s{i}",
-                title="x",
-                layout_archetype=a,
-                blocks=[TextBlock(kind="text", style="headline", content="H")],
-            )
-            for i, a in enumerate(["opener", "statement", "split", "stats"])
-        ],
+        slides=[_slide(i, roles) for i, roles in enumerate(varied_layouts)],
     )
     # 1 - (1/4): every slide distinct means most_common = 1 of 4.
     assert distribution_ratio(varied) == 0.75
 
     collapsed = Deck(
         family_id="editorial-serif",
-        slides=[
-            Slide(
-                id=f"s{i}",
-                title="x",
-                layout_archetype="statement",
-                blocks=[TextBlock(kind="text", style="headline", content="H")],
-            )
-            for i in range(6)
-        ],
+        slides=[_slide(i, ("headline", "body")) for i in range(6)],
     )
     assert distribution_ratio(collapsed) == 0.0  # all one frame
 
 
 def test_acceptance_brief_passes_with_varied_deck() -> None:
-    seam = FakeSeam(["opener", "statement", "split", "stats", "quote", "closer"])
+    seam = FakeSeam(
+        [
+            ("headline", "body"),
+            ("headline", "quote"),
+            ("headline", "body", "quote"),
+            ("headline", "media"),
+            ("headline", "quote", "body"),
+            ("headline", "body"),
+        ]
+    )
     result = run_acceptance_brief(_brief(), seam, model="m")
     assert isinstance(result, Ok)
     assert result.value.distribution_ratio >= 0.4
 
 
 def test_summary_fails_on_fingerprint_collapse() -> None:
-    # Two briefs that map to identical decks (same family, same archetypes).
-    # Alternating two archetypes passes the consecutive-check but collapses on
+    # Two briefs that map to identical decks (same family, same layouts).
+    # Alternating two layouts passes the consecutive-check but collapses on
     # the fingerprint (the two briefs are indistinguishable).
-    seam = FakeSeam(["statement", "split"] * 4)
+    seam = FakeSeam([("headline", "body"), ("headline", "quote")] * 4)
     r1 = run_acceptance_brief(_brief(), seam, model="m")
     r2 = run_acceptance_brief(_brief(), seam, model="m")
     assert isinstance(r1, Ok) and isinstance(r2, Ok)
@@ -211,8 +200,11 @@ def test_ratio_backstop_flags_a_thin_deck_directly() -> None:
             Slide(
                 id=f"s{i}",
                 title="x",
-                layout_archetype="list",
-                blocks=[TextBlock(kind="text", style="headline", content="H")],
+                layout=_layout("headline", "body"),
+                blocks=[
+                    TextBlock(kind="text", style="headline", content="H"),
+                    TextBlock(kind="text", style="body", content="B"),
+                ],
             )
             for i in range(6)
         ],

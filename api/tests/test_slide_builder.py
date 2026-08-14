@@ -1,14 +1,17 @@
 """Slide-builder tests.
 
 The core claim: each slide is generated individually, one call per slide, so
-the deck cannot collapse onto a repeated frame. Tests cover the one-call-per-
-slide invariant, per-slide distinctness of the prompts, the backstop, image
+the deck cannot collapse onto a repeated frame. Phase 10: each call carries the
+mapped layout structure and the family grammar, so the builder refines within
+the grammar rather than picking a frame. Tests cover the one-call-per-slide
+invariant, per-slide distinctness of the prompts, the backstop, image
 generation as a seam action, and id preservation.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Literal
 
 import pytest
 
@@ -16,8 +19,22 @@ from ai.complete import ModelError, Phase, Seam, T
 from ai.images import ImageError, ImageSeam
 from lib.result import Err, Ok, Result, err
 from pipeline.slide_builder.slide_builder import run_build
-from schema.deck import Deck, ImageBlock, Slide, TextBlock
+from schema.deck import (
+    Deck,
+    ImageBlock,
+    LayoutRegion,
+    LayoutStructure,
+    Slide,
+    TextBlock,
+)
 from schema.no_style import has_presentational_value
+
+Role = Literal["headline", "body", "media", "stats", "quote", "chart", "aside"]
+
+
+def _layout(*roles: Role) -> LayoutStructure:
+    """A full-span layout legal in the literary grammar (editorial-serif)."""
+    return LayoutStructure(regions=[LayoutRegion(role=role, span="full") for role in roles])
 
 
 def _deck() -> Deck:
@@ -27,19 +44,25 @@ def _deck() -> Deck:
             Slide(
                 id="s1",
                 title="The problem",
-                layout_archetype="opener",
-                blocks=[TextBlock(kind="text", style="headline", content="Headline 1")],
+                layout=_layout("headline", "body"),
+                blocks=[
+                    TextBlock(kind="text", style="headline", content="Headline 1"),
+                    TextBlock(kind="text", style="body", content="Body 1"),
+                ],
             ),
             Slide(
                 id="s2",
                 title="The product",
-                layout_archetype="split",
-                blocks=[TextBlock(kind="text", style="headline", content="Headline 2")],
+                layout=_layout("headline", "body"),
+                blocks=[
+                    TextBlock(kind="text", style="headline", content="Headline 2"),
+                    TextBlock(kind="text", style="body", content="Body 2"),
+                ],
             ),
             Slide(
                 id="s3",
                 title="The ask",
-                layout_archetype="closer",
+                layout=_layout("headline", "media"),
                 blocks=[
                     TextBlock(kind="text", style="headline", content="Headline 3"),
                     ImageBlock(
@@ -86,10 +109,14 @@ class FakeSeam(Seam):
                     alt="A founder shaking hands",
                 )
             )
+            layout = _layout("headline", "media")
+        else:
+            blocks.append(TextBlock(kind="text", style="body", content="Generated body"))
+            layout = _layout("headline", "body")
         slide = Slide(
             id="generated",
             title="Generated slide",
-            layout_archetype="opener",
+            layout=layout,
             blocks=blocks,  # type: ignore[arg-type]  # list variance: TextBlock|ImageBlock vs SlideBlock
         )
         return Ok(slide)  # type: ignore[arg-type]  # schema=Slide for all calls
@@ -129,13 +156,14 @@ def test_per_slide_prompts_are_distinct() -> None:
     assert len(set(users)) == 3  # each slide got its own prompt, none repeated
 
 
-def test_prompt_carries_archetype_and_continuity() -> None:
+def test_prompt_carries_layout_and_continuity() -> None:
     seam = FakeSeam()
     image_seam = FakeImageSeam()
     run_build(_deck(), seam, image_seam, model="m")
     second = seam.calls[1]["user"]
-    assert "split" in second  # the archetype is in the prompt
+    assert "headline" in second  # the layout roles are in the prompt
     assert "The problem" in second  # previous slide's title for continuity
+    assert "legal region roles" in second  # the grammar is in the prompt
 
 
 def test_prompt_has_no_presentational_values() -> None:
@@ -183,8 +211,11 @@ def test_backstop_rejects_presentational_value_in_slide() -> None:
             slide = Slide(
                 id="generated",
                 title="Slide in #333",
-                layout_archetype="opener",
-                blocks=[TextBlock(kind="text", style="headline", content="H")],
+                layout=_layout("headline", "body"),
+                blocks=[
+                    TextBlock(kind="text", style="headline", content="H"),
+                    TextBlock(kind="text", style="body", content="B"),
+                ],
             )
             return Ok(slide)  # type: ignore[arg-type]
 
@@ -214,8 +245,11 @@ def test_build_failure_keeps_prior_slides() -> None:
             slide = Slide(
                 id="generated",
                 title="Generated",
-                layout_archetype="opener",
-                blocks=[TextBlock(kind="text", style="headline", content="Generated")],
+                layout=_layout("headline", "body"),
+                blocks=[
+                    TextBlock(kind="text", style="headline", content="Generated"),
+                    TextBlock(kind="text", style="body", content="Generated body"),
+                ],
             )
             return Ok(slide)  # type: ignore[arg-type]
 

@@ -1,22 +1,36 @@
 """A golden deck fixture: schema-valid, no presentational values, and it
-exercises every block type and several archetypes. This is the fixture the
-round-trip test (Pydantic and generated Zod agree) and the codegen no-diff
-check both rely on.
+exercises the block types the literary grammar allows (text, quote, image).
+This is the fixture the round-trip test (Pydantic and generated Zod agree) and
+the codegen no-diff check both rely on.
+
+The family is editorial-serif (literary grammar): legal roles are headline,
+body, quote, media, aside; legal spans are full, two-thirds, half. Every slide
+layout here is a legal move in that grammar, and the opener leads with a
+full-width region. Stat and chart blocks are exercised in the slide-builder
+and renderer tests under a family whose grammar allows them.
 """
 
 from __future__ import annotations
 
+from typing import Literal
+
 from schema.deck import (
-    ChartBlock,
-    ChartSeries,
     Cta,
     Deck,
     ImageBlock,
+    LayoutRegion,
+    LayoutStructure,
     QuoteBlock,
     Slide,
-    StatBlock,
     TextBlock,
 )
+
+Role = Literal["headline", "body", "media", "stats", "quote", "chart", "aside"]
+
+
+def _layout(*roles: Role) -> LayoutStructure:
+    """A full-span layout from a list of roles — legal in the literary grammar."""
+    return LayoutStructure(regions=[LayoutRegion(role=role, span="full") for role in roles])
 
 
 def golden_deck() -> Deck:
@@ -26,8 +40,12 @@ def golden_deck() -> Deck:
             Slide(
                 id="s1",
                 title="The quiet power of editorial design",
-                layout_archetype="opener",
-                variant="centered",
+                layout=LayoutStructure(
+                    regions=[
+                        LayoutRegion(role="headline", span="full", emphasis="primary"),
+                        LayoutRegion(role="body", span="full"),
+                    ]
+                ),
                 blocks=[
                     TextBlock(
                         kind="text", style="headline", content="The quiet power of editorial design"
@@ -43,28 +61,39 @@ def golden_deck() -> Deck:
             ),
             Slide(
                 id="s2",
-                title="Three numbers that matter",
-                layout_archetype="stats",
-                variant="three",
+                title="Three ways to be remembered",
+                layout=LayoutStructure(
+                    regions=[
+                        LayoutRegion(role="headline", span="full"),
+                        LayoutRegion(role="body", span="full"),
+                        LayoutRegion(role="quote", span="full"),
+                    ]
+                ),
                 blocks=[
-                    TextBlock(kind="text", style="headline", content="Three numbers that matter"),
-                    StatBlock(kind="stat", value="3.4x", label="more remembered"),
-                    StatBlock(kind="stat", value="92%", label="recall after a week"),
-                    StatBlock(kind="stat", value="1", label="cohesive voice"),
+                    TextBlock(kind="text", style="headline", content="Three ways to be remembered"),
+                    TextBlock(
+                        kind="text",
+                        style="body",
+                        content="Restraint, typography, and rhythm each leave a mark.",
+                    ),
+                    QuoteBlock(
+                        kind="quote",
+                        text="Design is not just how it looks — it is how it works.",
+                        attribution="Steve Jobs",
+                    ),
                 ],
                 motion_intent="reveal",
             ),
             Slide(
                 id="s3",
                 title="What the reader takes away",
-                layout_archetype="quote",
-                variant="centered",
+                layout=_layout("headline", "quote"),
                 blocks=[
                     TextBlock(kind="text", style="headline", content="What the reader takes away"),
                     QuoteBlock(
                         kind="quote",
-                        text="Design is not just how it looks — it is how it works.",
-                        attribution="Steve Jobs",
+                        text="A single idea, held up by evidence, is what survives.",
+                        attribution="The author",
                     ),
                 ],
                 motion_intent="emphasize",
@@ -72,8 +101,7 @@ def golden_deck() -> Deck:
             Slide(
                 id="s4",
                 title="Where the effort goes",
-                layout_archetype="image",
-                variant="frame",
+                layout=_layout("headline", "media"),
                 blocks=[
                     TextBlock(kind="text", style="headline", content="Where the effort goes"),
                     ImageBlock(
@@ -88,19 +116,24 @@ def golden_deck() -> Deck:
             Slide(
                 id="s5",
                 title="The shape of the argument",
-                layout_archetype="statement",
-                variant="left",
+                layout=LayoutStructure(
+                    regions=[
+                        LayoutRegion(role="headline", span="full"),
+                        LayoutRegion(role="body", span="half"),
+                        LayoutRegion(role="aside", span="half"),
+                    ]
+                ),
                 blocks=[
                     TextBlock(kind="text", style="headline", content="The shape of the argument"),
-                    ChartBlock(
-                        kind="chart",
-                        chart_type="bar",
-                        title="Recall by format",
-                        series=[
-                            ChartSeries(label="Editorial", value=92.0),
-                            ChartSeries(label="Template", value=41.0),
-                            ChartSeries(label="Longform", value=78.0),
-                        ],
+                    TextBlock(
+                        kind="text",
+                        style="body",
+                        content="One claim, held up by evidence, in a clear order.",
+                    ),
+                    TextBlock(
+                        kind="text",
+                        style="caption",
+                        content="Figure 1 — the argument as a shape.",
                     ),
                 ],
                 motion_intent="none",
@@ -115,8 +148,12 @@ GOLDEN_DECK_JSON: dict[str, object] = {
         {
             "id": "s1",
             "title": "The quiet power of editorial design",
-            "layout_archetype": "opener",
-            "variant": "centered",
+            "layout": {
+                "regions": [
+                    {"role": "headline", "span": "full", "emphasis": "primary"},
+                    {"role": "body", "span": "full"},
+                ]
+            },
             "blocks": [
                 {
                     "kind": "text",
@@ -134,28 +171,48 @@ GOLDEN_DECK_JSON: dict[str, object] = {
         },
         {
             "id": "s2",
-            "title": "Three numbers that matter",
-            "layout_archetype": "stats",
-            "variant": "three",
+            "title": "Three ways to be remembered",
+            "layout": {
+                "regions": [
+                    {"role": "headline", "span": "full"},
+                    {"role": "body", "span": "full"},
+                    {"role": "quote", "span": "full"},
+                ]
+            },
             "blocks": [
-                {"kind": "text", "style": "headline", "content": "Three numbers that matter"},
-                {"kind": "stat", "value": "3.4x", "label": "more remembered"},
-                {"kind": "stat", "value": "92%", "label": "recall after a week"},
-                {"kind": "stat", "value": "1", "label": "cohesive voice"},
+                {
+                    "kind": "text",
+                    "style": "headline",
+                    "content": "Three ways to be remembered",
+                },
+                {
+                    "kind": "text",
+                    "style": "body",
+                    "content": "Restraint, typography, and rhythm each leave a mark.",
+                },
+                {
+                    "kind": "quote",
+                    "text": "Design is not just how it looks — it is how it works.",
+                    "attribution": "Steve Jobs",
+                },
             ],
             "motion_intent": "reveal",
         },
         {
             "id": "s3",
             "title": "What the reader takes away",
-            "layout_archetype": "quote",
-            "variant": "centered",
+            "layout": {
+                "regions": [
+                    {"role": "headline", "span": "full"},
+                    {"role": "quote", "span": "full"},
+                ]
+            },
             "blocks": [
                 {"kind": "text", "style": "headline", "content": "What the reader takes away"},
                 {
                     "kind": "quote",
-                    "text": "Design is not just how it looks — it is how it works.",
-                    "attribution": "Steve Jobs",
+                    "text": "A single idea, held up by evidence, is what survives.",
+                    "attribution": "The author",
                 },
             ],
             "motion_intent": "emphasize",
@@ -163,8 +220,12 @@ GOLDEN_DECK_JSON: dict[str, object] = {
         {
             "id": "s4",
             "title": "Where the effort goes",
-            "layout_archetype": "image",
-            "variant": "frame",
+            "layout": {
+                "regions": [
+                    {"role": "headline", "span": "full"},
+                    {"role": "media", "span": "full"},
+                ]
+            },
             "blocks": [
                 {"kind": "text", "style": "headline", "content": "Where the effort goes"},
                 {
@@ -179,19 +240,24 @@ GOLDEN_DECK_JSON: dict[str, object] = {
         {
             "id": "s5",
             "title": "The shape of the argument",
-            "layout_archetype": "statement",
-            "variant": "left",
+            "layout": {
+                "regions": [
+                    {"role": "headline", "span": "full"},
+                    {"role": "body", "span": "half"},
+                    {"role": "aside", "span": "half"},
+                ]
+            },
             "blocks": [
                 {"kind": "text", "style": "headline", "content": "The shape of the argument"},
                 {
-                    "kind": "chart",
-                    "chart_type": "bar",
-                    "title": "Recall by format",
-                    "series": [
-                        {"label": "Editorial", "value": 92.0},
-                        {"label": "Template", "value": 41.0},
-                        {"label": "Longform", "value": 78.0},
-                    ],
+                    "kind": "text",
+                    "style": "body",
+                    "content": "One claim, held up by evidence, in a clear order.",
+                },
+                {
+                    "kind": "text",
+                    "style": "caption",
+                    "content": "Figure 1 — the argument as a shape.",
                 },
             ],
             "motion_intent": "none",

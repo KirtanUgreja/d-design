@@ -1,21 +1,35 @@
 """Mapping tests.
 
 The mapping must produce a schema-valid Deck from an approved Outline, keep
-the through-line, distribute layout archetypes, and reject a collapsed deck.
-The seam is stubbed so no network is involved.
+the through-line (structural opener), distribute layout signatures, and reject
+a collapsed deck and a grammar-illegal layout. The seam is stubbed so no
+network is involved.
 """
 
 from __future__ import annotations
+
+from typing import Literal
 
 import pytest
 
 from ai.complete import ModelError, Phase, Seam, T
 from lib.result import Err, Ok, Result
-from pipeline.mapping.distribution import distribution_violation
+from pipeline.mapping.distribution import distribution_violation, layout_signature
 from pipeline.mapping.mapping import run_mapping
-from schema.deck import Deck, Slide, TextBlock
+from schema.deck import (
+    Deck,
+    ImageBlock,
+    LayoutRegion,
+    LayoutStructure,
+    QuoteBlock,
+    Slide,
+    SlideBlock,
+    TextBlock,
+)
 from schema.no_style import has_presentational_value
 from schema.outline import Outline, OutlineClaim, OutlineSection
+
+Role = Literal["headline", "body", "media", "stats", "quote", "chart", "aside"]
 
 
 class FakeSeam(Seam):
@@ -77,33 +91,56 @@ def _outline() -> Outline:
     )
 
 
+def _literary_layout(*roles: Role) -> LayoutStructure:
+    """A full-span layout legal in the literary grammar (editorial-serif)."""
+    return LayoutStructure(regions=[LayoutRegion(role=role, span="full") for role in roles])
+
+
+def _slide_for(index: int, roles: tuple[Role, ...]) -> Slide:
+    """A slide whose blocks fill its layout regions (literary grammar)."""
+    blocks: list[SlideBlock] = [
+        TextBlock(kind="text", style="headline", content=f"Headline {index}")
+    ]
+    for role in roles[1:]:
+        if role == "quote":
+            blocks.append(QuoteBlock(kind="quote", text=f"Quote {index}", attribution="Source"))
+        elif role == "media":
+            blocks.append(
+                ImageBlock(
+                    kind="image",
+                    subject=f"Visual {index}",
+                    role="hero",
+                    alt=f"Visual {index}",
+                )
+            )
+        elif role == "aside":
+            blocks.append(TextBlock(kind="text", style="caption", content=f"Caption {index}"))
+        else:
+            blocks.append(TextBlock(kind="text", style="body", content=f"Body {index}"))
+    return Slide(
+        id=f"s{index}",
+        title=f"Slide {index}",
+        layout=_literary_layout(*roles),
+        blocks=blocks,
+    )
+
+
 def _distributed_deck() -> Deck:
-    """A 9-slide deck with archetypes distributed enough to pass the check."""
-    archetypes = [
-        "opener",
-        "statement",
-        "section",
-        "split",
-        "columns",
-        "list",
-        "stats",
-        "quote",
-        "closer",
+    """A 9-slide deck with distinct layouts, legal in the literary grammar."""
+    layouts: list[tuple[Role, ...]] = [
+        ("headline", "body"),
+        ("headline", "quote"),
+        ("headline", "body", "quote"),
+        ("headline", "media"),
+        ("headline", "body", "aside"),
+        ("headline", "quote", "body"),
+        ("headline", "body"),
+        ("headline", "media", "body"),
+        ("headline", "quote"),
     ]
     return Deck(
-        family_id="editorial-serif",
-        slides=[
-            Slide(
-                id=f"s{i + 1}",
-                title=f"Slide {i + 1}",
-                layout_archetype=archetypes[i],
-                blocks=[
-                    TextBlock(kind="text", style="headline", content=f"Headline {i + 1}"),
-                    TextBlock(kind="text", style="body", content=f"Body {i + 1}"),
-                ],
-            )
-            for i in range(9)
-        ],
+        family_id="brutalist-stencil",  # the family _outline() samples by title
+        slides=[_slide_for(i + 1, layouts[i]) for i in range(9)],
     )
 
 
@@ -120,24 +157,33 @@ def test_mapping_preserves_through_line() -> None:
     seam = FakeSeam(Ok(deck))
     result = run_mapping(_outline(), seam, model="test-model")
     assert isinstance(result, Ok)
-    # The opener is first and the closer is last.
-    assert result.value.slides[0].layout_archetype == "opener"
-    assert result.value.slides[-1].layout_archetype == "closer"
+    # The opener is structural: the first slide's first region is full-width.
+    assert result.value.slides[0].layout.regions[0].span == "full"
 
 
-def test_mapping_rejects_unknown_archetype() -> None:
-    bad = _distributed_deck().model_dump()
-    bad["slides"][0]["layout_archetype"] = "invented-layout"
-    seam = FakeSeam(Ok(Deck.model_validate(bad)))
+def test_mapping_prompt_carries_the_grammar() -> None:
+    seam = FakeSeam(Ok(_distributed_deck()))
+    run_mapping(_outline(), seam, model="test-model")
+    assert "legal region roles" in seam.captured_user
+    assert "headline" in seam.captured_user
+    # The prompt names the family the title sampled and its grammar's roles.
+    assert "The design family for this deck:" in seam.captured_user
+    assert "legal relative spans" in seam.captured_user
+
+
+def test_mapping_accepts_a_grammar_legal_deck() -> None:
+    # Grammar legality is enforced by the Deck validator (test_schema.py) and
+    # the mapping's backstop; here we confirm the mapping accepts a legal deck
+    # for the family it was given.
+    seam = FakeSeam(Ok(_distributed_deck()))
     result = run_mapping(_outline(), seam, model="test-model")
-    assert isinstance(result, Err)
-    assert result.error.kind == "invalid"
+    assert isinstance(result, Ok)
 
 
 def test_mapping_rejects_collapsed_distribution() -> None:
-    # A valid deck that uses the same archetype everywhere must fail the
+    # A valid deck that repeats one layout everywhere must fail the
     # distribution check even though the schema is happy — this is the
-    # falsifier for the within-deck variety bet.
+    # falsifier for the within-deck variety bet, now on layout signatures.
     collapsed = Deck.model_validate(
         {
             "family_id": "editorial-serif",
@@ -145,7 +191,7 @@ def test_mapping_rejects_collapsed_distribution() -> None:
                 {
                     "id": f"s{i}",
                     "title": f"Slide {i}",
-                    "layout_archetype": "statement",
+                    "layout": {"regions": [{"role": "headline", "span": "full"}]},
                     "blocks": [
                         {"kind": "text", "style": "headline", "content": f"H {i}"},
                     ],
@@ -175,10 +221,28 @@ def test_distribution_violation_flags_runs_and_collapse() -> None:
 
     run = _distributed_deck().model_dump()
     for i in range(3):
-        run["slides"][i]["layout_archetype"] = "statement"
+        run["slides"][i]["layout"] = {"regions": [{"role": "headline", "span": "full"}]}
+        run["slides"][i]["blocks"] = [{"kind": "text", "style": "headline", "content": f"H {i}"}]
     v = distribution_violation(Deck.model_validate(run))
     assert v is not None
     assert "in a row" in v
+
+
+def test_layout_signature_is_stable_and_structural() -> None:
+    slide = _distributed_deck().slides[0]
+    assert layout_signature(slide.layout) == "headline:full,body:full"
+    # Emphasis does not change the signature (same frame, different render).
+    louder = slide.model_copy(
+        update={
+            "layout": LayoutStructure(
+                regions=[
+                    LayoutRegion(role="headline", span="full", emphasis="primary"),
+                    LayoutRegion(role="body", span="full"),
+                ]
+            )
+        }
+    )
+    assert layout_signature(louder.layout) == layout_signature(slide.layout)
 
 
 def test_mapping_family_selection_is_deterministic() -> None:

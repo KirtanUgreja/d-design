@@ -19,8 +19,12 @@ function sampleDeck(): Deck {
       {
         id: 's1',
         title: 'The quiet power of editorial design',
-        layout_archetype: 'opener',
-        variant: 'centered',
+        layout: {
+          regions: [
+            { role: 'headline', span: 'full', emphasis: 'primary' },
+            { role: 'body', span: 'full' },
+          ],
+        },
         blocks: [
           { kind: 'text', style: 'headline', content: 'The quiet power of editorial design' },
           { kind: 'text', style: 'body', content: 'A deck that reads as authored.' },
@@ -29,10 +33,15 @@ function sampleDeck(): Deck {
       {
         id: 's2',
         title: 'The numbers',
-        layout_archetype: 'stats',
+        layout: {
+          regions: [
+            { role: 'headline', span: 'full' },
+            { role: 'quote', span: 'full' },
+          ],
+        },
         blocks: [
           { kind: 'text', style: 'headline', content: 'The numbers' },
-          { kind: 'stat', value: '3.4x', label: 'more remembered' },
+          { kind: 'quote', text: 'A single idea, held up by evidence.', attribution: 'The author' },
         ],
       },
     ],
@@ -45,8 +54,8 @@ describe('renderDeckToHtml', () => {
     expect(html.startsWith('<!DOCTYPE html>')).toBe(true);
     expect(html).toContain('</html>');
     // The renderer's slides are in the markup (complete without JS).
-    expect(html).toContain('dds-slide--opener');
     expect(html).toContain('The quiet power of editorial design');
+    expect(html).toContain('dds-region');
   });
 
   it('enforces connect-src none — the file talks to nothing', () => {
@@ -75,6 +84,10 @@ describe('renderDeckToHtml', () => {
     const d = sampleDeck();
     const first = d.slides[0];
     if (!first) throw new Error('deck has a slide');
+    first.layout.regions = [
+      { role: 'headline', span: 'full' },
+      { role: 'media', span: 'full' },
+    ];
     first.blocks = [
       { kind: 'text', style: 'headline', content: 'A hero' },
       { kind: 'image', subject: 'A hero visual', role: 'hero', alt: 'Hero visual' },

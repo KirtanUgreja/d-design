@@ -1,16 +1,31 @@
 """Review loop tests.
 
 The review is a human loop: written feedback drives a per-slide re-call. Tests
-cover the index bounds, the feedback reaching the prompt, id preservation,
-and the backstop.
+cover the index bounds, the feedback reaching the prompt, id preservation, and
+the backstop.
 """
 
 from __future__ import annotations
 
+from typing import Literal
+
 from ai.complete import ModelError, Phase, Seam, T
 from lib.result import Err, Ok, Result
 from pipeline.review.review import revise_slide
-from schema.deck import Deck, Slide, TextBlock
+from schema.deck import (
+    Deck,
+    LayoutRegion,
+    LayoutStructure,
+    Slide,
+    TextBlock,
+)
+
+Role = Literal["headline", "body", "media", "stats", "quote", "chart", "aside"]
+
+
+def _layout(*roles: Role) -> LayoutStructure:
+    """A full-span layout legal in the literary grammar (editorial-serif)."""
+    return LayoutStructure(regions=[LayoutRegion(role=role, span="full") for role in roles])
 
 
 class FakeSeam(Seam):
@@ -31,8 +46,11 @@ class FakeSeam(Seam):
         slide = Slide(
             id="revised",
             title="Revised slide",
-            layout_archetype="opener",
-            blocks=[TextBlock(kind="text", style="headline", content="Revised")],
+            layout=_layout("headline", "body"),
+            blocks=[
+                TextBlock(kind="text", style="headline", content="Revised"),
+                TextBlock(kind="text", style="body", content="Revised body"),
+            ],
         )
         return Ok(slide)  # type: ignore[arg-type]
 
@@ -44,14 +62,20 @@ def _deck() -> Deck:
             Slide(
                 id="s1",
                 title="The problem",
-                layout_archetype="opener",
-                blocks=[TextBlock(kind="text", style="headline", content="Headline 1")],
+                layout=_layout("headline", "body"),
+                blocks=[
+                    TextBlock(kind="text", style="headline", content="Headline 1"),
+                    TextBlock(kind="text", style="body", content="Body 1"),
+                ],
             ),
             Slide(
                 id="s2",
                 title="The ask",
-                layout_archetype="closer",
-                blocks=[TextBlock(kind="text", style="headline", content="Headline 2")],
+                layout=_layout("headline", "body"),
+                blocks=[
+                    TextBlock(kind="text", style="headline", content="Headline 2"),
+                    TextBlock(kind="text", style="body", content="Body 2"),
+                ],
             ),
         ],
     )
@@ -69,6 +93,13 @@ def test_revision_honors_feedback_in_prompt() -> None:
     revise_slide(_deck(), 0, "The headline is too long", seam, model="m")
     assert "The headline is too long" in seam.captured_user
     assert "Reviewer feedback" in seam.captured_user
+
+
+def test_revision_prompt_carries_the_layout_and_grammar() -> None:
+    seam = FakeSeam()
+    revise_slide(_deck(), 0, "Change the emphasis", seam, model="m")
+    assert "headline" in seam.captured_user  # the layout regions are in the prompt
+    assert "legal region roles" in seam.captured_user  # the grammar is in the prompt
 
 
 def test_revision_preserves_slide_id() -> None:

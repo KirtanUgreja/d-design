@@ -17,6 +17,7 @@ from lib.result import Err, Result, err, ok
 from pipeline.slide_builder import prompts as slide_prompts
 from schema.deck import Deck, Slide
 from schema.design_families import family_by_id
+from schema.grammars import grammar_for_family
 from schema.no_style import assert_no_presentational_values
 
 # The system prompt for a revision: the feedback is authoritative, the slide's
@@ -26,14 +27,17 @@ REVISION_SYSTEM = """You are revising ONE slide of a deck in response to a revie
 The reviewer is a human who looked at the rendered slide. Their feedback is
 the most important input you have: honor it first. If they say a headline is
 too long, shorten it. If they say an image is off-message, describe a better
-one. If they say the emphasis is wrong, change the motion intent.
+one. If they say the emphasis is wrong, change the layout emphasis or motion
+intent.
 
 Rules:
-- Keep the slide's role in the deck: the layout archetype stays, the content
-  stays true to the outline. You are revising, not replacing.
+- Keep the slide's role in the deck: the layout regions stay, the content
+  stays true to the outline. You are revising, not replacing. You may refine
+  a span or emphasis within the family's grammar.
 - You still never emit a presentational value — no hex, no size, no font, no
   duration. The schema has no field for one.
 - Headline <= 60 characters and first. Body <= 240.
+- Every region must be filled and every block must belong to a region.
 - If the reviewer's feedback conflicts with the outline, the outline wins —
   the reviewer is fixing presentation, not facts."""
 
@@ -59,6 +63,15 @@ def revise_slide(
     if family is None:
         return err(ModelError("invalid", f"unknown family: {deck.family_id}"))
 
+    grammar = grammar_for_family(family)
+    if grammar is None:
+        return err(
+            ModelError(
+                "invalid",
+                f"family '{deck.family_id}' has no grammar for layout character '{family.axis[5]}'",
+            )
+        )
+
     prev_title = deck.slides[slide_index - 1].title if slide_index > 0 else ""
     next_title = deck.slides[slide_index + 1].title if slide_index < len(deck.slides) - 1 else ""
 
@@ -69,9 +82,8 @@ def revise_slide(
         family_name=family.name,
         family_id=family.id,
         family_character=", ".join(family.axis),
-        archetype_id=slide.layout_archetype,
-        archetype_intent=_intent(slide.layout_archetype),
-        variants=_variants(slide.layout_archetype),
+        layout=slide.layout,
+        grammar=grammar,
         content=slide.model_dump_json(indent=2),
         prev_headline=prev_title,
         next_headline=next_title,
@@ -91,17 +103,3 @@ def revise_slide(
     revised = result.value
     assert_no_presentational_values(revised.model_dump())
     return ok(revised.model_copy(update={"id": slide.id}))
-
-
-def _intent(archetype_id: str) -> str:
-    from schema.archetypes import archetype_by_id
-
-    a = archetype_by_id(archetype_id)
-    return a.intent if a else archetype_id
-
-
-def _variants(archetype_id: str) -> list[str]:
-    from schema.archetypes import archetype_by_id
-
-    a = archetype_by_id(archetype_id)
-    return list(a.variants) if a else []

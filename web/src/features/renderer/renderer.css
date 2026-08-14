@@ -170,51 +170,53 @@
   font-weight: 600;
 }
 
-/* --- archetype frames -------------------------------------------------- */
+/* --- layout regions (phase 10) ----------------------------------------- */
 
-.dds-slide--opener.dds-slide--centered .dds-slide__inner {
-  text-align: center;
-}
+/* The slide's generated layout is a sequence of regions; the renderer maps
+ * role/span/emphasis to a 12-column grid. The model never emits a length —
+ * the spans are relative relationships, sized here by the family tokens. */
 
-.dds-slide--opener.dds-slide--centered .dds-text--body {
-  margin: 0 auto;
-}
-
-.dds-slide--section .dds-slide__inner {
-  max-width: 40rem;
-}
-
-.dds-slide--quote .dds-slide__inner {
-  text-align: center;
-}
-
-.dds-slide--quote .dds-quote {
-  margin: 0 auto;
-}
-
-.dds-slide--stats .dds-slide__inner,
-.dds-slide--columns .dds-slide__inner {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1.5rem;
-}
-
-.dds-slide--split .dds-slide__inner {
+.dds-slide__inner {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3rem;
+  grid-template-columns: repeat(12, 1fr);
+  gap: clamp(1rem, 2.5vw, 2rem);
+  align-items: start;
 }
 
-.dds-slide--list .dds-slide__inner {
-  max-width: 44rem;
+.dds-region {
+  min-width: 0;
 }
 
-.dds-slide--closer.dds-slide--centered .dds-slide__inner {
-  text-align: center;
+.dds-region[data-span='full'] {
+  grid-column: 1 / -1;
 }
 
-.dds-slide--closer.dds-slide--centered .dds-text--body {
-  margin: 0 auto;
+.dds-region[data-span='two-thirds'] {
+  grid-column: span 8;
+}
+
+.dds-region[data-span='half'] {
+  grid-column: span 6;
+}
+
+.dds-region[data-span='third'] {
+  grid-column: span 4;
+}
+
+.dds-region[data-span='quarter'] {
+  grid-column: span 3;
+}
+
+.dds-region[data-emphasis='quiet'] {
+  opacity: 0.7;
+}
+
+.dds-region[data-emphasis='primary'] .dds-text--headline {
+  font-size: clamp(3rem, 7vw, 6rem);
+}
+
+.dds-region[data-role='aside'] {
+  opacity: 0.7;
 }
 
 /* --- texture (per family, set via data-family) -------------------------- */

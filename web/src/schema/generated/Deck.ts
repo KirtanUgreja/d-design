@@ -36,6 +36,30 @@ const ImageBlockSchema = z.object({
   alt: z.string().min(3).max(240),
 });
 
+const LayoutRegionSchema = z.object({
+  role: z.union([
+    z.literal('headline'),
+    z.literal('body'),
+    z.literal('media'),
+    z.literal('stats'),
+    z.literal('quote'),
+    z.literal('chart'),
+    z.literal('aside'),
+  ]),
+  span: z.union([
+    z.literal('full'),
+    z.literal('two-thirds'),
+    z.literal('half'),
+    z.literal('third'),
+    z.literal('quarter'),
+  ]),
+  emphasis: z.union([z.literal('primary'), z.literal('secondary'), z.literal('quiet')]).optional(),
+});
+
+const LayoutStructureSchema = z.object({
+  regions: z.array(LayoutRegionSchema).min(1).max(6),
+});
+
 const QuoteBlockSchema = z.object({
   kind: z.literal('quote'),
   text: z.string().min(1).max(400),
@@ -62,8 +86,7 @@ const StatBlockSchema = z.object({
 const SlideSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   title: z.string().min(1).max(120),
-  layout_archetype: z.string().min(1).max(40),
-  variant: z.string().max(40).optional(),
+  layout: LayoutStructureSchema,
   blocks: z
     .array(
       z.discriminatedUnion('kind', [
@@ -101,6 +124,10 @@ export type ChartBlock = z.infer<typeof ChartBlockSchema>;
 export type Cta = z.infer<typeof CtaSchema>;
 
 export type ImageBlock = z.infer<typeof ImageBlockSchema>;
+
+export type LayoutRegion = z.infer<typeof LayoutRegionSchema>;
+
+export type LayoutStructure = z.infer<typeof LayoutStructureSchema>;
 
 export type QuoteBlock = z.infer<typeof QuoteBlockSchema>;
 

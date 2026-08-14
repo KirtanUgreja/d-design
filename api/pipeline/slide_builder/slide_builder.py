@@ -26,6 +26,7 @@ from lib.result import Err, Result, err, ok
 from pipeline.slide_builder import prompts
 from schema.deck import Deck, ImageBlock, Slide
 from schema.design_families import family_by_id
+from schema.grammars import grammar_for_family
 from schema.no_style import assert_no_presentational_values
 
 
@@ -72,6 +73,15 @@ def run_build(
     if family is None:
         return err(ModelError("invalid", f"unknown family: {deck.family_id}"))
 
+    grammar = grammar_for_family(family)
+    if grammar is None:
+        return err(
+            ModelError(
+                "invalid",
+                f"family '{deck.family_id}' has no grammar for layout character '{family.axis[5]}'",
+            )
+        )
+
     # The deck's reference title for the prompts: the opener's title carries
     # the narrative the deck is named by.
     deck_title = deck.slides[0].title if deck.slides else "the deck"
@@ -89,9 +99,8 @@ def run_build(
             family_name=family.name,
             family_id=family.id,
             family_character=", ".join(family.axis),
-            archetype_id=slide.layout_archetype,
-            archetype_intent=_archetype_intent(slide.layout_archetype),
-            variants=_archetype_variants(slide.layout_archetype),
+            layout=slide.layout,
+            grammar=grammar,
             content=_content_for_slide(slide),
             prev_headline=prev_headline,
             next_headline=next_headline,
@@ -138,17 +147,3 @@ def run_build(
         built.append(built_slide)
 
     return ok(BuildResult(deck=deck.model_copy(update={"slides": built}), images=images))
-
-
-def _archetype_intent(archetype_id: str) -> str:
-    from schema.archetypes import archetype_by_id
-
-    a = archetype_by_id(archetype_id)
-    return a.intent if a else archetype_id
-
-
-def _archetype_variants(archetype_id: str) -> list[str]:
-    from schema.archetypes import archetype_by_id
-
-    a = archetype_by_id(archetype_id)
-    return list(a.variants) if a else []

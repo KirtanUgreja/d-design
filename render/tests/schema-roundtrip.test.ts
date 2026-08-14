@@ -18,8 +18,12 @@ const goldenDeck = {
     {
       id: 's1',
       title: 'The quiet power of editorial design',
-      layout_archetype: 'opener',
-      variant: 'centered',
+      layout: {
+        regions: [
+          { role: 'headline', span: 'full', emphasis: 'primary' },
+          { role: 'body', span: 'full' },
+        ],
+      },
       blocks: [
         { kind: 'text', style: 'headline', content: 'The quiet power of editorial design' },
         {
@@ -33,22 +37,30 @@ const goldenDeck = {
     },
     {
       id: 's2',
-      title: 'Three numbers that matter',
-      layout_archetype: 'stats',
-      variant: 'three',
+      title: 'Three ways to be remembered',
+      layout: {
+        regions: [
+          { role: 'headline', span: 'full' },
+          { role: 'body', span: 'full' },
+          { role: 'quote', span: 'full' },
+        ],
+      },
       blocks: [
-        { kind: 'text', style: 'headline', content: 'Three numbers that matter' },
-        { kind: 'stat', value: '3.4x', label: 'more remembered' },
-        { kind: 'stat', value: '92%', label: 'recall after a week' },
-        { kind: 'stat', value: '1', label: 'cohesive voice' },
+        { kind: 'text', style: 'headline', content: 'Three ways to be remembered' },
+        { kind: 'text', style: 'body', content: 'Restraint, typography, and rhythm.' },
+        { kind: 'quote', text: 'A single idea, held up by evidence.', attribution: 'The author' },
       ],
       motion_intent: 'reveal',
     },
     {
       id: 's3',
       title: 'What the reader takes away',
-      layout_archetype: 'quote',
-      variant: 'centered',
+      layout: {
+        regions: [
+          { role: 'headline', span: 'full' },
+          { role: 'quote', span: 'full' },
+        ],
+      },
       blocks: [
         { kind: 'text', style: 'headline', content: 'What the reader takes away' },
         {
@@ -62,8 +74,12 @@ const goldenDeck = {
     {
       id: 's4',
       title: 'Where the effort goes',
-      layout_archetype: 'image',
-      variant: 'frame',
+      layout: {
+        regions: [
+          { role: 'headline', span: 'full' },
+          { role: 'media', span: 'full' },
+        ],
+      },
       blocks: [
         { kind: 'text', style: 'headline', content: 'Where the effort goes' },
         {
@@ -78,20 +94,17 @@ const goldenDeck = {
     {
       id: 's5',
       title: 'The shape of the argument',
-      layout_archetype: 'statement',
-      variant: 'left',
+      layout: {
+        regions: [
+          { role: 'headline', span: 'full' },
+          { role: 'body', span: 'half' },
+          { role: 'aside', span: 'half' },
+        ],
+      },
       blocks: [
         { kind: 'text', style: 'headline', content: 'The shape of the argument' },
-        {
-          kind: 'chart',
-          chart_type: 'bar',
-          title: 'Recall by format',
-          series: [
-            { label: 'Editorial', value: 92.0 },
-            { label: 'Template', value: 41.0 },
-            { label: 'Longform', value: 78.0 },
-          ],
-        },
+        { kind: 'text', style: 'body', content: 'One claim, held up by evidence.' },
+        { kind: 'text', style: 'caption', content: 'Figure 1 — the argument as a shape.' },
       ],
       motion_intent: 'none',
     },

@@ -1,16 +1,15 @@
-"""Phase 00/09 — foundations and design-engine tests.
+"""Phase 00/09/10 — foundations, design-engine and grammar tests.
 
-The design-space must be a *space*: at least 30 clearly distinct families, an
-archetype catalogue that supports distributed layouts, and a diversity budget
-that follows the findings.md measurement — families differ most on the
-identity-bearing axes (type pairing, layout character) and least on colour.
-These assert the structural floor the human eye then judges.
+The design-space must be a *space*: at least 30 clearly distinct families, a
+diversity budget that follows the findings.md measurement, and a layout grammar
+that every family resolves to — the phase 10 constraint that replaced the
+curated catalogue. These assert the structural floor the human eye then judges.
 """
 
 from __future__ import annotations
 
-from schema.archetypes import LAYOUT_ARCHETYPES, archetype_by_id
 from schema.design_families import DESIGN_FAMILIES, family_by_id
+from schema.grammars import GRAMMARS, REGION_ROLES, REGION_SPANS, grammar_for_family
 
 # The six-axis tuple order in design_families.py.
 TYPE_AXIS = 0
@@ -43,19 +42,37 @@ def test_diversity_budget_varies_identity_axes_more_than_color() -> None:
     assert len(layout_values) >= len(color_values)
 
 
-def test_archetype_catalogue_is_larger_than_one_deck_needs() -> None:
-    # A 12-slide deck uses 7-8 archetypes; the catalogue must be bigger than
-    # that, or decks collapse onto the same frames.
-    assert len(LAYOUT_ARCHETYPES) >= 10
+def test_every_family_resolves_a_grammar() -> None:
+    # Phase 10: a family with no grammar is a registry bug — the Deck
+    # validator fails closed on it, so the registry must never have one.
+    for family in DESIGN_FAMILIES:
+        grammar = grammar_for_family(family)
+        assert grammar is not None, family.id
+        assert grammar.layout_character == family.axis[LAYOUT_AXIS]
 
 
-def test_archetype_ids_are_unique() -> None:
-    ids = [a.id for a in LAYOUT_ARCHETYPES]
-    assert len(ids) == len(set(ids))
+def test_grammar_registry_is_nonempty_and_bounded() -> None:
+    # ~9 grammars for 31 families: one per layout character, not per family.
+    # This is the phase 10 decision — bounded authoring, on-family because each
+    # family has exactly one layout character.
+    assert len(GRAMMARS) >= 5
+    assert len(GRAMMARS) <= 15
+
+
+def test_each_grammar_is_internally_consistent() -> None:
+    for grammar in GRAMMARS:
+        assert grammar.roles, grammar.layout_character
+        assert grammar.spans, grammar.layout_character
+        assert grammar.max_regions >= 1
+        # Every role is a real region role and every span a real span.
+        assert set(grammar.roles).issubset(set(REGION_ROLES))
+        assert set(grammar.spans).issubset(set(REGION_SPANS))
+        # Every signature is a non-empty sequence of the grammar's own roles.
+        for sig in grammar.signatures:
+            assert sig
+            assert set(sig).issubset(set(grammar.roles))
 
 
 def test_lookup_helpers() -> None:
     assert family_by_id("swiss-grid") is not None
     assert family_by_id("does-not-exist") is None
-    assert archetype_by_id("stats") is not None
-    assert archetype_by_id("does-not-exist") is None
