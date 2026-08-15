@@ -254,3 +254,23 @@ body {
   border-radius: 3px;
   border: 1px solid var(--editor-line);
 }
+
+.editor-toolbar__publish {
+  background: var(--editor-ink);
+  color: var(--editor-paper);
+}
+
+.editor-toolbar__published {
+  font-size: 0.75rem;
+  padding: 0.25rem 0.75rem;
+}
+
+.editor-toolbar__published a {
+  color: var(--editor-accent);
+}
+
+.editor-toolbar__error {
+  font-size: 0.75rem;
+  color: #b91c1c;
+  padding: 0.25rem 0.75rem;
+}

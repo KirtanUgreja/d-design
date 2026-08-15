@@ -22,7 +22,34 @@ import { DeckRenderer } from '@web/features/renderer/index.js';
 export type ExportInput = {
   deck: Deck;
   images?: Record<string, string>;
+  /**
+   * Show the "made with" badge in the footer. Defaults to true. The AI-content
+   * disclosure is NEVER controlled by this — one boolean, two very different
+   * meanings (website.md: the badge is removable on paid, the disclosure is
+   * the law).
+   */
+  badge?: boolean;
 };
+
+/**
+ * The footer — one mark, two layers (website.md): ours (the badge, removable
+ * on paid) and the law (the AI-content disclosure, EU AI Act Article 50, not
+ * removable). It is designed into the deck, styled per design family via the
+ * --dds-* tokens, and adds zero network — the offline posture holds. The
+ * machine-readable disclosure (data-ai-disclosure) survives export → hosted
+ * URL byte-identity.
+ */
+function footerMarkup(badge: boolean): string {
+  const badgeMarkup = badge
+    ? '<span class="dds-footer__badge">Designed by &lt;product&gt; from your brief</span>'
+    : '';
+  return (
+    '<footer class="dds-footer" data-ai-disclosure="true">' +
+    badgeMarkup +
+    '<span class="dds-footer__disclosure">AI-generated content</span>' +
+    '</footer>'
+  );
+}
 
 const NAV_SHELL_JS = `
 (function () {
@@ -105,6 +132,9 @@ const PRINT_CSS = `
   .dds-nav {
     display: none !important;
   }
+  .dds-footer {
+    display: none !important;
+  }
   [data-reveal] {
     opacity: 1 !important;
     transform: none !important;
@@ -112,7 +142,7 @@ const PRINT_CSS = `
 }
 `;
 
-export function renderDeckToHtml({ deck, images }: ExportInput): string {
+export function renderDeckToHtml({ deck, images, badge = true }: ExportInput): string {
   const spec = familyTokens(deck.family_id);
   if (!spec) {
     throw new Error(`unknown design family: ${deck.family_id}`);
@@ -145,6 +175,7 @@ ${PRINT_CSS}
 <div class="dds-present">
 ${body}
 </div>
+${footerMarkup(badge)}
 <div class="dds-nav" aria-label="Slide navigation">
   <button id="dds-prev" aria-label="Previous slide">Prev</button>
   <span id="dds-counter">1 / ${deck.slides.length}</span>

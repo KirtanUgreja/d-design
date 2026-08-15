@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 
 import {
   createEditorStore,
@@ -50,6 +50,31 @@ export default function EditorClient({ userId, kits = [] }: { userId: string; ki
     URL.revokeObjectURL(url);
   }
 
+  const [publishing, setPublishing] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState<string | null>(null);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
+  async function handlePublish() {
+    setPublishing(true);
+    setPublishError(null);
+    try {
+      const res = await fetch('/api/publish', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ deck, title: deck.slides[0]?.title ?? 'Deck' }),
+      });
+      const data = (await res.json()) as { url?: string; error?: string };
+      if (!res.ok) {
+        throw new Error(data.error ?? 'publish failed');
+      }
+      setPublishedUrl(data.url ?? null);
+    } catch (err) {
+      setPublishError((err as Error).message ?? 'publish failed');
+    } finally {
+      setPublishing(false);
+    }
+  }
+
   return (
     <div className="editor-layout">
       <div>
@@ -70,8 +95,24 @@ export default function EditorClient({ userId, kits = [] }: { userId: string; ki
             <button className="editor-toolbar__export" onClick={handleExport}>
               Export
             </button>
+            <button
+              className="editor-toolbar__publish"
+              onClick={handlePublish}
+              disabled={publishing}
+            >
+              {publishing ? 'Publishing…' : 'Publish'}
+            </button>
           </div>
         </div>
+        {publishedUrl && (
+          <div className="editor-toolbar__published">
+            Hosted:{' '}
+            <a href={publishedUrl} target="_blank" rel="noreferrer">
+              {publishedUrl}
+            </a>
+          </div>
+        )}
+        {publishError && <div className="editor-toolbar__error">{publishError}</div>}
         <EditorCanvas
           deck={deck}
           selection={selection}

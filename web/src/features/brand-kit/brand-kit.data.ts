@@ -69,7 +69,15 @@ export async function createKit(input: {
   const res = await fetch(`${API_URL}${API_BASE}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', ...(await authHeaders()) },
-    body: JSON.stringify(input),
+    // api's schema is snake_case (KitIn); translate here so the boundary
+    // never depends on FastAPI's camelCase handling.
+    body: JSON.stringify({
+      team_id: input.teamId,
+      name: input.name,
+      colors: input.colors,
+      logo_ref: input.logoRef,
+      font_ids: input.fontIds,
+    }),
   });
   if (!res.ok) throw new Error(`brand-kit create: ${res.status}`);
   return (await res.json()) as BrandKit;

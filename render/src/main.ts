@@ -33,12 +33,16 @@ export async function exportDeckPdf(inputPath: string, outputPath: string): Prom
 }
 
 // CLI: node render/dist/main.js <built.json> <out.html> [--pdf <out.pdf>]
+// Wrapped so the PDF path's await is not a top-level await (esbuild cannot
+// bundle one to CJS).
 const [, , inputPath, outputPath, pdfFlag, pdfPath] = process.argv;
 if (inputPath && outputPath) {
-  const out = exportDeckFile(inputPath, outputPath);
-  console.log(`Exported ${out}`);
-  if (pdfFlag === '--pdf' && pdfPath) {
-    await exportDeckPdf(inputPath, pdfPath);
-    console.log(`Exported PDF ${pdfPath}`);
-  }
+  void (async () => {
+    const out = exportDeckFile(inputPath, outputPath);
+    console.log(`Exported ${out}`);
+    if (pdfFlag === '--pdf' && pdfPath) {
+      const pdf = await exportDeckPdf(inputPath, pdfPath);
+      console.log(`Exported PDF ${pdf}`);
+    }
+  })();
 }

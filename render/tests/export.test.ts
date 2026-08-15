@@ -7,6 +7,7 @@
  * The zero-request assertion in a real browser is the Playwright job (phase
  * 08/CI); here we assert the static guarantees the file must carry.
  */
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 import { renderDeckToHtml } from '../src/export.jsx';
@@ -110,5 +111,49 @@ describe('renderDeckToHtml', () => {
     const bad = sampleDeck();
     bad.family_id = 'nope';
     expect(() => renderDeckToHtml({ deck: bad })).toThrow(/unknown design family/);
+  });
+
+  describe('the footer — badge + AI disclosure (phase 18)', () => {
+    it('renders the badge and the disclosure by default', () => {
+      const html = renderDeckToHtml({ deck: sampleDeck() });
+      expect(html).toContain('class="dds-footer"');
+      expect(html).toContain('Designed by &lt;product&gt; from your brief');
+      expect(html).toContain('AI-generated content');
+    });
+
+    it('carries the machine-readable disclosure attribute', () => {
+      const html = renderDeckToHtml({ deck: sampleDeck() });
+      expect(html).toContain('data-ai-disclosure="true"');
+    });
+
+    it('badge:false removes the badge but NEVER the disclosure', () => {
+      const html = renderDeckToHtml({ deck: sampleDeck(), badge: false });
+      expect(html).not.toContain('Designed by');
+      expect(html).toContain('AI-generated content');
+      expect(html).toContain('data-ai-disclosure="true"');
+    });
+
+    it('adds zero network — the footer carries no external reference', () => {
+      const html = renderDeckToHtml({ deck: sampleDeck() });
+      // The footer must not introduce any URL/font fetch (connect-src 'none'
+      // holds on the hosted page; the footer is the compliance surface).
+      expect(html).toContain("connect-src 'none'");
+      expect(html).not.toMatch(/https?:\/\/(?!example\.com)/);
+    });
+
+    it('styles the footer only from family tokens', () => {
+      // The footer CSS lives in renderer.css (inlined into the export at build
+      // time by esbuild's css->text loader; under vitest the import is a
+      // no-op). Assert the source rule is token-only — the tokens own the
+      // colour, never a literal hex.
+      const css = readFileSync(
+        new URL('../../web/src/features/renderer/renderer.css', import.meta.url),
+        'utf8',
+      );
+      const rule = css.match(/\.dds-footer\s*\{[^}]*border-top[^}]*\}/)?.[0] ?? '';
+      expect(rule).toContain('var(--dds-ink)');
+      expect(rule).toContain('var(--dds-font-body)');
+      expect(rule).not.toMatch(/#[0-9a-f]{3,6}/i);
+    });
   });
 });

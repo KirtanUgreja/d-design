@@ -176,6 +176,15 @@ file-type (v3, phase 17) — magic-byte detection in the worker — "extension
   are the authority. Worker only.
 jsdom (v3, phase 17) — the DOM DOMPurify needs, worker only — the sanitizer
   runs in the isolated process; no browser context in web or api.
+@aws-sdk/client-s3 (v3, phase 18) — the official S3 SDK in web — the
+  prod-swap lever: the same code points at MinIO locally (endpoint config)
+  and real S3 in prod. The emulator is never the SDK; the SDK is what makes
+  prod a config change, not a code change (decisions.md -> "storage.ts: local
+  disk → S3 (MinIO locally)").
+minio (v3, phase 18) — the local S3 in docker-compose — speaks the S3
+  protocol, free, no registration. LocalStack is NOT used for S3: its 2026
+  licensing put S3 behind the paid Pro tier (docs/techstack/infrastructure.md
+  "Local development").
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."

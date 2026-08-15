@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ teamId, name, colors, logoRef, fontIds: [] }),
+      body: JSON.stringify({ team_id: teamId, name, colors, logo_ref: logoRef, font_ids: [] }),
     },
   );
   if (!apiRes.ok) {

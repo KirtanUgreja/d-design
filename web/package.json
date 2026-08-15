@@ -12,6 +12,7 @@
     "schema:check": "node scripts/generate-schema.mjs --check"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1110.0",
     "@radix-ui/react-select": "^2.3.7",
     "better-auth": "^1.6.28",
     "drizzle-orm": "^0.45.2",

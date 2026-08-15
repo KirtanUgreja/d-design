@@ -13,7 +13,9 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from features.brand_kits.routes import router as brand_kits_router
+from features.experiences.routes import router as experiences_router
 
 app = FastAPI(title="d-design api", version="0.1.0")
 
 app.include_router(brand_kits_router)
+app.include_router(experiences_router)

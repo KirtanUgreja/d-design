@@ -235,3 +235,31 @@
 .dds-deck[data-motion='none'] [data-reveal] {
   opacity: 1;
 }
+
+/* --- the footer (phase 18) ---------------------------------------------
+ * One mark, two layers: the badge (ours, removable on paid) and the
+ * AI-content disclosure (the law, never removable). Styled ONLY from the
+ * family tokens — this is the one place our chrome and a design family are
+ * allowed to meet. It adds zero network; the offline posture holds.
+ */
+.dds-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--dds-space);
+  padding: calc(var(--dds-space) * 0.75) var(--dds-space);
+  color: color-mix(in srgb, var(--dds-ink) 70%, transparent);
+  font-family: var(--dds-font-body);
+  font-size: 0.75em;
+  border-top: 1px solid color-mix(in srgb, var(--dds-ink) 20%, transparent);
+  background: var(--dds-paper);
+}
+
+.dds-footer__badge {
+  font-weight: 600;
+  color: var(--dds-ink);
+}
+
+.dds-footer__disclosure {
+  color: color-mix(in srgb, var(--dds-ink) 60%, transparent);
+  margin-left: auto;
+}
