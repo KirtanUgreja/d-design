@@ -66,6 +66,52 @@ const NAV_SHELL_JS = `
 })();
 `;
 
+/**
+ * The print CSS (phase 14) — the PDF is a faithful print of the HTML, not a
+ * screenshot (14-pdf-export.md). Each slide is one 16:9 page; the nav shell
+ * and the on-canvas chrome never print; motion prints as the resting state,
+ * which is already the default (progressive enhancement: the finished state
+ * is the floor).
+ */
+const PRINT_CSS = `
+@media print {
+  @page {
+    size: 16in 9in;
+    margin: 0;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #fff;
+  }
+  .dds-deck {
+    display: block;
+  }
+  .dds-slide {
+    min-height: 0;
+    height: 9in;
+    width: 16in;
+    box-sizing: border-box;
+    page-break-after: always;
+    break-after: page;
+    overflow: hidden;
+    display: flex !important;
+    align-items: center;
+  }
+  .dds-slide:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  .dds-nav {
+    display: none !important;
+  }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+`;
+
 export function renderDeckToHtml({ deck, images }: ExportInput): string {
   const spec = familyTokens(deck.family_id);
   if (!spec) {
@@ -92,6 +138,7 @@ export function renderDeckToHtml({ deck, images }: ExportInput): string {
 ${cssVars}
 }
 ${cssText}
+${PRINT_CSS}
 </style>
 </head>
 <body>

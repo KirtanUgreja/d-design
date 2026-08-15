@@ -9,7 +9,7 @@
 | [11 — charts](11-charts.md) | done |
 | [12 — editor](12-editor.md) | done |
 | [13 — vision-critic](13-vision-critic.md) | done |
-| [14 — pdf-export](14-pdf-export.md) | not started |
+| [14 — pdf-export](14-pdf-export.md) | done |
 | [15 — variety-gate](15-variety-gate.md) | not started |
 
 ## Dependency graph
