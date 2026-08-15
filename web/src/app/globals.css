@@ -274,3 +274,17 @@ body {
   color: #b91c1c;
   padding: 0.25rem 0.75rem;
 }
+
+.editor-toolbar__plan {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0.1rem 0.4rem;
+  border: 1px solid var(--editor-line);
+  border-radius: 3px;
+}
+
+.editor-toolbar__plan[data-plan='paid'] {
+  border-color: var(--editor-accent);
+  color: var(--editor-accent);
+}

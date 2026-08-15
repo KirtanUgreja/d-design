@@ -21,6 +21,7 @@ await build({
   platform: 'node',
   format: 'cjs',
   target: 'node20',
+  jsx: 'automatic', // react-jsx runtime: never emit React.createElement
   outfile: join(root, 'dist', 'main.cjs'),
   external: ['playwright', 'playwright-core'],
   alias: {
@@ -39,6 +40,7 @@ await build({
   platform: 'node',
   format: 'cjs',
   target: 'node20',
+  jsx: 'automatic', // react-jsx runtime: never emit React.createElement
   outfile: join(root, 'dist', 'server.cjs'),
   alias: {
     '@web': join(root, '..', 'web', 'src'),

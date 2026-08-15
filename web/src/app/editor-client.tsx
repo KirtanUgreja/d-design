@@ -11,7 +11,15 @@ import {
 import type { BrandKit } from '../features/brand-kit/index.js';
 import { SAMPLE_DECK } from '../features/editor/sample-deck.js';
 
-export default function EditorClient({ userId, kits = [] }: { userId: string; kits?: BrandKit[] }) {
+export default function EditorClient({
+  userId,
+  kits = [],
+  plan = 'free',
+}: {
+  userId: string;
+  kits?: BrandKit[];
+  plan?: string;
+}) {
   // The store is created once per mount from the sample deck; the ref keeps it
   // stable across re-renders (Zustand stores are created, not rendered).
   const storeRef = useRef<ReturnType<typeof createEditorStore> | null>(null);
@@ -85,6 +93,9 @@ export default function EditorClient({ userId, kits = [] }: { userId: string; ki
           />
           <div className="editor-toolbar__actions">
             <span className="editor-toolbar__user">{userId.slice(0, 8)}</span>
+            <span className="editor-toolbar__plan" data-plan={plan}>
+              {plan}
+            </span>
             <button onClick={handleLogout}>Log out</button>
             <button onClick={() => store.getState().undo()} disabled={past.length === 0}>
               ↶ Undo

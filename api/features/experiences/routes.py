@@ -16,6 +16,8 @@ from features.experiences.experiences_data import (
     list_experiences,
     save_experience,
 )
+from features.quotas.kill_switch import effective_plan, kill_switch_tripped
+from features.quotas.quotas_data import consume_quota, plan_limit
 
 router = APIRouter(prefix="/experiences", tags=["experiences"])
 
@@ -59,7 +61,25 @@ async def experience_detail(experience_id: str, user_id: UserId) -> ExperienceOu
 
 @router.post("", response_model=ExperienceOut, status_code=status.HTTP_201_CREATED)
 async def experience_create(body: ExperienceIn, user_id: UserId) -> ExperienceOut:
+    # The authoritative, transactional spend gate (phase 19). The quota is
+    # consumed in the SAME transaction as the experiences insert — a refused
+    # check rolls the insert back too. Fail-closed: a kill switch or a quota
+    # that cannot run refuses (AGENTS.md rule 10).
+    plan = effective_plan()
+    limit = plan_limit(plan)
     async with as_user(user_id) as session:
+        if kill_switch_tripped():
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="service paused (kill switch)",
+            )
+        refused = await consume_quota(session, user_id, plan=plan, limit=limit)
+        if refused is not None:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=f"free tier includes {refused.limit} hosted URL"
+                + ("" if refused.limit == 1 else "s"),
+            )
         exp = await save_experience(
             session,
             title=body.title,

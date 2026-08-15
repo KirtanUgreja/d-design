@@ -2,6 +2,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { listKitsForUser } from '../features/brand-kit/brand-kit.data.js';
+import { getEntitlement } from '../features/publish/index.js';
 import { auth } from '../lib/auth.js';
 import EditorClient from './editor-client.js';
 
@@ -18,6 +19,11 @@ export const dynamic = 'force-dynamic';
  * client component; loading/saving a deck goes through as_user/asUser. The
  * user's team brand kits are fetched here (server-side, through api) and
  * passed down — the client never calls api.
+ *
+ * The brand kit is a PAID feature (v3/spec.md): free accounts get no kits
+ * fetched at all — the gate is server-side, at the point of action, and the
+ * client never sees paid-only data (infrastructure.md "entitlement checks are
+ * server-side").
  */
 export default async function HomePage() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -25,13 +31,25 @@ export default async function HomePage() {
     redirect('/login');
   }
 
-  let kits: Awaited<ReturnType<typeof listKitsForUser>> = [];
+  // The entitlement read decides the brand-kit gate. Fail-closed: if it
+  // cannot run, treat as free (no paid-only data leaks to a free user).
+  let plan = 'free';
   try {
-    kits = await listKitsForUser();
+    const entitlement = await getEntitlement();
+    plan = entitlement.plan;
   } catch {
-    // The api may be down in dev; the editor still works without kits.
-    kits = [];
+    plan = 'free';
   }
 
-  return <EditorClient userId={session.user.id} kits={kits} />;
+  let kits: Awaited<ReturnType<typeof listKitsForUser>> = [];
+  if (plan === 'paid') {
+    try {
+      kits = await listKitsForUser();
+    } catch {
+      // The api may be down in dev; the editor still works without kits.
+      kits = [];
+    }
+  }
+
+  return <EditorClient userId={session.user.id} kits={kits} plan={plan} />;
 }

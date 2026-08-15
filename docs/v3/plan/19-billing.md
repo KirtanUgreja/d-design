@@ -25,19 +25,25 @@ Billing: free = generate/edit/preview + one hosted URL with a badge; paid = more
 
 ## Verify
 
-- [ ] Free tier: generate/edit/preview + one hosted URL with a badge
-- [ ] Paid tier: more URLs, no badge, team, brand kit
-- [ ] Quota is transactional and race-proof
-- [ ] Kill switch bounds denial-of-wallet
+- [x] Free tier: generate/edit/preview + one hosted URL with a badge
+- [x] Paid tier: more URLs, no badge, team, brand kit (via FORCE_PLAN; Stripe deferred)
+- [x] Quota is transactional and race-proof
+- [x] Kill switch bounds denial-of-wallet
 - [ ] **Human:** the pricing page reads as honest; the badge/disclosure mark reads as one designed thing
 
 ## Skipped
 
-- Invoices/receipts — Stripe handles; not a product surface
+- **Stripe — deferred to the last phase (user decision).** No Stripe account
+  exists yet; the entitlement spine is built and testable without one. The
+  per-row `plan` column on `quotas` is the webhook slot — a future
+  `subscription.updated/deleted` handler flips it (signature-verified,
+  deduplicated by event id, reconciled on read per infrastructure.md). The
+  `FORCE_PLAN` env is the static/testing knob until then. Invoices/receipts —
+  Stripe handles; not a product surface.
 - Enterprise/SSO — not yet
 
 ## Exit gate
 
-- [ ] Tiers, quotas, kill switch in place
-- [ ] Transactional quota verified race-proof
-- [ ] Badge/disclosure mark correct
+- [x] Tiers, quotas, kill switch in place
+- [x] Transactional quota verified race-proof
+- [x] Badge/disclosure mark correct

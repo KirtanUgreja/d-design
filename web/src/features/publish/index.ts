@@ -27,15 +27,60 @@ async function authHeaders(): Promise<Record<string, string>> {
   return token ? { authorization: `Bearer ${token}` } : {};
 }
 
+/** The account's entitlement, from api (the authoritative source; web's read
+ * is an affordance, api's spend gate is the control). */
+export async function getEntitlement(): Promise<{
+  plan: string;
+  used: number;
+  limit: number;
+  exhausted: boolean;
+  killSwitch: boolean;
+}> {
+  const res = await fetch(`${API_URL}/entitlements`, {
+    headers: await authHeaders(),
+    cache: 'no-store',
+  });
+  if (!res.ok) throw new Error(`entitlements: ${res.status}`);
+  const data = (await res.json()) as {
+    plan: string;
+    used: number;
+    limit: number;
+    exhausted: boolean;
+    kill_switch: boolean;
+  };
+  return {
+    plan: data.plan,
+    used: data.used,
+    limit: data.limit,
+    exhausted: data.exhausted,
+    killSwitch: data.kill_switch,
+  };
+}
+
 export async function publishDeck(
   deck: Deck,
   title: string,
 ): Promise<{ url: string; key: string }> {
+  // 0. The entitlement pre-check (an affordance — fail fast before rendering
+  // and storing a deck api will refuse). The authoritative gate is api's
+  // experience_create; if api still refuses after this, the orphan cleanup
+  // below holds. Fail-closed: a pre-check that cannot run refuses — never
+  // proceed because the entitlement check was unavailable (AGENTS.md rule 10).
+  const entitlement = await getEntitlement();
+  if (entitlement.killSwitch) {
+    throw new Error('service paused (kill switch)');
+  }
+  if (entitlement.exhausted) {
+    throw new Error(`free tier includes ${entitlement.limit} hosted URL`);
+  }
+  // Paid → no badge. The AI disclosure is never touched by this boolean.
+  const badge = entitlement.plan === 'free';
+
   // 1. Render the single-file HTML (the render service — the same exporter).
   const renderRes = await fetch(`${RENDER_URL}/render`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ deck, badge: true }),
+    body: JSON.stringify({ deck, badge }),
   });
   if (!renderRes.ok) {
     throw new Error(`render failed: ${renderRes.status}`);
@@ -55,7 +100,10 @@ export async function publishDeck(
     // The object is stored but the row failed — remove the orphan (fail
     // closed: no dangling hosted page without a saved deck).
     await storage.delete(key).catch(() => {});
-    throw new Error(`experience save failed: ${apiRes.status}`);
+    // api's 402 detail is the honest message ("free tier includes 1 hosted
+    // URL"); surface it rather than a generic failure.
+    const detail = (await apiRes.json().catch(() => null)) as { detail?: string } | null;
+    throw new Error(detail?.detail ?? `experience save failed: ${apiRes.status}`);
   }
 
   return { url: `${HOSTED_ORIGIN}/${key}`, key };
