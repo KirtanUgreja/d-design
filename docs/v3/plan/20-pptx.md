@@ -35,6 +35,27 @@
 - PPTX *round-tripping* (editing a deck in PowerPoint and bringing it back) — a whole second product, not built
 - If the market never asks, this phase is skipped entirely and the trigger stays written down
 
+## Trigger status (2026-08-15)
+
+**Not started — the market trigger is not met.** The phase is conditional on a
+real signal (users asking for PowerPoint export, or a competitor's export
+becoming a complaint), and there is no such signal in the repo: no user
+requests, no documented competitor-export complaint against us, no market
+intelligence naming PPTX. The v3 spec frames it as a live question, not a
+decision to build.
+
+What exists today that would make the phase *small* if the trigger fires:
+- The `Deck` schema (api/schema/deck.py) is the source of truth — PPTX is a
+  third render of it (like HTML and PDF), never a second source.
+- The PDF path (phase 14) already establishes "motion prints as the resting
+  state" — the same rule PPTX needs.
+- The find/replace surface for a native OOXML generator would slot beside the
+  exporter (render/), not a new pipeline.
+
+The trigger stays written down: **users asking for PowerPoint export, or a
+competitor's export becoming a complaint.** Until then, HTML + PDF are the
+product, and the phase does not start.
+
 ## Exit gate
 
 - [ ] Market trigger met
