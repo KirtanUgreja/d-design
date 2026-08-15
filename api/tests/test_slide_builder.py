@@ -91,8 +91,9 @@ class FakeSeam(Seam):
         user: str,
         model: str,
         route: str = "openrouter/auto",
+        image: str | None = None,
     ) -> Result[T, ModelError]:
-        del phase, schema, model, route
+        del phase, schema, model, route, image
         self.calls.append({"system": system, "user": user})
         # Echo the mapped spec's image blocks (if any) so the image path is
         # exercised; otherwise a plain generated slide. The heuristic is the
@@ -206,8 +207,9 @@ def test_backstop_rejects_presentational_value_in_slide() -> None:
             user: str,
             model: str,
             route: str = "openrouter/auto",
+            image: str | None = None,
         ) -> Result[T, ModelError]:
-            del phase, schema, system, user, model, route
+            del phase, schema, system, user, model, route, image
             slide = Slide(
                 id="generated",
                 title="Slide in #333",
@@ -237,8 +239,9 @@ def test_build_failure_keeps_prior_slides() -> None:
             user: str,
             model: str,
             route: str = "openrouter/auto",
+            image: str | None = None,
         ) -> Result[T, ModelError]:
-            del phase, schema, system, model, route
+            del phase, schema, system, model, route, image
             self.calls.append({"system": "", "user": user})
             if len(self.calls) == 2:
                 return err(ModelError("refused", "model refused"))

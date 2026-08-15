@@ -86,8 +86,9 @@ class FakeSeam(Seam):
         user: str,
         model: str,
         route: str = "openrouter/auto",
+        image: str | None = None,
     ) -> Result[T, ModelError]:
-        del system, user, model, route
+        del system, user, model, route, image
         if phase == "interview":
             outline = Outline(
                 title="A brief",

@@ -40,8 +40,9 @@ class FakeSeam(Seam):
         user: str,
         model: str,
         route: str = "openrouter/auto",
+        image: str | None = None,
     ) -> Result[T, ModelError]:
-        del phase, schema, model, route
+        del phase, schema, model, route, image
         self.captured_user = user
         slide = Slide(
             id="revised",

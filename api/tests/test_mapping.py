@@ -48,8 +48,9 @@ class FakeSeam(Seam):
         user: str,
         model: str,
         route: str = "openrouter/auto",
+        image: str | None = None,
     ) -> Result[T, ModelError]:
-        del phase, schema, system, model, route
+        del phase, schema, system, model, route, image
         self.captured_user = user
         # Every call this fake serves is schema=Deck; the ignore is the one
         # narrowing point, asserted by the isinstance checks in each test.

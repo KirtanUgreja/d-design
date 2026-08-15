@@ -14,6 +14,7 @@ claim is visible before any slide is built.
 from __future__ import annotations
 
 import argparse
+import base64
 import json
 import sys
 from pathlib import Path
@@ -113,6 +114,27 @@ def main(argv: list[str] | None = None) -> int:
     review.add_argument("--feedback", required=True, help="The reviewer's written feedback")
     review.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
     review.add_argument("--out", default="built.json", help="Where to write the revised built Deck")
+
+    critic = sub.add_parser(
+        "critic",
+        help="Run the vision critic on one rendered slide (bounded to one revision)",
+    )
+    critic.add_argument("--built", default="built.json", help="The built Deck + images file")
+    critic.add_argument(
+        "--screenshot", required=True, help="Path to the rendered slide screenshot (png)"
+    )
+    critic.add_argument("--slide", type=int, required=True, help="1-based slide index to critic")
+    critic.add_argument(
+        "--model", default="openai/gpt-4o-mini", help="OpenRouter text model for a revision"
+    )
+    critic.add_argument(
+        "--critic-model",
+        default="openai/gpt-4o-mini",
+        help="OpenRouter vision model that reviews the screenshot",
+    )
+    critic.add_argument(
+        "--out", default="built.json", help="Where to write the revised built Deck (if revised)"
+    )
 
     acceptance = sub.add_parser(
         "acceptance",
@@ -229,6 +251,57 @@ def main(argv: list[str] | None = None) -> int:
         }
         Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
         print(f"Revised slide {args.slide} -> {args.out}")
+        return 0
+
+    if args.command == "critic":
+        from pipeline.vision_critic import run_critic
+
+        try:
+            raw = json.loads(Path(args.built).read_text(encoding="utf8"))
+        except (FileNotFoundError, json.JSONDecodeError) as exc:
+            print(f"cannot read built deck {args.built}: {exc}", file=sys.stderr)
+            return 1
+        built = raw["deck"]
+        images = raw.get("images", {})
+        deck = Deck.model_validate(built)
+
+        # The screenshot is the rendered slide (the render service produces it
+        # in the real flow); read it and embed as a data URI for the vision
+        # model. No URL is fetched — the file is the input.
+        try:
+            png = Path(args.screenshot).read_bytes()
+        except FileNotFoundError as exc:
+            print(f"cannot read screenshot {args.screenshot}: {exc}", file=sys.stderr)
+            return 1
+
+        screenshot = f"data:image/png;base64,{base64.b64encode(png).decode('ascii')}"
+
+        seam = make_seam()
+        result = run_critic(
+            deck,
+            args.slide - 1,
+            screenshot,
+            seam,
+            model=args.model,
+            critic_model=args.critic_model,
+        )
+
+        if isinstance(result, Err):
+            _show_error(result.error)
+            return 1
+
+        outcome = result.value
+        for f in outcome.findings:
+            print(f"  [{f.severity}] {f.kind}: {f.note}")
+        if outcome.revised:
+            payload = {
+                "deck": outcome.deck.model_dump(),
+                "images": images,
+            }
+            Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
+            print(f"critic revised slide {args.slide} -> {args.out}")
+        else:
+            print(f"critic accepted slide {args.slide} (no revision)")
         return 0
 
     if args.command == "acceptance":

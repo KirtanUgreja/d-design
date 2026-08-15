@@ -136,8 +136,14 @@ class Seam:
         user: str,
         model: str,
         route: str = "openrouter/auto",
+        image: str | None = None,
     ) -> Result[T, ModelError]:
         """Call the model once and validate the response against ``schema``.
+
+        ``image``, when present, is a data URI the model can see — the vision
+        path (phase 13). The user message becomes a multimodal content array;
+        everything else is identical to a text call. This is the only vision
+        path in the codebase (patterns.md rule 6: one seam for model calls).
 
         The single repair retry re-sends the invalid output as corrective
         context. If the repair also fails, this returns repair_exhausted.
@@ -148,9 +154,19 @@ class Seam:
         started = time.monotonic()
         # messages is a concrete list of OpenAI-format message dicts; typing it
         # keeps the append in the repair path typechecked instead of object.
+        # When an image is present the user message is multimodal: a text part
+        # plus an image_url part (the vision path, phase 13).
+        user_content: object
+        if image is not None:
+            user_content = [
+                {"type": "text", "text": user},
+                {"type": "image_url", "image_url": {"url": image}},
+            ]
+        else:
+            user_content = user
         messages: list[dict[str, object]] = [
             {"role": "system", "content": system},
-            {"role": "user", "content": user},
+            {"role": "user", "content": user_content},
         ]
         body: dict[str, object] = {
             "model": model,

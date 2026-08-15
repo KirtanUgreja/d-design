@@ -38,8 +38,9 @@ class FakeSeam(Seam):
         user: str,
         model: str,
         route: str = "openrouter/auto",
+        image: str | None = None,
     ) -> Result[T, ModelError]:
-        del phase, schema, system, model, route
+        del phase, schema, system, model, route, image
         self.called = True
         self.captured_user = user
         # The schema for every call this fake serves is Outline; the ignore is
