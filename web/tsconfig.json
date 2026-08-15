@@ -13,6 +13,11 @@
     "skipLibCheck": true,
     "noEmit": true,
     "types": ["node"],
+    "paths": {
+      "next/navigation": ["./node_modules/next/navigation.d.ts"],
+      "next/headers": ["./node_modules/next/headers.d.ts"],
+      "next": ["./node_modules/next"]
+    },
     "allowJs": true,
     "incremental": true,
     "esModuleInterop": true,

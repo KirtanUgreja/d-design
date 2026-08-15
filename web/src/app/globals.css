@@ -186,3 +186,63 @@ body {
   grid-template-columns: 1fr auto;
   min-height: 100vh;
 }
+
+/* --- auth (v3, phase 16) — cold chrome, assembled not crafted ------------ */
+
+.auth-form {
+  max-width: 22rem;
+  margin: 4rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 2rem;
+  border: 1px solid var(--editor-line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.auth-form h1 {
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem;
+}
+
+.auth-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: var(--editor-faint);
+}
+
+.auth-form input {
+  font: inherit;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+}
+
+.auth-form button {
+  font: inherit;
+  margin-top: 0.5rem;
+  padding: 0.5rem;
+  background: var(--editor-accent);
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.auth-form p {
+  font-size: 0.85rem;
+  color: var(--editor-faint);
+}
+
+.auth-error {
+  color: #b91c1c;
+}
+
+.editor-toolbar__user {
+  font-size: 0.75rem;
+  color: var(--editor-faint);
+  letter-spacing: 0.04em;
+}

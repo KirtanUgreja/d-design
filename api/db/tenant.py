@@ -1,38 +1,37 @@
 """The tenant transaction wrapper — the only place app.user_id is set in Python.
 
 patterns.md rule 4: every tenant-scoped query runs inside this wrapper. Exactly
-one wrapper per language; this is the Python one. The `true` in set_config
-scopes the value to the transaction, which is what keeps a pooled connection
-from serving the previous user.
+two wrappers, one per language; this is the Python one (the TypeScript one is
+web/src/db/tenant.ts). The `true` in set_config scopes the value to the
+transaction, which is what keeps a pooled connection from serving the previous
+user.
 
-v1 has no database (the DB and multi-tenancy arrive in v3). This module exists
-so the tenant-isolation invariant in scripts/checks/invariants.sh has its one
-named home from day one, and the shape is right before anything queries it.
+A third file that sets app.user_id is a bug the invariants script fails on
+(scripts/checks/invariants.sh, EXPECTED_TENANT_WRAPPERS=2).
 """
 
 from __future__ import annotations
 
 import contextlib
 from collections.abc import AsyncIterator
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy import text
+from sqlalchemy.ext.asyncio import AsyncSession
 
-# Note: sqlalchemy is a baseline dependency for api (docs/coderules/dependencies.md)
-# but is not installed in v1 since v1 has no database. The import stays lazy
-# (TYPE_CHECKING above, __import__ below) until the DB lands in v3, so the gate
-# can typecheck this file without requiring the package yet.
+from db.session import session_factory
 
 
 @contextlib.asynccontextmanager
-async def as_user(user_id: str, connection: AsyncConnection) -> AsyncIterator[AsyncConnection]:
+async def as_user(user_id: str) -> AsyncIterator[AsyncSession]:
     """Run a block of queries as ``user_id``.
 
-    The session variable is scoped to the transaction via the trailing ``true``.
+    The session variable is scoped to the transaction via the trailing ``true``
+    — without it, a connection returned to the pool would serve the next
+    request as the previous user.
     """
-    await connection.execute(
-        __import__("sqlalchemy").text("select set_config('app.user_id', :uid, true)"),
-        {"uid": user_id},
-    )
-    yield connection
+    async with session_factory() as session, session.begin():
+        await session.execute(
+            text("select set_config('app.user_id', :uid, true)"),
+            {"uid": user_id},
+        )
+        yield session

@@ -97,10 +97,10 @@ code_scan() { # code_scan <grep-args...> -- <pathspec...>
 # cross-tenant read rather than a design regression.
 #
 # The count is a literal, not a computed thing, so raising it is a deliberate
-# edit someone reviews. It goes to 2 in v3 when Better Auth brings the
+# edit someone reviews. It is 2 since v3 phase 16: Better Auth brought the
 # TypeScript wrapper (web/db/tenant.ts). A third is a bug.
-EXPECTED_TENANT_WRAPPERS=1
-EXPECTED_TENANT_FILES="api/db/tenant.py"
+EXPECTED_TENANT_WRAPPERS=2
+EXPECTED_TENANT_FILES="api/db/tenant.py web/src/db/tenant.ts"
 
 # The bracket keeps this script from matching itself.
 found=$(scan -lE "set_config\('app[.]user_id'" -- \
@@ -111,7 +111,7 @@ if [ "$count" -ne "$EXPECTED_TENANT_WRAPPERS" ]; then
   note "app.user_id is set in $count file(s), expected $EXPECTED_TENANT_WRAPPERS:"
   printf '      %s\n' $found >&2
   note "every tenant-scoped query goes through a wrapper (patterns.md rule 4)."
-elif [ "$found" != "$EXPECTED_TENANT_FILES" ]; then
+elif [ "$(printf '%s' "$found" | tr '\n' ' ' | sed 's/ $//')" != "$EXPECTED_TENANT_FILES" ]; then
   note "app.user_id is set in '$found', expected '$EXPECTED_TENANT_FILES'"
 fi
 

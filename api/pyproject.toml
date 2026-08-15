@@ -6,6 +6,14 @@ requires-python = ">=3.13"
 dependencies = [
     "pydantic>=2.9,<3",
     "httpx>=0.27,<1",
+    # sqlalchemy + asyncpg are the database layer (docs/coderules/dependencies.md
+    # baseline). They were dev-only in v1 (no database); the DB lands in v3
+    # (phase 16) with accounts, so they become runtime deps here.
+    "sqlalchemy[asyncio]>=2.0",
+    "asyncpg>=0.29",
+    # alembic owns the app tables' migrations (backend.md: Alembic for
+    # everything except the auth tables, which drizzle-kit owns).
+    "alembic>=1.13",
 ]
 
 [dependency-groups]
@@ -13,11 +21,6 @@ dev = [
     "mypy>=1.11",
     "ruff>=0.6",
     "pytest>=8.3",
-    # sqlalchemy is a baseline dependency (docs/coderules/dependencies.md) but v1
-    # has no database, so it is not a runtime dep yet. It is in dev so the
-    # dormant tenant-wrapper in db/tenant.py typechecks; the async engine lands
-    # with the DB in v3.
-    "sqlalchemy[asyncio]>=2.0",
 ]
 
 [tool.uv]

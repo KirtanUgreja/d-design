@@ -1,0 +1,28 @@
+# Local dev infrastructure (v3, phase 16).
+#
+# The docs' local-dev decision names "Docker Compose + MinIO + LocalStack" —
+# this phase starts with Postgres, the only service accounts needs. MinIO and
+# LocalStack land with storage/KMS (v3-later).
+#
+# ponytail: Postgres only for now. The compose file grows when storage and KMS
+# paths arrive; a service that exists but is unused is worse than one that
+# lands with its first consumer.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ddesign
+      POSTGRES_USER: ddesign
+      POSTGRES_PASSWORD: ddesign
+    ports:
+      - '5432:5432'
+    volumes:
+      - ddesign_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ddesign -d ddesign']
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  ddesign_pgdata:

@@ -142,6 +142,22 @@ tailwindcss (v2, phase 12) — app chrome only, never a design family —
   source on Radix primitives (frontend.md), and Radix gives the focus trap,
   dismissible layer and keyboard navigation that are genuinely easy to get
   subtly wrong. Nothing ships as a runtime dependency to the browser.
+asyncpg (v3, phase 16) — the Postgres driver for api's async SQLAlchemy
+  engine — baseline in the Python list; v1 had no database so it waited for
+  the DB, which accounts (phase 16) brings. `pool_pre_ping`, and prepared
+  statements disabled behind a transaction-mode pooler (backend.md).
+better-auth (v3, phase 16) — the auth library in Node (web) — the security
+  doc's own conclusion: never write your own credential path, and the
+  maintained library ships OAuth, email verification, reset, MFA, passkeys,
+  orgs and rate limiting that Python's options leave to you (backend.md ->
+  "Auth: Better Auth"). Users live in our own Postgres, which is what makes
+  the session-variable RLS work (a real FK between user and data).
+drizzle-orm + drizzle-kit (v3, phase 16) — web's ORM over the auth tables
+  only — baseline in the TS list. Two ORMs against one database survive only
+  because the table sets are disjoint and enforced; drizzle owns auth.*,
+  Alembic owns everything else (backend.md -> "Two ORMs").
+pg (v3, phase 16) — the Postgres driver Drizzle's node adapter uses — the
+  Drizzle baseline implies it; without a driver the adapter is inert.
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."

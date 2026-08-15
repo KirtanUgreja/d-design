@@ -1,20 +1,28 @@
 """Alembic migration environment.
 
-v1 has no database; this file exists so the Alembic-auth-table-isolation
-invariant in scripts/checks/invariants.sh has its home from day one, and so the
-shape that prevents the most destructive failure mode in the architecture — an
-autogenerate run proposing to drop the auth tables — is in place before any
-migration exists.
+Migrates the APP tables only. The auth tables are owned by web (Better Auth,
+Drizzle); Alembic must never propose dropping them, so include_object excludes
+them — this is the single most destructive failure mode in the architecture
+(docs/techstack/backend.md), and the filter below is what prevents it.
 
-The auth tables are owned by web (Better Auth, Drizzle). Alembic must never
-propose dropping them, so include_object excludes them.
+The engine is api's async engine (db/session.py); migrations run in a sync
+context via a temp sync engine over the same URL (Alembic's standard async
+pattern). The migration role owns DDL; the app role (no bypassrls) never does.
 """
 
 from __future__ import annotations
 
-# `Any` is not used in this file; it is imported so Alembic's generated
-# env.py template (which this file stands in for until v3) keeps its shape.
-from typing import Any  # noqa: F401
+import asyncio
+from logging.config import fileConfig
+from typing import Literal
+
+from alembic import context
+from sqlalchemy import pool
+from sqlalchemy.engine import Connection
+from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.sql.schema import SchemaItem
+
+from db.session import database_url
 
 # The seven auth tables owned by web (Better Auth, Drizzle). Alembic must never
 # propose dropping them — this is the single most destructive failure mode in
@@ -23,16 +31,34 @@ AUTH_TABLES = frozenset(
     {"user", "session", "account", "verification", "organization", "member", "invitation"}
 )
 
+config = context.config
+
+if config.config_file_name is not None:
+    fileConfig(config.config_file_name)
+
+config.set_main_option("sqlalchemy.url", database_url())
+
 
 def include_object(
-    object_: object, name: str, type_: str, reflected: bool, compare_to: object
+    object_: SchemaItem,
+    name: str | None,
+    type_: Literal[
+        "schema",
+        "table",
+        "column",
+        "index",
+        "unique_constraint",
+        "foreign_key_constraint",
+        "check_constraint",
+    ],
+    reflected: bool,
+    compare_to: SchemaItem | None,
 ) -> bool:
     """Exclude the auth tables from autogenerate. A table Alembic does not know
     it owns must not be something Alembic proposes to drop.
 
-    ``object_`` and ``compare_to`` are Alembic's (untyped) migration context
-    objects; we only branch on ``type_`` and ``name``, so ``object`` is the
-    honest annotation — nothing narrower is true.
+    ``object_`` and ``compare_to`` are Alembic's migration context objects; we
+    only branch on ``type_`` and ``name``.
     """
     del reflected, compare_to
     if type_ == "table":
@@ -46,8 +72,41 @@ include_object = include_object
 
 
 def run_migrations_offline() -> None:
-    raise NotImplementedError("No database in v1 — migrations arrive with the DB (v3).")
+    """Run migrations in 'offline' mode (SQL emitted, not executed)."""
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=None,
+        literal_binds=True,
+        include_object=include_object,
+        dialect_opts={"paramstyle": "named"},
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+def do_run_migrations(connection: Connection) -> None:
+    context.configure(
+        connection=connection,
+        target_metadata=None,
+        include_object=include_object,
+    )
+    with context.begin_transaction():
+        context.run_migrations()
+
+
+async def run_async_migrations() -> None:
+    """Run migrations online against the async engine."""
+    connectable = async_engine_from_config(
+        config.get_section(config.config_ini_section, {}),
+        prefix="sqlalchemy.",
+        poolclass=pool.NullPool,
+    )
+    async with connectable.connect() as connection:
+        await connection.run_sync(do_run_migrations)
+    await connectable.dispose()
 
 
 def run_migrations_online() -> None:
-    raise NotImplementedError("No database in v1 — migrations arrive with the DB (v3).")
+    """Run migrations in 'online' mode (executed against the database)."""
+    asyncio.run(run_async_migrations())
