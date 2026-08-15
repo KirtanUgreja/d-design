@@ -282,5 +282,28 @@ if code_scan -nE "blur\(|boxShadow|textShadow|dropShadow|box-shadow|text-shadow"
   note "a hard offset shadow is allowed, through tokens.ts's hardShadow() and only through it."
 fi
 
+# --- 10. The variety gate (v2, phase 15) ------------------------------------
+# The "53% identical" measurement made into a standing check. The golden
+# briefs run through the pipeline with a deterministic seam and the gate
+# asserts the design-space claims that must never silently creep back:
+# cross-deck fingerprints differ, within-deck layouts and chart types are
+# distributed, and no presentational value passes the backstop.
+#
+# It runs whenever api/ exists (the guard at the top already ensured one of
+# api/ or web/ is present) and it is fast — no network, no model calls.
+if [ -d api ]; then
+  if ! out=$(env -C api uv run python -c "
+from pipeline.acceptance.gate import run_variety_gate
+import sys
+passed, report = run_variety_gate()
+print(report)
+sys.exit(0 if passed else 1)
+" 2>&1); then
+    note "the variety gate is red — the design space has collapsed:"
+    printf '      %s\n' "$out" >&2
+    note "two decks converged on a fingerprint, or a deck collapsed to one frame (15-variety-gate.md)."
+  fi
+fi
+
 [ "$fail" -eq 0 ] || printf '\ninvariants failed — see docs/coderules/tooling.md\n' >&2
 exit "$fail"
