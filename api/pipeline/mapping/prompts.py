@@ -31,10 +31,13 @@ Rules:
   differ from the ones around it. The grammar's signatures are starting points,
   not the whole space — compose new legal combinations where they serve the
   content.
-- DISTRIBUTE the layouts. A deck must not use the same layout twice in a row,
-  and across a 10+ slide deck use at least 5-6 distinct layouts. Variety within
-  the deck is the point; cohesion comes from the design family, which is
-  constant, and from the grammar, which bounds every slide to the same space.
+- DISTRIBUTE the layouts. No layout may appear more than twice in a row, and
+  a deck of N slides must use at least max(4, N-1) distinct layout signatures
+  overall (5 slides -> at least 4 distinct; 10+ -> at least 5-6). Repeating
+  the same two-region skeleton is a failure even if no run exceeds two.
+  Variety within the deck is the point; cohesion comes from the design family,
+  which is constant, and from the grammar, which bounds every slide to the
+  same space.
 - The first slide leads with a FULL-width region (headline or media) — it
   claims the topic. The last slide carries the CTA, on a full or prominent
   region. Section breaks appear where the outline's narrative turns.

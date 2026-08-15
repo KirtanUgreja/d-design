@@ -68,12 +68,18 @@ async def save_experience(
     published_key: str | None,
 ) -> ExperienceRecord:
     """Save (or update) a deck. RLS's with check enforces ownership — a
-    non-owner's write is rejected by the database, not by this module."""
+    non-owner's write is rejected by the database, not by this module.
+
+    owner_id comes from the session's app.user_id (set by as_user). It must
+    be set on the row: the column is NOT NULL and the with check compares
+    against it — an insert without it is both a 500 (live-run finding) and a
+    policy violation.
+    """
     experience_id = _new_id()
     await session.execute(
         text(
-            "insert into experiences (id, title, deck_json, published_key)"
-            " values (:id, :title, :deck, :published)"
+            "insert into experiences (id, owner_id, title, deck_json, published_key)"
+            " values (:id, current_setting('app.user_id')::uuid, :title, :deck, :published)"
         ),
         {
             "id": experience_id,

@@ -74,7 +74,12 @@ async def resolve_session(
         return result
 
     user_id, expires_at = result.value
-    if expires_at is None or expires_at <= datetime.now(UTC):
+    # The auth table stores expires_at as a naive timestamp (no tz); normalize
+    # so the comparison never mixes aware and naive datetimes (a 500 that
+    # would fail closed but loudly — surfaced by the live end-to-end run).
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=UTC)
+    if expires_at <= datetime.now(UTC):
         return err(Unauthorized())
 
     return ok(user_id)

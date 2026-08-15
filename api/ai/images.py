@@ -20,9 +20,12 @@ import httpx
 
 from lib.result import Result, err, ok
 
-# Dimension cap: keeps the embedded file lean and bounds the cost.
-MAX_WIDTH = 1280
-MAX_HEIGHT = 720
+# Dimension cap: keeps the embedded file lean and bounds the cost. The size is
+# one of the modern OpenRouter image models' supported set (1024x1024 /
+# 1024x1536 / 1536x1024 / auto) — the old 1280x720 was rejected with a 400 by
+# gpt-image-* (live-run finding, phase 20-era).
+MAX_WIDTH = 1024
+MAX_HEIGHT = 1024
 
 # Hard per-deck image cap (pipeline-tools.md -> denial-of-wallet discipline).
 MAX_IMAGES_PER_DECK = 4
@@ -56,7 +59,7 @@ class ImageSeam:
         self,
         subject: str,
         visual_rules: str,
-        model: str = "openai/dall-e-3",
+        model: str = "openai/gpt-5-image-mini",
     ) -> Result[str, ImageError]:
         """Generate one image and return it as a data URI.
 

@@ -15,7 +15,7 @@ from pipeline.mapping.brand_tokens import BrandFacts, map_brand_to_family
 from pipeline.mapping.distribution import distribution_violation
 from schema.deck import Deck
 from schema.design_families import family_by_id
-from schema.grammars import grammar_for_family
+from schema.grammars import FamilyGrammar, grammar_for_family
 from schema.no_style import assert_no_presentational_values
 from schema.outline import Outline
 
@@ -86,6 +86,30 @@ def run_mapping(
     # (a presentational value is a schema gap — bug), and the distribution
     # (the within-deck variety claim). The distribution check is the falsifier
     # for the core bet: a collapsed deck fails even though it is valid JSON.
+    #
+    # The live run (phase 20-era) showed the model reliably collapses onto a
+    # repeated layout, and the gate returned a hard Err with no recovery. The
+    # schema gets one repair inside the seam; the semantic checks here get the
+    # same bounded treatment — one corrective call with the violation text,
+    # then fail visibly (patterns.md rule 6: bounded loops stay bounded).
+    issue = _first_semantic_issue(deck, grammar)
+    if issue is not None:
+        repair = seam.complete(
+            phase="mapping",
+            schema=Deck,
+            system=prompts.SYSTEM,
+            user=user
+            + (
+                "\n\nYour previous response passed the schema but failed a "
+                f"design check: {issue}. Return a revised Deck that fixes "
+                "this — vary the layouts, keep every block in a region."
+            ),
+            model=model,
+        )
+        if isinstance(repair, Err):
+            return repair
+        deck = repair.value
+
     assert_no_presentational_values(deck.model_dump())
 
     # The Deck validator enforces grammar-legality; this second line keeps the
@@ -106,6 +130,15 @@ def run_mapping(
         return err(ModelError("invalid", f"layout distribution: {violation}"))
 
     return ok(deck)
+
+
+def _first_semantic_issue(deck: Deck, grammar: FamilyGrammar) -> str | None:
+    """The first post-schema design issue: grammar-legality or distribution.
+    Returns a corrective message for the repair call, or None when clean."""
+    for slide in deck.slides:
+        if not prompts.slide_fits_grammar(slide, grammar):
+            return f"slide '{slide.id}' layout is not legal in the family grammar"
+    return distribution_violation(deck)
 
 
 def _pick_family(title: str) -> str:

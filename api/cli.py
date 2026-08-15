@@ -100,7 +100,9 @@ def main(argv: list[str] | None = None) -> int:
     build = sub.add_parser("build", help="Build every slide of a mapped Deck, one call each")
     build.add_argument("--deck", default="deck.json", help="The mapped Deck file")
     build.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
-    build.add_argument("--image-model", default="openai/dall-e-3", help="OpenRouter image model id")
+    build.add_argument(
+        "--image-model", default="openai/gpt-5-image-mini", help="OpenRouter image model id"
+    )
     build.add_argument(
         "--out", default="built.json", help="Where to write the built Deck + image assets"
     )
