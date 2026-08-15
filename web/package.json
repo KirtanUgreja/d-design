@@ -12,12 +12,16 @@
     "schema:check": "node scripts/generate-schema.mjs --check"
   },
   "dependencies": {
+    "@radix-ui/react-select": "^2.3.7",
+    "next": "^16.3.0",
     "react": "^19",
     "react-dom": "^19",
-    "zod": "^4"
+    "zod": "^4",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@eslint/js": "^9",
+    "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
@@ -25,6 +29,7 @@
     "eslint-plugin-boundaries": "^5",
     "globals": "^15",
     "prettier": "^3",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5",
     "typescript-eslint": "^8",
     "vitest": "^3"

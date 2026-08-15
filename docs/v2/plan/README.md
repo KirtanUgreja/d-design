@@ -7,7 +7,7 @@
 | [09 — design-engine](09-design-engine.md) | done |
 | [10 — layout-generation](10-layout-generation.md) | done |
 | [11 — charts](11-charts.md) | done |
-| [12 — editor](12-editor.md) | not started |
+| [12 — editor](12-editor.md) | done |
 | [13 — vision-critic](13-vision-critic.md) | not started |
 | [14 — pdf-export](14-pdf-export.md) | not started |
 | [15 — variety-gate](15-variety-gate.md) | not started |

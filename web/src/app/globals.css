@@ -1,0 +1,188 @@
+@import 'tailwindcss';
+
+/* The editor chrome — Tailwind on app chrome only (frontend.md). The rendered
+ * slides are CSS custom properties from the design family, never utility
+ * classes; the eslint ban scoped to renderer/ enforces that. */
+
+:root {
+  /* Near-monochrome chrome, one accent used almost nowhere (principles.md #4:
+   * "our chrome must never compete with the canvas"). */
+  --editor-ink: #1a1a1a;
+  --editor-faint: #6b6b6b;
+  --editor-line: #e4e4e4;
+  --editor-accent: #b45309;
+}
+
+body {
+  color: var(--editor-ink);
+  background: #fafaf9;
+  font-family: var(--font-ui, system-ui, sans-serif);
+}
+
+.editor-canvas {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem;
+  width: 100%;
+  max-width: 68rem;
+  margin: 0 auto;
+}
+
+.editor-slide {
+  position: relative;
+  cursor: pointer;
+  outline: 1px solid transparent;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+.editor-slide--selected {
+  outline-color: var(--editor-line);
+}
+
+.editor-slide__label {
+  position: absolute;
+  top: -1.4rem;
+  left: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--editor-faint);
+}
+
+.editor-panel {
+  border-left: 1px solid var(--editor-line);
+  padding: 1.5rem 1.5rem 1.5rem 2rem;
+  min-width: 16rem;
+}
+
+.editor-panel__title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 1.25rem;
+}
+
+.editor-panel__group {
+  margin-bottom: 1.5rem;
+}
+
+.editor-panel__group h3 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--editor-faint);
+  margin: 0 0 0.5rem;
+}
+
+.editor-panel__field {
+  display: block;
+  margin-bottom: 0.75rem;
+}
+
+.editor-panel__field > span {
+  display: block;
+  font-size: 0.8rem;
+  color: var(--editor-faint);
+  margin-bottom: 0.25rem;
+}
+
+.editor-panel__field textarea,
+.editor-panel__field select {
+  width: 100%;
+  font: inherit;
+  color: var(--editor-ink);
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.4rem 0.5rem;
+}
+
+.editor-panel__row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.editor-panel__row button {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--editor-ink);
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+
+.editor-panel__row button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.editor-panel__note {
+  font-size: 0.8rem;
+  color: var(--editor-faint);
+  margin-top: 1rem;
+}
+
+.editor-family-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--editor-faint);
+}
+
+.editor-family-switcher select {
+  font: inherit;
+  color: var(--editor-ink);
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+}
+
+.editor-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  border-bottom: 1px solid var(--editor-line);
+  background: #fff;
+}
+
+.editor-toolbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.editor-toolbar button {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--editor-ink);
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+
+.editor-toolbar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.editor-toolbar__export {
+  /* The export button is the only high-emphasis control (app.md) — the accent
+   * does almost nothing anywhere else. */
+  background: var(--editor-accent) !important;
+  color: #fff !important;
+  border-color: var(--editor-accent) !important;
+}
+
+.editor-layout {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  min-height: 100vh;
+}

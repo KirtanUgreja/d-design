@@ -126,6 +126,22 @@ server-only (v1, phase 05) — the marker structure.md already mandates for
   every *.data.ts and anything holding a secret ("a client component
   importing it is a build-time error"). web/src/lib/storage.ts is the first
   file that needed it; installing it is that existing rule, not a new one.
+next (v2, phase 12) — the editor's app framework — the documented v2 host
+  (frontend.md: "Next + the editor arrive in v2"). Baseline in the TS list;
+  installed when the editor lands. The render package's esbuild bundling of
+  web/src is untouched by it.
+zustand (v2, phase 12) — the single mutable editor document + undo/redo —
+  baseline in the TS list (frontend.md: "one mutable document, undo/redo");
+  a stack of past/future deck trees with structural sharing is exactly what
+  it is for. First installed when the editor lands.
+tailwindcss (v2, phase 12) — app chrome only, never a design family —
+  baseline in the TS list. The lint ban scoped to renderer/ (no Tailwind in
+  the rendered slides) is what keeps it on the chrome side.
+@radix-ui/react-select (v2, phase 12) — the accessible dropdown primitive
+  the family switcher and property panel sit on — shadcn/ui is copy-in
+  source on Radix primitives (frontend.md), and Radix gives the focus trap,
+  dismissible layer and keyboard navigation that are genuinely easy to get
+  subtly wrong. Nothing ships as a runtime dependency to the browser.
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."

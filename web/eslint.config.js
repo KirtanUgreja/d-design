@@ -4,7 +4,7 @@ import boundaries from 'eslint-plugin-boundaries';
 import globals from 'globals';
 
 export default tseslint.config(
-  { ignores: ['node_modules/', 'src/schema/generated/', 'out/'] },
+  { ignores: ['node_modules/', 'src/schema/generated/', 'out/', '.next/'] },
   {
     files: ['**/*.mjs'],
     languageOptions: { globals: globals.node },
