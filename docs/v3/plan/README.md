@@ -5,7 +5,7 @@
 | Phase | Status |
 |---|---|
 | [16 — accounts](16-accounts.md) | done |
-| [17 — brand-kit-at-scale](17-brand-kit-at-scale.md) | not started |
+| [17 — brand-kit-at-scale](17-brand-kit-at-scale.md) | done |
 | [18 — hosting](18-hosting.md) | not started |
 | [19 — billing](19-billing.md) | not started |
 | [20 — pptx](20-pptx.md) | not started |

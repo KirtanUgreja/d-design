@@ -69,6 +69,17 @@ if touches '^render/|^web/src/'; then
   step 'vitest'   env -C render pnpm exec vitest run
 fi
 
+# `worker` parses hostile bytes and has nothing to steal (phase 17). Its tests
+# are the fail-closed proof — the magic-byte reject, the bomb caps, the SVG
+# sanitize. A change to it that breaks the gate must not land.
+if touches '^worker/'; then
+  echo 'worker'
+  step 'prettier' env -C worker pnpm exec prettier --check .
+  step 'eslint'   env -C worker pnpm exec eslint . --max-warnings 0
+  step 'tsc'      env -C worker pnpm exec tsc --noEmit
+  step 'vitest'   env -C worker pnpm exec vitest run
+fi
+
 # Step 4. Runs whenever either side of the chain moved — and the chain has two
 # ends, so "either side" includes a hand-edit to the generated TypeScript.
 if touches '^api/schema/|^web/src/schema/|^web/scripts/generate-schema'; then

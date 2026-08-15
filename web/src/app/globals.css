@@ -246,3 +246,11 @@ body {
   color: var(--editor-faint);
   letter-spacing: 0.04em;
 }
+
+.editor-panel__swatch {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 3px;
+  border: 1px solid var(--editor-line);
+}

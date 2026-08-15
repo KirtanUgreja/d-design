@@ -52,9 +52,11 @@ Rules:
 - The deck reads as one authored thing: sections follow a narrative arc, not a
   list. The through-line is yours to keep."""
 
-# The user block: the approved outline, the design family, and the family's
-# grammar. The outline is trusted (it passed the human gate) but is still
-# passed as data.
+# The user block: the approved outline, the design family, the family's
+# grammar, and (when a kit is mapped) the brand's semantic roles. The outline
+# is trusted (it passed the human gate) but is still passed as data. The brand
+# block names roles, never values — the renderer binds the hex, so the model
+# never carries a presentational value (no_style backstop).
 USER_TEMPLATE = """The approved outline:
 
 <outline>
@@ -68,8 +70,39 @@ is not listed):
 
 {grammar}
 
+{brand_block}
 Produce the Deck now, as JSON matching the schema. Respect the distribution
 rule above. Every claim in the outline must appear in the deck."""
+
+
+def _format_brand(roles: list[str]) -> str:
+    """The brand block: the kit's mapped semantic roles as names, not values.
+
+    The model composes within these roles (a headline in the accent, body on
+    paper); the renderer owns the actual token values.
+    """
+    return (
+        "The brand kit maps to these semantic roles (values are applied by the "
+        "renderer, never chosen by you): " + ", ".join(roles) + "."
+    )
+
+
+def build_user_prompt(
+    outline: Outline,
+    family_id: str,
+    family_name: str,
+    grammar: FamilyGrammar,
+    brand_roles: list[str] | None = None,
+) -> str:
+    """Assemble the user-role block for the mapping call."""
+    brand_block = _format_brand(brand_roles) if brand_roles else ""
+    return USER_TEMPLATE.format(
+        outline=_format_outline(outline),
+        family_id=family_id,
+        family_name=family_name,
+        grammar=_format_grammar(grammar),
+        brand_block=brand_block,
+    )
 
 
 def _format_outline(outline: Outline) -> str:
@@ -88,21 +121,6 @@ def _format_grammar(grammar: FamilyGrammar) -> str:
     for sig in grammar.signatures:
         lines.append(f"  - {', '.join(sig)}")
     return "\n".join(lines)
-
-
-def build_user_prompt(
-    outline: Outline,
-    family_id: str,
-    family_name: str,
-    grammar: FamilyGrammar,
-) -> str:
-    """Assemble the user-role block for the mapping call."""
-    return USER_TEMPLATE.format(
-        outline=_format_outline(outline),
-        family_id=family_id,
-        family_name=family_name,
-        grammar=_format_grammar(grammar),
-    )
 
 
 def slide_fits_grammar(slide: Slide, grammar: FamilyGrammar) -> bool:

@@ -158,6 +158,24 @@ drizzle-orm + drizzle-kit (v3, phase 16) — web's ORM over the auth tables
   Alembic owns everything else (backend.md -> "Two ORMs").
 pg (v3, phase 16) — the Postgres driver Drizzle's node adapter uses — the
   Drizzle baseline implies it; without a driver the adapter is inert.
+fastapi + uvicorn (v3, phase 17) — api's HTTP layer, which brand kits need
+  because api owns the tables and web has the UI — baseline in the Python
+  list (backend.md "Python decides, TypeScript renders"). The routes are thin
+  (structure.md): parse, call the feature's public function inside as_user,
+  return. Uvicorn runs it in dev.
+sharp (v3, phase 17) — image re-encode + EXIF strip in the worker — the
+  security doc's prescribed tool (platform-and-packages.md): wraps libvips,
+  caps enforced BEFORE decode, keep at latest. Lives in the worker (the
+  isolated process that parses hostile bytes), never in web or api.
+dompurify >=3.4.5 (v3, phase 17) — SVG sanitizer in the worker — never 2.x
+  (four XSS bypasses disclosed 2025–2026, 2.x never patched for one). The
+  actual SVG control is serving only via <img>; the sanitizer is the
+  convenience layer. Lives in the worker, not in a privileged process.
+file-type (v3, phase 17) — magic-byte detection in the worker — "extension
+  and Content-Type are attacker-supplied" (content-and-web.md); the bytes
+  are the authority. Worker only.
+jsdom (v3, phase 17) — the DOM DOMPurify needs, worker only — the sanitizer
+  runs in the isolated process; no browser context in web or api.
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."

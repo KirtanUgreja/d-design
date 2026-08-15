@@ -14,6 +14,12 @@ dependencies = [
     # alembic owns the app tables' migrations (backend.md: Alembic for
     # everything except the auth tables, which drizzle-kit owns).
     "alembic>=1.13",
+    # fastapi + uvicorn: the brand-kit API (phase 17). api owns brand_kits;
+    # web reads them through this HTTP layer (the documented split: Python
+    # decides, TypeScript renders). The ORM-invariant keeps the auth tables
+    # out; this serves app tables only, behind resolve_session.
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
 ]
 
 [dependency-groups]

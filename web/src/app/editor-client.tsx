@@ -8,9 +8,10 @@ import {
   FamilySwitcher,
   PropertyPanel,
 } from '../features/editor/index.js';
+import type { BrandKit } from '../features/brand-kit/index.js';
 import { SAMPLE_DECK } from '../features/editor/sample-deck.js';
 
-export default function EditorClient({ userId }: { userId: string }) {
+export default function EditorClient({ userId, kits = [] }: { userId: string; kits?: BrandKit[] }) {
   // The store is created once per mount from the sample deck; the ref keeps it
   // stable across re-renders (Zustand stores are created, not rendered).
   const storeRef = useRef<ReturnType<typeof createEditorStore> | null>(null);
@@ -90,6 +91,7 @@ export default function EditorClient({ userId }: { userId: string }) {
             store.getState().patchRegion(selectedSlide.id, regionIndex, emphasis)
           }
           onReorder={(from, to) => store.getState().reorderSlide(from, to)}
+          kits={kits}
         />
       ) : (
         <aside className="editor-panel">

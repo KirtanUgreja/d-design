@@ -12,6 +12,7 @@
 
 import { DESIGN_FAMILY_TOKENS } from '../design-system/index.js';
 import type { Deck, Slide } from '../../schema/generated/Deck.js';
+import type { BrandKit, Team } from '../brand-kit/index.js';
 
 export type PropertyPanelProps = {
   deck: Deck;
@@ -21,6 +22,10 @@ export type PropertyPanelProps = {
   onPatchBlock: (blockIndex: number, content: string) => void;
   onPatchRegion: (regionIndex: number, emphasis: (typeof EMPHASIS)[number]) => void;
   onReorder: (from: number, to: number) => void;
+  /** The team's kits (fetched server-side; the client never calls api). */
+  kits?: BrandKit[];
+  /** The teams the user can see (server-fetched). */
+  teams?: Team[];
 };
 
 const EMPHASIS = ['primary', 'secondary', 'quiet'] as const;
@@ -33,6 +38,7 @@ export function PropertyPanel({
   onPatchBlock,
   onPatchRegion,
   onReorder,
+  kits = [],
 }: PropertyPanelProps) {
   const familyName = DESIGN_FAMILY_TOKENS[deck.family_id]?.tokens.id ?? deck.family_id;
 
@@ -95,6 +101,30 @@ export function PropertyPanel({
           </button>
         </div>
       </section>
+
+      {kits.length > 0 && (
+        <section className="editor-panel__group">
+          <h3>Brand kit</h3>
+          {kits.map((kit) => (
+            <div key={kit.id} className="editor-panel__field">
+              <span>{kit.name}</span>
+              <div className="editor-panel__row">
+                {kit.colors.accent && (
+                  <span
+                    className="editor-panel__swatch"
+                    style={{ background: kit.colors.accent }}
+                    title={`accent ${kit.colors.accent}`}
+                  />
+                )}
+                {kit.logoRef && <span className="editor-panel__note">logo uploaded</span>}
+                <span className="editor-panel__note">
+                  mapped to {Object.keys(kit.colors).length > 0 ? 'accent' : 'family tokens'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       <p className="editor-panel__note">
         Type, colour and spacing come from the <strong>{familyName}</strong> design family, so this

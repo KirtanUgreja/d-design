@@ -11,6 +11,7 @@ from __future__ import annotations
 from ai.complete import ModelError, Seam
 from lib.result import Err, Result, err, ok
 from pipeline.mapping import prompts
+from pipeline.mapping.brand_tokens import BrandFacts, map_brand_to_family
 from pipeline.mapping.distribution import distribution_violation
 from schema.deck import Deck
 from schema.design_families import family_by_id
@@ -24,11 +25,15 @@ def run_mapping(
     seam: Seam,
     model: str,
     family_id: str | None = None,
+    brand_facts: BrandFacts | None = None,
 ) -> Result[Deck, ModelError]:
     """Run the mapping pass: Outline -> schema-validated Deck.
 
     ``family_id`` selects the per-deck design system; it defaults to a
-    deterministic pick so the same outline maps reproducibly.
+    deterministic pick so the same outline maps reproducibly. ``brand_facts``
+    are the extracted kit facts (a logo's dominant color, etc.); they are
+    mapped to the family's semantic roles with contrast enforced, and the
+    model composes within those roles — it never sees a value.
     """
     if family_id is None:
         # Deterministic family selection: hash the outline title so the same
@@ -49,11 +54,19 @@ def run_mapping(
             )
         )
 
+    brand_roles: list[str] | None = None
+    if brand_facts is not None:
+        tokens = map_brand_to_family(
+            brand_facts.accent_hex, brand_facts.paper_hex, brand_facts.ink_hex
+        )
+        brand_roles = list(tokens.overrides().keys())
+
     user = prompts.build_user_prompt(
         outline=outline,
         family_id=family.id,
         family_name=family.name,
         grammar=grammar,
+        brand_roles=brand_roles,
     )
 
     result = seam.complete(

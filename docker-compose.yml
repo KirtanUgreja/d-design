@@ -1,12 +1,12 @@
-# Local dev infrastructure (v3, phase 16).
+# Local dev infrastructure (v3, phases 16–17).
 #
 # The docs' local-dev decision names "Docker Compose + MinIO + LocalStack" —
-# this phase starts with Postgres, the only service accounts needs. MinIO and
-# LocalStack land with storage/KMS (v3-later).
+# phases 16–17 add Postgres (accounts) and the upload worker (brand kits).
+# MinIO and LocalStack land with storage/KMS (v3-later).
 #
-# ponytail: Postgres only for now. The compose file grows when storage and KMS
-# paths arrive; a service that exists but is unused is worse than one that
-# lands with its first consumer.
+# ponytail: Postgres + the worker only. The compose file grows when storage
+# and KMS paths arrive; a service that exists but is unused is worse than one
+# that lands with its first consumer.
 services:
   postgres:
     image: postgres:16
@@ -23,6 +23,17 @@ services:
       interval: 2s
       timeout: 3s
       retries: 15
+
+  # The upload worker: the isolated process that parses hostile bytes and has
+  # nothing to steal (security/README.md trust boundaries). No database, no
+  # sessions, no VPC route. web forwards brand-asset uploads here; the worker
+  # verifies magic bytes, re-encodes/sanitizes, and hands the safe bytes back.
+  worker:
+    build: ./worker
+    ports:
+      - '8080:8080'
+    environment:
+      PORT: 8080
 
 volumes:
   ddesign_pgdata:
