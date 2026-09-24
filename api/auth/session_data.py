@@ -24,7 +24,12 @@ from lib.result import Err, Result, err, ok
 
 # The read-only query over the auth session table. `expires_at` is stored as
 # a timestamp; the exact column set is better-auth's schema (pinned version).
-SELECT_SESSION = text("select user_id, expires_at from auth.session where id = :token")
+#
+# Matched on `token`, not `id`: the bearer carries the session token — the
+# value Better Auth puts in its cookie — while `id` is a separate primary key
+# that never leaves the database. Matching on `id` made every real session
+# resolve to Unauthorized.
+SELECT_SESSION = text("select user_id, expires_at from auth.session where token = :token")
 
 
 @dataclass(frozen=True)

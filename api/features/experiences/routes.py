@@ -18,6 +18,7 @@ from features.experiences.experiences_data import (
 )
 from features.quotas.kill_switch import effective_plan, kill_switch_tripped
 from features.quotas.quotas_data import consume_quota, plan_limit
+from lib.result import Err
 
 router = APIRouter(prefix="/experiences", tags=["experiences"])
 
@@ -86,4 +87,8 @@ async def experience_create(body: ExperienceIn, user_id: UserId) -> ExperienceOu
             deck_json=body.deck_json,
             published_key=body.published_key,
         )
-    return _out(exp)
+    # The RLS with check refused the row: the caller is not the owner the policy
+    # requires. An expected refusal (403), not a server error.
+    if isinstance(exp, Err):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=exp.error.detail)
+    return _out(exp.value)

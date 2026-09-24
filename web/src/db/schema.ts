@@ -5,10 +5,18 @@
  * touch them (its include_object excludes them). Drizzle-kit migrates these;
  * Alembic migrates everything else. A table here that is not one of the seven
  * is the table-ownership violation.
+ *
+ * They live in the `auth` schema, not `public`: api's session resolver reads
+ * `auth.session` read-only (auth/session_data.py), so the schema name is the
+ * contract between the two halves. Declared unqualified, Drizzle emitted
+ * `select ... from "user"`, which resolved against `public` and 500'd every
+ * sign-up with `relation "user" does not exist`.
  */
-import { pgTable, text, timestamp, boolean } from 'drizzle-orm/pg-core';
+import { pgSchema, text, timestamp, boolean } from 'drizzle-orm/pg-core';
 
-export const user = pgTable('user', {
+const auth = pgSchema('auth');
+
+export const user = auth.table('user', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
@@ -18,7 +26,7 @@ export const user = pgTable('user', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const session = pgTable('session', {
+export const session = auth.table('session', {
   id: text('id').primaryKey(),
   expiresAt: timestamp('expires_at').notNull(),
   token: text('token').notNull().unique(),
@@ -31,7 +39,7 @@ export const session = pgTable('session', {
     .references(() => user.id, { onDelete: 'cascade' }),
 });
 
-export const account = pgTable('account', {
+export const account = auth.table('account', {
   id: text('id').primaryKey(),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
@@ -49,7 +57,7 @@ export const account = pgTable('account', {
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
-export const verification = pgTable('verification', {
+export const verification = auth.table('verification', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),

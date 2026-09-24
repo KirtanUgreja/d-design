@@ -10,32 +10,28 @@
  */
 import 'server-only';
 
-import { gt } from 'drizzle-orm';
-
-import { db } from '../db/index.js';
-import { session } from '../db/schema.js';
-
 /**
- * Resolve the current session token. Uses the Better Auth session cookie if
- * present; otherwise falls back to reading the session table for the newest
- * unexpired session (local/dev convenience). Returns null when unauthenticated.
+ * Resolve the current session token from the request's Better Auth cookie.
+ *
+ * Better Auth signs the cookie as `<token>.<signature>`; api matches the
+ * `session.token` column, so the signature must not travel with it. Sending
+ * the signed value verbatim made every api call resolve to Unauthorized.
+ *
+ * Returns null when unauthenticated. There is deliberately no database
+ * fallback: "the newest unexpired session for any user" is a permissive
+ * default in a credential path (coderules rule 5) — with two users signed in
+ * it returns the wrong one. Every caller is request-scoped and already holds
+ * a verified session, so the cookie is the only correct source.
  */
 export async function getSessionToken(): Promise<string | null> {
   const { cookies } = await import('next/headers');
   const store = await cookies();
-  // Better Auth's cookie name (session token for the default plugin).
-  const cookieToken = store.get('better-auth.session_token')?.value;
-  if (cookieToken) {
-    return cookieToken;
+
+  const raw = store.get('better-auth.session_token')?.value;
+  if (!raw) {
+    return null;
   }
 
-  // Fallback: the newest unexpired session row. This is the local/dev path —
-  // the cookie is the real mechanism in production.
-  const rows = await db
-    .select({ token: session.token })
-    .from(session)
-    .where(gt(session.expiresAt, new Date()))
-    .orderBy(session.createdAt)
-    .limit(1);
-  return rows[0]?.token ?? null;
+  const token = decodeURIComponent(raw).split('.')[0];
+  return token && token.length > 0 ? token : null;
 }

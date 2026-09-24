@@ -42,4 +42,14 @@ export const auth = betterAuth({
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
   },
+  advanced: {
+    database: {
+      // Ids must be UUIDs. Better Auth's default is a 32-char nanoid, but
+      // every user-referencing column api owns is `uuid` (quotas.account_id,
+      // experiences.owner_id, teams.owner_id, team_members.user_id). A nanoid
+      // id failed at the first write with `invalid input for query argument`
+      // — invisible until now because the seeded test user was a UUID.
+      generateId: () => globalThis.crypto.randomUUID(),
+    },
+  },
 });

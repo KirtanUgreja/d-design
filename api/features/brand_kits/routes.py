@@ -21,6 +21,7 @@ from features.brand_kits.brand_kits_data import (
     list_kits_for_team,
     list_teams,
 )
+from lib.result import Err
 
 router = APIRouter(prefix="/brand-kits", tags=["brand-kits"])
 
@@ -81,7 +82,7 @@ async def kit_detail(kit_id: str, user_id: UserId) -> KitOut:
 @router.post("", response_model=KitOut, status_code=status.HTTP_201_CREATED)
 async def kit_create(body: KitIn, user_id: UserId) -> KitOut:
     async with as_user(user_id) as session:
-        kit = await create_kit(
+        result = await create_kit(
             session,
             team_id=body.team_id,
             name=body.name,
@@ -89,4 +90,8 @@ async def kit_create(body: KitIn, user_id: UserId) -> KitOut:
             logo_ref=body.logo_ref,
             font_ids=body.font_ids,
         )
-    return _out(kit)
+    # The RLS with check refused the row: the caller is not a member of the
+    # team it is writing to. An expected refusal (403), not a server error.
+    if isinstance(result, Err):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=result.error.detail)
+    return _out(result.value)

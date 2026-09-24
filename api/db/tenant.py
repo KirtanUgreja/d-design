@@ -34,4 +34,23 @@ async def as_user(user_id: str) -> AsyncIterator[AsyncSession]:
             text("select set_config('app.user_id', :uid, true)"),
             {"uid": user_id},
         )
+        # The role switch is what makes the policies apply at all. A role with
+        # `rolbypassrls` — a superuser, or a table's owner — skips row-level
+        # security entirely, so `app.user_id` would be set and then ignored.
+        # The local compose database connects as `ddesign`, which is a
+        # superuser, so without this line RLS is inert wherever the stack is
+        # run for real: GET /experiences returned every tenant's rows.
+        #
+        # `app_user` is the nologin role migration 0001 creates with no
+        # bypassrls, and it holds the table grants (0005, 0008). Production
+        # connects as that role directly, where setting a role to itself is a
+        # no-op — so this is the same transaction in both.
+        #
+        # LOCAL, not SET: scoped to the transaction, so a pooled connection
+        # cannot hand the next request a switched role (same reason as the
+        # `true` above).
+        #
+        # The session resolver runs before this wrapper and stays on the owner
+        # role — it reads web's `auth.session`, which app_user has no grant on.
+        await session.execute(text("set local role app_user"))
         yield session

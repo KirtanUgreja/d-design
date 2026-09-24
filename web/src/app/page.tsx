@@ -31,15 +31,10 @@ export default async function HomePage() {
     redirect('/login');
   }
 
-  // The entitlement read decides the brand-kit gate. Fail-closed: if it
-  // cannot run, treat as free (no paid-only data leaks to a free user).
-  let plan = 'free';
-  try {
-    const entitlement = await getEntitlement();
-    plan = entitlement.plan;
-  } catch {
-    plan = 'free';
-  }
+  // The entitlement read decides the brand-kit gate. Fail-closed: an api that
+  // cannot be read means free (no paid-only data leaks to a free user).
+  const entitlement = await getEntitlement();
+  const plan = entitlement.ok ? entitlement.value.plan : 'free';
 
   let kits: Awaited<ReturnType<typeof listKitsForUser>> = [];
   if (plan === 'paid') {

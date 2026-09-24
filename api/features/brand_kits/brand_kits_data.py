@@ -16,6 +16,10 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import text
 from sqlalchemy.engine import Row
+from sqlalchemy.exc import DBAPIError
+
+from db.errors import is_rls_refusal
+from lib.result import Result, err, ok
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,8 +47,17 @@ def _record(row: Row[_KitRow]) -> BrandKitRecord:
     id_, team_id, name, colors_json, logo_ref, font_ids = row
     colors = json.loads(colors_json) if colors_json else {}
     fonts = json.loads(font_ids) if font_ids else []
+    # Postgres returns uuid.UUID for the uuid columns, while the dataclass and
+    # the response models say str. Coerce here — the one point every read path
+    # meets. The insert path builds both in Python (strs), which is why create
+    # returned 201 while list and detail 500'd on pydantic validation.
     return BrandKitRecord(
-        id=id_, team_id=team_id, name=name, colors=colors, logo_ref=logo_ref, font_ids=fonts
+        id=str(id_),
+        team_id=str(team_id),
+        name=name,
+        colors=colors,
+        logo_ref=logo_ref,
+        font_ids=fonts,
     )
 
 
@@ -76,6 +89,13 @@ async def get_kit(session: AsyncSession, kit_id: str) -> BrandKitRecord | None:
     return _record(row) if row is not None else None
 
 
+@dataclass(frozen=True)
+class Forbidden:
+    """The write the RLS policy refused — the caller is not a team member."""
+
+    detail: str = "not permitted"
+
+
 async def create_kit(
     session: AsyncSession,
     *,
@@ -84,26 +104,42 @@ async def create_kit(
     colors: dict[str, str],
     logo_ref: str | None,
     font_ids: list[str],
-) -> BrandKitRecord:
-    """Create a kit. RLS's with check enforces the user is a team member —
-    a non-member's insert is rejected by the database, not by this module."""
+) -> Result[BrandKitRecord, Forbidden]:
+    """Create a kit. RLS's with check enforces the user is a team member.
+
+    A non-member's insert is refused by the database — an expected failure, so
+    it returns ``Err`` (``python.md``) and the route answers 403. Letting it
+    raise surfaced the refusal as a 500.
+    """
     kit_id = _new_id()
-    await session.execute(
-        text(
-            "insert into brand_kits (id, team_id, name, colors_json, logo_ref, font_ids)"
-            " values (:id, :team_id, :name, :colors, :logo_ref, :font_ids)"
-        ),
-        {
-            "id": kit_id,
-            "team_id": team_id,
-            "name": name,
-            "colors": json.dumps(colors),
-            "logo_ref": logo_ref,
-            "font_ids": json.dumps(font_ids),
-        },
-    )
-    return BrandKitRecord(
-        id=kit_id, team_id=team_id, name=name, colors=colors, logo_ref=logo_ref, font_ids=font_ids
+    try:
+        await session.execute(
+            text(
+                "insert into brand_kits (id, team_id, name, colors_json, logo_ref, font_ids)"
+                " values (:id, :team_id, :name, :colors, :logo_ref, :font_ids)"
+            ),
+            {
+                "id": kit_id,
+                "team_id": team_id,
+                "name": name,
+                "colors": json.dumps(colors),
+                "logo_ref": logo_ref,
+                "font_ids": json.dumps(font_ids),
+            },
+        )
+    except DBAPIError as exc:
+        if is_rls_refusal(exc):
+            return err(Forbidden())
+        raise
+    return ok(
+        BrandKitRecord(
+            id=kit_id,
+            team_id=team_id,
+            name=name,
+            colors=colors,
+            logo_ref=logo_ref,
+            font_ids=font_ids,
+        )
     )
 
 
@@ -120,4 +156,5 @@ async def list_teams(session: AsyncSession) -> list[tuple[str, str]]:
             )
         )
     ).all()
-    return [(r[0], r[1]) for r in rows]
+    # str(), for the same reason as _record: teams.id is a uuid column.
+    return [(str(r[0]), r[1]) for r in rows]

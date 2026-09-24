@@ -6,6 +6,13 @@
  * Python one is api/db/tenant.py). The `true` in set_config scopes the value
  * to the transaction, so a pooled connection never serves the previous user.
  *
+ * This wrapper deliberately does NOT `set local role app_user`, though api's
+ * does. The role switch is what makes RLS apply (a superuser bypasses it), but
+ * web reads only the auth tables — which web owns and `app_user` has no grants
+ * on — so switching here would turn every session lookup into "permission
+ * denied". If web ever reads an app table, that table needs the role switch
+ * and a grant, together.
+ *
  * `import 'server-only'` keeps it off the client bundle.
  */
 import 'server-only';

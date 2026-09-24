@@ -14,6 +14,10 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import text
 from sqlalchemy.engine import Row
+from sqlalchemy.exc import DBAPIError
+
+from db.errors import is_rls_refusal
+from lib.result import Result, err, ok
 
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
@@ -33,7 +37,13 @@ def _new_id() -> str:
 
 def _record(row: Row[tuple[str, str, str, str | None]]) -> ExperienceRecord:
     id_, title, deck_json, published_key = row
-    return ExperienceRecord(id=id_, title=title, deck_json=deck_json, published_key=published_key)
+    # Postgres returns a uuid.UUID for the id column, while the dataclass and
+    # the response model both say str. Coerce here — the one point both read
+    # paths meet. The insert path builds the id in Python (a str), which is why
+    # create returned 201 while list and detail 500'd on pydantic validation.
+    return ExperienceRecord(
+        id=str(id_), title=title, deck_json=deck_json, published_key=published_key
+    )
 
 
 async def list_experiences(session: AsyncSession) -> list[ExperienceRecord]:
@@ -60,37 +70,53 @@ async def get_experience(session: AsyncSession, experience_id: str) -> Experienc
     return _record(row) if row is not None else None
 
 
+@dataclass(frozen=True)
+class Forbidden:
+    """The write the RLS policy refused — the caller is not the row's owner."""
+
+    detail: str = "not permitted"
+
+
 async def save_experience(
     session: AsyncSession,
     *,
     title: str,
     deck_json: str,
     published_key: str | None,
-) -> ExperienceRecord:
-    """Save (or update) a deck. RLS's with check enforces ownership — a
-    non-owner's write is rejected by the database, not by this module.
+) -> Result[ExperienceRecord, Forbidden]:
+    """Save (or update) a deck. RLS's with check enforces ownership.
 
-    owner_id comes from the session's app.user_id (set by as_user). It must
-    be set on the row: the column is NOT NULL and the with check compares
-    against it — an insert without it is both a 500 (live-run finding) and a
-    policy violation.
+    ``owner_id`` comes from the session's ``app.user_id`` (set by ``as_user``).
+    It must be set on the row: the column is NOT NULL and the with check
+    compares against it — an insert without it is both a 500 (live-run finding)
+    and a policy violation.
+
+    A refusal by the policy is an expected authorization failure, so it returns
+    ``Err`` and the route answers 403 rather than a 500.
     """
     experience_id = _new_id()
-    await session.execute(
-        text(
-            "insert into experiences (id, owner_id, title, deck_json, published_key)"
-            " values (:id, current_setting('app.user_id')::uuid, :title, :deck, :published)"
-        ),
-        {
-            "id": experience_id,
-            "title": title,
-            "deck": deck_json,
-            "published": published_key,
-        },
-    )
-    return ExperienceRecord(
-        id=experience_id,
-        title=title,
-        deck_json=deck_json,
-        published_key=published_key,
+    try:
+        await session.execute(
+            text(
+                "insert into experiences (id, owner_id, title, deck_json, published_key)"
+                " values (:id, current_setting('app.user_id')::uuid, :title, :deck, :published)"
+            ),
+            {
+                "id": experience_id,
+                "title": title,
+                "deck": deck_json,
+                "published": published_key,
+            },
+        )
+    except DBAPIError as exc:
+        if is_rls_refusal(exc):
+            return err(Forbidden())
+        raise
+    return ok(
+        ExperienceRecord(
+            id=experience_id,
+            title=title,
+            deck_json=deck_json,
+            published_key=published_key,
+        )
     )

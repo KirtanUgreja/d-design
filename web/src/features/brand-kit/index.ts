@@ -20,5 +20,6 @@ export interface Team {
   name: string;
 }
 
-/** The api base — same origin in dev (Next rewrites /api/brand-kits to api). */
-export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? '/api/brand-kits';
+/** The api path prefix. api serves these routes with no `/api` prefix; the
+ * reader (brand-kit.data.ts) is server-only and prefixes its own API_URL. */
+export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? '/brand-kits';
