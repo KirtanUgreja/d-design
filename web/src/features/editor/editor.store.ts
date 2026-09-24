@@ -21,10 +21,15 @@ import { DESIGN_FAMILY_TOKENS } from '../design-system/index.js';
 
 export type EditorState = {
   deck: Deck;
+  /** The image assets for the deck's image blocks, keyed by slide id (the key
+   * the renderer reads). Generation produces them; the schema has no field for
+   * them, so they ride beside the deck. */
+  images: Record<string, string>;
   selection: string | null;
   past: Deck[];
   future: Deck[];
 
+  loadDeck: (deck: Deck, images: Record<string, string>) => void;
   patchSlide: (id: string, patch: Partial<Slide>) => void;
   patchBlock: (slideId: string, blockIndex: number, patch: Partial<TextBlock>) => void;
   patchRegion: (
@@ -39,12 +44,19 @@ export type EditorState = {
   redo: () => void;
 };
 
-export function createEditorStore(initial: Deck) {
+export function createEditorStore(initial: Deck, initialImages: Record<string, string> = {}) {
   return create<EditorState>()((set, get) => ({
     deck: initial,
+    images: initialImages,
     selection: null,
     past: [],
     future: [],
+
+    loadDeck: (deck, images) => {
+      // A generated deck is a new document, not an edit: there is nothing
+      // meaningful to undo back into, so the history starts clean.
+      set({ deck, images, selection: null, past: [], future: [] });
+    },
 
     patchSlide: (id, patch) => {
       const { deck } = get();

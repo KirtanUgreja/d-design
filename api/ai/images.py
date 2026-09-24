@@ -106,8 +106,11 @@ class ImageSeam:
         return ok(uri)
 
 
-def make_image_seam() -> ImageSeam:
+def make_image_seam(transport: ImageTransport | None = None) -> ImageSeam:
+    """The image seam. ``transport`` is injected in tests, and the service
+    passes a shared client: outside a short-lived CLI, a client per seam leaks
+    connections (the same reason ``make_seam`` takes one)."""
     return ImageSeam(
-        transport=httpx.Client(timeout=180.0),
+        transport=transport if transport is not None else httpx.Client(timeout=180.0),
         api_key=os.environ.get("OPENROUTER_API_KEY", ""),
     )

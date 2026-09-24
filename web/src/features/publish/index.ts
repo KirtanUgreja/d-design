@@ -100,6 +100,7 @@ export async function getEntitlement(): Promise<Result<Entitlement, PublishRefus
 export async function publishDeck(
   deck: Deck,
   title: string,
+  images: Record<string, string> = {},
 ): Promise<Result<Published, PublishRefusal>> {
   // 0. The entitlement pre-check (an affordance — fail fast before rendering
   // and storing a deck api will refuse). The authoritative gate is api's
@@ -123,12 +124,14 @@ export async function publishDeck(
   const badge = account.plan === 'free';
 
   // 1. Render the single-file HTML (the render service — the same exporter).
+  // The image assets travel with the deck: without them the exporter emits a
+  // placeholder, so a deck full of generated images would publish empty.
   let renderRes: Response;
   try {
     renderRes = await fetch(`${RENDER_URL}/render`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ deck, badge }),
+      body: JSON.stringify({ deck, images, badge }),
     });
   } catch {
     return err({ kind: 'render_failed', message: 'render service unreachable' });

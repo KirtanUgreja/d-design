@@ -13,3 +13,5 @@ export { PropertyPanel } from './property-panel.js';
 export type { PropertyPanelProps } from './property-panel.js';
 export { FamilySwitcher } from './family-switcher.js';
 export type { FamilySwitcherProps } from './family-switcher.js';
+export { GeneratePanel } from './generate-panel.js';
+export type { GeneratePanelProps } from './generate-panel.js';

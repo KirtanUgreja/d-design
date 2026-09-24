@@ -36,6 +36,32 @@ The output space of the art-direction layer, counted on 2026-08-10 against the t
 
 Sources: [LLM output diversity](https://arxiv.org/pdf/2604.01504) · [The Price of Format](https://arxiv.org/pdf/2505.18949) · [More Is Not More](https://arxiv.org/html/2607.20429)
 
+**Mapping is model-bound, and the cheap tier cannot do it.** Measured 2026-09-24, one fixed brief and outline, the `scientific` family, four samples per model. The pass/fail rate is the mapping stage's — whether a legal `Deck` came back at all:
+
+| Model | Passed | Best time | Distinct layouts |
+|---|---|---|---|
+| `openai/gpt-4o-mini` | 0/3 | — | — |
+| `openai/gpt-4o` | 3/4 | 6.1s | 5 of 6, 6 of 7, 5 of 7 |
+| `anthropic/claude-sonnet-4.5` | 4/4 | 16.1s | 6 of 7, 7 of 7, 7 of 7, 8 of 8 |
+
+Three failure modes, all cross-field consistency the model must hold across a
+whole deck at once: a text block with no region in the layout, spans outside
+the family's grammar, and a region with no block filling it. The single repair
+retry does not recover any of them.
+
+Two things follow. **The mini tier is not a cheaper option for this stage, it
+is a broken one** — and it is the *slower* failure, 75.6s before refusing,
+because it burns the repair before giving up. And **validity and the product's
+claim are the same measurement here**: sonnet returned near-all-distinct
+layouts where gpt-4o repeated one, and "it does not look AI-made" is a
+statement about layouts, not about prose. The service therefore runs mapping on
+sonnet and the cheaper stages on the mini/4o tier (`features/generation/`).
+
+Not yet measured: interview and build reliability per model, and whether a
+stronger *prompt* (enumerating the legal spans and the region/block
+correspondence explicitly) buys back the mini tier. Both are eval runs, not
+opinions.
+
 ## The category
 
 Researched August 2026.

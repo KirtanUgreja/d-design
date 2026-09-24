@@ -15,11 +15,14 @@ import { DeckRenderer } from '../renderer/index.js';
 
 export type EditorCanvasProps = {
   deck: Deck;
+  /** Image data URIs, keyed by slide id — passed straight to the pure renderer
+   * so the canvas shows the same images the export will inline. */
+  images: Record<string, string>;
   selection: string | null;
   onSelect: (id: string | null) => void;
 };
 
-export function EditorCanvas({ deck, selection, onSelect }: EditorCanvasProps) {
+export function EditorCanvas({ deck, images, selection, onSelect }: EditorCanvasProps) {
   const motion = familyTokens(deck.family_id)?.motion ?? { reveal: 'rise', pacing: 'steady' };
 
   return (
@@ -43,7 +46,7 @@ export function EditorCanvas({ deck, selection, onSelect }: EditorCanvasProps) {
             }}
           >
             {selected && <span className="editor-slide__label">{slide.title}</span>}
-            <DeckRenderer deck={{ ...deck, slides: [slide] }} motion={motion} />
+            <DeckRenderer deck={{ ...deck, slides: [slide] }} motion={motion} images={images} />
           </div>
         );
       })}

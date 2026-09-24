@@ -12,8 +12,12 @@ import { publishDeck, type PublishRefusal } from '../../../features/publish/inde
 import { DeckSchema } from '../../../schema/generated/Deck.js';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
+
+/** Image data URIs keyed by slide id — what the render service inlines. */
+const ImagesSchema = z.record(z.string(), z.string());
 
 /** The HTTP status an expected refusal maps to — api's own codes preserved. */
 function statusFor(kind: PublishRefusal['kind']): number {
@@ -37,7 +41,11 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
   }
 
-  const body = (await req.json().catch(() => ({}))) as { deck?: unknown; title?: string };
+  const body = (await req.json().catch(() => ({}))) as {
+    deck?: unknown;
+    title?: string;
+    images?: unknown;
+  };
   if (typeof body.title !== 'string') {
     return NextResponse.json({ error: 'title is required' }, { status: 400 });
   }
@@ -46,9 +54,15 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid deck' }, { status: 400 });
   }
+  // The image assets, keyed by slide id. Absent is legitimate: a deck with no
+  // image blocks has none.
+  const images = ImagesSchema.safeParse(body.images ?? {});
+  if (!images.success) {
+    return NextResponse.json({ error: 'invalid images' }, { status: 400 });
+  }
 
   try {
-    const result = await publishDeck(parsed.data, body.title);
+    const result = await publishDeck(parsed.data, body.title, images.data);
     if (!result.ok) {
       return NextResponse.json(
         { error: result.error.message },

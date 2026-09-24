@@ -6,6 +6,7 @@ import {
   createEditorStore,
   EditorCanvas,
   FamilySwitcher,
+  GeneratePanel,
   PropertyPanel,
 } from '../features/editor/index.js';
 import type { BrandKit } from '../features/brand-kit/index.js';
@@ -29,6 +30,7 @@ export default function EditorClient({
   const store = storeRef.current;
 
   const deck = store((s) => s.deck);
+  const images = store((s) => s.images);
   const selection = store((s) => s.selection);
   const past = store((s) => s.past);
   const future = store((s) => s.future);
@@ -69,7 +71,13 @@ export default function EditorClient({
       const res = await fetch('/api/publish', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ deck, title: deck.slides[0]?.title ?? 'Deck' }),
+        // The image assets travel with the deck: the hosted page is the same
+        // single file, and without them its image blocks render as placeholders.
+        body: JSON.stringify({
+          deck,
+          images,
+          title: deck.slides[0]?.title ?? 'Deck',
+        }),
       });
       const data = (await res.json()) as { url?: string; error?: string };
       if (!res.ok) {
@@ -124,8 +132,12 @@ export default function EditorClient({
           </div>
         )}
         {publishError && <div className="editor-toolbar__error">{publishError}</div>}
+        <GeneratePanel
+          onGenerated={(built) => store.getState().loadDeck(built.deck, built.images)}
+        />
         <EditorCanvas
           deck={deck}
+          images={images}
           selection={selection}
           onSelect={(id) => store.getState().select(id)}
         />

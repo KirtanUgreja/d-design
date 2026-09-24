@@ -288,3 +288,139 @@ body {
   border-color: var(--editor-accent);
   color: var(--editor-accent);
 }
+
+/* --- the generate panel (v3) ---------------------------------------------- */
+
+.generate-panel {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 1rem 2rem 0;
+}
+
+.generate-panel__form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.generate-panel__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--editor-faint);
+}
+
+.generate-panel__form input {
+  font: inherit;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--editor-ink);
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+}
+
+.generate-panel__form label:first-child input {
+  min-width: 22rem;
+}
+
+.generate-panel__form input[type='number'] {
+  width: 5rem;
+}
+
+.generate-panel__form button,
+.generate-panel__actions button {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--editor-ink);
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+
+.generate-panel__form button:disabled,
+.generate-panel__actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.generate-panel__error {
+  font-size: 0.8rem;
+  color: #b91c1c;
+  margin-top: 0.75rem;
+}
+
+.generate-panel__outline {
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 6px;
+}
+
+.generate-panel__outline h2 {
+  font-size: 1.05rem;
+  margin: 0 0 0.25rem;
+}
+
+.generate-panel__outline > p {
+  font-size: 0.8rem;
+  color: var(--editor-faint);
+  margin: 0 0 1rem;
+}
+
+.generate-panel__section h3 {
+  font-size: 0.85rem;
+  margin: 0 0 0.2rem;
+}
+
+.generate-panel__section p {
+  font-size: 0.8rem;
+  color: var(--editor-faint);
+  margin: 0 0 0.4rem;
+}
+
+.generate-panel__section ul {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.generate-panel__section li {
+  font-size: 0.8rem;
+  padding: 0.15rem 0;
+}
+
+/* The provenance marker is the trust device, so it is legible rather than
+ * decorative: YOU is the quiet case, AI is the one worth noticing. */
+.generate-panel__source {
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  padding: 0.05rem 0.3rem;
+  border: 1px solid var(--editor-line);
+  border-radius: 3px;
+  color: var(--editor-faint);
+}
+
+.generate-panel__section li[data-claim-source='model'] .generate-panel__source {
+  border-color: var(--editor-accent);
+  color: var(--editor-accent);
+}
+
+.generate-panel__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.generate-panel__reject {
+  color: var(--editor-faint);
+}
