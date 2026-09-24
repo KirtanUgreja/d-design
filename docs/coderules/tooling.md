@@ -48,7 +48,9 @@ CI runs the same gate plus the test suites and the dependency-advisory check, so
 
 ## What CI runs, across five repos
 
-> **No CI exists right now.** The workflow was deleted on 2026-08-10 with the codebase — it ran the gate against `api/` and `web/`, neither of which is here. This section is the specification for what to rebuild, not a description of what runs. The local hook in `scripts/hooks/pre-commit` is the only gate today, which means a bypass of it is currently caught by nothing.
+> **Rebuilt 2026-09-24** as `.github/workflows/gate.yml`: the gate per package, pytest against a live Postgres service (the RLS tests skip without one), the generated schema with no diff, `next build`, and the docs check. The original was deleted on 2026-08-10 with the codebase it ran against.
+>
+> The rows below are still the specification, not a description. **Not yet covered:** dependency advisories, the duplication report, the Playwright zero-request assertion from `file://`, the schema-publish job, and the per-family visual render check. The local hook in `scripts/hooks/pre-commit` runs per commit; CI is what catches a bypass of it.
 
 The gate above is per-commit and fast. CI adds the things that are too slow or need a browser, and it now spans five repos ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
 

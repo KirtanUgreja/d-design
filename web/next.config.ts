@@ -18,6 +18,10 @@ import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  // The deployment shape: `next build` emits .next/standalone, a server plus
+  // the modules it actually imports. The container copies that instead of
+  // running an install (web/Dockerfile). Additive — `next start` still works.
+  output: 'standalone',
   turbopack: {
     resolveAlias: {
       'next/headers': './node_modules/next/headers.js',
