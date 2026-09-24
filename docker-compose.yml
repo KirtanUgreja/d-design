@@ -138,6 +138,9 @@ services:
       # reaches its neighbours by name.
       DDESIGN_API_URL: http://api:8000
       RENDER_URL: http://render:8001
+      # The upload worker. Without this the upload route looks for it on
+      # localhost, which inside the web container is the web container.
+      WORKER_URL: http://worker:8080
       HOSTED_ORIGIN: ${HOSTED_ORIGIN:-http://localhost:9000/ddesign-assets}
       S3_ENDPOINT: http://minio:9000
       S3_REGION: ${S3_REGION:-us-east-1}

@@ -13,6 +13,7 @@
  * becomes servable.
  */
 import { auth } from '../../../../lib/auth.js';
+import { getSessionToken } from '../../../../lib/session-token.js';
 import { storage } from '../../../../lib/storage.js';
 import { headers } from 'next/headers';
 import { NextResponse } from 'next/server';
@@ -62,13 +63,20 @@ export async function POST(req: Request) {
   const safeBytes = Buffer.from(processed.data, 'base64');
   const logoRef = await storage.put(safeBytes, processed.contentType);
 
-  // Record the kit through api.
+  // Record the kit through api. The session token travels as the bearer —
+  // api resolves sessions itself, and without this header every upload was
+  // refused after the object had already been stored and then cleaned up
+  // again. Same trust chain as publish: one token, no shared secret.
   const colors = processed.dominantColor ? { accent: processed.dominantColor } : {};
+  const token = await getSessionToken();
   const apiRes = await fetch(
     `${process.env.DDESIGN_API_URL ?? 'http://localhost:8000'}/brand-kits`,
     {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      headers: {
+        'content-type': 'application/json',
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify({ team_id: teamId, name, colors, logo_ref: logoRef, font_ids: [] }),
     },
   );
