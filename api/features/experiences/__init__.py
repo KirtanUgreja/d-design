@@ -7,9 +7,20 @@ SQLAlchemy appears here.
 
 from features.experiences.experiences_data import (
     ExperienceRecord,
+    Forbidden,
     get_experience,
     list_experiences,
     save_experience,
+    set_published_key,
+    update_experience,
 )
 
-__all__ = ["ExperienceRecord", "get_experience", "list_experiences", "save_experience"]
+__all__ = [
+    "ExperienceRecord",
+    "Forbidden",
+    "get_experience",
+    "list_experiences",
+    "save_experience",
+    "set_published_key",
+    "update_experience",
+]

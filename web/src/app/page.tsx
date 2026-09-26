@@ -2,6 +2,8 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { listKitsForUser } from '../features/brand-kit/brand-kit.data.js';
+import { listDecks } from '../features/decks/decks.data.js';
+import type { DeckSummary } from '../features/decks/index.js';
 import { getEntitlement } from '../features/publish/index.js';
 import { auth } from '../lib/auth.js';
 import EditorClient from './editor-client.js';
@@ -46,5 +48,14 @@ export default async function HomePage() {
     }
   }
 
-  return <EditorClient userId={session.user.id} kits={kits} plan={plan} />;
+  // The user's saved decks, for the switcher. Summaries only — a deck carrying
+  // images is megabytes, and the editor fetches the payload when one is opened.
+  // Not plan-gated: saving is free, and the quota is on hosted URLs.
+  let decks: DeckSummary[] = [];
+  const deckList = await listDecks();
+  if (deckList.ok) {
+    decks = deckList.value;
+  }
+
+  return <EditorClient userId={session.user.id} kits={kits} decks={decks} plan={plan} />;
 }

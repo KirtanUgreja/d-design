@@ -15,3 +15,5 @@ export { FamilySwitcher } from './family-switcher.js';
 export type { FamilySwitcherProps } from './family-switcher.js';
 export { GeneratePanel } from './generate-panel.js';
 export type { GeneratePanelProps } from './generate-panel.js';
+export { DeckSwitcher } from './deck-switcher.js';
+export type { DeckSwitcherProps } from './deck-switcher.js';

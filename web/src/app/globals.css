@@ -142,6 +142,41 @@ body {
   padding: 0.3rem 0.5rem;
 }
 
+/* The saved-deck switcher mirrors the family switcher: same control, same
+ * weight. It disappears entirely when nothing has been saved yet. */
+.editor-deck-switcher {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.editor-deck-switcher select {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--editor-ink);
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+  max-width: 16rem;
+}
+
+.editor-deck-switcher button {
+  font: inherit;
+  font-size: 0.8rem;
+  color: var(--editor-ink);
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+}
+
+.editor-deck-switcher button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .editor-toolbar {
   display: flex;
   align-items: center;
