@@ -38,8 +38,16 @@ def _lookup(row: tuple[str, datetime] | None = None, error: Exception | None = N
     return lookup
 
 
+async def _resolve[T](coro: Awaitable[T]) -> T:
+    return await coro
+
+
 def _run[T](coro: Awaitable[T]) -> T:
-    return asyncio.run(coro)
+    # `asyncio.run` takes a Coroutine, not any awaitable — an annotation mypy
+    # only reports on a cold cache, so this was hidden until the cache was
+    # cleared. Awaiting inside a small coroutine satisfies it without naming
+    # Any (which `disallow_any_explicit` bans).
+    return asyncio.run(_resolve(coro))
 
 
 def test_empty_token_fails_closed() -> None:

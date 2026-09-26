@@ -18,18 +18,25 @@ export default function EditorClient({
   userId,
   kits = [],
   decks = [],
+  initialDeck = null,
   plan = 'free',
 }: {
   userId: string;
   kits?: BrandKit[];
   decks?: DeckSummary[];
+  /** The deck to open on load — the most recent one, or null for a user who has
+   * none, in which case the sample deck stands in as a starting point. */
+  initialDeck?: SavedDeck | null;
   plan?: string;
 }) {
-  // The store is created once per mount from the sample deck; the ref keeps it
-  // stable across re-renders (Zustand stores are created, not rendered).
+  // The store is created once per mount; the ref keeps it stable across
+  // re-renders (Zustand stores are created, not rendered).
   const storeRef = useRef<ReturnType<typeof createEditorStore> | null>(null);
   if (!storeRef.current) {
-    storeRef.current = createEditorStore(SAMPLE_DECK);
+    storeRef.current = createEditorStore(
+      initialDeck?.deck ?? SAMPLE_DECK,
+      initialDeck?.images ?? {},
+    );
   }
   const store = storeRef.current;
 
@@ -41,7 +48,7 @@ export default function EditorClient({
 
   // The saved deck this document belongs to, once it has one. Null means the
   // deck has never been saved — the first save creates, later ones update.
-  const [deckId, setDeckId] = useState<string | null>(null);
+  const [deckId, setDeckId] = useState<string | null>(initialDeck?.id ?? null);
   const [savedDecks, setSavedDecks] = useState<DeckSummary[]>(decks);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);

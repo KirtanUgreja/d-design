@@ -2,7 +2,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { listKitsForUser } from '../features/brand-kit/brand-kit.data.js';
-import { listDecks } from '../features/decks/decks.data.js';
+import { listDecks, getDeck } from '../features/decks/decks.data.js';
 import type { DeckSummary } from '../features/decks/index.js';
 import { isPaid } from '../features/entitlement/index.js';
 import { getEntitlement } from '../features/entitlement/entitlement.data.js';
@@ -59,5 +59,20 @@ export default async function HomePage() {
     decks = deckList.value;
   }
 
-  return <EditorClient userId={session.user.id} kits={kits} decks={decks} plan={plan} />;
+  // Open the most recent deck rather than the hardcoded sample. Reloading
+  // should not look like the work vanished, and it must not quietly hand back a
+  // sample deck that the next click on Publish would host under the user's name.
+  const newest = decks[0];
+  const opened = newest === undefined ? null : await getDeck(newest.id);
+  const initialDeck = opened !== null && opened.ok ? opened.value : null;
+
+  return (
+    <EditorClient
+      userId={session.user.id}
+      kits={kits}
+      decks={decks}
+      initialDeck={initialDeck}
+      plan={plan}
+    />
+  );
 }

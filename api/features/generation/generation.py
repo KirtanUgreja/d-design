@@ -55,8 +55,16 @@ MAPPING_MODEL = os.environ.get("DDESIGN_MAPPING_MODEL", "anthropic/claude-sonnet
 BUILD_MODEL = os.environ.get("DDESIGN_BUILD_MODEL", "openai/gpt-4o-mini")
 IMAGE_MODEL = os.environ.get("DDESIGN_IMAGE_MODEL", "openai/gpt-5-image-mini")
 
-_text_client: httpx.Client | None = None
-_image_client: httpx.Client | None = None
+# One client each, built at import — the seam's own rule ("one module-level
+# client, reused; a client per call leaks connections") and, on macOS, the only
+# place it works: constructing an httpx client builds an SSL context, and doing
+# that inside the threadpool FastAPI runs a sync dependency in fails here with
+# `FileNotFoundError` from `ssl.create_default_context`.
+#
+# Only the socket pool is shared. The seam object stays fresh per request so its
+# counters — the per-deck image cap — count one request, not one process.
+_TEXT_CLIENT = httpx.Client(timeout=120.0)
+_IMAGE_CLIENT = httpx.Client(timeout=180.0)
 
 
 def provider_configured() -> bool:
@@ -70,20 +78,14 @@ def provider_configured() -> bool:
 
 def new_text_seam() -> Seam:
     """A text seam for one request, over the shared client."""
-    global _text_client
-    if _text_client is None:
-        _text_client = httpx.Client(timeout=120.0)
-    return make_seam(_text_client)
+    return make_seam(_TEXT_CLIENT)
 
 
 def new_image_seam() -> ImageSeam:
     """An image seam for one request, over the shared client. Fresh per request
     so the per-deck image cap counts one deck (see the module doc). Named `new_`
     so it cannot be shadowed by the `image_seam` parameter below."""
-    global _image_client
-    if _image_client is None:
-        _image_client = httpx.Client(timeout=180.0)
-    return make_image_seam(_image_client)
+    return make_image_seam(_IMAGE_CLIENT)
 
 
 def interview(brief: Brief, seam: Seam | None = None) -> Result[Outline, ModelError]:
