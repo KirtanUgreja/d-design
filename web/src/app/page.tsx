@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import { listKitsForUser } from '../features/brand-kit/brand-kit.data.js';
 import { listDecks } from '../features/decks/decks.data.js';
 import type { DeckSummary } from '../features/decks/index.js';
-import { getEntitlement } from '../features/publish/index.js';
+import { isPaid } from '../features/entitlement/index.js';
+import { getEntitlement } from '../features/entitlement/entitlement.data.js';
 import { auth } from '../lib/auth.js';
 import EditorClient from './editor-client.js';
 
@@ -36,10 +37,11 @@ export default async function HomePage() {
   // The entitlement read decides the brand-kit gate. Fail-closed: an api that
   // cannot be read means free (no paid-only data leaks to a free user).
   const entitlement = await getEntitlement();
+  const paid = entitlement.ok && isPaid(entitlement.value);
   const plan = entitlement.ok ? entitlement.value.plan : 'free';
 
   let kits: Awaited<ReturnType<typeof listKitsForUser>> = [];
-  if (plan === 'paid') {
+  if (paid) {
     try {
       kits = await listKitsForUser();
     } catch {

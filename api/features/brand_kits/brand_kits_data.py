@@ -143,6 +143,46 @@ async def create_kit(
     )
 
 
+@dataclass(frozen=True)
+class TeamRecord:
+    id: str
+    name: str
+
+
+async def create_team(session: AsyncSession, *, name: str) -> Result[TeamRecord, Forbidden]:
+    """Create a team, with the owner as its first member.
+
+    Both inserts are needed before the team is usable: kits are team-scoped, so
+    a team with no roster is a team nobody can put a kit in. Migration 0004
+    exists precisely to permit this first membership — before it, `with check`
+    demanded the user already be a member, so the roster could never start.
+
+    Until this existed, teams could only be made by hand in SQL, which meant a
+    new account had no team and therefore could not create a brand kit at all.
+    """
+    team_id = _new_id()
+    try:
+        await session.execute(
+            text(
+                "insert into teams (id, owner_id, name)"
+                " values (:id, current_setting('app.user_id')::uuid, :name)"
+            ),
+            {"id": team_id, "name": name},
+        )
+        await session.execute(
+            text(
+                "insert into team_members (team_id, user_id, role)"
+                " values (:id, current_setting('app.user_id')::uuid, 'owner')"
+            ),
+            {"id": team_id},
+        )
+    except DBAPIError as exc:
+        if is_rls_refusal(exc):
+            return err(Forbidden())
+        raise
+    return ok(TeamRecord(id=team_id, name=name))
+
+
 async def list_teams(session: AsyncSession) -> list[tuple[str, str]]:
     """List the teams the user can see (owns or is a member of). Returns
     (id, name). RLS: teams is owner-scoped, team_members is team-scoped."""

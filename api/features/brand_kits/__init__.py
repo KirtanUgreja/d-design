@@ -8,7 +8,10 @@ SQLAlchemy appears here.
 
 from features.brand_kits.brand_kits_data import (
     BrandKitRecord,
+    Forbidden,
+    TeamRecord,
     create_kit,
+    create_team,
     get_kit,
     list_kits_for_team,
     list_teams,
@@ -16,7 +19,10 @@ from features.brand_kits.brand_kits_data import (
 
 __all__ = [
     "BrandKitRecord",
+    "Forbidden",
+    "TeamRecord",
     "create_kit",
+    "create_team",
     "get_kit",
     "list_kits_for_team",
     "list_teams",

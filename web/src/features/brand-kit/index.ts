@@ -23,3 +23,6 @@ export interface Team {
 /** The api path prefix. api serves these routes with no `/api` prefix; the
  * reader (brand-kit.data.ts) is server-only and prefixes its own API_URL. */
 export const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? '/brand-kits';
+
+export { BrandKitForm } from './brand-kit-form.js';
+export type { BrandKitFormProps } from './brand-kit-form.js';

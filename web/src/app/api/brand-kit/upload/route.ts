@@ -13,6 +13,8 @@
  * becomes servable.
  */
 import { auth } from '../../../../lib/auth.js';
+import { isPaid } from '../../../../features/entitlement/index.js';
+import { getEntitlement } from '../../../../features/entitlement/entitlement.data.js';
 import { getSessionToken } from '../../../../lib/session-token.js';
 import { storage } from '../../../../lib/storage.js';
 import { headers } from 'next/headers';
@@ -27,6 +29,20 @@ export async function POST(req: Request) {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
     return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
+  }
+
+  // The paid gate, at the point of action. The editor only *reads* kits for a
+  // paid account, which left creation open to anyone — a free account could
+  // spend worker time and storage on a capability it cannot then use.
+  const entitlement = await getEntitlement();
+  if (!entitlement.ok) {
+    return NextResponse.json(
+      { error: entitlement.error.message },
+      { status: entitlement.error.status },
+    );
+  }
+  if (!isPaid(entitlement.value)) {
+    return NextResponse.json({ error: 'brand kits are a paid feature' }, { status: 403 });
   }
 
   const form = await req.formData();
@@ -44,11 +60,18 @@ export async function POST(req: Request) {
   const claimedType = file.type || 'application/octet-stream';
 
   // Forward to the worker. It verifies magic bytes, caps, re-encodes/sanitizes.
-  const workerRes = await fetch(`${WORKER_URL}/process`, {
-    method: 'POST',
-    headers: { 'content-type': claimedType },
-    body: bytes as unknown as BodyInit,
-  });
+  // An unreachable worker is a refusal, not a crash: it is the component that
+  // decides what a valid image is, so with it down nothing may be accepted.
+  let workerRes: Response;
+  try {
+    workerRes = await fetch(`${WORKER_URL}/process`, {
+      method: 'POST',
+      headers: { 'content-type': claimedType },
+      body: bytes as unknown as BodyInit,
+    });
+  } catch {
+    return NextResponse.json({ error: 'the upload worker is unreachable' }, { status: 503 });
+  }
   if (!workerRes.ok) {
     const err = (await workerRes.json().catch(() => ({}))) as { error?: string };
     return NextResponse.json({ error: err.error ?? 'file rejected' }, { status: 422 });

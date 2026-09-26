@@ -25,6 +25,8 @@ from sqlalchemy import text
 if TYPE_CHECKING:
     from sqlalchemy.ext.asyncio import AsyncSession
 
+DEFAULT_PLAN = "free"
+
 FREE_LIMIT = 1
 PAID_LIMIT = 50  # a config number, deliberately generous (decisions.md: the
 # numbers are not chosen; this is the enforcement default)
@@ -54,18 +56,34 @@ def plan_limit(plan: str) -> int:
     return FREE_LIMIT if plan == "free" else PAID_LIMIT
 
 
-async def ensure_quota_row(
-    session: AsyncSession, account_id: str, *, plan: str, limit: int
-) -> None:
-    """Create the account's quota row if absent. `on conflict do nothing`
-    keeps concurrent first-publishes from racing on the insert."""
+async def ensure_quota_row(session: AsyncSession, account_id: str, *, forced: str | None) -> None:
+    """Create the account's quota row if absent; when the instance is pinned by
+    FORCE_PLAN, write the pinned plan through.
+
+    The write-through matters. `on conflict do nothing` left an existing row's
+    plan and limit exactly as they were, so once an account had a row the
+    override could never take effect — and since every first request creates
+    one, that was every account. The knob is documented as flipping the
+    instance; this is the line that makes it true.
+
+    With ``forced`` None the conflict clause skips the update and the row is
+    authoritative, which is what a Stripe webhook will write.
+    """
+    plan = forced if forced is not None else DEFAULT_PLAN
     await session.execute(
         text(
             'insert into quotas (account_id, plan, used, "limit")'
             " values (:acc, :plan, 0, :limit)"
-            " on conflict (account_id) do nothing"
+            " on conflict (account_id) do update"
+            ' set plan = excluded.plan, "limit" = excluded."limit", updated_at = now()'
+            " where :overriding"
         ),
-        {"acc": account_id, "plan": plan, "limit": limit},
+        {
+            "acc": account_id,
+            "plan": plan,
+            "limit": plan_limit(plan),
+            "overriding": forced is not None,
+        },
     )
 
 
@@ -73,8 +91,7 @@ async def consume_quota(
     session: AsyncSession,
     account_id: str,
     *,
-    plan: str,
-    limit: int,
+    forced: str | None,
 ) -> QuotaExceeded | None:
     """Atomically consume one unit of the account's quota.
 
@@ -82,8 +99,11 @@ async def consume_quota(
     refusal (used/limit) when the counter was already at the limit.
     Fail-closed: any exception here propagates — a quota check that cannot
     run refuses (AGENTS.md rule 10).
+
+    The limit comes from the plan rather than the caller: the plan decides the
+    limit, so passing both invited them to disagree.
     """
-    await ensure_quota_row(session, account_id, plan=plan, limit=limit)
+    await ensure_quota_row(session, account_id, forced=forced)
     row = (
         await session.execute(
             text(
@@ -105,15 +125,21 @@ async def consume_quota(
         ).first()
         if current is not None:
             return QuotaExceeded(used=current[0], limit=current[1])
-        return QuotaExceeded(used=0, limit=limit)
+        return QuotaExceeded(used=0, limit=plan_limit(forced or DEFAULT_PLAN))
     return None
 
 
-async def get_entitlement(session: AsyncSession, account_id: str, *, plan: str) -> Entitlement:
+async def get_entitlement(
+    session: AsyncSession, account_id: str, *, forced: str | None
+) -> Entitlement:
     """The account's current entitlement (plan, used, limit). Creates the
-    default free row if the account has never spent."""
-    limit = plan_limit(plan)
-    await ensure_quota_row(session, account_id, plan=plan, limit=limit)
+    default free row if the account has never spent.
+
+    Reads back from the row rather than echoing the plan it was handed, so the
+    two can only disagree if the database does — and the row is what the spend
+    gate checks against.
+    """
+    await ensure_quota_row(session, account_id, forced=forced)
     row = (
         await session.execute(
             text('select plan, used, "limit" from quotas where account_id = :acc'),

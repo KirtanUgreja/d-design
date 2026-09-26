@@ -25,8 +25,8 @@ from features.experiences.experiences_data import (
     set_published_key,
     update_experience,
 )
-from features.quotas.kill_switch import effective_plan, kill_switch_tripped
-from features.quotas.quotas_data import consume_quota, plan_limit
+from features.quotas.kill_switch import forced_plan, kill_switch_tripped
+from features.quotas.quotas_data import consume_quota
 from lib.result import Err
 
 router = APIRouter(prefix="/experiences", tags=["experiences"])
@@ -134,15 +134,13 @@ async def experience_publish(experience_id: str, body: PublishIn, user_id: UserI
     refuses (AGENTS.md rule 10). The artefact has already been rendered and
     stored by web, which removes it if this refuses.
     """
-    plan = effective_plan()
-    limit = plan_limit(plan)
     async with as_user(user_id) as session:
         if kill_switch_tripped():
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="service paused (kill switch)",
             )
-        refused = await consume_quota(session, user_id, plan=plan, limit=limit)
+        refused = await consume_quota(session, user_id, forced=forced_plan())
         if refused is not None:
             raise HTTPException(
                 status_code=status.HTTP_402_PAYMENT_REQUIRED,

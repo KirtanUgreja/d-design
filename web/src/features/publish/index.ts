@@ -28,11 +28,10 @@ import type { Images } from '../decks/index.js';
 import type { Deck } from '../../schema/generated/Deck.js';
 import { err, ok, type Result } from '../../lib/result.js';
 import { storage } from '../../lib/storage.js';
-import { getSessionToken } from '../../lib/session-token.js';
 import { publishSavedDeck, saveDeck } from '../decks/decks.data.js';
+import { getEntitlement } from '../entitlement/entitlement.data.js';
 
 const RENDER_URL = process.env.RENDER_URL ?? 'http://localhost:8001';
-const API_URL = process.env.DDESIGN_API_URL ?? 'http://localhost:8000';
 // The hosted origin: pages.<domain> in prod; locally the MinIO object URL.
 const HOSTED_ORIGIN = process.env.HOSTED_ORIGIN ?? 'http://localhost:9000/ddesign-assets';
 
@@ -42,62 +41,12 @@ export type PublishRefusal = {
   message: string;
 };
 
-export interface Entitlement {
-  plan: string;
-  used: number;
-  limit: number;
-  exhausted: boolean;
-  killSwitch: boolean;
-}
-
 export interface Published {
   url: string;
   key: string;
   /** The saved deck it was published from — the editor keeps this so the next
    * save updates rather than duplicating. */
   experienceId: string;
-}
-
-/** The session token for the api Authorization header (web owns the session
- * table; api resolves the same token read-only). */
-async function authHeaders(): Promise<Record<string, string>> {
-  const token = await getSessionToken();
-  return token ? { authorization: `Bearer ${token}` } : {};
-}
-
-/** The account's entitlement, from api (the authoritative source; web's read
- * is an affordance, api's spend gate is the control).
- *
- * Fail-closed: an unreachable or unhappy api is a refusal, never a default
- * plan (AGENTS.md rule 10 — a catch returning a permissive default is a
- * vulnerability, not error handling). */
-export async function getEntitlement(): Promise<Result<Entitlement, PublishRefusal>> {
-  let res: Response;
-  try {
-    res = await fetch(`${API_URL}/entitlements`, {
-      headers: await authHeaders(),
-      cache: 'no-store',
-    });
-  } catch {
-    return err({ status: 503, message: 'entitlement check unavailable' });
-  }
-  if (!res.ok) {
-    return err({ status: 503, message: `entitlement check failed (${res.status})` });
-  }
-  const data = (await res.json()) as {
-    plan: string;
-    used: number;
-    limit: number;
-    exhausted: boolean;
-    kill_switch: boolean;
-  };
-  return ok({
-    plan: data.plan,
-    used: data.used,
-    limit: data.limit,
-    exhausted: data.exhausted,
-    killSwitch: data.kill_switch,
-  });
 }
 
 export async function publishDeck(

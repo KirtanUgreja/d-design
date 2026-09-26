@@ -11,7 +11,7 @@ from pydantic import BaseModel
 
 from db.tenant import as_user
 from features.brand_kits.auth_dependency import current_user_id
-from features.quotas.kill_switch import effective_plan, kill_switch_tripped
+from features.quotas.kill_switch import forced_plan, kill_switch_tripped
 from features.quotas.quotas_data import get_entitlement
 
 router = APIRouter(prefix="/entitlements", tags=["entitlements"])
@@ -30,7 +30,7 @@ class EntitlementOut(BaseModel):  # type: ignore[explicit-any]  # pydantic stubs
 @router.get("", response_model=EntitlementOut)
 async def entitlement(user_id: UserId) -> EntitlementOut:
     async with as_user(user_id) as session:
-        e = await get_entitlement(session, user_id, plan=effective_plan())
+        e = await get_entitlement(session, user_id, forced=forced_plan())
     return EntitlementOut(
         plan=e.plan,
         used=e.used,

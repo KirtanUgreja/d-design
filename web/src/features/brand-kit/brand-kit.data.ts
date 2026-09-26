@@ -36,6 +36,18 @@ export async function listTeams(): Promise<Team[]> {
   return (await res.json()) as Team[];
 }
 
+/** Create a team, owner included. A kit is team-scoped, so an account with no
+ * team has nowhere to put one — this is what makes the feature reachable. */
+export async function createTeam(name: string): Promise<Team> {
+  const res = await fetch(`${API_URL}${API_BASE}/teams`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', ...(await authHeaders()) },
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) throw new Error(`create team: ${res.status}`);
+  return (await res.json()) as Team;
+}
+
 export async function listKitsForUser(): Promise<BrandKit[]> {
   const teams = await listTeams();
   const kits: BrandKit[] = [];

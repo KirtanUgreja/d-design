@@ -182,6 +182,11 @@ export default function EditorClient({
               {plan}
             </span>
             <button onClick={handleLogout}>Log out</button>
+            {plan === 'paid' && (
+              <a className="editor-toolbar__link" href="/brand-kits">
+                Brand kits
+              </a>
+            )}
             <button onClick={() => store.getState().undo()} disabled={past.length === 0}>
               ↶ Undo
             </button>

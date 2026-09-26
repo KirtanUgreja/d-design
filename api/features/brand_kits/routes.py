@@ -17,6 +17,7 @@ from features.brand_kits.auth_dependency import current_user_id
 from features.brand_kits.brand_kits_data import (
     BrandKitRecord,
     create_kit,
+    create_team,
     get_kit,
     list_kits_for_team,
     list_teams,
@@ -45,6 +46,10 @@ class KitIn(BaseModel):  # type: ignore[explicit-any]  # pydantic stubs are unty
     font_ids: list[str] = Field(default_factory=list)
 
 
+class TeamIn(BaseModel):  # type: ignore[explicit-any]  # pydantic stubs are untyped
+    name: str = Field(min_length=1, max_length=120)
+
+
 def _out(k: BrandKitRecord) -> KitOut:
     return KitOut(
         id=k.id,
@@ -61,6 +66,21 @@ async def list_user_teams(user_id: UserId) -> list[dict[str, str]]:
     async with as_user(user_id) as session:
         rows = await list_teams(session)
     return [{"id": t_id, "name": name} for t_id, name in rows]
+
+
+@router.post("/teams", response_model=dict[str, str], status_code=status.HTTP_201_CREATED)
+async def team_create(body: TeamIn, user_id: UserId) -> dict[str, str]:
+    """Create a team, owner included.
+
+    A kit is team-scoped, so without this a new account has nowhere to put one.
+    Teams were previously creatable only by hand in SQL, which is why the
+    brand-kit feature had no reachable path.
+    """
+    async with as_user(user_id) as session:
+        result = await create_team(session, name=body.name)
+    if isinstance(result, Err):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=result.error.detail)
+    return {"id": result.value.id, "name": result.value.name}
 
 
 @router.get("/teams/{team_id}/kits", response_model=list[KitOut])

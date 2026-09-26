@@ -20,11 +20,17 @@ def kill_switch_tripped() -> bool:
     return os.environ.get("KILL_SWITCH") == "1"
 
 
-def effective_plan() -> str:
-    """The plan for the whole instance. FORCE_PLAN overrides per-row plans
-    (the static/testing knob; a future Stripe webhook flips the per-row plan
-    instead). Free is the default — never a permissive upgrade."""
+def forced_plan() -> str | None:
+    """The plan FORCE_PLAN pins the instance to, or ``None`` when the account's
+    own row decides.
+
+    ``None`` is not "free". It means the row is authoritative — which is what a
+    future Stripe webhook writes, and the reason this cannot default to a plan:
+    returning "free" here made a paid row unreachable, so no account could ever
+    be paid and every paid capability was dead (brand kits included).
+
+    When it is set, the data layer writes it through to the row, so the plan's
+    limit follows the flip instead of the row keeping the old one.
+    """
     forced = os.environ.get("FORCE_PLAN")
-    if forced in ("free", "paid"):
-        return forced
-    return "free"
+    return forced if forced in ("free", "paid") else None

@@ -177,6 +177,123 @@ body {
   cursor: default;
 }
 
+/* --- brand kits ----------------------------------------------------------- */
+
+.brand-kits {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.brand-kits__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--editor-line);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.brand-kits__header h1 {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.brand-kits__header a,
+.editor-toolbar__link {
+  font-size: 0.8rem;
+  color: var(--editor-faint);
+}
+
+.editor-toolbar__link {
+  text-decoration: none;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.3rem 0.5rem;
+}
+
+.brand-kits__gated {
+  font-size: 0.9rem;
+  color: var(--editor-faint);
+}
+
+.brand-kits__form form,
+.brand-kits__team {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+}
+
+.brand-kits__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--editor-faint);
+}
+
+.brand-kits__form input,
+.brand-kits__form select {
+  font: inherit;
+  font-size: 0.85rem;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--editor-ink);
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.35rem 0.5rem;
+}
+
+.brand-kits__form button {
+  align-self: flex-start;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--editor-ink);
+  background: #fff;
+  border: 1px solid var(--editor-line);
+  border-radius: 4px;
+  padding: 0.4rem 0.75rem;
+  cursor: pointer;
+}
+
+.brand-kits__form button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.brand-kits__error {
+  font-size: 0.8rem;
+  color: #b91c1c;
+}
+
+.brand-kits__list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.brand-kits__list li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--editor-line);
+}
+
+/* The one place a colour from a kit is shown — it is the kit's own colour, not
+ * our chrome, which is why it is the only saturated pixel on the page. */
+.brand-kits__swatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  border-radius: 3px;
+  border: 1px solid var(--editor-line);
+}
+
 .editor-toolbar {
   display: flex;
   align-items: center;

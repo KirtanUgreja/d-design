@@ -20,7 +20,7 @@ import pytest
 from sqlalchemy import text
 
 from db.session import session_factory
-from features.quotas.kill_switch import effective_plan, kill_switch_tripped
+from features.quotas.kill_switch import forced_plan, kill_switch_tripped
 from features.quotas.quotas_data import (
     Entitlement,
     QuotaExceeded,
@@ -79,13 +79,13 @@ class _FakeSession:
 
 def test_consume_quota_succeeds_when_row_returned() -> None:
     s = _FakeSession((1, 1))
-    refused = _run(consume_quota(s, "acc", plan="free", limit=1))  # type: ignore[arg-type]
+    refused = _run(consume_quota(s, "acc", forced="free"))  # type: ignore[arg-type]
     assert refused is None
 
 
 def test_consume_quota_refuses_when_no_row_returned() -> None:
     s = _FakeSession(None)  # update...returning returns no row = at limit
-    refused = _run(consume_quota(s, "acc", plan="free", limit=1))  # type: ignore[arg-type]
+    refused = _run(consume_quota(s, "acc", forced="free"))  # type: ignore[arg-type]
     assert isinstance(refused, QuotaExceeded)
     assert refused.limit == 1
 
@@ -96,7 +96,7 @@ def test_fail_closed_when_db_raises() -> None:
             raise RuntimeError("db down")
 
     with pytest.raises(RuntimeError):
-        _run(consume_quota(BoomSession(None), "acc", plan="free", limit=1))  # type: ignore[arg-type]
+        _run(consume_quota(BoomSession(None), "acc", forced="free"))  # type: ignore[arg-type]
 
 
 def test_plan_limit() -> None:
@@ -104,11 +104,21 @@ def test_plan_limit() -> None:
     assert plan_limit("paid") > 1
 
 
-def test_effective_plan_defaults_free(monkeypatch: pytest.MonkeyPatch) -> None:
+def test_forced_plan_is_none_when_unset(monkeypatch: pytest.MonkeyPatch) -> None:
+    """None, not "free": the row is authoritative when nothing is pinned.
+
+    Returning "free" here made a paid row unreachable — the account could never
+    be anything but free, so every paid capability was dead.
+    """
     monkeypatch.delenv("FORCE_PLAN", raising=False)
-    assert effective_plan() == "free"
+    assert forced_plan() is None
     monkeypatch.setenv("FORCE_PLAN", "paid")
-    assert effective_plan() == "paid"
+    assert forced_plan() == "paid"
+    monkeypatch.setenv("FORCE_PLAN", "free")
+    assert forced_plan() == "free"
+    # Anything else is not a plan, so it pins nothing.
+    monkeypatch.setenv("FORCE_PLAN", "enterprise")
+    assert forced_plan() is None
 
 
 def test_kill_switch_defaults_off(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -121,25 +131,30 @@ def test_kill_switch_defaults_off(monkeypatch: pytest.MonkeyPatch) -> None:
 # --- live-DB tests ----------------------------------------------------
 
 
-async def _consume(account: str, plan: str, limit: int) -> QuotaExceeded | None:
+async def _consume(account: str, forced: str | None) -> QuotaExceeded | None:
     async with as_app_user(account) as session:
-        return await consume_quota(session, account, plan=plan, limit=limit)
+        return await consume_quota(session, account, forced=forced)
 
 
 def test_race_proof_atomic_counter() -> None:
-    """N concurrent spends with limit N-1: exactly N-1 succeed."""
+    """limit concurrent spends + 1: exactly `limit` succeed, one is refused.
+
+    The limit comes from the plan now, not from the caller — the plan decides
+    it, so passing both invited them to disagree. More contention than before
+    as a side effect, which is the point of the test.
+    """
     if not _run(_db_is_up()):
         pytest.skip("no live Postgres")
-    n = 5
+    limit = plan_limit("paid")
     account = str(__import__("uuid").uuid4())  # fresh each run
 
     async def _race() -> list[QuotaExceeded | None]:
-        return await asyncio.gather(*[_consume(account, "paid", limit=n - 1) for _ in range(n)])
+        return await asyncio.gather(*[_consume(account, "paid") for _ in range(limit + 1)])
 
     results = _run(_race())
     refused = [r for r in results if isinstance(r, QuotaExceeded)]
     succeeded = [r for r in results if r is None]
-    assert len(succeeded) == n - 1
+    assert len(succeeded) == limit
     assert len(refused) == 1
 
 
@@ -150,7 +165,7 @@ def test_fresh_account_gets_free_entitlement() -> None:
 
     async def _get() -> Entitlement:
         async with as_app_user(fresh) as session:
-            return await get_entitlement(session, fresh, plan=effective_plan())
+            return await get_entitlement(session, fresh, forced=forced_plan())
 
     e = _run(_get())
     assert e.plan == "free"
@@ -165,8 +180,8 @@ def test_free_limit_consumed_then_refused() -> None:
     # A fresh account each run (the previous run left used=1).
     account = str(__import__("uuid").uuid4())
 
-    first = _run(_consume(account, "free", limit=1))
-    second = _run(_consume(account, "free", limit=1))
+    first = _run(_consume(account, "free"))
+    second = _run(_consume(account, "free"))
     assert first is None
     assert isinstance(second, QuotaExceeded)
     assert second.used == 1
