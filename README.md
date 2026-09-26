@@ -8,19 +8,19 @@
 
 <br/>
 
-<img src="https://img.shields.io/badge/status-rebuilding%20from%20zero-F4B740?style=for-the-badge&labelColor=08090B" alt="Status: rebuilding from zero">
-<img src="https://img.shields.io/badge/code-none%20yet-64748B?style=for-the-badge&labelColor=08090B" alt="Code: none yet">
-<img src="https://img.shields.io/badge/docs-cross--cutting%20only-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Docs: cross-cutting only">
+<img src="https://img.shields.io/badge/status-end--to--end%20local-3FB950?style=for-the-badge&labelColor=08090B" alt="Status: end-to-end locally">
+<img src="https://img.shields.io/badge/deployed-no-F4B740?style=for-the-badge&labelColor=08090B" alt="Deployed: no">
+<img src="https://img.shields.io/badge/gate-green-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Gate: green">
 <img src="https://img.shields.io/badge/builder-solo%20%2B%20AI-A78BFA?style=for-the-badge&labelColor=08090B" alt="Builder: solo + AI">
 
 </div>
 
 <br/>
 
-> [!WARNING]
-> **This repository was reset to zero on 2026-08-10.** The product code and the `v1`/`v2`/`v3` documentation were deleted — not abandoned, deleted deliberately — because the product is being re-decided from the vision up.
+> [!NOTE]
+> **This repository was reset to zero on 2026-08-10, and rebuilt.** The product code and the `v1`/`v2`/`v3` documentation were deleted — not abandoned, deleted deliberately — because the product was being re-decided from the vision up. What replaced them is described below and in `docs/v1/`, `docs/v2/`, `docs/v3/`; it runs end to end locally.
 >
-> **Everything is in git history.** The two commits before the reset hold the complete working system and the full specification.
+> **Everything is in git history.** The two commits before the reset hold the deleted system and its full specification.
 
 ---
 
@@ -75,18 +75,40 @@ It is checkable, and in the deleted codebase it was checked — a test walked ev
 ## Working here today
 
 ```
-./scripts/setup.sh               installs the git hooks — run once per clone
+./scripts/setup.sh               installs hooks, dependencies, infra, migrations — run once per clone
 ./scripts/check-docs.sh          every link resolves, every file is indexed
 ./scripts/hooks/pre-commit       the gate, on demand
+docker compose up -d             the whole product in containers
 ```
 
-No local infrastructure, no CI. Both were specific to the deleted stack and get rewritten for whatever comes next.
+**Run it locally.** `scripts/setup.sh` sets up the toolchain, the database and
+the local infrastructure; its last lines print the three commands that start
+the product. Then: sign up, type a topic, read the outline with each claim
+marked `YOU` or `AI`, approve it, edit the deck, **Save**, **Publish** — and
+open the single-file HTML it hands back. That file makes no network requests at
+all; there is a test that opens it from `file://` in a real browser and fails on
+any request that leaves it.
+
+The gate is typecheck, lint, format, tests and generated-code-no-diff across
+four packages, plus the project invariants and the doc index. CI runs the same
+and adds advisories and a duplication report. Locally, `api` and `web` each
+need a running peer to be useful — `render` for export, `worker` for uploads —
+which is why `docker compose up -d` is the short path.
+
+**Not deployed.** The images for `api`, `web`, `render` and `worker` build and
+run, and the whole stack runs under compose, but there is no Vercel/registry
+wiring, no production secrets, no privacy policy — see the plan's remaining
+items rather than assuming this is live.
 
 ```
 d-design/
 ├── README.md            you are here
 ├── AGENTS.md            the contract — rules + a task→doc routing table
 ├── CLAUDE.md            one line: @AGENTS.md
+├── api/                 FastAPI: app tables, tenancy, quotas, the generation stages
+├── web/                 Next.js: the editor, auth, the browser-facing API
+├── render/              the pure renderer and the single-file HTML exporter
+├── worker/              the isolated upload worker (parses hostile bytes)
 ├── docs/                what survives a vision change
 └── scripts/             setup · check-docs · the gate · invariants · hooks
 ```
