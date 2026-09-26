@@ -14,7 +14,7 @@
     "dompurify": "^3.4.5",
     "file-type": "^21",
     "jsdom": "^26",
-    "sharp": "^0.35"
+    "sharp": "^0.35.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

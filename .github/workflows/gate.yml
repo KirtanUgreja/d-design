@@ -106,3 +106,75 @@ jobs:
         run: |
           ./scripts/checks/invariants.sh
           ./scripts/check-docs.sh
+
+  # Advisories fail the build; duplication only reports. The split is
+  # deliberate and comes from the rules: dependencies.md:279 wants a
+  # known-critical advisory in EITHER tree to fail CI, and ai-authorship.md:59
+  # wants duplication as "a signal, not a gate" — it fires rarely and is worth
+  # reading every time it does.
+  advisories:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: '0.11.20'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: javascript — fail on a critical advisory in any package
+        run: |
+          for dir in web render worker; do
+            echo "=== $dir"
+            pnpm --dir "$dir" audit --prod --audit-level critical
+          done
+
+      - name: python — audit the locked dependencies
+        # Exported from the lockfile rather than from an install, so the audit
+        # is of what would actually ship. pip-audit has no severity filter, so
+        # this is stricter than the JS step: any known advisory fails it, and
+        # the escape hatch for an accepted one is --ignore-vuln with a reason.
+        run: |
+          uv export --project api --no-dev --format requirements-txt > requirements.txt
+          uv run --with pip-audit pip-audit --requirement requirements.txt
+
+  duplication:
+    runs-on: ubuntu-latest
+    # A warning, never a failure: the report is for a human to read.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The diff needs history to compare against.
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: changed files only
+        # Scoped to the diff, because a whole-repo number is one nobody acts on.
+        # The measured failure mode of AI-written code is duplication, and it is
+        # invisible per-commit and only visible per-quarter.
+        run: |
+          base="${{ github.event.pull_request.base.sha || github.event.before }}"
+          if [ -z "$base" ] || ! git cat-file -e "$base" 2>/dev/null; then
+            echo "no base to diff against; skipping"
+            exit 0
+          fi
+          files=$(git diff --name-only --diff-filter=ACMR "$base" HEAD \
+            -- '*.ts' '*.tsx' '*.py' | tr '\n' ' ')
+          if [ -z "$files" ]; then
+            echo "no source changes"
+            exit 0
+          fi
+          echo "checking: $files"
+          npx --yes jscpd --min-lines 12 --reporters console --exitCode 0 $files

@@ -48,9 +48,13 @@ CI runs the same gate plus the test suites and the dependency-advisory check, so
 
 ## What CI runs, across five repos
 
-> **Rebuilt 2026-09-24** as `.github/workflows/gate.yml`: the gate per package, pytest against a live Postgres service (the RLS tests skip without one), the generated schema with no diff, `next build`, and the docs check. The original was deleted on 2026-08-10 with the codebase it ran against.
+> **Rebuilt 2026-09-24** as `.github/workflows/gate.yml`: three jobs — the gate per package, **advisories** (pnpm audit at critical in each JS package, pip-audit over the exported uv lockfile), and **duplication** (jscpd on changed files, `continue-on-error`, because the rule wants a signal and not a gate). Plus pytest against a live Postgres service so the RLS tests run instead of skipping, the generated schema with no diff, `next build` — the only check that compiles every route — and the docs check.
 >
-> The rows below are still the specification, not a description. **Not yet covered:** dependency advisories, the duplication report, the Playwright zero-request assertion from `file://`, the schema-publish job, and the per-family visual render check. The local hook in `scripts/hooks/pre-commit` runs per commit; CI is what catches a bypass of it.
+> The advisories job earned its place before it ever ran: it found a **critical** in our own `next` (16.3.0 → 16.3.6) and a **high** in `sharp` (0.35.3 → 0.35.4), both of which the upgrade fixed. Three moderate advisories remain under `better-auth`'s own peers (esbuild via drizzle-kit, vitest, @vitest/mocker), below the critical threshold and left visible rather than suppressed.
+>
+> **Not yet covered:** the schema-publish job and the per-family visual render check — the latter is a check with a human by design, not a snapshot suite. The local hook in `scripts/hooks/pre-commit` runs per commit; CI is what catches a bypass of it.
+>
+> **Unverified:** CI has never run on GitHub. The workflow parses, and every step was run by hand locally on 2026-09-26, but "the YAML is valid and the commands work" is not "the workflow works".
 
 The gate above is per-commit and fast. CI adds the things that are too slow or need a browser, and it now spans five repos ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
 
