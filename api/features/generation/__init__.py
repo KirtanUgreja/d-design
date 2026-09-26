@@ -16,6 +16,8 @@ from features.generation.generation import (
     build,
     interview,
     mapping,
+    new_image_seam,
+    new_text_seam,
     provider_configured,
 )
 
@@ -27,5 +29,7 @@ __all__ = [
     "build",
     "interview",
     "mapping",
+    "new_image_seam",
+    "new_text_seam",
     "provider_configured",
 ]

@@ -68,17 +68,18 @@ def provider_configured() -> bool:
     return bool(os.environ.get("OPENROUTER_API_KEY", ""))
 
 
-def _text_seam() -> Seam:
-    """The text seam for one request, over the shared client."""
+def new_text_seam() -> Seam:
+    """A text seam for one request, over the shared client."""
     global _text_client
     if _text_client is None:
         _text_client = httpx.Client(timeout=120.0)
     return make_seam(_text_client)
 
 
-def _image_seam() -> ImageSeam:
-    """The image seam for one request, over the shared client. Fresh per
-    request so the per-deck image cap counts one deck (see the module doc)."""
+def new_image_seam() -> ImageSeam:
+    """An image seam for one request, over the shared client. Fresh per request
+    so the per-deck image cap counts one deck (see the module doc). Named `new_`
+    so it cannot be shadowed by the `image_seam` parameter below."""
     global _image_client
     if _image_client is None:
         _image_client = httpx.Client(timeout=180.0)
@@ -87,7 +88,9 @@ def _image_seam() -> ImageSeam:
 
 def interview(brief: Brief, seam: Seam | None = None) -> Result[Outline, ModelError]:
     """Stage one: the brief becomes a schema-validated outline for approval."""
-    return run_interview(brief, seam if seam is not None else _text_seam(), model=INTERVIEW_MODEL)
+    return run_interview(
+        brief, seam if seam is not None else new_text_seam(), model=INTERVIEW_MODEL
+    )
 
 
 def mapping(
@@ -98,7 +101,7 @@ def mapping(
     """Stage two: an approved outline becomes a per-slide Deck."""
     return run_mapping(
         outline,
-        seam if seam is not None else _text_seam(),
+        seam if seam is not None else new_text_seam(),
         model=MAPPING_MODEL,
         family_id=family_id,
     )
@@ -112,8 +115,8 @@ def build(
     """Stage three: every slide built, one call each, images where the deck asks."""
     return run_build(
         deck,
-        seam if seam is not None else _text_seam(),
-        image_seam if image_seam is not None else _image_seam(),
+        seam if seam is not None else new_text_seam(),
+        image_seam if image_seam is not None else new_image_seam(),
         model=BUILD_MODEL,
         image_model=IMAGE_MODEL,
     )

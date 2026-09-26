@@ -10,10 +10,12 @@ from __future__ import annotations
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import text
 
 from ai.complete import ModelError, Phase, Seam, T
 from ai.images import ImageError, ImageSeam
 from app import app
+from db.session import session_factory
 from features.brand_kits.auth_dependency import current_user_id
 from features.generation import (
     IMAGE_MODEL,
@@ -23,9 +25,11 @@ from features.generation import (
     interview,
     mapping,
 )
+from features.generations import record_generation
 from lib.result import Ok, Result, err, ok
 from schema.outline import Brief, Outline
 from tests.fixtures import golden_deck
+from tests.rls_helper import as_app_user, run_on_loop
 
 BRIEF = {
     "topic": "Launching a new CRM for agencies",
@@ -193,3 +197,90 @@ def test_the_kill_switch_halts_generation(monkeypatch: pytest.MonkeyPatch) -> No
 
     assert response.status_code == 503
     assert response.json()["detail"] == "service paused (kill switch)"
+
+
+# --- telemetry -------------------------------------------------------------
+#
+# Tested at the data layer, not through the HTTP route. TestClient runs each
+# request on its own event loop, while the module-global engine's pool binds
+# connections to this suite's loop (tests/rls_helper.py) — so a route that
+# touches the database cannot be exercised here without breaking that
+# discipline. The route's wiring is verified against the running stack; the SQL
+# and the "metadata only" property are verified here.
+
+
+def _latest_generation() -> tuple[str, str, bool, int] | None:
+    async def _read() -> tuple[str, str, bool, int] | None:
+        async with as_app_user(USER_ID) as session:
+            row = (
+                await session.execute(
+                    text(
+                        "select phase, model, repair, latency_ms from generations"
+                        " order by created_at desc limit 1"
+                    )
+                )
+            ).first()
+        return (row[0], row[1], row[2], row[3]) if row is not None else None
+
+    return run_on_loop(_read())
+
+
+async def _db_is_up() -> bool:
+    try:
+        async with session_factory() as session:
+            await session.execute(text("select 1"))
+        return True
+    except Exception:
+        return False
+
+
+def test_record_generation_stores_metadata() -> None:
+    """One row per stage: phase, model, repair, latency — and the RLS policy
+    scopes it to the account that ran it."""
+    if not run_on_loop(_db_is_up()):
+        pytest.skip("no live Postgres")
+
+    async def _record() -> None:
+        async with as_app_user(USER_ID) as session:
+            await record_generation(
+                session,
+                phase="mapping",
+                model="test/model",
+                repair=True,
+                latency_ms=1234,
+            )
+
+    run_on_loop(_record())
+
+    assert _latest_generation() == ("mapping", "test/model", True, 1234)
+
+
+def test_the_telemetry_columns_cannot_hold_content() -> None:
+    """The table's shape is the guarantee: `backend.md:214` forbids prompts,
+    outputs and brief content, and there is nowhere to put them."""
+    if not run_on_loop(_db_is_up()):
+        pytest.skip("no live Postgres")
+
+    async def _columns() -> set[str]:
+        async with as_app_user(USER_ID) as session:
+            rows = (
+                await session.execute(
+                    text(
+                        "select column_name from information_schema.columns"
+                        " where table_name = 'generations'"
+                    )
+                )
+            ).all()
+        return {r[0] for r in rows}
+
+    columns = run_on_loop(_columns())
+    assert columns == {
+        "id",
+        "owner_id",
+        "experience_id",
+        "phase",
+        "model",
+        "repair",
+        "latency_ms",
+        "created_at",
+    }
