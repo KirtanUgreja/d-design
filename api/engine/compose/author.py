@@ -75,8 +75,13 @@ class Composed:
     css: str
 
 
-def prefix(theme: Theme) -> str:
-    """The stable, cacheable part of every compose call for one deck."""
+def prefix(theme: Theme, exemplars: bool = True) -> str:
+    """The stable, cacheable part of every compose call for one deck.
+
+    ``exemplars=False`` exists for the phase-22 A/B: does the library help?
+    """
+    if not exemplars:
+        return f"{RULES}\nTHEME TOKENS\n{theme.describe()}\n"
     pack = "\n\n".join(e.prompt() for e in load_all())
     return (
         f"{RULES}\nTHEME TOKENS\n{theme.describe()}\n\n"
@@ -120,6 +125,7 @@ async def compose(
     total: int,
     thought: str,
     previous: str,
+    exemplars: bool = True,
 ) -> Result[Composed, ModelError]:
     differ = (
         f"; the previous slide was '{previous}', so this one must look different.\n"
@@ -137,7 +143,7 @@ async def compose(
         system="Follow the contract exactly.",
         user=user,
         model=model,
-        prefix=prefix(theme),
+        prefix=prefix(theme, exemplars),
         prompt_version=PROMPT_VERSION,
         max_tokens=12000,
         reasoning="low",
@@ -153,6 +159,7 @@ async def repair(
     defects: list[Defect],
     *,
     model: str,
+    exemplars: bool = True,
 ) -> Result[Composed, ModelError]:
     """One targeted repair from measured defects: the smallest change that
     fixes them. The model is told what was measured, never asked to judge."""
@@ -172,7 +179,7 @@ async def repair(
         system="Follow the contract exactly.",
         user=user,
         model=model,
-        prefix=prefix(theme),
+        prefix=prefix(theme, exemplars),
         prompt_version=PROMPT_VERSION,
         max_tokens=12000,
         reasoning="low",

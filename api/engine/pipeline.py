@@ -46,6 +46,7 @@ async def build(
     work_file: str,
     shots_dir: str,
     budget_usd: float,
+    exemplars: bool = True,
 ) -> Built:
     started = time.monotonic()
     plans = planner.assign(storyline.slides)
@@ -74,6 +75,7 @@ async def build(
                 total=len(plans),
                 thought=storyline.governing_thought,
                 previous=plans[index - 1].archetype if index else "",
+                exemplars=exemplars,
             )
         if isinstance(result, Err):
             origin[plan.id] = "fallback"
@@ -104,7 +106,13 @@ async def build(
             return
         async with gate:
             result = await author.repair(
-                seam, theme, plan, composed[plan.id], measured[plan.id].defects(), model=model
+                seam,
+                theme,
+                plan,
+                composed[plan.id],
+                measured[plan.id].defects(),
+                model=model,
+                exemplars=exemplars,
             )
         attempts[plan.id] += 1
         if not isinstance(result, Err):

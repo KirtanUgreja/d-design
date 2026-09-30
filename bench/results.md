@@ -12,7 +12,10 @@ One row per run (docs/v4/bench.md -> "What a run records"). Runs themselves live
 | 2026-09-30 | `2026-09-30-models` | Same, `z-ai/glm-5.3-flash` | 3 | median $0.018 | median 69 s | pending. 15 of 30 clean first pass, 6 fallback, 0 flagged |
 | 2026-09-30 | — | `qwen/qwen3.8-flash` | 0 | — | stalled for over 10 minutes on the first deck; dropped | — |
 | 2026-09-30 | `2026-09-30-full` | Engine, all 12 briefs, `deepseek/deepseek-v4.1-flash`, `compose.v1`, three-layout fallback | 12 of 12 | median $0.055, total $0.67 | about 1 minute per deck | owner looked at the decks and approved the quality; no ratings file. 0 slides flagged |
+| 2026-09-30 | `2026-09-30-ab` | Exemplar A/B: the 3 smoke briefs **without** exemplars, DeepSeek | 3 | median $0.061 | 45–89 s | owner to compare. 21 of 30 slides clean first pass (26 of 30 with exemplars in `2026-09-30-models`), 2 fallback, 0 flagged |
 
 **The bar phase 22 has to beat:** a single prompt to the best model costs about $0.21 and 93 seconds per deck, and already looks far better than v3. It also shows the look v4 is built to avoid: rounded cards, numbered badges, one centred system font.
 
 **First engine result (2026-09-30):** on cheap models a deck costs $0.02–0.06, about a quarter of the one-shot baseline's $0.21 on the top model, and finishes in about a minute with no defect left. The weak point is the code-built fallback layout, which about 1 slide in 10 ends up with: it is never broken, and it is plain.
+
+**Exemplar A/B (2026-09-30):** without the library the model still designs well, but more slides need a repair (9 of 30 against 4 of 30). The library costs almost nothing, because it sits in the cached prefix. Decision: keep it. Two caveats: 3 decks is a small sample, and the with/without decks were not on the same themes, so the look cannot be compared slide for slide.
