@@ -1,150 +1,140 @@
 # Content & Web
 
-Defending the viewer. Everything here protects someone who opens a deck — your customer's prospect, on your customer's launch page, from a downloaded file.
+Defending the viewer. Everything here protects someone who opens a deck — your customer's prospect, on your customer's pitch, from a downloaded file.
+
+**Rewritten 2026-09-26 for v4** ([../v4/spec.md](../v4/spec.md)). The change that matters to this document: **the model now writes each slide's HTML and CSS.** Until v3 the model filled a JSON form and React escaped it, so there was no markup to defend against. That control is gone, and what replaced it is below.
 
 ## The artefact is a file
 
-The v1 artefact is a **single self-contained `.html` file** that runs offline — `connect-src 'none'`, fonts and images embedded as data URIs, motion inlined. It talks to *nothing*. That is the strongest possible distribution posture: there is no CDN to poison, no origin to route around, no beacon to misdirect, no personalization endpoint to leak a token. It is the product rather than a constraint (`docs/v1/plan/05-export.md`).
+One self-contained `.html` file that runs offline: `connect-src 'none'`, fonts and images embedded as data URIs, one script (our player). It talks to *nothing*. There is no CDN to poison, no origin to route around, no beacon to misdirect.
 
-**A hosted URL (v3) serves the same bytes.** Publishing uploads the single-file HTML to S3 and serves it via CloudFront; there is no origin server behind it, so the offline posture carries to the URL. The separation in v3 is physical, not merely configured — static objects, no route to attack, no router that could disagree with the CDN about what a URL means.
+There is no hosted URL in v4. If one is ever built it serves the same bytes, and the S3, CDN and custom-domain controls at the end of this document return with it.
+
+## AI-written HTML and CSS
+
+**Assume the model is compromised.** A slide's markup is attacker-influenced text: pasted material and web search results reach the prompt. The design goal is unchanged from v1 — a fully attacker-controlled model produces an ugly deck, not a dangerous one — and it is now held by three independent layers. **Any one of them alone stops script execution and data exfiltration.** The specification is [../v4/engine.md](../v4/engine.md) → "Security of AI-written HTML".
+
+### Layer 1 — the sanitizer (`nh3`, an allowlist)
+
+| Allowed | Removed |
+|---|---|
+| A short list of text and structure tags, plus our empty components `dd-image`, `dd-chart`, `dd-texture` | `script`, `svg`, `a`, `img`, `form`, `input`, `iframe`, `object`, `embed`, and everything unlisted |
+| `class` (a strict pattern), `data-field` (must name one of this slide's fields), a few `data-*` flags, enum attributes on `dd-*` | `style`, `id`, every `on*` handler, `href`, `src` |
+| ≤150 elements, depth ≤12, ≤16 KB of HTML and of CSS per slide | Over-limit slides fail and go to repair |
+
+Three decisions in that table do more than the rest:
+
+- **Slides contain no `<a>`.** A URL is plain text. v3 rendered an unvalidated CTA `href` while inline script was allowed, which was a `javascript:` XSS. v4 does not filter link schemes; it has no link element, so the class is gone.
+- **Slides contain no `<img>` and no `<svg>`.** Images and charts are empty `dd-*` elements that *our* code fills after sanitising, from assets and `Fact`s it holds. The model never supplies a `src` or a path.
+- **No `style` attribute.** All CSS is in the slide's one stylesheet, where it can be linted.
+
+### Layer 2 — the CSS lint (`tinycss2`)
+
+The lint **rejects**; it never rewrites.
+
+- **No `url()`**, anywhere. This is the exfiltration channel CSS has, and textures reach a slide only through `dd-texture`.
+- **No at-rules of any kind**: no `@import`, `@font-face`, `@keyframes`, `@media`.
+- **No `animation` or `transition`.** The player owns motion.
+- **No `position: fixed`**, no `:host`, `:root`, `html` or `body` selectors, no backslash escapes.
+- **The token rule**: colour, font family, size and weight only through the theme's custom properties.
+- **The design bans**: no gradients, no blur, no glow ([../design/principles.md](../design/principles.md) §5).
+
+**Scoping is the browser's job.** Each slide lives in its own Declarative Shadow DOM root (`<template shadowrootmode>`, Baseline 2024), so its CSS cannot reach the player or another slide. Selector rewriting was considered and rejected: a rewriting bug is a leak, and the browser already does this correctly.
+
+### Layer 3 — the browser
+
+| Where | Control |
+|---|---|
+| **QA render** (the worker's Chromium) | Every request is aborted except `data:`. The page's CSP is `script-src 'none'`, and our measure script is injected from outside |
+| **Editor** | A `srcdoc` iframe with `sandbox="allow-same-origin"` and **no `allow-scripts`**. The parent drives `contenteditable="plaintext-only"` on `data-field` nodes, so a paste cannot add markup |
+| **Export** | The CSP below. The only script is our player, allowed by hash |
+
+**Never combine `allow-scripts` with `allow-same-origin`** on a frame showing slide markup: together they let the framed document remove its own sandbox. Present mode shows the export, which runs our player, so that frame has `allow-scripts` and **not** `allow-same-origin`.
+
+### Why layers, and not the sanitizer alone
+
+DOMPurify, the best sanitizer in its class, had four XSS bypasses disclosed in eighteen months ([platform-and-packages.md](platform-and-packages.md)). `nh3` will have its own. A design that trusted sanitisation alone would be exploitable each time. Here a sanitizer bypass lands in a document that cannot run script and cannot make a request, which is the actual control.
 
 ## CSP
 
-**The exported deck (v1) — and the hosted URL (v3), which serves the same bytes:**
+**The exported deck**, as a `<meta>` in the file:
 
 ```
 default-src 'none';
-script-src  'self';
-style-src   'self' 'unsafe-inline';
-img-src     'self' data:;
-font-src    'self' data:;
+script-src  'sha256-<player>';
+style-src   'unsafe-inline';
+img-src     data:;
+font-src    data:;
 connect-src 'none';
-frame-ancestors *;
 base-uri    'none';
 form-action 'none';
 ```
 
-`connect-src 'none'` is the whole point — the deck talks to nothing. `img-src data:` and `font-src data:` are what make the embedded fonts and generated images legal under that. The browser test in [testing.md](testing.md) asserts **zero requests**, in a real browser, from `file://`.
+`connect-src 'none'` is the whole point. `img-src data:` and `font-src data:` are what make embedded fonts and images legal under it. `script-src` names one hash: the player. Model-written markup cannot add a script the policy would run.
 
-This reverses the old framing: the previous product weakened `connect-src 'none'` to two endpoints for personalization and analytics. The offline single-file deck has neither.
+`style-src 'unsafe-inline'` is required because the theme and each slide's stylesheet are inline. It is why layer 2 exists.
 
-`frame-ancestors *` is deliberate. Embedding a deck is a feature.
+`frame-ancestors` cannot be set from a `<meta>`, so a deck file can be framed by anyone. That is accepted: the deck has no session and no privileges, and it contains no links, so there is nothing to hijack a click *into*. If a deck ever carries anything interactive and consequential, revisit.
 
-**It also means a deck can be framed by anyone, which is a residual risk worth naming rather than discovering.** An attacker can frame a customer's deck inside a page of their own construction — overlaying it, surrounding it with their own copy, or positioning it so a click lands somewhere the viewer did not intend. Classic clickjacking.
+**The editor's slide document:** `default-src 'none'; style-src 'unsafe-inline'; img-src data:; font-src data:`.
 
-This is accepted, not solved, and the reasoning is that the alternative is worse: an allowlist of embedding origins would break the embed feature for every customer who has not pre-registered their site, which is all of them. Three things bound the damage:
+**App routes:** `frame-ancestors 'none'`, no `unsafe-inline` script.
 
-- The framed deck has **no session and no privileges** — there is nothing to hijack a click *into*. Clickjacking against an authenticated app is an account-takeover primitive; against a static deck it is a presentation problem
-- A CTA destination comes from the approved outline, so the destination of any click is a URL the customer supplied
-- **App routes are `frame-ancestors 'none'`.** The app's origin separation means the framing risk never reaches the surface where it would matter
+## Speaker notes do not leave with the deck
 
-If a future feature puts anything interactive and consequential on a deck — a form, a purchase, an authenticated action — this trade stops being acceptable and `frame-ancestors` has to be revisited with it.
+Notes are written for the presenter and can be candid. One export that carried them would hand them to every recipient.
 
-`style-src 'unsafe-inline'` is required for the design family's CSS custom properties and is the reason the next section exists.
-
-**App routes:** `frame-ancestors 'none'`, no `unsafe-inline`.
-
-Also on a deck:
-
-```
-Referrer-Policy: no-referrer
-X-Content-Type-Options: nosniff
-Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()
-```
-
-`Referrer-Policy: no-referrer` fixes a quiet leak: without it, a viewer clicking a CTA sends the full deck URL — including any query parameters — to the destination site in the `Referer` header. A `file://` deck has no URL to leak, and the hosted URL (v3) must not leak one either. There are no recipient tokens in the offline artefact — the personalization endpoints that made them exist were a feature of the old served page and are gone with it.
-
-## S3 and CloudFront
-
-Publishing (v3) writes the single-file HTML to object storage, which moves a class of misconfiguration into scope that did not exist when the artefact was a download.
-
-| | |
+| Flavour | Notes |
 |---|---|
-| **Block Public Access on, at bucket and account level** | The bucket is never public. This is the control that fails loudest and matters most |
-| **CloudFront Origin Access Control** | The distribution is the only reader. No public bucket, no legacy OAI |
-| **Brand-kit uploads land in a quarantine prefix** | Presigned direct-to-S3 puts arbitrary bytes in your bucket. The object is not servable until the worker has verified magic bytes and re-encoded it ([../techstack/infrastructure.md](../techstack/infrastructure.md)) |
-| **`Content-Type` set by the server, `nosniff`, no inline HTML from assets** | An HTML file on the assets origin is an XSS on the assets origin |
-| **Separate buckets per origin** | Hosted decks and uploaded assets do not share a bucket, a policy, or a blast radius. Terraform state shares neither ([build-pipeline.md](build-pipeline.md)) |
-| **Versioning and lifecycle rules** | Versioning is the recovery path from a bad publish or a destructive bug; lifecycle rules are how retention actually happens rather than being intended |
+| **present** | Included, as an inert `<script type="application/json">` block the presenter popup reads |
+| **send** — and the PDF | **Not in the file.** Not hidden: absent |
 
-## CSS injection via design-family tokens
+A test asserts on the bytes of the send flavour ([testing.md](testing.md)).
 
-**This is the attack surface most likely to be missed.** It arrives in v3 with user-influenced brand-kit values: the brand kit maps to a design family's semantic roles, and an attacker-controlled logo, color, or font id becomes a CSS custom property value. Combined with the `style-src 'unsafe-inline'` that the families require, an unvalidated token value is a script-adjacent injection point.
+## AI disclosure
 
-**Every token value is validated by type before it becomes CSS. No exceptions, no free-text tokens.**
+EU AI Act Article 50 has been in force since 2026-08-02.
+
+- Every export carries machine-readable markers, and a visible disclosure line in the player chrome (not on the slides).
+- Every generated image carries the IPTC XMP tag `digitalSourceType=trainedAlgorithmicMedia`, because the image is what gets copied out of a deck.
+- Check the Code of Practice's required mechanism, C2PA or otherwise, at phase 26.
+
+## Theme tokens
+
+The theme is computed by **our code** from a seeded sampler ([../v4/design-engine.md](../v4/design-engine.md) → "Sampler and theme"). No model writes it.
+
+The user-influenced input is the brand kit: typed colours. **Every token value is validated by type before it becomes CSS.**
 
 | Token kind | Validation |
 |---|---|
-| Colors | Parsed into a color object, re-serialized. Never passed through as a string |
-| Numbers | Numeric, range-checked against the linter bounds |
-| Enums | `lighting`, `material`, `background`, `texture` — matched against known values, rejected otherwise |
-| Font families | Selected from a curated registry by id. **Never a user-supplied string** |
-| Easing curves | Parsed as `cubic-bezier(a,b,c,d)` with numeric components, or a known keyword |
+| Colours | Parsed into a colour object, contrast-corrected, re-serialised. Never passed through as a string |
+| Numbers | Numeric, range-checked |
+| Font families | Selected from the vendored registry by id. **Never a user-supplied string** |
 
-Rejected outright, everywhere: `url(`, `expression(`, `@import`, `</style`, `javascript:`, backslash escapes, and any character outside the expected grammar for that token type.
+Rejected outright: `url(`, `expression(`, `@import`, `</style`, `javascript:`, backslash escapes. A user-supplied font-family string is the most natural-looking free-text token in the system and the one that most easily carries a payload, which is why it does not exist.
 
-The v2 AD linter already validates ranges for design reasons. **Extend it with these grammar checks and treat a failure as a hard failure**, exactly like a contrast violation. One validator, two purposes.
+## Text and data
 
-Font families deserve the emphasis: a user-supplied family string is the most natural-looking free-text token in the whole system, and it is the one that most easily carries a payload. Fonts are chosen from a registry by id, and the registry maps id to a vetted family and file.
-
-## The deck is the sandbox
-
-The old product had a `Slot` — a sandboxed `srcdoc` iframe for generated code. The offline single-file artefact has no equivalent: there is no user-authored executable surface inside a deck. The deck is generated from a schema-validated tree, rendered by React (which escapes by default), and the exported file carries `connect-src 'none'` so nothing inside it can phone home. A compromised generation produces an ugly deck, not a dangerous one — the "assume the model is compromised" principle, enforced by the schema parse and the CSP rather than by a sandbox.
-
-## XSS in the renderer
-
-The deck tree is JSON rendered by React, which escapes by default. `dangerouslySetInnerHTML` appears nowhere — this is a lint rule, not a convention.
-
-Specific paths that need care:
-
-**CTA destination** — restricted to URLs from the approved outline, plus a scheme allowlist rejecting `javascript:`, `data:`, `vbscript:`, and protocol-relative URLs. See [prompt-injection.md](prompt-injection.md).
-
-**Abstract visuals** — generates SVG and CSS from an enum generator and a numeric seed. No user string reaches the output.
-
-**Generated images** — embedded as data URIs, rendered through `<img>`. An image cannot execute. The image *prompt* is a seam action with a cost cap, not a vector — see [../techstack/pipeline-tools.md](../techstack/pipeline-tools.md).
-
-**Chart data** — rendered as SVG paths and text nodes, never interpolated into markup. A cell containing `<script>` renders as visible characters.
-
-**Locale codes and hostnames** — reach routing and headers. Validated against BCP-47 and a hostname grammar respectively, never interpolated raw.
+- **Field text** reaches a slide as text nodes. In the editor, `plaintext-only` editing and a server-side re-sanitise on every save keep it that way.
+- **Chart data** is drawn by our code as SVG paths and text nodes, never interpolated into markup. A label containing `<script>` renders as visible characters.
+- **Generated images** are re-encoded to webp by Pillow and embedded as data URIs. An image cannot execute.
+- **Source lines** show a citation's title and host as text. The URL is never a link.
 
 ## Uploads
 
-Every uploaded file is hostile until proven otherwise.
+**Not in v4.** The brand kit is typed text and nothing is uploaded, so v3's upload worker, its quarantine prefix and its SVG sanitizer are deleted.
+
+When logo or file upload returns, every uploaded file is hostile until proven otherwise, and these come back with it:
 
 | Control | Why |
 |---|---|
 | Magic-byte verification | Extension and `Content-Type` are attacker-supplied |
-| Server-side re-encode for raster images | Strips EXIF, kills polyglots, normalizes format |
-| Dimension and size caps before decode | Decompression bombs: a 200KB PNG can decode to gigabytes |
-| Server-generated UUID storage keys | User filenames mean path traversal; never use them |
-| `Content-Type` set by the server, `nosniff` | Prevents an image being interpreted as HTML |
-| Served only from `assets.<domain>` | Contains any content-type confusion to a useless origin |
+| Server-side re-encode for raster images | Strips EXIF, kills polyglots, normalises format |
+| Dimension and size caps before decode | A 200 KB PNG can decode to gigabytes |
+| Server-generated storage keys | User filenames mean path traversal |
+| SVG sanitised **and** used only via `<img>` | The layering is the control, not the sanitizer |
+| Parsing in an isolated process with nothing to steal | [infrastructure.md](infrastructure.md) |
 
-**SVG** is accepted, sanitized, and served only via `<img>`. Sanitization removes `<script>`, `<foreignObject>`, event handler attributes, external references, and `<use href>` pointing off-document. Referenced through `<img>`, an SVG cannot execute at all even if sanitization missed something — that layering is the actual defense. Rejecting SVG outright would hurt real users, since logos are almost always SVG.
+## If a hosted URL is ever built
 
-> The layering is not caution, it is the control. DOMPurify — the best tool available for this and the right choice — had **four distinct XSS bypasses disclosed in 2025–2026**, and its 2.x branch was never patched for one of them. A design that trusted sanitization alone would have been exploitable four times in eighteen months. Versions and the full list are in [platform-and-packages.md](platform-and-packages.md).
->
-> SVG also carries a **denial-of-service** shape distinct from XSS: billion-laughs entity expansion, deeply nested groups, and pathological filter chains. Next.js shipped a CVE in July 2026 for exactly this — CPU exhaustion at `/_next/image` from malicious SVG. Cap entity expansion and nesting depth at sanitization, and keep SVG out of any image-optimization path.
-
-**GLB/USDZ** (a v3 question, not a v1 one) would parse in an isolated worker with triangle, texture, and file-size caps enforced *before* full decode. Draco and meshopt compression are decompression-bomb vectors with the same shape as image bombs. The v1 artefact embeds images and fonts as data URIs only — no 3D until it is a deliberate feature with a threat model.
-
-## Custom domains
-
-| Control | |
-|---|---|
-| TXT-record ownership challenge before serving | Stops claiming a domain you do not control |
-| Periodic re-verification, auto-unbind | Prevents hosting content for a domain the customer no longer owns |
-| Served from the published-content origin only | Never same-origin with the app. Restated because this is where origin separation breaks |
-| Per-account domain cap | Limits spam and SEO abuse |
-
-Certificate issuance is automated per verified hostname. Rate-limit issuance requests — an unbounded issuance path is both a cost problem and a way to hit a CA's rate limits and take down legitimate provisioning.
-
-### Dangling DNS, in both directions
-
-Custom domains create a subdomain-takeover surface that runs *both ways*, and the second direction is the one usually missed.
-
-**Customer → you.** A customer points `launch.theircompany.com` at your platform, later cancels, and leaves the CNAME in place. If your side then serves whatever any account claims for that hostname, the next person to claim it is publishing content on the customer's brand domain. This is why re-verification and auto-unbind are in the table above — but unbinding is only half of it. **A hostname that is unbound must stop being servable, not merely stop being owned.** An unclaimed-but-routable hostname is the vulnerability; claim-checking on request is what closes it.
-
-**You → the internet.** Any subdomain of your own domain pointed at a third-party service you later stop using is takeable by whoever registers that service next — and a takeover of `assets.<domain>` or `pages.<domain>` collapses the origin separation this entire document rests on. Inventory your own DNS records and remove them when a service is retired. This is unglamorous and it is how well-run companies lose an origin.
-
-**Verification is per-binding, not per-domain, and it expires.** A TXT challenge proves control at one moment. Re-verify on a schedule, and treat verification failure as unbind-and-stop-serving rather than as a warning to follow up on.
+Not in v4; the trigger is in [../v4/spec.md](../v4/spec.md). These controls were specified for v3 and return unchanged: a private bucket behind the CDN's origin access control, separate buckets per origin, server-set `Content-Type` with `nosniff`, `Referrer-Policy: no-referrer`, and for custom domains a TXT ownership challenge with periodic re-verification, where an unbound hostname stops being *servable* and not merely owned. Dangling DNS runs both ways: inventory your own records and remove them when a service is retired.

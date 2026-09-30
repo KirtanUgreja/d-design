@@ -1,154 +1,112 @@
 # Infrastructure
 
-Threats where you are the target: your network, your model budget, your revenue.
+Threats where you are the target: your model key, your model budget, your processes.
 
-## SSRF
+**Rewritten 2026-09-26 for v4** ([../v4/spec.md](../v4/spec.md)). v3 designed a VPC, a quarantined fetch worker and a job queue for features v4 does not have. What v4 does have is one secret, one browser and one spend surface, and this document is about those. The v3 controls return with the features that need them, and are kept at the end so they are not rebuilt from memory.
 
-v3 lets a user paste a URL and your server fetches it, for art-direction derivation. This is textbook SSRF, and the interesting targets are internal:
+## The API and the worker
 
-```
-http://169.254.169.254/latest/meta-data/     cloud instance credentials
-http://metadata.google.internal/             GCP equivalent
-http://localhost:5432                        your database
-http://10.0.0.0/8                            your VPC
-file:///etc/passwd                           local files
-```
+From phase 27 the backend is two processes from one codebase ([../techstack/backend.md](../techstack/backend.md)).
 
-### Network isolation is the control
+| | **api** | **worker** |
+|---|---|---|
+| Reachable from the internet | Yes | **No inbound port** |
+| Holds the OpenRouter key | **No** | Yes |
+| Calls a model | **Never** | Yes |
+| Runs a browser | **Never** | Yes |
+| Parses requests from strangers | Yes | No — it reads job files our own API wrote |
 
-**URL fetching runs in a dedicated worker with egress-only networking and no route to the VPC, the database, or the metadata endpoint.**
+**The privileged process never parses a stranger's request, and the process that does has nothing worth stealing.** It is the same split v3 drew around its fetch worker, pointed at what v4 actually holds.
 
-The control is not "we reject bad URLs." It is that the process doing the fetching *cannot reach anything worth reaching*. A bypass in URL parsing then lands on a machine with nothing on it.
+Rules that keep it real:
 
-This matters because application-level blocking is a game you keep losing: DNS rebinding (a hostname that resolves to a public IP on validation and a private one on fetch), IPv6-mapped IPv4, decimal and octal IP encodings, redirect chains that pivot on the third hop, and `0.0.0.0`. Every one of these has broken a careful blocklist somewhere.
+- **The key is in the worker's environment only.** Assert its absence in the API's environment with a test that reads it, the same control v3's `render` service carried.
+- **A job file is a boundary.** The worker schema-parses it like any external input. It carries ids, never content.
+- **The worker re-checks at execution**, not at enqueue: the deck still exists, the budget still has room. From phase 29, the owner still exists and is still entitled.
+- **Deployed, the split must be a network rule and a secret scope**, not a convention. Phase 29's first check is that both hold ([../techstack/infrastructure.md](../techstack/infrastructure.md)).
 
-The same worker holds decrypted integration credentials — see [tenancy-and-data.md](tenancy-and-data.md). One isolated process for all outbound network access, and it is the only thing holding secrets.
+Before phase 27 there is no API: the engine runs from the CLI on a developer machine, with the key in a local `.env`.
 
-**There are two workers, and this is the quarantined one.** The fetch worker touches hostile input — URLs, screenshots, PDFs, uploaded images — and has no database access, no VPC route, and no secret beyond the integration token it is actively using. A separate **`jobs` worker** runs PGQueuer with full database access and never parses attacker-controlled bytes, and a **`render`** service holds the renderer but neither database credentials nor a model key. Splitting them means the process holding database credentials is never the process rendering an attacker's webpage. Topology in [../techstack/infrastructure.md](../techstack/infrastructure.md); the isolation is a subnet and a security group, so the socket-level test below asserts the network rather than the code.
+## Chromium in the worker
 
-### Application-level checks anyway
+The worker renders every slide in headless Chromium to measure it. **The input is model-written markup, which is attacker-influenced**, so treat this browser as exposed — though far less than v3's fetch worker, which loaded pages an attacker chose from the live internet.
 
-Cheap, and they turn a network-isolated failure into an early, loggable rejection:
-
-- Scheme allowlist: `https` only. No `http`, `file`, `gopher`, `ftp`, `data`
-- Resolve DNS, reject private, loopback, link-local, and reserved ranges — IPv4 and IPv6
-- **Pin the resolved IP and connect to it**, rather than re-resolving. This is what actually stops DNS rebinding
-- Maximum 3 redirects, re-validating the target at every hop
-- 10-second timeout, 10MB response cap
-- Log every rejection. Repeated attempts are a signal worth having
-
-### Next.js-specific SSRF paths
-
-Two beyond the fetch worker, both from the July 2026 advisory set ([platform-and-packages.md](platform-and-packages.md)):
-
-- **`rewrites()` / `redirects()`** that build a destination hostname from request-controlled input become SSRF and open redirect respectively. Custom-domain routing resolves a **verified hostname to an experience id via a database lookup** — never by constructing a destination from the incoming `Host` header.
-- **Remote image optimization** (`/_next/image`) fetches arbitrary remote URLs by design. This product self-hosts every image on `assets.<domain>`, so the remote path is a surface with no corresponding feature. **Turn it off.**
-
-## Headless Chromium is the most exposed component in the product
-
-The fetch worker runs Playwright to screenshot user-pasted URLs ([../techstack/infrastructure.md](../techstack/infrastructure.md)). That means **the most-attacked software on the internet, pointed at pages an attacker chose.**
-
-### The trap, and it is the default
-
-**Containers do not run Chromium in its sandbox unless you provide a seccomp profile.** Chromium fails to start, the internet says add `--no-sandbox`, it works, and the renderer process — the one parsing attacker-supplied HTML, CSS, fonts, and images — is now running with no isolation from the rest of the container.
-
-`--no-sandbox` is acceptable in CI against pages you wrote. **It is exactly wrong here**, because here the pages are the threat.
+What bounds it:
 
 | Control | |
 |---|---|
-| **Seccomp profile, sandbox on** | The documented way to run headless Chrome in a container. Not `--no-sandbox` |
-| **Non-root user, and a separate user for the browser** | The recommended pattern for untrusted URLs specifically |
-| **Read-only root filesystem**, writable temp only | A renderer escape lands somewhere it cannot persist |
-| **One fresh browser context per fetch, always disposed** | No state carries from one target to the next |
-| **Hard timeouts, and kill the process on breach** | A page that hangs the browser is the cheapest denial of service available |
-| **`--disable-dev-shm-usage`, capped memory** | Chromium OOM in a container is a routine failure, not an exotic one |
-| **Current Chromium** | The patch window here is days, not weeks — [adversarial-ai.md](adversarial-ai.md), and [build-pipeline.md](build-pipeline.md) on rebuilding on a schedule rather than only on code change |
+| **The markup is sanitized and linted first** | No script, no `url()`, no external reference reaches the browser ([content-and-web.md](content-and-web.md)) |
+| **Every request is aborted except `data:`** | A sanitizer miss still cannot fetch or exfiltrate |
+| **`script-src 'none'` on the rendered page** | A sanitizer miss still cannot execute |
+| **A fresh context per deck, always disposed** | No state carries between decks |
+| **Hard timeouts, kill the page on breach** | A pathological layout is the cheapest denial of service available |
+| **Element, depth and size limits per slide** | Enforced before render |
+| **Current Chromium** | Rebuild on a schedule, not only on code change |
 
-### And this is what the isolation is for
+**The container trap still applies at phase 29.** Containers do not run Chromium in its sandbox without a seccomp profile; Chromium fails to start, the internet says add `--no-sandbox`, and it works. For a browser rendering our own sanitized markup with the network cut, running without Chromium's sandbox under Docker's default seccomp is a defensible trade — v3's `render` service made it — **but decide it deliberately at phase 29 and write the reason down**, because this process also holds the model key. Non-root user, read-only root filesystem and capped memory regardless.
 
-Assume all of the above eventually fails. Chromium sandbox escapes are real, they are valuable, and a solo operator will not out-patch them.
-
-**A full renderer escape lands on a container with no database access, no VPC route, no metadata endpoint, and one narrowly-scoped KMS grant.** That is the entire reason the fetch worker exists as a separate task with its own subnet ([../techstack/infrastructure.md](../techstack/infrastructure.md)), and it is why the socket-level unreachability test in [testing.md](testing.md) is the most important test in the suite — it is the one that still holds when everything above has been bypassed.
-
-The same reasoning explains a rule from [../coderules/dependencies.md](../coderules/dependencies.md): a hostile-input parser is a different severity depending on which container it is in. Chromium is that principle at its most extreme.
-
-## The job queue
-
-PGQueuer runs in the privileged worker, so its inputs deserve the same scrutiny as an HTTP route.
-
-- **Job payloads are internal but not automatically trustworthy.** A payload is JSON in a database row; treat it as a boundary and schema-parse it in the handler ([../coderules/python.md](../coderules/python.md)). It is cheap, and it means a bug in an enqueue path cannot become arbitrary behavior in a worker.
-- **Payloads carry ids, never data.** No brief text, no recipient fields, no credentials in a job row — the queue is a table, it is backed up, and it outlives the work.
-- **Ownership is re-checked at execution, not trusted from enqueue time.** A job enqueued before an account was deleted or downgraded must not run with the old entitlement. This is [failing closed](#failing-closed--owasp-a10) applied to time.
-- **Bounded retries and a dead-letter queue.** An unbounded retry on a job that calls a model is denial of wallet with a cron attached, and it is the version of that attack that comes from your own code rather than a user.
-- **Job creation is subject to the same quotas as the action that caused it.** Enqueuing is cheap; the work is not.
-
-Enqueue in the same transaction as the data change ([../coderules/dependencies.md](../coderules/dependencies.md)) — a publish that rolls back must not leave a job that publishes.
+**Assume it all fails.** A renderer escape lands in a process with the OpenRouter key and the deck store. That is a real loss and the reason for three things: a spend limit on the key itself, a key that can be rotated in one step, and a worker with no inbound port so the escape cannot be reached from outside in the first place.
 
 ## Failing closed — OWASP A10
 
-New to the OWASP Top 10 in the November 2025 revision: **A10 Mishandling of Exceptional Conditions**, 24 CWEs covering uncaught exceptions, race conditions, and failing open.
-
-It gets its own section because this product is unusually exposed to it. Graceful degradation is a *feature* here — 3D falls back to a poster, live data to its last cached value, WebGPU to WebGL2, a missing locale to the source language, a failed AD derivation to an honest error. Every one of those paths is somewhere an attacker can ask: *what if I cause the failure?*
-
-The rule, and it applies to code that has not been written yet:
+**A10 Mishandling of Exceptional Conditions** (November 2025): uncaught exceptions, race conditions, and failing open.
 
 > **Availability degrades open. Authorization degrades closed.**
 
 | Failure | Correct behavior |
 |---|---|
-| 3D asset unavailable | Poster frame — degrade open, nothing is protected here |
-| Live-data fetch fails | Last cached value, then the honest empty state |
-| Quota check throws or times out | **Refuse the generation.** Never proceed because the check was unavailable |
-| Entitlement lookup fails | **Deny the paid feature** |
-| Recipient token validation errors | **Reject the token** |
-| Domain verification lookup fails | **Stop serving that hostname** |
-| Rate limiter unreachable | **Rate-limit as if tripped** |
+| An image fails to generate | The slide ships without it — degrade open, nothing is protected here |
+| A slide fails QA after two repairs | A safer composition, then a visible flag |
+| **The budget check throws or cannot read the ledger** | **Refuse the model call** |
+| **JWT verification errors, or JWKS is unreachable** (phase 29) | **401** |
+| **The owner lookup fails** (phase 29) | **Deny** |
+| **The kill switch cannot be read** (phase 29) | **Treat as on** |
+| **A version check cannot run on a write** | **Reject the write** |
 
-The distinction is whether a failure could grant something. A viewer seeing a poster instead of a 3D model has been given nothing. A generation running because the quota service was slow has.
+The distinction is whether a failure could grant something. A slide without its image has been given nothing. A model call made because the ledger was unreadable has.
 
-**Test this by making the check throw**, not by reasoning about it. A dependency-injected failure on each row above, asserting refusal. Fail-open is invisible in code review — it reads as ordinary error handling, and the `catch` that returns a permissive default looks like defensive programming right up until it is the vulnerability.
+**Test this by making the check throw**, not by reasoning about it. Fail-open is invisible in review: the `except` that returns a permissive default looks like defensive programming right up until it is the vulnerability.
 
-Race conditions are the other half of A10, and the one that matters here is **quota checked and then consumed as two separate operations**. Concurrent requests all read the same remaining balance and all proceed. The counter increment must be atomic in the database, not a read-modify-write in application code.
+The race half of A10 has two instances here. **A budget checked and then spent as two steps** lets concurrent slide calls all pass the same check; the check reserves against the ledger under the deck's lock. **Two writers on one deck** is the other, closed by the single-writer rule ([tenancy-and-data.md](tenancy-and-data.md)).
 
 ## Denial of wallet
 
-Generation is the most expensive operation in the product, and the free tier gives it away. This is the likeliest real-world attack because it needs no skill — a loop and a script.
+Generation is the expensive operation, and v4 is quality-first: an estimated $1.5–3.5 per deck. The likeliest attack needs no skill — a loop.
 
-| Control | |
+| Control | From |
 |---|---|
-| **Per-account quotas** | Hard caps per plan, checked server-side *before* the model call. The `generations` table already records what is needed |
-| **Rate limits** | Per account and per IP. Also catches runaway client retry loops, which is the more common cause |
-| **Email verification before first generation** | Blocks throwaway-account farming. Friction at the wow moment, accepted deliberately |
-| **Spend alerting + global kill switch** | You find out from a monitor, not an invoice |
+| **A per-deck `budget_usd` hard cap**, checked before every model call, failing closed | Phase 22 |
+| **Literal limits in code**: repair rounds ≤2, searches and images per deck | Phase 22–25 |
+| **Pinned model ids** | Phase 22. An alias repointed by a provider cannot move the price of a call |
+| **A spend limit on the OpenRouter key** | Phase 22. The outer ceiling under everything else |
+| **Per-user daily budget, rate limits** | Phase 29 |
+| **A global kill switch** | Phase 29. Reachable from a phone |
+| **Email verification before first generation** | Phase 29 |
 
-The kill switch is the one that matters. Quotas and rate limits are bypassable in ways you have not thought of; a global spend ceiling that halts generation fails safe regardless of how it was reached. Build it early — it is a config flag and a check, not a system.
+The first denial-of-wallet is not an attacker. It is our own repair loop or a retry storm, which is why the per-deck cap exists seven phases before accounts do.
 
-Related cost paths: the slide builder runs one call per slide, so a 12-slide deck is 12 calls, plus image generations where the builder decides a slide wants one; reskin re-runs the slide builder. **Warn before a reskin on a large deck** — it is the single most expensive user action in the product, and a user clicking it repeatedly is indistinguishable from an attack.
-
-## Billing and entitlements
-
-**Entitlement checks are server-side, at the point of action.** Publishing to a custom domain, removing branding, enabling personalization or analytics — each verifies the subscription server-side when it happens. A client-side check is a UI affordance, never a control.
-
-**Stripe webhooks:** verify the signature on every event, deduplicate by event id, and treat delivery as unreliable. Reconcile subscription state on read rather than trusting that every webhook arrived — a missed `subscription.deleted` otherwise means indefinite free access.
-
-**Downgrade behavior is defined, not emergent.** When a subscription lapses: custom domains stop resolving, branding returns, personalized links keep working (they are already out in the world and breaking them punishes the recipient, not the customer), analytics collection stops. Decide this before the first downgrade, not during it.
+A theme re-roll regenerates or re-repairs every slide. It is the most expensive single user action; **warn before it** and count it against the same budget.
 
 ## Secrets
 
 | | |
 |---|---|
-| Model API keys | Server-only, never in a client bundle. Asserted in the build |
-| Database credentials | Server-only, from Secrets Manager by task role. Never in a client bundle |
-| Integration KMS key | Granted to the fetch worker's task role and nothing else |
-| Integration OAuth tokens | Envelope-encrypted, decrypted only in the fetch worker |
-| Signing keys | Rotatable. Recipient tokens are stored-random, so rotation does not invalidate campaigns |
+| **OpenRouter key** | Worker only. Never in the API's environment, never in `web`, never in a client bundle. Asserted |
+| **Auth provider secret** (phase 29) | API only. The JWKS is public; the management key is not |
+| **Database credentials** (phase 29) | API and worker. Never `web` |
 
-Nothing in the generation records, application logs, or error reporting carries prompt content, deck content, or recipient fields. Error trackers are the most common accidental leak, because they capture request bodies by default.
+Nothing in the cost ledger, `events.jsonl`, logs or error reports carries prompt, brief or deck content. Error trackers capture request bodies by default, which is the most common accidental leak.
 
-## Availability
+## What returns with features v4 does not have
 
-Not a primary concern for this product — a launch page being briefly unreachable is bad, not catastrophic — but two cheap things:
+Kept so the control arrives with the feature. The full v3 text is in git history at commit `8169fd9`.
 
-**Hosted decks are static after render.** They do not query the database or an LLM per view, so traffic on a viral launch page costs nothing and cannot exhaust a connection pool.
+**URL import or "paste a link" → SSRF.** A server that fetches a user-supplied URL can be pointed at `169.254.169.254`, `localhost` and the private network. **Network isolation is the control**: the fetch runs in a process that cannot route to anything worth reaching. Application checks come second — `https` only, reject private and reserved ranges in IPv4 and IPv6, **pin the resolved IP and connect to it**, re-validate every redirect hop, cap time and size. Note that `openrouter:web_search` is *not* this: OpenRouter's servers do the fetching, and ours fetch nothing the model or the user chose.
 
-**The editor degrades independently of hosted decks.** If generation is down, hosted decks (v3) keep serving — and downloaded files always work. Keep those paths separate; it costs nothing at the start and is expensive to untangle later.
+**File upload → hostile-byte parsers.** Image decoders, PDF extractors and SVG sanitizers run in an isolated process with no key and no deck store. Chromium pointed at attacker-chosen pages needs its sandbox and a seccomp profile, never `--no-sandbox`.
+
+**A job queue → payload rules.** Payloads carry ids, never content; ownership is re-checked at execution; retries are bounded with a dead-letter path.
+
+**Billing → entitlements.** Checked server-side at the point of action, never in the client. Stripe webhooks verified, deduplicated, and reconciled on read. Downgrade behaviour defined before the first downgrade.
+
+**Next.js-specific:** remote image optimization stays off, and no rewrite destination is ever built from request-controlled input. The dev rewrite of `/api/*` points at one fixed host ([platform-and-packages.md](platform-and-packages.md)).

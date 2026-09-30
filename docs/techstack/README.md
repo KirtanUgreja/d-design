@@ -1,169 +1,174 @@
 # Tech Stack
 
-> What this is built with, where each piece runs, and why. Including which model — and the answer is deliberately "no preferred vendor".
+> What this is built with, where each piece runs, and why. **Re-decided 2026-09-26 with v4** ([../v4/spec.md](../v4/spec.md)). There are two packages and three processes, each concern has one owner, and the model gateway is still vendor-neutral.
 
-**Start here:** [The shape](#the-shape) below — three origins, three runtimes, and the trust boundary between them.
+**Start here:** [The shape](#the-shape).
 
-**Looking for one decision and its rejected alternative?** [decisions.md](decisions.md) is the full log.
-
-What this is built with, where each piece runs, and why.
-
-The *language* half of the stack was settled in `v1/spec.md` and [../coderules/](../coderules/README.md), and has since been **reversed** — the backend is Python and this directory now owns that decision ([decisions.md](decisions.md) → "The Python backend move"). This directory also settles the **operational** half — hosting, workers, storage, delivery, auth, jobs — which earlier docs assumed without naming. The security docs already relied on some of it: an "isolated worker with no route to the VPC", a CDN in front of published pages. Those were requirements with no implementation. Now they have one.
+**Looking for one decision and its rejected alternative?** [decisions.md](decisions.md) is the full log. The 2026-09-26 reversals are at the top.
 
 ## The shape
 
-Three origins, five runtimes, two languages. Most of the splits are trust boundaries; one is a language boundary, and it is labelled so it is never mistaken for a security control.
+Two packages, three processes, two languages, and one rule. **The backend owns everything the product is. The frontend owns only what the user touches.**
 
 ```
-                    ┌──────────────────────────────────────┐
-  app.<domain>      │  web — Next.js 16 on Vercel      TS  │  sessions, Better Auth,
-  (editor)          │  editor · renderer · marketing       │  AUTH TABLES ONLY
-                    └───────────────┬──────────────────────┘
-                                    │ session cookie
-                                    ▼
-                    ┌──────────────────────────────────────┐
-                    │  api — FastAPI                   PY  │  the four phases,
-                    │  pipeline · seam · quotas · data     │  all app tables
-                    └───┬───────────────┬──────────────┬───┘
-                        │               │              │
-        ┌───────────────▼──┐  ┌─────────▼────────┐  ┌──▼───────────────┐
-        │  jobs        PY  │  │  render      TS  │  │  fetch worker TS │
-        │  PGQueuer        │  │  scene → HTML    │  │  NO db access    │
-        │  DB access       │  │  Playwright      │  │  NO vpc route    │
-        │  no hostile input│  │  NO db, NO keys  │  │  hostile input   │
-        └───────────────┬──┘  └─────────┬────────┘  └──────────────────┘
-           privileged   │               │              quarantined
-                        │  writes artifact
-                        ▼               ▼
-  pages.<domain>    ┌──────────────────────────────────────┐  no server,
-  (published)       │  S3 + CloudFront — static HTML       │  no DB,
-  assets.<domain>   │  no origin server to route around    │  nothing to breach
-                    └──────────────────────────────────────┘
+                ┌────────────────────────────────────────────────────┐
+  browser  ───▶ │  web — Next.js 16 + React 19                   TS  │  UI only:
+                │  composer · interview · outline · looks ·          │  no DB, no model key,
+                │  generation watch · editor · present               │  renders no slide itself
+                └─────────────────────────┬──────────────────────────┘
+                                          │  /api/* (rewrite in dev) · SSE over fetch
+                                          ▼
+                ┌────────────────────────────────────────────────────┐
+                │  api — FastAPI, Python 3.13                    PY  │  internet-facing
+                │  routes · one Pydantic parse at entry ·            │  NO model key,
+                │  SSE tails events.jsonl                            │  NO browser
+                └─────────────────────────┬──────────────────────────┘
+                                          │  file store (single writer) · job files
+                                          ▼
+                ┌────────────────────────────────────────────────────┐
+                │  worker — api/worker.py, same codebase         PY  │  no inbound port
+                │  engine/  interview · research · storyline ·       │  holds the
+                │           compose · QA · export                    │  OpenRouter key
+                │  Chromium — every request aborted · Pillow         │
+                └─────────────────────────┬──────────────────────────┘
+                                          │
+                     OpenRouter — text, image, web_search (ZDR routes only)
+
+  artefact: one offline .html per deck. The player, embedded fonts, webp images,
+            CSP default-src 'none', connect-src 'none'
 ```
 
-**Two ideas carry this diagram.**
+**Before phase 27 there is no API and no worker process**: the CLI calls the engine directly. The split arrives with the app, because that is when something internet-facing exists to split from.
 
-**The trust splits.** `fetch worker` and `jobs` have opposite requirements — one parses attackers' bytes and holds nothing worth stealing, the other holds database credentials and never sees hostile input. `render` sits between them: it has the renderer but neither database access nor a model key, so its worst case is a wrong page. See [backend.md](backend.md).
+**Four ideas carry this diagram.**
 
-**The language split, which is a cost rather than a control.** `render` exists because Python cannot server-side-render React and the renderer must have exactly one implementation ([../coderules/patterns.md](../coderules/patterns.md) rule 2). **Python decides; TypeScript renders.** That line explains most of the architecture, including why `web` reaches no application table and why `api` reads exactly one table it does not own.
+**Each concern has one owner.** v3 split the product across five runtimes:
+- `web` rendered the deck, and Python decided it.
+- A `render` service bridged the two languages.
+- A `fetch` worker parsed uploads.
+- Auth lived half in each language.
 
-**Published pages have no origin server.** Publishing renders the deck to a single-file HTML and writes it to S3. There is no route to attack, no database to reach, no cache-key disagreement between a CDN and an origin — because there is no origin. This makes [../security/platform-and-packages.md](../security/platform-and-packages.md)'s cache-deception class nearly vanish, and it makes a viral launch page cost pennies.
+v4 gives the engine, the data and the export to the backend alone. The frontend renders nothing of the deck itself:
+- It shows backend-produced HTML in a script-less iframe.
+- It presents the export file byte for byte.
+- It uses QA screenshots as thumbnails ([frontend.md](frontend.md)).
 
-**In v1 the artefact is the file itself, not the URL.** The deck exports as one self-contained `.html` file that runs offline — `connect-src 'none'`, fonts embedded, motion inlined. The hosted URL (v3) serves the same bytes.
+**The model composes, and the backend checks.** The model writes each slide's HTML and CSS within theme tokens. Every slide is rendered in a real browser, measured and repaired before anyone sees it ([../v4/design-engine.md](../v4/design-engine.md)). That needs a browser in the backend, and it lives in the worker process ([backend.md](backend.md) → "The worker").
+
+**The process that faces the internet holds nothing worth stealing.** The API never calls a model or a browser and never holds the OpenRouter key. The worker does all three and accepts no inbound connection. v3 had the same idea in its fetch worker; v4 applies it to the one secret and the one browser it actually has.
+
+**The artefact is still the file.** One self-contained `.html` per deck, with `connect-src 'none'` and fonts and images embedded. It comes in two flavours, **present** (with speaker notes) and **send** (without), so emailing a deck never leaks the notes ([frontend.md](frontend.md) → "The exported deck"). That has been the decision since 2026-08-13, and v4 is what makes it true: v3's exporter shipped system font stacks and no `@font-face` at all ([../findings.md](../findings.md)).
 
 ## The stack
 
 | Layer | Choice | Doc |
 |---|---|---|
-| **Backend language** | **Python**, typed — `api` and `jobs` | [ai-stack.md](ai-stack.md) |
+| **Backend language** | **Python 3.13**, `mypy --strict` | [ai-stack.md](ai-stack.md) → "Language" |
 | **Backend framework** | **FastAPI** | [backend.md](backend.md) |
-| **Frontend language** | TypeScript, strict — `web`, `render`, fetch worker | [../coderules/typescript.md](../coderules/typescript.md) |
-| **App framework** | Next.js 16 App Router + React 19.2 | [frontend.md](frontend.md) |
-| **Editor state** | Zustand | [frontend.md](frontend.md) |
-| **App chrome UI** | shadcn/ui on Radix + Tailwind | [frontend.md](frontend.md) |
-| **Motion** | Motion (`motion/react`) | [frontend.md](frontend.md) |
-| **Streaming** | SSE over a Route Handler | [frontend.md](frontend.md) |
-| **Fonts** | Fontsource, open-license, self-hosted | [frontend.md](frontend.md) |
-| **Schema / validation** | **Pydantic** — the source of truth. Zod 4 + TS types generated from it | [ai-stack.md](ai-stack.md) |
-| **Database** | Postgres — Docker local → **RDS/Aurora** | [backend.md](backend.md) |
-| **ORM / migrations** | **SQLAlchemy + Alembic** (app tables) · Drizzle (auth tables only) | [backend.md](backend.md) |
-| **Auth** | **Better Auth**, kept in Node, on your own Postgres | [backend.md](backend.md) |
-| **Session across languages** | `api` reads the `session` table read-only | [backend.md](backend.md) |
-| **Isolation** | RLS driven by a session variable — **two wrappers, one per language** | [backend.md](backend.md) |
-| **Jobs** | **PGQueuer** on the same Postgres | [backend.md](backend.md) |
-| **Model access** | **OpenRouter** behind a thin provider seam — no preferred vendor. **Text and image routes, one seam** | [ai-stack.md](ai-stack.md) |
-| **Evals** | Promptfoo in CI, self-hosted Langfuse for tracing | [ai-stack.md](ai-stack.md) |
-| **Agent framework** | **None.** Not an agent — and it would be privileged, in a class under active exploitation | [ai-stack.md](ai-stack.md) |
-| **Model client** | Plain `httpx`. Instructor if the seam grows | [ai-stack.md](ai-stack.md) |
-| **Pipeline tools** | Read-only only; visual verification loop from v2 | [pipeline-tools.md](pipeline-tools.md) |
-| **Email** | Resend | [backend.md](backend.md) |
-| **App hosting** | Vercel | [infrastructure.md](infrastructure.md) |
-| **Workers** | AWS ECS Fargate, four services | [infrastructure.md](infrastructure.md) |
-| **Storage / delivery** | S3 + CloudFront + ACM | [infrastructure.md](infrastructure.md) |
-| **Secrets** | AWS Secrets Manager + KMS | [infrastructure.md](infrastructure.md) |
-| **IaC** | Terraform / OpenTofu | [infrastructure.md](infrastructure.md) |
-| **CI/CD** | GitHub Actions, OIDC to AWS | [infrastructure.md](infrastructure.md) |
-| **Local dev** | Docker Compose — Postgres, MinIO, LocalStack | [infrastructure.md](infrastructure.md) |
-| **Tests** | pytest (Python) · Vitest + Playwright (TypeScript) | [../coderules/tooling.md](../coderules/tooling.md) |
+| **Schema / validation** | **Pydantic**, the one source. TypeScript types for web are generated from FastAPI's OpenAPI | [backend.md](backend.md) → "The API contract" |
+| **Model access** | **OpenRouter** via plain async `httpx`, from the worker only. JSON mode for structured stages, **text mode** for slide HTML. One **pinned** model id per stage, chosen by the phase-22 bake-off | [ai-stack.md](ai-stack.md) |
+| **Facts** | `openrouter:web_search`, with `url_citation` annotations becoming `Fact`s | [ai-stack.md](ai-stack.md) → "Web search" |
+| **QA · thumbnails · PDF** | **Playwright (Python)** in the worker: one browser, a page pool, every request aborted except `data:` | [backend.md](backend.md) → "The worker" |
+| **AI-written HTML safety** | **`nh3`** (HTML allowlist, no `<a>`) · **`tinycss2`** (CSS lint only) · **Declarative Shadow DOM** for per-slide scoping · a script-less iframe · the export CSP | [../security/content-and-web.md](../security/content-and-web.md) → "AI-written HTML and CSS" |
+| **Design system** | **Pure code.** A seeded sampler picks the axes and code computes the theme and the 3 looks. No model call | [../v4/design-engine.md](../v4/design-engine.md) |
+| **Fonts** | ~40 OFL families vendored as Latin-subset woff2, licence checked per family, **embedded as-is**. `fontTools` is deferred | [frontend.md](frontend.md) → "Fonts" |
+| **Images** | OpenRouter image models → **Pillow** (webp only) → data URIs carrying the IPTC `trainedAlgorithmicMedia` tag. Our code's call, not a model tool | [pipeline-tools.md](pipeline-tools.md) |
+| **Streaming** | The worker appends to `events.jsonl`; the API's SSE tails it and honours `Last-Event-ID`. Web reads it with a fetch-stream reader | [backend.md](backend.md) → "The worker" |
+| **Storage** | A file store, `api/store/files.py`, the only data module: atomic writes, a per-deck lock, a version check → Postgres + SQLAlchemy + Alembic at phase 29, owned by Python alone |
+| **Spend** | A per-deck `budget_usd` hard cap that fails closed, read from the cost ledger | [backend.md](backend.md) → "Budget" | [backend.md](backend.md) → "Data" |
+| **Auth** | None until phase 29. Then a managed IdP (WorkOS AuthKit or Clerk), with the JWT verified in FastAPI by PyJWT's `PyJWKClient` | [backend.md](backend.md) → "Auth (phase 29)" |
+| **App framework** | Next.js 16 App Router + React 19 | [frontend.md](frontend.md) |
+| **App chrome UI** | shadcn/ui + Tailwind 4 on our brand tokens | [frontend.md](frontend.md) |
+| **API types in web** | `openapi-typescript`: generated, never hand-edited, no-diff gate. SSE event models are registered in OpenAPI explicitly | [frontend.md](frontend.md) → "The app: UI only" |
+| **Agent framework** | **None.** The pipeline is a plain orchestrator and the model has no tool with side effects | [ai-stack.md](ai-stack.md) → "Agent framework: none" |
+| **Evals** | The v4 bench: 12 briefs, a wall of rendered decks, human scores, and content evals | [ai-stack.md](ai-stack.md) → "Evals", [../v4/bench.md](../v4/bench.md) |
+| **Tests** | pytest, with Playwright for the artefact assertions · Vitest + Playwright E2E for web | [../coderules/tooling.md](../coderules/tooling.md) |
 | **Package managers** | **uv** (Python) · pnpm (TypeScript) | [../coderules/dependencies.md](../coderules/dependencies.md) |
+| **Hosting** | Local-first. The deploy target is decided at phase 29 | [infrastructure.md](infrastructure.md) |
+
+**Removed by v4** (phase 21 does the deleting; the last state of each is at commit `8169fd9`):
+- the `render` service and the v3 upload `worker` (unrelated to v4's `api/worker.py`)
+- MinIO and `docker-compose.yml`
+- Better Auth + Drizzle, and the RLS migrations
+- the quotas, kill-switch, teams and `briefs` tables
+- the Pydantic→Zod `Deck` codegen and the TypeScript renderer
 
 ## Documents
 
 | | |
 |---|---|
-| [frontend.md](frontend.md) | The editor, the exported deck, and what JS ships inside it |
-| [backend.md](backend.md) | App server, the two workers, data, auth, jobs |
-| [ai-stack.md](ai-stack.md) | Model neutrality, evals, why there is no agent framework, and what the Python backend costs |
-| [pipeline-tools.md](pipeline-tools.md) | What the model may call, and the loop that lets it look at what it made |
-| [infrastructure.md](infrastructure.md) | AWS topology, delivery, secrets, CI/CD, local dev, the repos |
-| [decisions.md](decisions.md) | The full log — every choice, its rejected alternative, and what it changed elsewhere |
+| [frontend.md](frontend.md) | The app as UI only, the exported deck and its player, fonts, and what talks to the network |
+| [backend.md](backend.md) | What `api` owns, generation jobs, the browser in the backend, data, the API contract, auth at phase 29 |
+| [ai-stack.md](ai-stack.md) | Model neutrality, the stages and their models, text mode, web search, prompt caching, evals, and why there is no agent framework |
+| [pipeline-tools.md](pipeline-tools.md) | What the model may call (one read-only tool), what our code calls on its behalf, and the measured QA loop |
+| [infrastructure.md](infrastructure.md) | Local-first development, the repo, CI, secrets, and what phase 29 decides |
+| [decisions.md](decisions.md) | The full log: every choice, its rejected alternative, and what it changed elsewhere |
 
 ## Find it fast
 
 | If you need… | Go to |
 |---|---|
+| Why the model may now write CSS | [decisions.md](decisions.md) → "2026-09-26 — v4" |
+| Which model runs which stage | [ai-stack.md](ai-stack.md) → "Stages and models (v4)" |
+| Why slide HTML is not returned as JSON | [ai-stack.md](ai-stack.md) → "Text mode for slide HTML" |
+| How web search works and what it costs | [ai-stack.md](ai-stack.md) → "Web search" |
+| Prompt caching, and why the prompt order matters | [ai-stack.md](ai-stack.md) → "Prompt caching" |
+| How a build streams, survives a reload, and aborts | [backend.md](backend.md) → "The worker"; [../v4/engine.md](../v4/engine.md) → "Generation jobs and events" |
+| Why models and Chromium run in a separate process | [backend.md](backend.md) → "The worker" |
+| Who may write a deck, and what a 409 means | [backend.md](backend.md) → "Data" |
+| Where decks are stored before accounts exist | [backend.md](backend.md) → "Data" |
+| How web gets its types | [backend.md](backend.md) → "The API contract" |
+| Auth, when it arrives | [backend.md](backend.md) → "Auth (phase 29)" |
+| How the app shows a slide without running its markup | [frontend.md](frontend.md) → "The app: UI only" |
 | What JavaScript ships in a deck | [frontend.md](frontend.md) → "The exported deck" |
 | Why the exported deck makes zero network requests | [frontend.md](frontend.md) → "What talks to the network" |
-| Editor state, undo/redo (v2) | [frontend.md](frontend.md) → "The editor" |
-| How generation streams to the UI | [frontend.md](frontend.md) → "Streaming" |
-| Font licensing, and embedding | [frontend.md](frontend.md) → "Fonts" |
-| What each runtime may touch, and why there are five | [backend.md](backend.md) → "The five runtimes" |
-| Which ORM owns which tables — **read before any migration** | [backend.md](backend.md) → "Two ORMs, one database" |
-| The RLS session-variable pattern, and why there are now two wrappers | [backend.md](backend.md) → "Isolation" |
-| Auth — why Better Auth stayed in Node | [backend.md](backend.md) → "Auth: Better Auth, in Node" |
-| How the Python API learns who the user is | [backend.md](backend.md) → "Session resolution" |
-| Where the deck renders | [backend.md](backend.md) → "Publishing — where the render happens" |
-| Jobs, and transactional enqueue | [backend.md](backend.md) → "Jobs: PGQueuer" |
-| Which model to use | [ai-stack.md](ai-stack.md) → "The stance: no favourite model", "What actually constrains the choice" |
-| The eval harness | [ai-stack.md](ai-stack.md) → "Evals — the missing apparatus" |
+| Font licensing, and why fonts are not subset | [frontend.md](frontend.md) → "Fonts" |
+| What the model is allowed to call | [pipeline-tools.md](pipeline-tools.md) → "The one tool" |
+| The render → measure → repair loop | [pipeline-tools.md](pipeline-tools.md) → "The QA loop" |
 | Why there is no agent framework, and the CVE evidence | [ai-stack.md](ai-stack.md) → "Agent framework: none" |
-| Which languages run where, and what the split costs | [ai-stack.md](ai-stack.md) → "Language" |
-| How the `Deck` schema crosses the language boundary | [ai-stack.md](ai-stack.md) → "The `Deck` schema, which is the whole cost of this move" |
-| Why DSPy is allowed but only offline | [ai-stack.md](ai-stack.md) → "DSPy — now native, and still offline" |
-| What the model is allowed to call | [pipeline-tools.md](pipeline-tools.md) → "The three tiers", "The catalog, by phase" |
-| The render-and-look loop | [pipeline-tools.md](pipeline-tools.md) → "The visual verification loop" |
-| AWS topology, subnets, isolation | [infrastructure.md](infrastructure.md) → "AWS topology" |
-| How hosted decks are delivered (v3) | [infrastructure.md](infrastructure.md) → "Delivery" |
-| Secrets and KMS | [infrastructure.md](infrastructure.md) → "Secrets" |
-| Local development setup | [infrastructure.md](infrastructure.md) → "Local development" |
-| What v1 actually needs to run | [infrastructure.md](infrastructure.md) → "What v1 actually stands up" (Docker Compose, no AWS) |
+| What only phase 29 decides (hosting, auth vendor, queue) | [infrastructure.md](infrastructure.md) → "What phase 29 decides" |
 | Why a choice was made, or what it replaced | [decisions.md](decisions.md) → "The log", "What this supersedes" |
 | What is still undecided | [decisions.md](decisions.md) → "Still open" |
 
 ## Build it in this order
 
-Most of the above is not needed for a long time, and standing it up early is weeks spent on infrastructure before the thing that decides whether this product works — the renderer — exists at all.
+The v4 order is the whole lesson of v1–v3: those releases built accounts, RLS, quotas, teams and publishing around decks that did not look designed. v4 puts infrastructure last, behind a human gate.
 
-| Version | Infrastructure |
+| Phase | Stack it needs |
 |---|---|
-| **v1** | **Docker Compose and two dev servers.** Local Postgres, `web` on Next.js, `api` on uvicorn, local disk via `storage`, no AWS account, no auth, no `jobs`, no CDN. The artefact is a downloadable single-file HTML (`docs/v1/plan/05-export.md`) |
-| **v2** | Adds the editor (re-skin, undo/redo) and the vision critic; still no auth, no hosting |
-| **v3** | Everything else — AWS, RDS, Better Auth, `jobs`, S3/CloudFront for the hosted URL, Terraform, CI/CD |
+| **21 reset** | uv + pnpm, the gate, the bench. Deletes `render/`, `worker/`, compose and the v3 tables |
+| **22 engine spike** | The engine alone, from the CLI: OpenRouter, Playwright, `nh3`, `tinycss2`. **Nothing after it starts until the owner scores the wall ≥4/5** |
+| **23 design system** | The font registry, palettes, the sampler. Pure code |
+| **24 content engine** | `openrouter:web_search`, the `Fact` ledger |
+| **25 composition + QA** | Image models, Pillow, the full measured loop |
+| **26 player + export** | The player, the two export flavours, PDF |
+| **27 app** | `web` arrives, and the backend splits into `api` and `worker`: Next.js, shadcn/Tailwind, `openapi-typescript`, SSE |
+| **28 editor** | Nothing new |
+| **29 accounts + deploy** | Postgres + SQLAlchemy + Alembic, the managed IdP + PyJWT, budget caps per user, the kill switch, the deploy target |
 
-**v1 is where the language split first costs something real**, and it is worth knowing before you feel it: two dev servers, two package managers, and a codegen step between them. In v1 the renderer runs in the browser only, so `render` is not needed — the export is a `web` route writing a single HTML file to local disk. That is the fallback the [backend.md](backend.md) design keeps.
-
-v1's verification list includes *"open the exported file from `file://` in an incognito window and confirm it works offline"*, which a local dev server satisfies. The real deployment lands with the release that has real users (the hosted URL in v3), which is the same boundary every other v3 control sits on ([../security/README.md](../security/README.md)).
-
-**The one thing to get right early is `storage.ts`** — the single abstraction with a planned second implementation. Point it at the S3 API from day one and run MinIO locally, and the local-to-production move is a credential change rather than a rewrite.
+**The two things to get right early:**
+- **The browser aborts every request from day one.** It renders model-written HTML in the process holding the model key.
+- **`api/store/files.py` is the only module that writes a deck.** That makes phase 29's move to Postgres a change to one module rather than a hunt.
 
 ## What this changed
 
-Several of these decisions supersede things earlier docs locked. The reversals are recorded in [decisions.md](decisions.md), and the security-relevant ones have been patched at the source rather than left to contradict:
+The 2026-09-26 reversals, each recorded with its reason in [decisions.md](decisions.md):
 
-- **The backend is Python.** `api` and `jobs` are FastAPI and PGQueuer; `web`, `render`, and the fetch worker stay TypeScript. Pydantic owns the `Deck` schema and TypeScript is generated from it
-- **Supabase is out.** Postgres moves to RDS/Aurora, auth to Better Auth, storage to S3. `auth.uid()` is replaced by a session variable in every RLS policy
-- **`connect-src 'none'` is back, because the artefact is a file.** The old product weakened it to two endpoints for personalization and analytics; the offline single-file deck talks to *nothing*. A hosted URL (v3) serves the same bytes
-- **One isolated worker became two, and then five runtimes**, split on trust — except `render`, which is split on language
-- **The artefact is a downloadable single-file HTML, not a served page.** The hosted URL is a v3 distribution layer
-- **Model calls go through OpenRouter**, so the schema constraint is enforced by the schema parse rather than by the decoder. **Image generation uses OpenRouter image models behind the same seam**
-
-Two of those trade away a guarantee — the Python move and OpenRouter. It is deliberate, the reasoning is in [backend.md](backend.md), and the metric that tells you whether it was right — the repair rate — already exists in `v1/spec.md`.
+- **The model writes slide HTML and CSS within theme tokens.** "AI never writes styling" is retired, and a token rule plus a lint replace it
+- **`web` is UI only.** The TypeScript renderer, the `render` service and the `Deck` codegen are gone, and the backend assembles every deck
+- **Models and Chromium run in a worker process** (from phase 27). The internet-facing API holds no model key
+- **A fixed 1920×1080 canvas, scaled to fit**, replaces fluid `100vh` pages
+- **Facts come from web research with citations** and from what the user pastes
+- **Founders and sales first**: pitch, sales, launch, investor update, partnership
+- **Auth waits until phase 29 and moves to a managed provider.** FastAPI verifies JWTs, and a Python-owned `users` row keyed by the provider's `sub` keeps foreign keys real
+- **Python stays by the owner's decision.** DSPy/GEPA, the reason the move cited, was never used
 
 ## Connects to
 
 | | |
 |---|---|
-| [../coderules/README.md](../coderules/README.md) | The rules these choices imply, including the two new non-negotiables |
-| [../security/README.md](../security/README.md) | Every control assumes this topology — especially the two-worker split |
-| [../security/third-parties.md](../security/third-parties.md) | The data-flow consequence of routing model calls through OpenRouter |
-| `v1/spec.md` | The language half of the stack, settled earlier; the new artefact (single-file HTML) |
+| [../v4/spec.md](../v4/spec.md) | The decisions this directory implements |
+| [../v4/engine.md](../v4/engine.md) | The engine's layout, data model, events and model seam |
+| [../coderules/README.md](../coderules/README.md) | The rules these choices imply |
+| [../security/README.md](../security/README.md) | Every control assumes this topology, especially the three layers around AI-written HTML |
+| [../security/third-parties.md](../security/third-parties.md) | Where data goes when OpenRouter, its providers and its search engines see a prompt |

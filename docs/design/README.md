@@ -8,16 +8,16 @@ There are two design systems in this project and they are deliberately separate.
 
 | | Governs | Lives in |
 |---|---|---|
-| **The design engine** | The decks the product *emits*. The per-deck generated design system (type pairing, layout grammar, spacing, texture, color, motion) | `v1/`, `v2/` — the design registry and layout engine |
+| **The design engine** | The decks the product *emits*. The per-deck look (type pairing, palette, grid, motif, motion) and the slides the model composes inside it | [../v4/design-engine.md](../v4/design-engine.md) |
 | **Product design** — this directory | The marketing site, the app chrome, onboarding, pricing, the editor UI | here |
 
-They must not merge. The moment our own chrome is styled by a generated deck's tokens, the design engine stops being a product boundary and becomes a global stylesheet — and rule 7 in [../../AGENTS.md](../../AGENTS.md) is the reason that matters. Tailwind for our chrome, CSS variables for the output, and no path between them ([../techstack/frontend.md](../techstack/frontend.md)).
+They must not merge. The moment our own chrome is styled by a generated deck's tokens, the design engine stops being a product boundary and becomes a global stylesheet. Tailwind for our chrome, theme tokens for the output, and no path between them ([../techstack/frontend.md](../techstack/frontend.md)). Since v4 the app never renders a slide itself: it shows backend-produced slides in a script-less iframe, so the two stylesheets cannot meet ([../v4/engine.md](../v4/engine.md)).
 
 ## The thesis
 
 **Our own surfaces are the first proof of the central claim.** The product says AI-generated experiences can be genuinely beautiful. Anyone who lands on a generic SaaS marketing page has already been told the opposite, before reading a word.
 
-And the counterweight, from `v1/spec.md`: **appeal has to be aimed.** Tome was beautiful, reached millions, and died at ~$4M ARR because the people it attracted would not pay. The goal is not maximum appeal. It is *irresistible to a marketer with a launch in three weeks*, and mildly intimidating to everyone else.
+And the counterweight, from [../findings.md](../findings.md) → "The category": **appeal has to be aimed.** Tome was beautiful, reached millions, and died at ~$4M ARR because the people it attracted would not pay. The goal is not maximum appeal. It is *irresistible to a founder pitching on Thursday*, and mildly intimidating to everyone else. The first users are founders and salespeople ([../v4/spec.md](../v4/spec.md) → Locked decisions → First users).
 
 Both of those are argued in [principles.md](principles.md).
 
@@ -29,25 +29,24 @@ Both of those are argued in [principles.md](principles.md).
 | [questions.md](questions.md) | **The question bank.** 276 open questions across 24 areas, each with a recommended default. Answer by exception |
 | [brand.md](brand.md) | Identity: the gallery-wall decision, naming, type, colour, motion, voice |
 | [website.md](website.md) | The marketing site: the hero, the recorded build, homepage order, showcase, pricing |
-| [app.md](app.md) | The product UI: four hot surfaces, the editor, the missing colour picker, first run, failure states |
+| [app.md](app.md) | The product UI for v4: composer, interview + outline gate, pick a look, generation watch, editor, present and export, the missing colour picker, first run, failure states |
 
 **Four decisions are locked** and the rest of the bank is open: the name is a placeholder (`brand.md`), our surfaces are a light editorial gallery wall (`brand.md`), the hero is a live artifact plus a recorded build (`website.md`), and the paywall is on publishing rather than generating (`website.md`).
 
 ## Version gating
 
-Product design follows the same discipline as [../security/README.md](../security/README.md): designed early, built when a version needs it. v1 is a lean flow (interview → mapping → build → review → export) with no auth and no deployment, so almost nothing here *ships* in v1 — but the parts that are expensive to retrofit are decided in v1, exactly like CSS logical properties.
+**Updated 2026-09-26 for v4.** Product design follows the same discipline as [../security/README.md](../security/README.md): designed early, built when a phase needs it. v4 builds the engine first (phases 21–26) and the app after it (27–28); accounts and deployment are phase 29 ([../v4/plan/README.md](../v4/plan/README.md)). The parts that are expensive to retrofit are decided now.
 
 | Surface | Designed | Built |
 |---|---|---|
-| Name, voice, vocabulary | v1 | v1 — it leaks into every UI string and every doc |
-| Our brand identity | v1 | v1, at whatever fidelity a solo builder can hold |
-| App chrome: intake interview, outline gate, generation watch, review | v1 | v1 — it is the only UI that exists |
-| Empty, error, and refusal states | v1 | v1 — the AI refuses in v1 and something has to be on screen |
-| Marketing site | v1 | v3, when there is a URL to give someone |
-| Pricing page | v2 | v3 |
-| Signup, auth, account | v3 | v3 |
-| Editor (post-generation editing, re-skin) | v2 | v2 |
-| Gallery, showcase, "made with" badge | v2 | v3 — it needs published work to show |
+| Name, voice, vocabulary | Now | Phase 27 — it leaks into every UI string |
+| Our brand identity | Now | Phase 27, at whatever fidelity a solo builder can hold |
+| Composer, interview + outline gate, pick a look, generation watch | Now ([app.md](app.md)) | Phase 27 |
+| Editor, present, export reveal | Now ([app.md](app.md)) | Phase 28 |
+| Empty, error, and refusal states | Now | Phases 27–28 — the AI refuses and something has to be on screen |
+| Signup, auth, account, budget-cap states | Now | Phase 29 |
+| Marketing site, pricing page | Now ([website.md](website.md)) | After phase 29, when there is a URL to give someone |
+| Gallery, showcase, "made with" badge, hosted URL | Now | Skipped in v4 — needs published work and a hosted URL ([../v4/plan/29-accounts-deploy.md](../v4/plan/29-accounts-deploy.md) → Skipped) |
 
 ## What this directory obligates elsewhere
 
@@ -55,12 +54,13 @@ Design decisions that turned into requirements in other documents. Listed here s
 
 | Obligation | Landed in |
 |---|---|---|
-| The interview is an interview, not a chat | `docs/v1/plan/02-interview.md` |
-| The outline gate shows claim provenance and is not a list with a button | `docs/v1/plan/02-interview.md` |
-| The review loop is human in v1, not an AI judge | `docs/v1/plan/07-visual-review.md` |
-| The badge + AI disclosure are one mark, and only one of them is removable | `docs/v3/spec.md`, `docs/v3/plan/18-hosting.md` |
-| Our chrome must not converge on any generated design family | `docs/v2/plan/12-editor.md`, [principles.md](principles.md) → principle 9 |
-| The marketing hero is a real exported deck, not a canned template | [website.md](website.md), `docs/v1/plan/05-export.md` |
+| The interview is an interview, not a chat: ≤5 questions with suggested answers, skippable | [../v4/content.md](../v4/content.md) → "Interview" |
+| The outline gate shows YOU / AI / WEB provenance and flags unsourced numbers | [../v4/content.md](../v4/content.md) → "Research and the Fact ledger" |
+| Design is judged by a human on the bench wall, not by an AI judge | [../v4/bench.md](../v4/bench.md) |
+| The banned-pattern list governs generated slides | [../v4/design-engine.md](../v4/design-engine.md) → "Slide lint" |
+| The export carries a machine-readable AI marker; a badge, if one ever exists, is separate and removable | [../v4/spec.md](../v4/spec.md) → Locked decisions → Export |
+| Our chrome's display face is never a deck display face | [../v4/design-engine.md](../v4/design-engine.md) → "Registry", [brand.md](brand.md) |
+| The marketing hero is a real exported deck, not a canned template | [website.md](website.md), [../v4/plan/26-player-export.md](../v4/plan/26-player-export.md) |
 | Showcase requires written per-artifact release after the customer's launch | [../security/tenancy-and-data.md](../security/tenancy-and-data.md) |
 | Marketing analytics is self-hosted, so it adds no subprocessor | [../security/third-parties.md](../security/third-parties.md) |
 
@@ -74,14 +74,15 @@ Design decisions that turned into requirements in other documents. Listed here s
 | How to demo a product whose demo costs a real generation | [principles.md](principles.md) → principle 7 |
 | The colour picker users will look for and never find | [app.md](app.md) → "The colour picker that does not exist" |
 | What to name this thing | [brand.md](brand.md) → "Naming" |
-| The one v1 action item hiding in a v3 document | [website.md](website.md) → keep real exported decks for the hero |
+| The one early action item hiding in a late document | [website.md](website.md) → record generation event logs from the first good bench run |
 | Every open decision, with a default | [questions.md](questions.md) |
 
 ## Connects to
 
 | | |
 |---|---|
-| `v1/spec.md` | Who we are aiming at, and the per-deck design engine the output comes from |
+| [../v4/spec.md](../v4/spec.md) | Who we are aiming at, and the decisions the app is built on |
+| [../v4/design-engine.md](../v4/design-engine.md) | The *other* design system: the looks and the slides |
 | [../techstack/frontend.md](../techstack/frontend.md) | shadcn/ui, Tailwind-on-chrome-only, and the cold 90% |
 | [../coderules/performance.md](../coderules/performance.md) | The cold-90% rule this directory applies to *design attention*, not just code |
-| `v3/spec.md` | AI-disclosure obligations that are a design constraint on both our site and the output |
+| [../findings.md](../findings.md) | The category evidence, and the platform fact behind the AI-disclosure obligation (EU AI Act Art. 50) |

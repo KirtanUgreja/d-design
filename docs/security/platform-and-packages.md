@@ -16,17 +16,17 @@ The patch is not the lesson. The lesson is durable and it is a design rule:
 
 > **Middleware is not an authorization boundary. It is an optimization.**
 
-Do the real check where the data is read — which in this codebase means inside the feature data modules ([../coderules/patterns.md](../coderules/patterns.md)), the same place the service-role filter and the RLS assumption already live. A redirect in middleware is a nicety that saves a round trip. If skipping it grants access, the access control was in the wrong place, and the next framework bug of this shape will find it again.
+Do the real check where the data is read — which in this codebase means inside the one data module ([../coderules/patterns.md](../coderules/patterns.md)), the same place the owner filter lives. A redirect in middleware is a nicety that saves a round trip. If skipping it grants access, the access control was in the wrong place, and the next framework bug of this shape will find it again.
 
-This rule costs nothing here because the architecture already puts data access in one module per feature — and the Python move made it structural rather than disciplinary. **`web` holds no application table at all**, so a Next.js middleware bypass has nothing to bypass: the authorization happens in `api`, in another process, behind a session lookup that fails closed ([../techstack/backend.md](../techstack/backend.md)). This is one of the few places the split is a security *gain* rather than a cost. It is worth writing down precisely because middleware is the *obvious* place to put an auth check, and the obvious thing is wrong.
+This rule costs nothing here because the architecture already puts data access in one module per feature — and the Python move made it structural rather than disciplinary. **`web` holds no data at all**, so a Next.js middleware bypass has nothing to bypass: the authorization happens in `api`, in another process, behind a JWT verification that fails closed ([../techstack/backend.md](../techstack/backend.md)). This is one of the few places the split is a security *gain* rather than a cost. It is worth writing down precisely because middleware is the *obvious* place to put an auth check, and the obvious thing is wrong.
 
 ### The 2026 advisories that map onto this product
 
 | Advisory class | Why it matters here |
 |---|---|
 | **Cache confusion — CVE-2026-64647 / 64648** | Cached responses shared between users under specific caching conditions. **The v1 artefact is a local file — it is never cached by a shared cache.** A hosted URL (v3) is static bytes with no per-viewer variation. See the section below |
-| **Image Optimization DoS via malicious SVG** — CVE-2026-64644 | CPU exhaustion at `/_next/image` on self-hosted deployments. **Brand-kit upload (v3) accepts SVG.** Two features that are individually fine and hostile together |
-| **SSRF via `rewrites()` / `redirects()`** | A rule building its destination hostname from request-controlled input becomes SSRF (rewrites) or open redirect (redirects). Custom domains (v3) are exactly the feature that invites dynamic rewrite rules |
+| **Image Optimization DoS via malicious SVG** — CVE-2026-64644 | CPU exhaustion at `/_next/image` on self-hosted deployments. v4 has no uploads and serves no SVG through Next; keep remote optimization off so this stays irrelevant |
+| **SSRF via `rewrites()` / `redirects()`** | A rule building its destination hostname from request-controlled input becomes SSRF (rewrites) or open redirect (redirects). v4's one rewrite, `/api/*` to FastAPI, has a fixed destination. Custom domains, if ever built, are exactly the feature that invites dynamic rules |
 | **Auth bypass via App Router segment-prefetch** | Same lesson as CVE-2025-29927 — route-level access control is fragile in ways the data layer is not |
 | **Unbounded Server Action payloads (Edge)** — CVE-2026-64646 | Memory exhaustion. Server Actions need explicit size limits |
 | **XSS via CSP nonces and `beforeInteractive` scripts** | Interacts with the deck CSP in [content-and-web.md](content-and-web.md) |
@@ -35,7 +35,7 @@ This rule costs nothing here because the architecture already puts data access i
 
 ### Two decisions that fall out of this
 
-**Disable remote image optimization.** All images in this product are either generated (embedded as data URIs) or uploaded (re-encoded at ingest, v3 — [content-and-web.md](content-and-web.md)). `/_next/image` fetching arbitrary remote URLs is a feature this product does not need, and it is simultaneously an SSRF surface and the SVG DoS surface above. Turning off what you do not use is the cheapest control available. Optimization of already-trusted, already-re-encoded local assets is fine; the remote fetch path is not.
+**Disable remote image optimization.** All images in this product are generated and embedded as data URIs. `/_next/image` fetching arbitrary remote URLs is a feature this product does not need, and it is simultaneously an SSRF surface and the SVG DoS surface above. Turning off what you do not use is the cheapest control available. Optimization of already-trusted, already-re-encoded local assets is fine; the remote fetch path is not.
 
 **Never let a request-controlled value into a rewrite destination.** Custom-domain routing (v3) maps a verified hostname to a deck id via a database lookup — never by constructing a destination from the incoming `Host` header. The hostname grammar validation in [content-and-web.md](content-and-web.md) is the second layer; the lookup is the first.
 
@@ -43,9 +43,9 @@ This rule costs nothing here because the architecture already puts data access i
 
 Serious enough to be its own section, and the v1 artefact nearly eliminates it.
 
-**The offline file (v1) is not cached by anything.** It is a local `.html` file served from `file://` or sent as an attachment — there is no CDN, no shared cache, no URL to deceive. The class does not exist for the primary artefact.
+**The offline file is not cached by anything.** It is a local `.html` file served from `file://` or sent as an attachment — there is no CDN, no shared cache, no URL to deceive. The class does not exist for the primary artefact.
 
-**The hosted URL (v3) is static bytes with no per-viewer variation.** It is the same single-file HTML served from S3+CloudFront. There is no recipient token, no session, no cookie that varies a response — the personalization features that made cache deception valuable are gone with the old served-page product. A poisoned entry would serve every viewer the same bytes, which is bad but not a privacy breach.
+**There is no hosted URL in v4.** If one is built, it is static bytes with no per-viewer variation: the same single-file HTML. There is no recipient token, no session, no cookie that varies a response — the personalization features that made cache deception valuable are gone with the old served-page product. A poisoned entry would serve every viewer the same bytes, which is bad but not a privacy breach.
 
 The controls that remain, in dependency order:
 
@@ -59,20 +59,24 @@ If a hosted-URL analytics or personalization feature ever reintroduces per-viewe
 
 ## The packages that touch untrusted input
 
-Ordinary application dependencies are a low-grade risk. These are different: they parse hostile bytes by design, and a bug in one is directly reachable by an attacker.
+Ordinary application dependencies are a low-grade risk. These are different: they parse hostile bytes by design, and a bug in one is directly reachable by an attacker. **The v4 list (2026-09-26)** — in v4 the hostile bytes are model-written markup and model-generated images, not uploads:
 
-| Package class | Role | What to know |
+| Package | Role | What to know |
 |---|---|---|
-| **SVG sanitizer** (DOMPurify) | Sanitize uploaded SVG | See below — a continuous stream of bypasses |
-| **`sharp`** | Image re-encode, EXIF strip | Wraps libvips, a large native C library. Decompression bombs are the primary risk, capped before decode |
-| **PDF text extraction** | Intake imports | Historically the richest source of parser CVEs in this list. Run it isolated |
-| **GLB / Draco / meshopt decoders** | 3D upload (v3) | Compression codecs. Same bomb shape as images, caps enforced before full decode |
-| **Font parsing** | Per-script fonts (v3) | Serve from a curated registry; never parse a user-uploaded font |
-| **Headless Chromium** (Playwright) | URL screenshots (v3) | The most-attacked software on the internet, pointed at pages an attacker chose. Its own section in [infrastructure.md](infrastructure.md) — and the container default is *unsandboxed*, which is the trap |
+| **`nh3`** (Rust `ammonia` bindings) | The HTML allowlist sanitizer for every slide | The direct analogue of DOMPurify below. Expect bypasses, watch its advisories by name, and never let it be the only layer ([content-and-web.md](content-and-web.md)) |
+| **`tinycss2`** | Parses slide CSS for the lint | A lint that misparses is a lint that misses. The lint rejects what it cannot parse rather than passing it through |
+| **Headless Chromium** (Playwright, Python) | Renders every slide for QA, thumbnails and PDF | Renders attacker-influenced markup in the process holding the model key. Network cut, no slide script, no inbound port ([infrastructure.md](infrastructure.md) → "Chromium in the worker") |
+| **Pillow** | Re-encodes generated images to webp | A native decoder. Its input comes from an image model, not a user, which is lower risk but not none. Cap dimensions before decode |
+| **PyJWT** (phase 29) | Verifies the identity provider's tokens | A credential path. Pass an explicit algorithm allowlist; never let the token choose its algorithm |
+| **`fontTools`** | **Not installed.** Deferred with font subsetting | If it arrives it parses only our own vendored fonts, never a user's |
+
+**Not in v4, and returning only with their features:** DOMPurify, `sharp`, PDF text extraction, SVG sanitising, 3D decoders. v3 ran them in an isolated upload worker, which is deleted. They come back with file upload, inside a process with nothing to steal.
 
 ### DOMPurify is the case study for why layering is the real control
 
-DOMPurify is the best SVG/HTML sanitizer available and it is the correct choice. It also had **at least four distinct XSS bypasses disclosed in 2025–2026**:
+v4 does not use DOMPurify; its sanitizer is `nh3`. The history below is kept because it is the measured evidence for how any sanitizer behaves over time.
+
+DOMPurify is the best SVG/HTML sanitizer in JavaScript. It also had **at least four distinct XSS bypasses disclosed in 2025–2026**:
 
 | | |
 |---|---|
@@ -85,9 +89,9 @@ DOMPurify is the best SVG/HTML sanitizer available and it is the correct choice.
 
 Two conclusions:
 
-**Track the floor, and expect it to move.** At time of writing that is **≥ 3.4.5**. It will be higher by the time this is built; the number matters less than knowing this package needs watching specifically, which is the point [operations.md](operations.md) makes about advisory-watching untrusted-input parsers by name.
+**Watch `nh3` the same way.** It needs advisory-watching by name, which is the point [operations.md](operations.md) makes about packages that touch untrusted input.
 
-**And this is the argument for the existing layering.** [content-and-web.md](content-and-web.md) already requires that SVG be served **only via `<img>`**, where script cannot execute regardless of what sanitization missed. Given four bypasses in eighteen months in the best tool available, that decision is not belt-and-braces — it is the actual control, and the sanitizer is the convenience layer. A design that relied on the sanitizer alone would have been exploitable four times in that window.
+**And this is the argument for v4's layering.** [content-and-web.md](content-and-web.md) renders sanitized slide markup only where no script runs and no request leaves. Given four bypasses in eighteen months in the best tool of its kind, that is not belt-and-braces — it is the actual control, and the sanitizer is the convenience layer. A design that relied on the sanitizer alone would have been exploitable four times in that window.
 
 The same reasoning applies to prototype pollution generally: CVE-2026-41238 turned a *non-security* bug elsewhere in an application into an XSS in DOMPurify. Prototype pollution is a gadget, and the defense is that untrusted input is schema-parsed into known shapes at entry ([../coderules/python.md](../coderules/python.md), [../coderules/typescript.md](../coderules/typescript.md)) rather than merged into objects.
 
@@ -95,7 +99,7 @@ The same reasoning applies to prototype pollution generally: CVE-2026-41238 turn
 
 *(researched August 2026)*
 
-New with the Python backend, and it needs its own section because it does not behave like the classes above. The untrusted-input parsers are dangerous and **contained by placement** — they live in the fetch worker, which has nothing worth stealing ([../coderules/dependencies.md](../coderules/dependencies.md)). An agent framework would be dangerous and **uncontainable**, because its whole job is to sit in the process that orchestrates: `api`, which holds database credentials, model credentials, and from v3 decrypted integration tokens.
+New with the Python backend, and it needs its own section because it does not behave like the classes above. An agent framework would be dangerous and **uncontainable**, because its whole job is to sit in the process that orchestrates: in v4 the worker, which holds the model key and the deck store.
 
 The class is being exploited, not theorised about:
 
@@ -114,7 +118,7 @@ The Cloud Security Alliance published a research note in March 2026 on agentic-f
 
 Two conclusions, and only the first is about frameworks:
 
-**This is a leg of the "no agent framework" decision**, not a caveat to it. [../techstack/ai-stack.md](../techstack/ai-stack.md) carries the full argument; the short version is that this pipeline is four sequential calls with a human gate, so the framework would add an actively-targeted attack surface to the most privileged process in the system in exchange for nothing.
+**This is a leg of the "no agent framework" decision**, not a caveat to it. [../techstack/ai-stack.md](../techstack/ai-stack.md) carries the full argument; the short version is that this pipeline is a fixed sequence of calls with two human gates, so the framework would add an actively-targeted attack surface to the most privileged process in the system in exchange for nothing.
 
 **And the deserialization pattern generalizes past frameworks.** Two of the CVEs above are "load a stored object, get code execution." Anything in this system that deserializes something it stored earlier is the same shape — and the answer is the one already written down: **untrusted input is schema-parsed into known types at entry** ([../coderules/python.md](../coderules/python.md)), never `pickle`, never `yaml.load`, never a msgpack blob reconstructed into arbitrary classes. `pickle` should be as unwelcome in this codebase as `eval`.
 
@@ -132,14 +136,16 @@ Not a lockfile — a set of statements about what is known-bad, to be re-checked
 |---|---|---|
 | **Next.js** | **15.5.21** or **16.2.11** | Covers May + July 2026 advisory sets |
 | **React** | Current with the Next.js release | The May 2026 release was joint React/Next.js |
-| **DOMPurify** | **≥ 3.4.5**, never 2.x | Four bypasses in 18 months; 2.x branch abandoned |
+| **`nh3`** | Latest | The slide sanitizer. Watched by name |
+| **Playwright / Chromium** | Latest | Renders model-written markup |
+| **DOMPurify** | **Not present** in v4. If it returns: ≥ 3.4.5, never 2.x | Four bypasses in 18 months; 2.x branch abandoned |
 | **Node** | Current Active LTS | Runtime CVEs are patched only on supported lines |
 | **Python** | Current stable, security-supported line | Same reasoning. An EOL minor gets no patches at all |
 | **Agent frameworks** | **Not present.** Grepped in CI | Not a floor — an absence. See above and [../coderules/dependencies.md](../coderules/dependencies.md) |
-| **`sharp` / libvips** | Latest | Native decoder against hostile input |
-| **Three.js + loaders** | Latest (v3) | Only if 3D blocks become a feature; the v1 artefact embeds images and fonts only |
+| **Pillow** | Latest | Native decoder |
+| **PyJWT** | Latest (phase 29) | Credential path |
 
-**The floors are a starting point, not the control.** The control is that CI fails on a known-critical advisory and that the four untrusted-input parsers above are watched by name. A table in a document goes stale; a failing build does not.
+**The floors are a starting point, not the control.** The control is that CI fails on a known-critical advisory and that the packages in the table above are watched by name. A table in a document goes stale; a failing build does not.
 
 ## The patch-speed tension, stated honestly
 
@@ -155,10 +161,9 @@ Two rules in this repository pull against each other, and it is better to name t
 Additions to [operations.md](operations.md):
 
 - Framework version is at or above the floor, verified at build, not by memory
-- No transitive DOMPurify 2.x anywhere in the tree
+- `nh3`, Playwright and Pillow are current
 - Remote image optimization is off
 - No rewrite or redirect destination is built from request-controlled input
-- `/r/[token]` responses carry `Cache-Control: private, no-store`, asserted against the real CDN rather than the origin
 - A lockfile diff is reviewed on every dependency update, **in both ecosystems** — the update itself is the delivery mechanism for A03
 - No agent framework is in `pyproject.toml`, asserted by CI rather than by memory
 - No `pickle`, `yaml.load`, or arbitrary-class deserialization anywhere in `api`

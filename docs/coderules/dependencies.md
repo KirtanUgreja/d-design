@@ -6,6 +6,40 @@
 
 Not a ban — a speed bump. The cost of a dependency is not install time; it is the security surface, the breaking changes, the transitive tree, and the fact that you now maintain a relationship with code you did not write. A few lines you own beat a package you rent, until they clearly don't.
 
+## v4 — read this before the lists below
+
+> **2026-09-26.** v4 ([../v4/spec.md](../v4/spec.md)) deletes `render/`, the upload worker, `web/` as it stood, and most of `api/`'s features. **The baseline and ledger below still describe v3 and are left as they are on purpose**: phase 21 ([../v4/plan/21-reset.md](../v4/plan/21-reset.md)) removes each row in the same commit that removes the package, so the ledger never claims less than what is installed.
+
+**Superseded by v4, to be removed in phase 21:**
+
+| Goes | Why |
+|---|---|
+| `@d-design/schema`, Zod as the generated validator, the "You are now a publisher" section | No TypeScript renderer; `web` gets payload types from OpenAPI ([typescript.md](typescript.md)) |
+| Drizzle, `pg`, Better Auth, `@aws-sdk/client-s3`, MinIO, Zustand, Motion | `web` has no database, auth tables or storage; slides are backend HTML. Auth returns in phase 29 as a managed provider verified by JWT in Python |
+| `sharp`, `jsdom`, `dompurify`, `file-type`, esbuild for `render`, `@fontsource/*` | The upload worker and the render service are deleted. Fonts are vendored woff2 in `api/engine/design/fonts/` |
+| SQLAlchemy, asyncpg, Alembic | Leave with the v3 tables; **return in phase 29**, each with a fresh row |
+| The "fetch worker" placement rung | There is no fetch worker. See the placement note below |
+
+**Expected additions. Each needs its own ledger row in the commit that adds it; none is approved by appearing here:**
+
+| Package | Where | For | Phase |
+|---|---|---|---|
+| `nh3` | api | The HTML allowlist sanitizer for model-written slides. A sanitizer is on the never-write-your-own side of the line | 22 |
+| `tinycss2` | api | Parsing slide CSS so the lint can walk real declarations. Lint only: scoping is Declarative Shadow DOM, not selector rewriting | 22 |
+| `playwright` (Python) | api | Chromium for QA measurement, thumbnails and PDF | 22 |
+| `Pillow` | api | Re-encoding generated images to webp. Webp only | 22–25 |
+| `openapi-typescript` | web (dev) | Generating `web/lib/api/schema.d.ts` | 21 or 27 |
+| Tailwind + shadcn/ui (copy-in source on Radix primitives) | web | Our chrome only, never a deck | 27 |
+| A managed-auth SDK, a JWT/JWKS verifier, SQLAlchemy + asyncpg + Alembic | web / api | Accounts and Postgres | 29 |
+
+**Deliberately not added:**
+- **`fonttools` + `brotli`.** Vendored Latin-subset woff2 are embedded as-is. Trigger: a non-Latin locale, or fonts exceeding 1 MB of an export.
+- **An icon set.** v4 slides have no icons.
+- **A chart library.** Charts are SVG built by our own code from a chart spec.
+- **An agent framework.** Unchanged; see the rule below.
+
+**Placement in v4.** Two processes matter. The **worker** (`api/worker.py`, phase 27) holds the model key and drives Chromium over model-written HTML, with all network aborted. The **API** process holds the data. Neither parses user-uploaded bytes in v4. When uploads return (the first brand-kit user), the parser goes in its own isolated process, and the old rule below applies again.
+
 ## The baseline
 
 Already decided, no justification needed — these are the stack. **Two languages means two baselines**, and a package on one list is not thereby approved on the other.

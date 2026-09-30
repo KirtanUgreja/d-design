@@ -1,94 +1,122 @@
 # Frontend
 
-Two very different frontends share one component tree: an editor (v2) that must feel instant, and an exported deck that must be a single offline file weighing almost nothing. The rule that keeps them from becoming two codebases is [../coderules/patterns.md](../coderules/patterns.md)'s pure renderer — **the same React components produce both**, and neither knows which one it is.
+Two things a user sees, built in two different places. **The app** is a Next.js UI that renders no slide. **The exported deck** is one offline file the backend assembles. **Rewritten 2026-09-26 for v4** ([../v4/spec.md](../v4/spec.md)).
+
+v3 shared one React component tree between an editor and an exporter, on the rule that the same renderer must produce both. v4 keeps the guarantee and drops the mechanism: there is one source of slide HTML, the backend, and both the editor and the export show those bytes.
+
+## The app: UI only
+
+Next.js 16 App Router, React 19, TypeScript strict. It arrives in phase 27.
+
+**`web` has no database, no model key and no renderer.** It calls the API and draws chrome.
+
+| What the user sees | Where it comes from |
+|---|---|
+| A slide on the canvas | The slide's HTML document from the backend, placed in a `srcdoc` iframe |
+| A thumbnail | The QA screenshot the worker already took |
+| Present mode | **The export file itself**, in an iframe. What you present is byte-for-byte what you send |
+| The three looks | Backend-rendered cover and second slide per look |
+
+### The slide iframe
+
+```html
+<iframe sandbox="allow-same-origin" srcdoc="…the slide document from the API…">
+```
+
+**`allow-same-origin` without `allow-scripts`.** The slide's document cannot run any script. Because it is same-origin, the parent *can* reach its DOM, which is how inline editing works: our code sets `contenteditable="plaintext-only"` on the slide's `data-field` nodes and listens from outside. `plaintext-only` means a paste cannot introduce markup.
+
+Two rules keep that safe:
+
+- **Never add `allow-scripts`.** Together with `allow-same-origin` it lets the framed document remove its own sandbox.
+- The document carries its own CSP meta, `default-src 'none'` plus inline styles and data images and fonts ([../security/content-and-web.md](../security/content-and-web.md)).
+
+Per-slide CSS is scoped by **Declarative Shadow DOM**, so the parent reaches fields through the slide's shadow root. That is one line of code to get wrong in every edit path; keep it in one helper.
+
+**Present mode is a different frame.** The export runs our player script, so that iframe needs `allow-scripts` and therefore must **not** have `allow-same-origin`. Phase 27 verifies fullscreen and the presenter popup work from inside it.
+
+### API types
+
+`openapi-typescript` generates `web/lib/api/schema.d.ts` from FastAPI's OpenAPI ([backend.md](backend.md) → "The API contract"). Never hand-edited; the gate fails on a diff. One typed client module wraps `fetch`, and components never call `fetch` directly.
+
+### Streaming
+
+A build streams from `GET /decks/{id}/events`.
+
+**Web reads it with a fetch-stream reader, not `EventSource`.** `EventSource` cannot send an `Authorization` header, and phase 29 needs a Bearer token. Building on `fetch` from phase 27 means auth does not force a rewrite of the generation watch.
+
+- On reconnect the client sends `Last-Event-ID` and the API replays what was missed.
+- The unit is a whole checked slide. Ghost slots fill in place as `slide_ready` arrives.
+- **Dev proxy:** Next rewrites `/api/*` to FastAPI so everything is same-origin. **Verify the rewrite does not buffer the stream** at phase 27; if it does, the events route is fetched from the API origin directly with CORS for that one route.
+
+### UI: shadcn/ui and Tailwind 4
+
+Copy-in components on Radix primitives, styled with our brand tokens ([../design/brand.md](../design/brand.md)): light warm-neutral, hairlines instead of shadows, one quiet accent. Radix supplies focus traps, dismissible layers and keyboard navigation, which [../coderules/README.md](../coderules/README.md) says never to simplify away.
+
+**Tailwind is for our chrome only and cannot reach a slide**: slides live in an iframe, in a shadow root, with their own stylesheet. v3 imported Tailwind, used none of it, and hand-wrote 578 lines of CSS.
+
+The shadcn defaults are a starting point, not an identity ([../design/principles.md](../design/principles.md) §5).
+
+### State
+
+The server holds the deck and its versions, so undo and redo are server operations. Client state is what is on screen: the selected slide, an in-flight edit, the stream. Whether that needs Zustand is decided in phase 28.
+
+Edits can be refused with **409 while a build runs** ([backend.md](backend.md) → "Data"). The editor shows that as "still generating", not as an error.
 
 ## The exported deck
 
-Publishing renders the deck tree to the single-file HTML — fonts, images, and motion inlined — and writes it to disk (v1) or S3 (v3). The file then needs no hydration: it is self-contained and progressive by design.
+One `.html` file, assembled by the backend (`api/engine/export/`). It is the product.
 
-The alternative — render to HTML and ship a small hand-written IntersectionObserver runtime instead of React — would produce a lighter page and was rejected for one reason: **it implements motion twice.** Motion's vocabulary in the editor, vanilla in the published page, and the two drift. The whole product rests on what you edit being what you ship, and a second motion implementation is that guarantee quietly leaking away. A page that is 60KB heavier is a worse page; a page that animates differently from the editor is a broken product.
-
-**What that costs, and how it is paid:**
-
-| | |
+| Part | What it is |
 |---|---|
-| **Weight** | The motion and present runtime is tiny and inlined in the single file. It is the *only* JS — no analytics SDK, no tag manager, no framework chrome. The budget in [../coderules/performance.md](../coderules/performance.md) is spent here deliberately |
-| **The real weight is elsewhere** | Generated images and embedded fonts dominate a deck by an order of magnitude. Optimizing them matters more than the runtime, and that is where the caps live |
-| **Nothing is server-rendered at request time** | The exported file is already complete. Opening it costs nothing; a hosted URL (v3) serves the same static bytes from a CDN |
+| **Slides** | Each slide's sanitized HTML inside a `<template shadowrootmode="open">`, with its linted CSS. Declarative Shadow DOM is Baseline since 2024, so no script is needed to scope styles |
+| **Theme** | One `:root` block of custom properties. Custom properties and fonts inherit through the shadow boundary |
+| **Player** | Our one script, `player.js`, inlined and allowed by hash. Keys, touch, fullscreen, overview grid, deep links, presenter popup, and **all motion** |
+| **Fonts** | Vendored Latin-subset woff2, base64 in `@font-face`. Embedded as-is |
+| **Images** | webp data URIs |
+| **Components** | `dd-chart`, `dd-image` and `dd-texture`, filled by our code after sanitising. A chart is inline SVG drawn from `Fact`s |
 
-**Progressive enhancement is the floor.** The deck must be readable and complete without JS — text, images, and layout are in the HTML. If JS never arrives, a viewer sees a finished deck without motion, not an empty one. Reveals animate *in* from a visible resting state, never *out* of `opacity: 0`, because a JS-less `opacity: 0` is a blank slide.
+**The slide's own CSS may not animate.** No `animation`, no `transition`, no at-rules. The player applies the theme's motion character to slides, so motion is implemented once and `prefers-reduced-motion` is honoured in one place.
 
-CSS scroll-driven animations (~84% support, not yet Baseline) are the progressive-enhancement path already noted in `v1/plan/06-renderer.md` — worth adopting for the simple reveals once Firefox ships, because it moves work off the main thread. Not a reason to change the architecture now.
+**Without JavaScript the deck is still complete.** Slides and styles are plain HTML. A viewer with scripts blocked sees every slide in order, without navigation or motion. Nothing starts at `opacity: 0`.
+
+**Canvas.** Every slide is 1920×1080, scaled to fit by the player and letterboxed in the slide's own ground colour. Print CSS gives one 16:9 page per slide, which is what the PDF is.
+
+### Two flavours
+
+| Flavour | Speaker notes | Used for |
+|---|---|---|
+| **present** | Included, as an inert `<script type="application/json">` block the presenter popup reads | Presenting from your own machine |
+| **send** | **Absent from the file** | Emailing, attaching, and the PDF |
+
+Notes are written for the presenter. A single file that carried them would leak them to every recipient, so "send" is assembled without them rather than hiding them.
 
 ### What talks to the network
 
-The **v1 artefact is a single self-contained `.html` file that runs offline** — it talks to *nothing*. `connect-src 'none'` is not a weakening to manage; it is the product. The file is complete without JS (progressive enhancement is the floor), and a browser test asserts it makes zero network requests. The hosted URL (v3) serves the same bytes, so the same assertion holds there.
+**Nothing.** The file carries `default-src 'none'` and `connect-src 'none'` in a CSP meta tag. A browser test opens both flavours from `file://` and fails on any request ([../security/testing.md](../security/testing.md)).
 
-This reverses the old framing: the previous product weakened `connect-src 'none'` to two endpoints for personalization and analytics. The offline single-file deck has neither.
-
-## The editor (v2)
-
-The editor arrives in v2 (`docs/v2/plan/12-editor.md`) — v1 is the lean flow (interview → mapping → build → review → export) with no editor. The design below is what v2 builds, and the decisions that are expensive to retrofit are made now.
-
-### State: Zustand
-
-The editor holds one mutable document — the deck tree — plus selection, undo/redo, and in-flight patches. That is a single store, not a graph of independent atoms, and Zustand fits it without a provider tree or a reducer ceremony.
-
-```
-useEditor: { tree, selection, patch(blockId, props), undo(), redo(), status }
-```
-
-**Undo/redo is the reason a real store earns its place.** It is a stack of past trees with structural sharing, and it is the feature that makes AI-assisted editing safe to try — a user who can undo instantly will experiment, and experimentation is where this product is fun. Build it with the editor, not after.
-
-Patching **one block** and re-rendering the minimum is the performance rule from [../coderules/performance.md](../coderules/performance.md). The React Compiler ([../coderules/tooling.md](../coderules/tooling.md)) handles the memoization automatically, so the store's job is only to make the patch surgical — not to hand-tune renders.
-
-### UI: shadcn/ui
-
-Copy-in components on Radix primitives and Tailwind. Radix gives the accessibility behavior — focus traps, dismissible layers, keyboard navigation — that is genuinely easy to get subtly wrong and that [../coderules/README.md](../coderules/README.md) says never to simplify away. Nothing ships as a runtime dependency.
-
-**Tailwind stays on app chrome only.** The rendered slides are CSS custom properties from the design family, never utility classes. This is the no-styling invariant seen from the other side: if a Tailwind class ever reaches a rendered slide, the design family has stopped being the single source of visual truth. A lint rule scoped to `renderer/` enforces it.
-
-The property panel, outline editor, brand kit, and settings are the cold 90% of the app ([../coderules/performance.md](../coderules/performance.md)) — assemble them, do not craft them. The craft budget belongs to the renderer.
-
-### Streaming: SSE over a Route Handler
-
-Generation streams **slide by slide**, so the user watches the deck assemble and can abort a bad direction early — a perceived-performance decision that beats any raw-speed optimization.
-
-A `ReadableStream` from an App Router route, `EventSource` in the client. No dependency.
-
-The reason this does not need a streaming library: **the unit is a whole validated slide, not a token.** Partial-object streaming, JSON repair mid-stream, and chat-shaped hooks solve problems this pipeline does not have. A slide is generated, Zod-parsed, and then emitted as one event — anything that failed validation never reaches the client at all.
-
-```
-event: slide   data: { "index": 2, "slide": { … } }
-event: repair  data: { "index": 3 }
-event: done    data: { "count": 8 }
-```
-
-You write the reconnect logic. That is a few lines, and it is the only thing the platform does not give you.
-
-**Serialize the good streams to a file.** Because the events are whole validated slides rather than tokens, an event log replayed client-side drives the same renderer and is indistinguishable from a live run. That makes it three things at once for the price of writing a file: the marketing site's demo ([../design/website.md](../design/website.md)), a way to develop the generation-watch UI without spending a model call per reload, and a regression fixture for the renderer. Keep them versioned alongside the golden briefs (`docs/v1/plan/08-acceptance.md`).
+The presenter popup is opened by the deck and driven through the window reference, with an in-window fallback when popups are blocked. It needs no network and no `BroadcastChannel`, which is unreliable from `file://`.
 
 ## Fonts
 
-Fontsource, open-license families — **embedded as data URIs in the single-file deck**, not served. The offline file must work from `file://` with zero network, and embedding is what makes that true (`docs/v1/plan/05-export.md`).
+~40 OFL families, vendored in `api/engine/design/fonts/` as **Latin-subset woff2** with a licence file per family.
 
-**Licensing is the reason, not cost.** These fonts end up inside a deck the customer redistributes. That is redistribution, and it makes the licence terms a product constraint rather than a developer detail. Open licences (OFL-1.1) are unambiguous about bundling in a downloadable file; a webfont licence bought per-domain is not.
+**Licensing is the reason, not cost.** These fonts end up inside a file the customer redistributes. OFL-1.1 permits bundling and embedding; a per-domain webfont licence does not. "It is on Google Fonts" is not a licence check — verify per family.
 
-Subset per script, embed the faces the deck actually uses, keep the file lean.
+**Fonts are embedded as-is. `fontTools` subsetting is deferred.** Subsetting a font is modifying it, and under the OFL a modified version may not use the font's Reserved Font Name. Embedding the unmodified vendored file avoids that question entirely. **Trigger to revisit:** a non-Latin locale, or fonts passing 1 MB of an export. When it fires, the answer is to check each family's Reserved Font Name declaration, not to subset blindly.
 
-**Buying type is the highest-leverage money in the product**, and it is deferred rather than refused. Type is most of why a design family will or will not look expensive. Revisit when the registry makes the difference visible; open faces are good enough to prove the runtime first.
+**Buying type is still the highest-leverage money in the product**, deferred until the phase-23 wall shows where open faces fall short.
 
-**None of the above binds our own chrome, and that distinction is worth not losing.** The redistribution argument applies to fonts embedded in *customers'* decks. Our marketing site and app chrome serve fonts to visitors of our own site, which is what an ordinary webfont licence is for — so the identity face can be a commercially licensed editorial one for the price of a licence rather than waiting on the output's constraint ([../design/brand.md](../design/brand.md)). It **must not** be shared with any family's stack: if the chrome and a family wear the same face, the chrome starts reading as a family and the two design systems have quietly merged.
+**None of this binds our own chrome.** The app's identity face can be commercially licensed, and it must not be a face from the output registry: if the chrome and a deck wear the same face, the two design systems have merged ([../design/brand.md](../design/brand.md)).
 
 ## Testing
 
-Vitest for units and component behaviour in the TypeScript repos (`api` uses pytest — [../coderules/python.md](../coderules/python.md)). **Playwright for anything that needs a real browser** — and in this product that is most of what matters:
+pytest owns the artefact; Vitest and Playwright own the app.
 
-- The `connect-src 'none'` assertion — that an exported deck makes **zero** requests, from `file://`
-- The data-URI assertion — fonts and images are embedded, no external fetch
-- The navigation assertion — arrows, Space, buttons, counter, swipe all work
-- Cross-origin behavior of a hosted deck (v3), which cannot be tested in jsdom
+- **Zero requests from `file://`**, both flavours, in a real browser
+- **The send flavour contains no speaker notes** — assert on the bytes
+- Navigation: arrows, Space, Home/End, swipe, fullscreen, overview, deep link, presenter popup
+- The deck is complete with scripts blocked
+- **The hostile-slide suite** on Chromium, Firefox and WebKit ([../security/testing.md](../security/testing.md))
+- App: a Playwright E2E against a stub engine replaying a recorded `events.jsonl`, plus one live run per phase exit
 
-Playwright is already in the stack for the vision critic and the print path ([backend.md](backend.md)), so it is not a new dependency.
-
-**Renderer quality gets a visual check, not a snapshot test.** A snapshot on a design surface fails on every intentional improvement and trains you to update it without looking. One page rendering all block types under each design family, reviewed by eye — that judgment is the product.
+**Design quality gets a human, not a snapshot.** A snapshot on a design surface fails on every intentional improvement and trains you to update it without looking. The bench wall, scored by the owner, is that check ([../v4/bench.md](../v4/bench.md)).

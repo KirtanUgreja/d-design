@@ -1,6 +1,6 @@
 # AI Authorship
 
-Most of this codebase will be written by Claude. That is a deliberate choice — it is the only way one person ships v1 through v3 — and it changes which mistakes are likely. This doc is about those mistakes.
+Most of this codebase will be written by Claude. That is a deliberate choice — it is the only way one person ships this — and it changes which mistakes are likely. This doc is about those mistakes.
 
 Everything else in this directory would be reasonable rules for a hand-written codebase too. This one exists only because of how the code gets written.
 
@@ -30,7 +30,7 @@ The other number worth internalizing: **about 66% of developers report AI output
 Three of its properties make the duplication failure worse than average:
 
 - **Solo.** There is no second person who says "we already have that." That role has to be played by tooling or by you, deliberately.
-- **Feature folders.** [structure.md](structure.md) is right for humans and slightly hostile here — a feature folder is a context boundary, and an AI working inside `editor/` has no particular reason to notice that `renderer/` already solved the same problem. The structure that keeps *you* oriented also narrows the model's field of view.
+- **Feature folders.** [structure.md](structure.md) is right for humans and slightly hostile here — a feature folder is a context boundary, and an AI working inside `engine/compose/` has no particular reason to notice that `engine/qa/` already solved the same problem. The structure that keeps *you* oriented also narrows the model's field of view.
 - **Nobody is watching the aggregate.** Duplication is invisible per-commit and only visible per-quarter. Solo, nobody is running the per-quarter look.
 
 ## Why it is also unusually protected
@@ -39,14 +39,14 @@ The rules in this directory were written for clarity. They happen to be exactly 
 
 | Rule | What it stops |
 |---|---|
-| Types generated from Pydantic ([python.md](python.md)) | The most damaging duplication of all — a second definition of a core shape — is caught by a gate that regenerates and fails on a diff. It used to be *unrepresentable*; across two languages it is *detected*, which is weaker and is why the gate is not optional |
-| One renderer, no mode branches ([patterns.md](patterns.md)) | A second "export-flavored" renderer, which is precisely the thing an AI would helpfully write |
+| Types generated from Pydantic via OpenAPI ([python.md](python.md)) | The most damaging duplication of all, a second definition of a core shape, is caught by a gate that regenerates and fails on a diff. Across two languages it is *detected* rather than unrepresentable, which is why the gate is not optional |
+| One pure engine, one export assembly ([patterns.md](patterns.md) rule 2) | A second path to a slide: a preview renderer in `web`, or an "editor-flavoured" assembly. Precisely the thing an AI would helpfully write |
 | Feature public APIs (`index.ts`) | Gives the model a short, readable catalog of what already exists. A good index is a duplication defense |
 | The dependency ledger ([dependencies.md](dependencies.md)) | Stops the other direction — a package added for something already in the tree |
 | `Result` as the one error type | No parallel error-handling convention per feature |
-| The tenant wrappers and the model seam ([patterns.md](patterns.md)) | The "exactly N places" rules, and the ones where a helpfully-written extra copy is worst. **The tenant wrapper now legitimately exists twice**, which makes a third copy far easier to write and far harder to notice |
+| The model seam, the one data module, and (phase 29) the tenant wrapper ([patterns.md](patterns.md)) | The "exactly one place" rules, and the ones where a helpfully-written extra copy is worst. As of 2026-09-26 each exists exactly once; v3 had two tenant wrappers, and the second was never called |
 
-**The last row is the one to watch, because it is where this failure mode stops being a maintenance cost and becomes a vulnerability.** A model asked to add a query has every reason to write `db.select(...)` directly — it is shorter, it works in testing, and it reads fine. It also skips the transaction that scopes `app.user_id`, which is a cross-tenant read. Same for a second model call written inline: it works, and it silently has no repair loop, no metadata log, and no tool-call cap.
+**The last row is the one to watch, because it is where this failure mode stops being a maintenance cost and becomes a vulnerability.** A second model call written inline works, and it silently has no repair, no `finish_reason` check and no cost-ledger entry. A deck file opened outside `api/store/files.py` works, and it skips the single-writer rule. From phase 29, a query written outside the tenant wrapper works in testing and is a cross-tenant read.
 
 Both are now lint rules for exactly this reason ([tooling.md](tooling.md)). When the plausible-looking duplicate is a security bug, prose is not enough — the machine has to say no.
 
@@ -62,25 +62,25 @@ The pattern: **make the canonical thing easy to find and the duplicate hard to w
 
 **4. Read the diff where "almost correct" is expensive.** You cannot review everything solo, and pretending otherwise means reviewing nothing. Read these properly; skim the rest:
 
-- **the `Deck` schema** — every downstream guarantee is a consequence of this shape
-- **Feature data modules** (`*_data.py`, `*.data.ts`) — the service-role filter and the RLS assumption are security-critical, and a missing `where` clause is textbook almost-correct ([../security/tenancy-and-data.md](../security/tenancy-and-data.md))
+- **`api/engine/models.py`** — every downstream guarantee is a consequence of these shapes
+- **The data module** (`api/store/files.py`; `*_data.py` from phase 29) — the single-writer rule now, the ownership filter later. A missing `where` clause is textbook almost-correct ([../security/tenancy-and-data.md](../security/tenancy-and-data.md))
 - **every `catch`** — a permissive default is the single most reviewable-looking vulnerability there is ([patterns.md](patterns.md), rule 5). Grep for `catch` in a diff and ask what each one grants
-- **the no-styling backstop and the AD linter** — a check that is subtly too permissive still passes its own tests
-- **anything touching the sandbox, the sanitizer, or a signed URL**
-- **character-budget arithmetic** — an off-by-one here breaks localization in twelve languages at once
+- **the sanitizer allowlist, the slide lint and the QA thresholds** — a check that is subtly too permissive still passes its own tests. v3's variety gate passed on a stub model
+- **anything touching the iframe sandbox, the export CSP, or the player script hash**
+- **word-budget and contrast arithmetic** — an off-by-one here ships on every slide
 - **every `ponytail:` comment in the diff** — that is the author flagging a known ceiling; it is the cheapest signal in the codebase
 
-Everything else — intake forms, settings UI, the outline editor — gets a skim and the gate. If it typechecks, lints, and works, it is fine.
+Everything else — the composer, settings UI, the outline editor — gets a skim and the gate. If it typechecks, lints, and works, it is fine.
 
 ## Review is the constraint now, not writing
 
 CircleCI's 2026 data: feature-branch throughput up 59% year over year, while median main-branch throughput *fell*. Teams got much faster at producing code and no faster at deciding it was safe to merge.
 
-Solo, that bottleneck is one person, and it is the actual limit on this project's speed — not typing, not model latency, not tokens (`docs/v1/spec.md` notes the cost per deck is measured, not assumed).
+Solo, that bottleneck is one person, and it is the actual limit on this project's speed — not typing, not model latency, not tokens.
 
 Two consequences, and they are why [tooling.md](tooling.md) exists in the form it does:
 
-- **Every rule that a machine can check must be checked by a machine.** Each one is review capacity handed back to you. This is the whole reason the three custom lint rules are worth writing.
+- **Every rule that a machine can check must be checked by a machine.** Each one is review capacity handed back to you. This is the whole reason the custom lint rules are worth writing. **And what a machine cannot check, a human looks at on schedule**: the bench wall at every phase exit ([../v4/bench.md](../v4/bench.md)), because v3's checks were all green on decks that looked bad.
 - **Small diffs, merged often.** A 2,000-line generated PR does not get reviewed, it gets approved. Ship the change that fits in your head, which is also the change the model edits most reliably.
 
 ## Instruction files: AGENTS.md is the source, CLAUDE.md imports it
@@ -94,6 +94,6 @@ So: `AGENTS.md` carries the rules, `CLAUDE.md` is three lines that import it plu
 ## Test
 
 - CI reports duplication on changed files; the number is looked at, not gated on
-- No shape in `schema/` has a hand-written type beside it
+- No shape in `api/engine/models.py` has a hand-written TypeScript type beside it
 - `rg 'ponytail:'` returns a readable ledger, not a graveyard
 - Every feature's `index.ts` is short enough to read in one screen — if it is not, the feature is doing too much and the model's catalog just got worse

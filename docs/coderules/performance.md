@@ -8,33 +8,37 @@ This is not "ignore performance." It is "spend the performance budget where it i
 
 ## The only hot paths
 
+> **Rewritten 2026-09-26 for v4.** The old list named the React renderer and a block-patch editor; neither exists now.
+
 Three, and they are the whole list. Everything else is cold, and cold code should be written for clarity.
 
-### 1. Page load of a published experience
+### 1. Generation: time and money per deck
 
-The thing a viewer waits on, and the thing a marketer's audience judges. Non-negotiable, because it is not an optimization — it is the product working.
+The wait between approving an outline and seeing slides, and what each deck costs. Budgets and measurements live in [../v4/bench.md](../v4/bench.md).
 
-- The v1 artefact is a **single self-contained `.html` file** — there is no server, no CDN, no route, no LLM call per view. The `render` service produces the file once; the viewer opens it from `file://` or any static host. A hosted URL (v3) serves the same bytes ([../techstack/infrastructure.md](../techstack/infrastructure.md), `docs/v1/plan/05-export.md`).
-- **Images, video, and fonts are the weight**, not the code. Enforce dimension caps, subset and embed fonts, keep the file lean. `connect-src 'none'` means nothing external can be loaded at view time, so everything the deck needs is already in the file.
-- **The file is complete without JS.** Text, images, and layout are in the HTML; reveals animate *in* from a visible resting state, never *out* of `opacity: 0`. A deck that is blank until JS arrives has traded a real guarantee for an animation.
-- The deck tree is small JSON; rendering it is never the bottleneck. The embedded assets around it always are.
+- **Slides are composed in parallel**, five in flight behind one semaphore. After the planner assigns intents, slides do not depend on each other.
+- **Stream whole slides as they pass QA.** The user watches the deck fill in and can abort early. Perceived speed beats raw speed.
+- **Prompt caching is the biggest cost lever.** Stable prefix first (rules, theme, exemplars), so every compose call in a deck reuses one cached prefix ([patterns.md](patterns.md) rule 6).
+- **Model choice per stage is a bench result, not a guess** ([../techstack/ai-stack.md](../techstack/ai-stack.md)). A cheaper model for repair is taken only if the bench shows parity.
+- **The theme and the three looks cost no model call.** They are code.
 
-### 2. Generation latency
+### 2. The QA render pool
 
-The wait between prompt and page. Perceived speed matters more than wall-clock here.
+Every slide is rendered at 1920×1080 in Chromium and measured, and re-measured after each repair and each edit.
 
-- **Stream slide by slide.** The user watches the deck assemble and can abort a bad direction early. This is a perceived-performance decision, and it beats any raw-speed optimization.
-- **Build slides sequentially but independently.** Each slide is a separate call; there is no cross-slide dependency after the mapping pass assigns layout archetypes, so slides can be built in parallel where cost allows.
-- **Model choice is the real lever:** fast model for interview and mapping, strong model only for the slide builder. Optimizing prompt tokens matters more than optimizing any code around the call — and which model goes where is an eval result, not a guess ([../techstack/ai-stack.md](../techstack/ai-stack.md)).
-- **Never block the stream on verification.** The visual critic ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)) runs *behind* the stream: the slide appears as soon as it validates, and a correction surfaces afterwards if needed. Waiting on a render and a vision call before showing anything would spend the perceived-speed win on a quality gain nobody can see happening.
+- **One browser, launched once, a small pool of pages**, in the worker process. Never a launch per slide.
+- **One measurement script, one screenshot per render.** The screenshot is reused as the thumbnail.
+- **Bounded:** at most two repair rounds, so at most three renders per slide.
+- **An inline text edit re-measures one slide**, not the deck.
 
-### 3. The editor canvas (v2)
+### 3. The export file
 
-Direct manipulation must feel instant, or the editing model that justifies the whole product falls flat.
+The artefact a viewer opens, from `file://` with zero network requests.
 
-- Editing patches **one block** and re-renders the minimum. Never regenerate or re-render the whole tree on a keystroke — the patch shape from `docs/v1/plan/01-schema.md` exists for this.
-- The reskin transition is the one place to spend real animation effort (`docs/v2/plan/12-editor.md`); animate only visible slides, swap off-screen ones instantly.
-- Debounce AI-assisted edits; do not fire a model call per keystroke.
+- **Images and fonts are the weight, not the code.** Images are webp with a dimension cap. Fonts are vendored Latin-subset woff2, embedded as-is, and only the faces the deck uses. Target: under 3 MB for a typical deck.
+- `ponytail:` no per-deck font subsetting. Trigger to add fontTools: a non-Latin locale, or fonts exceeding 1 MB of an export.
+- **The file is complete without the player.** Text and layout are in the HTML; builds animate *in* from a visible resting state, never *out* of `opacity: 0`.
+- **Do expensive work once, at generation.** Opening the file costs nothing.
 
 ## Two platform features that do this work for you
 
@@ -44,30 +48,26 @@ The stack moved in a direction that suits this project unusually well. Both of t
 
 The React Compiler reached 1.0 and is **stable in Next.js 16**, though still opt-in (`reactCompiler: true`) while build-performance data accumulates. It analyses the component tree at build time and inserts the equivalent of `useMemo`, `useCallback`, and `React.memo` automatically.
 
-For the editor canvas — hot path #3, where re-render cost is the whole problem — this is the single highest-leverage setting in the project. It is also pure subtraction: memoization is boilerplate that clutters components, drifts out of date, and is exactly the kind of code that gets added speculatively by someone optimizing without measuring.
+For the editor's chrome (filmstrip, panels) this is pure subtraction: memoization is boilerplate that clutters components, drifts out of date, and is exactly the kind of code that gets added speculatively by someone optimizing without measuring.
 
 **The rule that comes with it:** the compiler only transforms components that follow the Rules of React. Break them — side effects in render, direct state mutation — and it *silently skips that component* with a warning rather than transforming it wrongly. So the failure mode is not a bug; it is a component that quietly stopped being optimized. That is why the `react-hooks` lint rules are in the gate ([tooling.md](tooling.md)) rather than treated as advisory: they are now load-bearing for performance, not just correctness.
 
 Do not hand-write `useMemo` unless the compiler demonstrably skipped something and a profiler says it matters.
 
-### `use cache` — the caching model matches the product
+### Caching
 
-Next.js 16's Cache Components replace route-segment revalidation config with an explicit `"use cache"` directive plus `cacheLife()`. Under `cacheComponents`, the old route-segment config is deprecated, so this is the model to author against from the start rather than migrate to later.
-
-It is a good fit here because the product's caching story is genuinely mixed and was always going to need this granularity: an exported deck is a static file and should be cached hard, the hosted URL (v3) is static too, and the editor (v2) is fully dynamic. One directive at the component that owns each of those beats a per-route setting that has to describe all three.
-
-Turbopack is the default builder in 16 (2–5× faster builds). Nothing to decide — just do not fight it.
+`web` holds no data of its own, so there is little to cache there: deck pages are dynamic and read from the API. Slide documents and thumbnails are versioned by slide version, so they can be cached hard by URL. Turbopack is the default builder in Next 16; do not fight it.
 
 ## Rules that keep the hot paths fast without micro-optimizing
 
-- **Static and cacheable by default.** An exported deck is a local file — the strongest caching posture there is. A hosted URL (v3) serves the same static bytes and scales to a viral launch for free.
-- **Do expensive work once, at generation, not per view.** The model calls and image generations happen at build; the viewer's open costs nothing.
-- **Expensive work runs in `jobs`, not in a request.** It has no function-timeout ceiling. If something is being split up to fit inside a request, it is in the wrong process.
-- **Server components by default; client components only where interaction lives.** The editor (v2) is interactive; an exported deck is a static file with a small present runtime.
-- **Measure with a real tool** — the profiler, Lighthouse, a token counter — before changing code for speed. "This feels slow" is a reason to measure, not a reason to optimize.
+- **Expensive work runs in the worker, not in a request.** From phase 27, model calls and Chromium live in `api/worker.py`; a route enqueues and returns. If something is being split up to fit inside a request, it is in the wrong process.
+- **Never block the API event loop.** One sync call stalls every request ([python.md](python.md)).
+- **List endpoints return thumbnails, never image payloads.**
+- **Server components by default; client components only where interaction lives.**
+- **Measure with a real tool** — the cost ledger, the profiler, Lighthouse — before changing code for speed.
 
 ## What not to optimize
 
-The cold 90%: intake forms, the outline editor, settings, the brand-kit UI, admin. Write these for clarity. A clever optimization in code that runs once per session is pure cost — harder to read, no measurable gain. If a profiler ever flags one, revisit it then, and not before.
+The cold 90%: the composer, the outline editor, settings, account screens. Write these for clarity. A clever optimization in code that runs once per session is pure cost — harder to read, no measurable gain. If a profiler ever flags one, revisit it then, and not before.
 
-**Cold for optimization is not cold for design.** [../design/app.md](../design/app.md) borrows this rule to ration *design attention*, and it lands on a different list: intake and the outline gate are hot there and cold here, because they run once per session — which is exactly what makes them the screens a user forms an opinion on. Assemble them from shadcn/ui and never profile them; still spend real time on what they say and how they feel. Two budgets, two lists, one rule.
+**Cold for optimization is not cold for design.** [../design/app.md](../design/app.md) borrows this rule to ration *design attention*, and it lands on a different list: the composer and the outline gate are hot there and cold here, because they run once per session — which is exactly what makes them the screens a user forms an opinion on. Assemble them from shadcn/ui and never profile them; still spend real time on what they say and how they feel. Two budgets, two lists, one rule.

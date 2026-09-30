@@ -1,20 +1,28 @@
 # d-design docs
 
-> The corpus was cleared on 2026-08-10 and **re-decided on 2026-08-13**. The product is now an **AI-designed HTML presentation** that exports as a **single self-contained `.html` file running offline** — built by a per-slide generative pipeline, not a fixed template. The new vision lives in [v1/](v1/README.md), [v2/](v2/README.md) and [v3/](v3/README.md).
+> **The live plan is [v4/](v4/README.md), decided 2026-09-26.** The product is an AI presentation maker whose edge is design: the model composes each slide in real HTML inside a per-deck design system, every slide is checked in a real browser, content is grounded in cited facts, and the deck exports as one offline `.html` file.
 
-## What happened, and why nothing here describes the product
+## What happened
 
-Four directories were deleted: `v1/`, `v2/`, `v3/` and `reviews/`. They were not wrong so much as *layered* — three releases of decisions, each correcting the one before, with the corrections marked in strikethrough until finding the live decision meant reading the history of a dead one.
+| Date | |
+|---|---|
+| 2026-08-10 | The first corpus and codebase were cleared |
+| 2026-08-13 | The product was re-decided as an offline single-file HTML deck; `v1/`–`v3/` were written and built |
+| 2026-09-26 | An audit found every generated deck was a heading and one line of text on a flat ground ([findings.md](findings.md) → "Measured 2026-09-26"). `v1/`–`v3/` were deleted and replaced by [v4/](v4/README.md) |
 
-The judgement behind it: a product whose *"who is this for, and what is the artefact"* has changed is not a document that needs correcting. Improving it incrementally converges on a better version of the wrong thing.
+**Everything deleted is in git history.** The last state of `v1/`–`v3/` and of the code they describe is commit `8169fd9`.
 
-**Everything deleted is in git history** — its last state is the commit immediately before this one, which includes the presentation pivot and the variety measurement made just before the clear. Nothing was lost; it was moved out of the way.
+**What changed, in one line:** the model may now write slide HTML and CSS, inside theme tokens. "The AI never writes styling" is reversed ([v4/spec.md](v4/spec.md) → Locked decisions).
 
-**The new vision (2026-08-13) re-decided the product.** The old system was a schema-valid `Scene` tree rendered through three fixed "art directions" — which was still a skeleton the model filled in. The new product is different: the design system is **generated per deck** from a combinatorial registry, each slide is **generated individually**, and the artefact is a **downloadable single-file HTML** that runs offline. The old three-art-direction approach is gone — it is precisely what the user deleted it for.
+## The live plan
 
-## What survives, and why
+| | |
+|---|---|
+| [v4/](v4/README.md) | What gets built and why: the spec, the engine, content, the design engine, the bench, and phases 21–29 |
 
-**Current** — kept because it is about how code is written, what can attack it, what runs where, and how our own surfaces look. None of that is a product decision.
+## What survives a vision change
+
+**Current, not versioned** — about how code is written, what can attack it, what runs where, and how our own surfaces look. Updated to v4 on 2026-09-30.
 
 | Directory | What it answers |
 |---|---|
@@ -23,20 +31,18 @@ The judgement behind it: a product whose *"who is this for, and what is the arte
 | [techstack/](techstack/README.md) | Where every piece runs, which model, what the AI may call, and why each was chosen |
 | [design/](design/README.md) | How **our own** app and website look and feel — never what the engine produces |
 
-**Root files** — about the corpus, not about a version of the product.
+**Root files**
 
 | | |
 |---|---|
-| [versions.md](versions.md) | **How a version is documented.** The required files, what each owns, the phase anatomy, the conventions, and when to start fresh instead of extending. Read this before writing the next version directory |
-| [findings.md](findings.md) | **Evidence, not direction.** Measured facts about this codebase, LLM behaviour, the category, platform status with dates, and the process lessons. Nothing here says what to build |
+| [versions.md](versions.md) | **How a version is documented.** The required files, the phase anatomy, and when to start fresh |
+| [findings.md](findings.md) | **Evidence, not direction.** Measurements of this codebase, model behaviour, the category, platform facts with dates, and process lessons |
 
 ## What comes next
 
-The vision is settled (2026-08-13). [v1/](v1/README.md) is the build; [versions.md](versions.md) specifies its shape; [findings.md](findings.md) is the evidence it should not have to rediscover.
+[v4/plan/README.md](v4/plan/README.md) holds the status. Phase 21 (reset) is in progress: the docs are written; the code reset, the gate and the bench are not started.
 
-**The one constraint on the build**, and it is a fact rather than an opinion:
-
-- **The old code is a different product.** It was a schema-valid `Scene` tree rendered through three fixed art directions — precisely the "same skeleton, different skin" problem this product exists to solve. Nothing from the old codebase is a starting point. Recover a specific piece from git only if it is deliberately chosen, never because it happens to be there.
+**The one constraint on the build:** the v3 code still in the tree is a different product. Phase 21 deletes it. Port a piece only where a phase names it.
 
 ## Conventions
 

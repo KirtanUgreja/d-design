@@ -25,6 +25,45 @@ The output space of the art-direction layer, counted on 2026-08-10 against the t
 - **A token read is the abstraction working; a branch is the abstraction failing.** "Any renderer change means the abstraction is wrong" was too blunt — a hardcoded value becoming a token is the exercise succeeding. A `mode` prop or an `if (id === …)` is it failing.
 - **The values a system holds globally are the ones it holds because it only ever had one instance.** Four of the seven costs of the second art direction were exactly this shape, and three more appeared in the third. Expect it wherever a second instance of anything arrives.
 
+## Measured 2026-09-26 — the v1–v3 build
+
+An audit of the code at `8169fd9` and of the three `samples/*.html` decks opened in a browser. It is why v4 exists ([v4/spec.md](v4/spec.md)).
+
+| | |
+|---|---|
+| What the model could express | A JSON form: ≤6 regions × role/span/emphasis, 5 block kinds. **Never HTML or CSS** |
+| What drew every slide | One 265-line `renderer.css`: one type scale, one 12-column grid, a centred column, hierarchy by opacity |
+| Design families | 31 on paper, **13 distinct palettes**; three were exact duplicates |
+| Fonts | **None loaded.** No `@font-face` anywhere; every named face fell back to a system font |
+| How a family was chosen | `sum(ord(title)) % 31`. One trailing space changed the family |
+| Brand kit | Zero visual effect: the values never reached the prompt or the renderer |
+| Motion | None. `data-reveal` was written and read by nothing |
+| Editor canvas | Never loaded the renderer CSS, so it showed browser-default styling |
+| Facts | No source. The sample deck's chart was `{"Growth": 85}`; its donut was one colour |
+| Headlines | Topic labels: "Visual Data Representation", "Conclusion and Future Outlook" |
+| Speaker notes | No field existed |
+| Variety gate | Ran against a stub model that wrote the variety itself; it never rendered anything |
+| Services | 6 containers, 2 languages, auth split across both, RLS with 3 fix-up migrations, for zero users |
+| The stated reason for Python (DSPy/GEPA) | Zero references in the code |
+
+**What every screenshot showed:** a bold heading and one line of text on a flat off-white ground. One slide had a 2.57 MB generated image of a fake chart overflowing the frame; one had a button wrapping one word per line.
+
+**Three lessons:**
+
+- **A rule that forbids the model from designing caps the output at what the renderer can do.** "AI output carries no presentational values" left about five visual variables. The rule was never the safeguard; the token system is.
+- **A check that never runs on real output is theater.** The variety gate, the vision critic and the acceptance run all lived outside the product path.
+- **Infrastructure built before the output is good is built for nobody.** Accounts, tenancy, quotas and publishing all worked, around decks no one would present.
+
+## Research used by v4
+
+Read September 2026.
+
+- **AeSlides** (arXiv 2604.22840): HTML slides scored by four programmatic metrics measured with Playwright — aspect ratio, whitespace, element collision and overflow, visual balance. Training on them beat Claude Sonnet 4.5 and reflection-based systems. **Iterative vision-model reflection was counterproductive**: about 70% of samples stopped after one round despite visible defects.
+- **SlideAudit** (arXiv 2508.03630): vision-model judges are weakest on layout flaws and better on contrast. It recommends automated checks plus human review.
+- **Learning to Present** (arXiv 2603.16839): the "inverse specification" score — a model rebuilds the brief from the slides alone.
+- **OpenRouter web search** (2026-09): the `openrouter:web_search` server tool returns `url_citation` annotations. Exa is about $0.007 per request for 10 results.
+- **OpenRouter prompt caching** (2026-09): `cache_control` passes through to Anthropic; cache reads cost 0.1× input.
+
 ## Model behaviour
 
 - **Mode collapse is the norm.** LLMs converge to a narrow output space along two dimensions: **intra-model** (repeated samples from one prompt converge on the same idea) and **inter-model** (independently trained models converge on the same idea). Asking one model for three distinct creative artefacts returns three variations of one.

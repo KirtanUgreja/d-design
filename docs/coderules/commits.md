@@ -21,7 +21,7 @@ Four parts, each earning its place:
 
 | Part | Rule |
 |---|---|
-| **Subject** | ≤72 characters, imperative or noun phrase, **no trailing period**. Name the change *and* what it turned up — `"the AD linter, and the three defects it found"` beats `"add linter"` |
+| **Subject** | ≤72 characters, imperative or noun phrase, **no trailing period**. Name the change *and* what it turned up — `"the slide lint, and the three defects it found"` beats `"add linter"` |
 | **Body** | Why. The problem, and the project-level consequence. Required when more than one file changed |
 | **File list** | One block per file. Path, an anchor, and one or two lines on the problem and the fix **for that file** |
 | **Trailers** | **None.** No `Co-Authored-By`, no `Signed-off-by`, no "Generated with" |
@@ -30,12 +30,12 @@ Four parts, each earning its place:
 
 This is the one place the format deviates from the obvious design, and the reason matters.
 
-A commit message is **immutable**, and line numbers are **not stable**. The moment a later commit inserts a line above, `lint.py:88-140` points at the wrong place — and unlike a stale comment, nobody will ever fix it, because rewriting history to correct a line number is absurd. A year on, the numbers in old commits are confidently wrong, which is worse than absent.
+A commit message is **immutable**, and line numbers are **not stable**. The moment a later commit inserts a line above, `palette.py:88-140` points at the wrong place — and unlike a stale comment, nobody will ever fix it, because rewriting history to correct a line number is absurd. A year on, the numbers in old commits are confidently wrong, which is worse than absent.
 
 So the anchor is **both**, and they do different jobs:
 
 ```
-api/features/art_direction/lint.py:88-140 · check_contrast()
+api/engine/design/palette.py:88-140 · check_contrast()
 ```
 
 - **`88-140` is for today.** It helps whoever reads this in review this week jump straight there. It is a convenience, not a record.
@@ -65,6 +65,18 @@ The message carries no `Co-Authored-By`, no `Signed-off-by`, no tool attribution
 **Git still records an author.** That is the `author` and `committer` metadata from `git config user.name` / `user.email`, and it is how git works — it is not something a message convention can remove, and it is not what this rule is about. What is dropped is **attribution inside the message body**, which is noise in a solo repository: `git log --format='%an'` already answers "who", and a trailer naming a tool answers a question nobody asked.
 
 If this repository ever has more than one human committer, revisit this — trailers are how co-authorship is credited on a shared history, and the reason to drop them now is that there is nothing to credit.
+
+## Branches
+
+One branch per phase, named `phase-NN-slug` after the phase file in [../v4/plan/README.md](../v4/plan/README.md). v4 continues the numbering (2026-09-26):
+
+```
+phase-21-reset            phase-24-content-engine     phase-27-app-create-flow
+phase-22-engine-spike     phase-25-composition-qa     phase-28-editor
+phase-23-design-system    phase-26-player-export      phase-29-accounts-deploy
+```
+
+A phase branch merges to `main` when the gate is green **and** the phase's exit gate is met, which in v4 includes the owner's wall score ([tooling.md](tooling.md)). Push only when asked.
 
 ## Worked example
 

@@ -4,13 +4,13 @@
 
 ### AI presentation engine
 
-*The AI emits content and intent. It never writes styling.*
+*The model designs every slide in real HTML. One offline file comes out.*
 
 <br/>
 
-<img src="https://img.shields.io/badge/status-end--to--end%20local-3FB950?style=for-the-badge&labelColor=08090B" alt="Status: end-to-end locally">
+<img src="https://img.shields.io/badge/status-v4%20planned-F4B740?style=for-the-badge&labelColor=08090B" alt="Status: v4 planned">
 <img src="https://img.shields.io/badge/deployed-no-F4B740?style=for-the-badge&labelColor=08090B" alt="Deployed: no">
-<img src="https://img.shields.io/badge/gate-green-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Gate: green">
+<img src="https://img.shields.io/badge/phase-21%20reset-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Phase: 21 reset">
 <img src="https://img.shields.io/badge/builder-solo%20%2B%20AI-A78BFA?style=for-the-badge&labelColor=08090B" alt="Builder: solo + AI">
 
 </div>
@@ -22,96 +22,76 @@
 >
 > **Everything is in git history.** The two commits before the reset hold the deleted system and its full specification.
 
----
 
-## What was deleted, and why
-
-A working system: a FastAPI backend, a Next.js frontend, a Pydantic-owned scene schema with TypeScript types and a Zod validator generated from it, a four-phase AI pipeline with a human approval gate, three art directions rendering the same scene tree with no branch in the renderer, and a passing end-to-end acceptance run. Roughly 316 files, plus 84 specification documents.
-
-None of it was broken. The problem was upstream of the code: three releases of decisions had each corrected the one before, until finding a live decision meant reading the history of a dead one — and the framing underneath all of them was being changed rather than patched.
-
-**A product whose *"who is this for, and what is the artefact"* has changed is not a document that needs correcting.** Improving it incrementally converges on a better version of the wrong thing.
+> [!NOTE]
+> **Re-decided on 2026-09-26.** Three releases built a pipeline, an editor, accounts and billing, and every generated deck still came out as a bold heading and one line of text on a flat background. The cause was a rule this README used to open with: *the AI never writes styling*. It is reversed. The plan is [`docs/v4/`](docs/v4/README.md); the v3 code still in this tree is deleted by its first phase.
 
 ---
 
-## What survives
+## What it is
 
-Everything true regardless of what the product turns out to be.
+An AI presentation maker for **founders and salespeople presenting live**. You type a brief. You get a deck that looks designed and says something, as **one `.html` file that runs offline** — no network requests, fonts and images inside.
+
+| | |
+|---|---|
+| 🎨 **The model designs** | Each slide is composed in real HTML and CSS. Colour and type come only from the deck's own design system; layout is free |
+| 🔍 **Every slide is checked** | Rendered in Chromium and measured — overflow, collisions, contrast, type size — then repaired or flagged. Never shipped broken |
+| 📚 **Every number has a source** | Web research with citations plus what you paste. Anything unsourced is flagged for you |
+| 🎲 **No two decks alike** | A seeded sampler picks type pairing, palette strategy, grid and motif from ~40 embedded open-licence fonts |
+| 🚫 **No AI look** | No gradients, neon, blur, glow, icon cards or emoji. Texture carries colour |
+
+## The flow
+
+```
+brief ─► interview (≤5 questions, skippable) ─► research (cited facts)
+      ─► storyline            ⏸ you edit and approve the outline
+      ─► 3 looks              ⏸ you pick one, or shuffle
+      ─► slides composed in parallel ─► checked in a real browser ─► repaired
+      ─► editor ─► present · download .html · PDF
+```
+
+```
+api/   Python · FastAPI     the engine, the data, the export        (docs/v4/engine.md)
+web/   Next.js · TypeScript the app — UI only, it never builds a slide
+bench/ 12 briefs, baselines, and the wall a human scores            (docs/v4/bench.md)
+```
+
+## Where things stand
+
+| Phase | | Status |
+|---|---|---|
+| 21 | Reset: delete the v3 code, new gate, the bench | in progress — docs done |
+| 22 | **Engine spike — the make-or-break gate** | not started |
+| 23–25 | Design system · content engine · composition and QA | not started |
+| 26–28 | Player and export · the app · the editor | not started |
+| 29 | Accounts and deploy — last, on purpose | not started |
+
+Status lives in [`docs/v4/plan/README.md`](docs/v4/plan/README.md). **No phase closes until a human has scored its wall of decks.**
+
+## Docs
 
 <table>
 <tr><th align="left">Path</th><th align="left">What it covers</th></tr>
+<tr><td>🗺️ <a href="docs/v4/README.md"><b>docs/v4</b></a></td><td>The plan: spec, engine, content, design engine, bench, phases 21–29</td></tr>
 <tr><td>📐 <a href="docs/coderules/README.md"><b>docs/coderules</b></a></td><td>How the code stays consistent when an AI writes most of it</td></tr>
 <tr><td>🛡️ <a href="docs/security/README.md"><b>docs/security</b></a></td><td>Threat model and every control, routed by threat</td></tr>
 <tr><td>🧰 <a href="docs/techstack/README.md"><b>docs/techstack</b></a></td><td>What runs where, which model, and why each was chosen</td></tr>
 <tr><td>🎨 <a href="docs/design/README.md"><b>docs/design</b></a></td><td>How <b>our own</b> app and site look — never what the engine produces</td></tr>
-<tr><td>🧭 <a href="docs/versions.md"><b>docs/versions.md</b></a></td><td>How a version is documented — required files, phase anatomy, when to start fresh</td></tr>
-<tr><td>🔬 <a href="docs/findings.md"><b>docs/findings.md</b></a></td><td>Evidence, not direction — measurements, model behaviour, the category, dated platform facts</td></tr>
+<tr><td>🔬 <a href="docs/findings.md"><b>docs/findings.md</b></a></td><td>Evidence: what the audit measured, model behaviour, the category</td></tr>
 </table>
 
-**[`docs/README.md`](docs/README.md) is the index.** [`AGENTS.md`](AGENTS.md) is the contract any agent working here reads first.
-
----
-
-## The one thing carried over
-
-The constraint the project exists to test, kept because it is the reason there is a project:
-
-> **The AI never writes styling.** It emits content and intent — `motion: "reveal"`, `emphasis: "hero"` — and a separate token layer resolves that into type scale, spacing, colour, easing and duration.
-
-```jsonc
-// ✅ what the AI emits — meaning only
-{ "type": "Headline", "props": { "text": "Ship in minutes", "emphasis": "hero" }, "motion": "reveal" }
-
-// ❌ the schema has no field for any of this
-{ "fontSize": "4rem", "color": "#F4F4F5", "duration": "900ms", "ease": "expo-out" }
-```
-
-It is checkable, and in the deleted codebase it was checked — a test walked every block in a generated tree and failed on anything matching `/#[0-9a-f]{3,8}|[\d.]+(px|rem|em|ms|s)\b/i`.
-
-**Whether it survives the new vision is a decision that has not been made yet.**
-
----
+**[`docs/README.md`](docs/README.md) is the index.** `AGENTS.md` is the contract any agent working here reads first.
 
 ## Working here today
 
 ```
-./scripts/setup.sh               installs hooks, dependencies, infra, migrations — run once per clone
+./scripts/setup.sh               installs hooks and dependencies — run once per clone
 ./scripts/check-docs.sh          every link resolves, every file is indexed
 ./scripts/hooks/pre-commit       the gate, on demand
-docker compose up -d             the whole product in containers
 ```
 
-**Run it locally.** `scripts/setup.sh` sets up the toolchain, the database and
-the local infrastructure; its last lines print the three commands that start
-the product. Then: sign up, type a topic, read the outline with each claim
-marked `YOU` or `AI`, approve it, edit the deck, **Save**, **Publish** — and
-open the single-file HTML it hands back. That file makes no network requests at
-all; there is a test that opens it from `file://` in a real browser and fails on
-any request that leaves it.
+The v3 stack (`docker compose up -d`) still runs until phase 21 removes it. It is not a starting point.
 
-The gate is typecheck, lint, format, tests and generated-code-no-diff across
-four packages, plus the project invariants and the doc index. CI runs the same
-and adds advisories and a duplication report. Locally, `api` and `web` each
-need a running peer to be useful — `render` for export, `worker` for uploads —
-which is why `docker compose up -d` is the short path.
-
-**Not deployed.** The images for `api`, `web`, `render` and `worker` build and
-run, and the whole stack runs under compose, but there is no Vercel/registry
-wiring, no production secrets, no privacy policy — see the plan's remaining
-items rather than assuming this is live.
-
-```
-d-design/
-├── README.md            you are here
-├── AGENTS.md            the contract — rules + a task→doc routing table
-├── CLAUDE.md            one line: @AGENTS.md
-├── api/                 FastAPI: app tables, tenancy, quotas, the generation stages
-├── web/                 Next.js: the editor, auth, the browser-facing API
-├── render/              the pure renderer and the single-file HTML exporter
-├── worker/              the isolated upload worker (parses hostile bytes)
-├── docs/                what survives a vision change
-└── scripts/             setup · check-docs · the gate · invariants · hooks
-```
 
 ---
 

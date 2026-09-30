@@ -1,6 +1,6 @@
 # Python
 
-The backend language — `api` and `jobs` ([../techstack/backend.md](../techstack/backend.md)). The renderer half of the codebase is [typescript.md](typescript.md), and the two are held together by the schema codegen below, which is the most important section in this file.
+The backend language. As of 2026-09-26, `api` owns **the engine, every model call, all data and the export** ([../v4/engine.md](../v4/engine.md), [../techstack/backend.md](../techstack/backend.md)). The UI half is [typescript.md](typescript.md). The two meet only at the HTTP API, and the section below on how that API's shapes reach TypeScript is the one to read first.
 
 ## Strict, and what that means here
 
@@ -16,83 +16,111 @@ disallow_any_explicit = true          # `Any` is a decision, not a shrug
 Three rules on top of `strict = true`, each the Python spelling of a TypeScript non-negotiable:
 
 - **No bare `Any`.** Use a protocol, a union, or `object` and narrow. `Any` deletes the checker exactly the way TS `any` does.
-- **No `# type: ignore` without a code and a reason on the same line.** `# type: ignore[arg-type]  # asyncpg stubs lag` is fine; a naked ignore is the non-null `!` wearing a different hat.
+- **No `# type: ignore` without a code and a reason on the same line.** `# type: ignore[import-untyped]  # nh3 ships no stubs` is fine. A naked ignore is the non-null `!` wearing a different hat.
 - **No `cast()` to make an error go away.** A cast is a claim you are making on the checker's behalf. If it is wrong, it is wrong silently and forever.
 
-**Ruff** for lint and format — one tool, one config block, and it replaces the flake8/isort/black stack outright. Format is not a decision, the same way Prettier is not one on the other side.
+**Ruff** for lint and format: one tool, one config block, and it replaces the flake8/isort/black stack outright. Format is not a decision, the same way Prettier is not one on the other side.
 
 > The point of the pairing is that the two languages have the *same* rules, not similar ones. A reviewer moving between `api/` and `web/` should not have to reload a different set of standards, and neither should the model writing most of this.
 
-## The schema is the source of truth
+## Pydantic is the source of truth
 
-**This is the load-bearing section of the Python move.** [../techstack/decisions.md](../techstack/decisions.md) records why it exists; this is how it works.
+**Rewritten 2026-09-26.** Every shape that crosses a boundary is a Pydantic model:
+- the engine's models (`Brief`, `Fact`, `SlidePlan`, `Storyline`, `Theme`, `Slide`, `Deck`, `CostLedger`; [../v4/engine.md](../v4/engine.md) → "Data model")
+- every route's request and response
 
-Pydantic owns the `Deck` shape. Everything else is generated from it.
+Everything else is derived:
 
 ```
-schema/deck.py           ← the one definition, hand-written
+api/engine/models.py + route request/response models      ← hand-written, the one definition
    │
-   ├─ Deck.model_json_schema()   ─▶ the model's structured-output constraint
-   │                                  (in-process, never travels)
+   ├─ Model.model_json_schema()  ─▶ the structured-output constraint for JSON-mode calls
+   │                                 (in-process, never travels)
    │
-   └─ CI ─▶ JSON Schema ─▶ TypeScript types
-                        ─▶ a Zod validator
-                             │
-                             └─▶ @d-design/schema  ─▶ web · render · fetch worker
+   └─ FastAPI ─▶ openapi.json ─▶ openapi-typescript ─▶ web/lib/api/schema.d.ts   (GENERATED)
 ```
 
 Three rules make the generated half safe. Each is enforced, not remembered:
 
-**1. Generated TypeScript is never hand-edited.** Every generated file carries a header saying so, and the gate runs the generator and fails if the output differs from what is committed. A hand-edit is the drift arriving through the only door left open — and it will look like a perfectly reasonable small fix in review.
+**1. Generated TypeScript is never hand-edited.** The generated file carries a header saying so. The gate regenerates it from the app's OpenAPI document and fails if the output differs from what is committed. A hand-edit is drift arriving through the only door left open, and it will look like a perfectly reasonable small fix in review.
 
-**2. The JSON Schema never becomes a file someone maintains.** `model_json_schema()` is called at the point the seam needs it. The model call happens in Python, so the constraint has nowhere to travel to and no chance to go stale. This is the one thing that got *simpler* with the move: the old design had to generate a JSON Schema from Zod and keep it in step; now the schema and the caller are in the same process.
+**2. The JSON Schema never becomes a file someone maintains.** `model_json_schema()` is called where the seam needs it. The model call happens in Python, so the constraint has nowhere to travel to and no chance to go stale.
 
-**3. A schema change is one commit touching both languages.** If regeneration lands in a follow-up PR, the two have already drifted, and the window is exactly as long as the review queue.
+**3. A shape change is one commit that touches both sides**: the Pydantic model and the regenerated types. If regeneration lands in a follow-up, the two have already drifted, and the window is as long as the review queue.
+
+**What this replaced, and why.** v3 generated TypeScript types *and a Zod validator* for the whole `Deck` tree into a published `@d-design/schema` package. It needed them because a TypeScript renderer and an offline editor consumed that tree. v4 has no TypeScript renderer: slides are HTML the engine assembles. So `web` needs only the API's payload types, and OpenAPI is how FastAPI already publishes them. Three things went with the v3 approach:
+- the package and its publishing
+- the Changesets bumps
+- the cross-language fixture round-trip
+
+### Slide HTML is not a schema
+
+Slide HTML is the one piece of model output that is not JSON. Compose, repair and revise calls answer in text mode: `<slide>…</slide><style>…</style>`. HTML escaped inside JSON strings wastes tokens and breaks, so it never travels as JSON ([../v4/engine.md](../v4/engine.md) → "The model seam").
+
+It has a **contract** instead of a schema:
+- a fragment plus its CSS, scoped by a Declarative Shadow DOM root per slide (the lint does not rewrite selectors)
+- content nodes tagged `data-field`
+- component slots (`data-chart`, `data-image`); no icons and no `<a>` links in v4
+
+It is parsed, sanitized (`nh3`) and linted (`tinycss2`) at entry, exactly once ([../v4/design-engine.md](../v4/design-engine.md)). Past that point it is trusted like any other parsed value. A lint failure is an expected failure, so it returns a `Result` whose error names the violation, and that error becomes the repair prompt.
 
 ### The constraints that do not survive the trip
 
-Unchanged in substance from the Zod-first design, restated because the mechanism moved:
-
 | | |
 |---|---|
-| **Shape** — fields, types, discriminators | Carried by the generated JSON Schema. Enforced by Pydantic on the response; the decoder only shifts the odds (`docs/v1/plan/01-schema.md`) |
-| **Character caps** — `Headline ≤ 60`, `Body ≤ 240` | **Do not survive.** Structured-output implementations widely ignore `minLength`/`maxLength`. Keep them on the Pydantic field anyway — they cost nothing and they are what does the rejecting — and state every budget in the prompt as a hard number, because prompting is the only portable lever on length |
-| **Semantic rules** — one `Headline` per slide, region validity, claim provenance | Pydantic validators plus the post-build checks |
+| **Shape**: fields, types, discriminators | Carried by the JSON Schema. Enforced by Pydantic on the response; the decoder only shifts the odds |
+| **Character and word caps**: headline ≤12 words, ≤3 points | **Do not survive.** Structured-output implementations widely ignore `minLength`/`maxLength`. Keep them on the Pydantic field anyway, because they cost nothing and they do the rejecting. Also state every budget in the prompt as a hard number: prompting is the only portable lever on length. (v3's schema allowed 500 characters where its prompt said 60, so the cap on the field was the real rule, not the prompt) |
+| **Semantic rules**: an assertion headline, a source for every number, notes on every slide | Pydantic validators, plus the content evals ([../v4/content.md](../v4/content.md)) |
 
-**Keep a discriminated union off the schema root.** `SlideBlock` is a tagged union and it is nested inside `Deck`, which is an object — that is the shape strict structured-output validators handle cleanly. It is a constraint on how the schema is written down rather than a limitation, so it is written down rather than rediscovered.
+**Keep a discriminated union off the schema root.** A `SlidePlan` holds its optional `stat`, `quote` and `chart` parts inside an object. That is the shape strict structured-output validators handle cleanly. It is a constraint on how the schema is written, so it is written down rather than rediscovered.
 
 ## Trust boundaries: one parse, at entry
 
-**Every external input is `model_validate`'d exactly once, at the point it enters the system. Past that point it is typed and trusted.**
+**Every external input is parsed exactly once, at the point it enters the system. Past that point it is typed and trusted.**
 
-External means: HTTP request bodies, **model output**, tool-call arguments, uploaded file metadata, integration data, and anything from the URL. All of it is untyped until parsed, and none of it is re-validated downstream.
+External means all of these, and all of them are untyped until parsed and never re-validated downstream:
+- HTTP request bodies
+- **model output**, both JSON and slide HTML
+- web-search results and their citations
+- anything a user pasted
+- anything from the URL
 
 ```python
-brief = Brief.model_validate(raw)     # at the boundary — raises, which is a bug path
+brief = Brief.model_validate(raw)     # at the boundary; raises, which is a bug path
 # everywhere after: brief is Brief, no re-checking
 ```
 
 Two of those are the ones actually forgotten:
 
-- **Model output is internal plumbing and fully untrusted.** It is parsed like any other external input. This is not a formality — it is the gate the entire security posture rests on ([../security/prompt-injection.md](../security/prompt-injection.md)).
-- **Tool-call arguments look like your own function calls and are not.** A model calling `read_document(id=7)` may be reading an attacker's PDF ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)). Parse at the tool boundary, and check ownership there — and because ownership is an authorization decision, it **fails closed** ([patterns.md](patterns.md) rule 5).
+- **Model output is internal plumbing and fully untrusted.** It is parsed like any other external input. This is not a formality: it is the gate the security posture rests on ([../security/prompt-injection.md](../security/prompt-injection.md)). For slide HTML, "parsed" means sanitized and linted too, because the output channel is now markup.
+- **Search results look like our own data and are not.** A page returned through `openrouter:web_search` can carry instructions aimed at the model. It becomes a `Fact` at entry, quoted in prompts as data, never followed. The model has no tool with side effects ([../techstack/pipeline-tools.md](../techstack/pipeline-tools.md)), so an injected "do X" has nothing to do X with.
 
-**The rule generalizes: if a value crossed a process boundary to get here, it is external, regardless of how local the call site looks.** With five runtimes there are more such boundaries than there used to be, and the API surface between `web` and `api` is the newest one.
+**The rule generalizes: if a value crossed a process boundary to get here, it is external, however local the call site looks.** The API between `web` and `api` is such a boundary in both directions.
 
 ## Errors: typed Results for the expected, raise for the impossible
 
-Same split as TypeScript ([typescript.md](typescript.md)), which is the point — the rule should not change when the language does.
+Same split as TypeScript ([typescript.md](typescript.md)), which is the point: the rule should not change when the language does.
 
-**Expected failures return a `Result`.** Repair exhausted, quota reached, upload rejected, integration unreachable, session invalid. Python has no union types in the TypeScript sense, so this is a small tagged pair:
+**Expected failures return a `Result`.** These happen in normal operation:
+- repair exhausted
+- a slide that still fails QA after the repair ladder
+- an image the image model did not produce
+- research that returned nothing usable
+- a lint violation
+- the budget cap reached (phase 29)
+
+Python has no union types in the TypeScript sense, so this is a small tagged pair:
 
 ```python
 # lib/result.py
 type Result[T, E = AppError] = Ok[T] | Err[E]
 ```
 
-`mypy --strict` makes the match exhaustive, so a caller that forgets a branch fails the gate. That is the property being bought, and without a strict checker `Result` in Python is just ceremony — which is why rule 1 above is a prerequisite for this one rather than a neighbour.
+`mypy --strict` makes the match exhaustive, so a caller that forgets a branch fails the gate. That is the property being bought. Without a strict checker, `Result` in Python is just ceremony, which is why the strict rule above is a prerequisite for this one rather than a neighbour.
 
-**Bugs raise.** A broken invariant, an unreachable branch, a `model_validate` on data that was supposed to be validated already. Let them raise, catch at the route boundary, log, return a 500.
+**One failed slide is a `Result` on that slide, never an exception that unwinds the deck.** v3's build threw away every finished slide when one failed (`slide_builder.py:116`), so v4 makes the per-slide `Result` the unit.
+
+**Bugs raise.** A broken invariant, an unreachable branch, a `model_validate` on data that was supposed to be validated already. Let them raise, catch at the route boundary, log, and return a 500 whose body is human copy, never the exception text.
 
 The line is one question: *would a correct system ever produce this?* If yes, `Result`. If no, raise.
 
@@ -100,31 +128,38 @@ The line is one question: *would a correct system ever produce this?* If yes, `R
 
 ## Async, and the one thing that bites
 
-`api` is async end to end — FastAPI, SQLAlchemy's async session, `httpx.AsyncClient`, PGQueuer. The pipeline is I/O bound by definition: it waits on model calls.
+`api` is async end to end: FastAPI, `httpx.AsyncClient`, Playwright's async API, and SQLAlchemy's async session from phase 29. The pipeline is I/O bound by definition: it waits on model calls and on a browser.
 
-**One blocking call in an async handler blocks the whole event loop**, and the symptom is latency on unrelated requests, which is the hardest kind of bug to attribute. A sync library goes in `run_in_threadpool` or it does not go in `api` at all.
+**One blocking call in an async handler blocks the whole event loop.** The symptom is latency on unrelated requests, which is the hardest kind of bug to attribute. A sync library goes in `run_in_threadpool`, or it does not go in `api` at all. The v3 seam was synchronous and ran in a thread, and that is why its slides were built one after another.
 
-Two specifics worth knowing before they cost an afternoon:
+Specifics worth knowing before they cost an afternoon:
 
-- **`asyncpg` caches prepared statements**, which breaks behind a transaction-mode pooler ([../techstack/backend.md](../techstack/backend.md)). Disable the cache; the errors it produces otherwise look like nothing else in the system.
-- **One `httpx.AsyncClient`, module-level, reused.** A client per request leaks connections and loses keep-alive on the hot path — and the model seam is the hot path ([performance.md](performance.md)).
+- **One `httpx.AsyncClient`, module-level, reused.** A client per request leaks connections and loses keep-alive on the hot path, and the model seam is the hot path ([performance.md](performance.md)).
+- **Parallel slides go through one semaphore**, never through `gather` over an unbounded list. Five in flight is the v4 default ([../v4/engine.md](../v4/engine.md)); an unbounded fan-out turns a 20-slide deck into a rate-limit incident.
+- **One browser, launched once, with a small page pool, in the worker process.** A Chromium launch per slide costs more than the measurement it serves. From phase 27 the API process never starts a browser or calls a model; `api/worker.py` does ([structure.md](structure.md)).
+- **`asyncpg` caches prepared statements** (phase 29), which breaks behind a transaction-mode pooler ([../techstack/backend.md](../techstack/backend.md)). Disable the cache; the errors it produces otherwise look like nothing else in the system.
 
 ## No classes for data
 
 Pydantic models and dataclasses for data; functions that transform them for behaviour. A `Deck` is data, not an object with methods.
 
-Classes are fine where identity and lifecycle genuinely matter — a client, a connection pool, a context manager. They are not a namespace. A class whose methods never touch `self` is a module with extra syntax.
+Classes are fine where identity and lifecycle genuinely matter: a client, a browser pool, a context manager. They are not a namespace. A class whose methods never touch `self` is a module with extra syntax.
 
 This is the same rule as [typescript.md](typescript.md)'s "no classes for data", and it matters more in Python because the language makes the wrong version so comfortable.
 
 ## Test
 
-**pytest**, and what gets tested is unchanged and deliberately narrow ([ai-authorship.md](ai-authorship.md)): the schema round-trip, the golden-brief pipeline run, the seam's repair and refusal paths, the tenant wrapper's unset case, and every fail-closed check proven by making it raise.
+**pytest.** What gets tested is deliberately narrow ([ai-authorship.md](ai-authorship.md)):
 
-Three that only exist because of the language split, and all three are cheap:
+- [ ] **The seam**: the repair path (the real previous answer goes back), `finish_reason` handling, and one cost-ledger entry per call
+- [ ] **The sanitizer** against an XSS corpus, and **the lint** against banned CSS: each fixture must be rejected, not merely warned
+- [ ] **The QA metrics** against fixture slides with known overflow, collision and contrast defects
+- [ ] **The export** opened from `file://` in a real browser, with zero network requests
+- [ ] **Regenerating the OpenAPI types produces no diff**: the gate rule, as a test
+- [ ] **The file store's single-writer rule**: an API edit while a job is generating returns 409
+- [ ] **Every fail-closed check** proven by making it raise
+- [ ] **From phase 29:** the tenant wrapper's unset case fails rather than matching everything ([patterns.md](patterns.md) rule 4)
 
-- [ ] **Regenerating `@d-design/schema` from Pydantic produces no diff.** The gate rule, as a test
-- [ ] **A `Deck` fixture round-trips through both validators** — Pydantic and the generated Zod — with the same verdict on the same input. This is what would actually catch a codegen bug
-- [ ] **`current_setting('app.user_id')` on a connection where it was never set fails**, rather than matching everything ([patterns.md](patterns.md) rule 4)
+The browser-backed tests carry a `browser` marker. They run in CI and before a phase exits, and are kept out of the per-commit gate so it stays fast ([tooling.md](tooling.md)).
 
 No coverage threshold. The ponytail rule holds: one runnable check per non-trivial branch, none for trivial code.
