@@ -15,8 +15,10 @@
   const out = {};
 
   for (const host of document.querySelectorAll(".dd-slide")) {
-    const id = host.dataset.slide, root = host.shadowRoot, errors = [];
+    const id = host.dataset.slide, root = host.shadowRoot, errors = [], warnings = [];
     const add = (code, field, measured, threshold) => errors.push({ code, field, measured: String(measured), threshold: String(threshold) });
+    // Reported and tracked, never repaired: a widow is a blemish, not a break.
+    const warn = (code, field, measured, threshold) => warnings.push({ code, field, measured: String(measured), threshold: String(threshold) });
     if (!root || !root.querySelector(".s")) { out[id] = { measured: false, errors: [], fingerprint: "" }; continue; }
     const box = host.getBoundingClientRect();
     const want = arg.slides[id] || {};
@@ -94,7 +96,7 @@
       const lines = [...new Set(tops)].sort((a, b) => a - b);
       if (name === "headline" && lines.length > 4) add("E9", name, lines.length + " lines", "4 lines");
       if (words >= 3 && lines.length === words) add("E9", name, "one word per line", "wider box");
-      if (name === "headline" && lines.length >= 2 && words >= 5 && tops.filter((t) => t === lines[lines.length - 1]).length === 1) add("E9", name, "single word on the last line", "at least 2 words");
+      if (name === "headline" && lines.length >= 2 && words >= 5 && tops.filter((t) => t === lines[lines.length - 1]).length === 1) warn("W7", name, "single word on the last line", "at least 2 words");
       rects.push({ name, el, r, layer: !!el.closest("[data-layer]") });
     }
     // E3 collisions between fields
@@ -115,7 +117,7 @@
     const s = root.querySelector(".s"), scs = getComputedStyle(s);
     const centred = rects.length && rects.filter((x) => getComputedStyle(x.el).textAlign === "center").length > rects.length / 2;
     const fingerprint = [scs.display, scs.gridTemplateColumns.split(" ").length, scs.gridTemplateRows.split(" ").length, centred ? "c" : "l", fields.map((f) => f.dataset.field.replace(/-\d+$/, "")).join(">"), root.querySelectorAll("dd-texture").length].join("|");
-    out[id] = { measured: true, errors, fingerprint, centred };
+    out[id] = { measured: true, errors, warnings, fingerprint, centred };
   }
   return out;
 }

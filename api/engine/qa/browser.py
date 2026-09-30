@@ -29,14 +29,19 @@ class _Found(BaseModel):
 class Measured(BaseModel):
     measured: bool
     errors: list[_Found] = Field(default_factory=list)
+    warnings: list[_Found] = Field(default_factory=list)
     fingerprint: str = ""
     centred: bool = False
 
     def defects(self) -> list[Defect]:
-        return [
-            Defect(code=e.code, field=e.field, measured=e.measured, threshold=e.threshold)
-            for e in self.errors
-        ]
+        return [_defect(e) for e in self.errors]
+
+    def warned(self) -> list[Defect]:
+        return [_defect(e) for e in self.warnings]
+
+
+def _defect(e: _Found) -> Defect:
+    return Defect(code=e.code, field=e.field, measured=e.measured, threshold=e.threshold)
 
 
 _RESULT = TypeAdapter(dict[str, Measured])

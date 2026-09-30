@@ -11,6 +11,7 @@ One row per run (docs/v4/bench.md -> "What a run records"). Runs themselves live
 | 2026-09-30 | `2026-09-30-models` | Same, `google/gemini-3.8-flash` | 3 | median $0.049 | median 52 s | pending. 22 of 30 clean first pass, 3 fallback, 0 flagged |
 | 2026-09-30 | `2026-09-30-models` | Same, `z-ai/glm-5.3-flash` | 3 | median $0.018 | median 69 s | pending. 15 of 30 clean first pass, 6 fallback, 0 flagged |
 | 2026-09-30 | — | `qwen/qwen3.8-flash` | 0 | — | stalled for over 10 minutes on the first deck; dropped | — |
+| 2026-09-30 | `2026-09-30-full` | Engine, all 12 briefs, `deepseek/deepseek-v4.1-flash`, `compose.v1`, three-layout fallback | 12 of 12 | median $0.055, total $0.67 | about 1 minute per deck | owner looked at the decks and approved the quality; no ratings file. 0 slides flagged |
 
 **The bar phase 22 has to beat:** a single prompt to the best model costs about $0.21 and 93 seconds per deck, and already looks far better than v3. It also shows the look v4 is built to avoid: rounded cards, numbered badges, one centred system font.
 

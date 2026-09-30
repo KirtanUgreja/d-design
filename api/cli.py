@@ -116,6 +116,9 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             print(f"{brief_id}: no frozen outline — run `freeze` first")
             continue
         out = root / brief_id
+        if (out / "deck.html").exists() and not args.force:
+            print(f"{brief_id}: already built")
+            continue
         out.mkdir(parents=True, exist_ok=True)
         theme = themes[index % len(themes)]
         seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{args.run}-{label}-{brief_id}")
@@ -149,9 +152,13 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             "refusals": built.refusals,
         }
         rows.append(row)
-        print(json.dumps(row))
-    with (root / "summary.jsonl").open("a") as out_file:
-        out_file.writelines(json.dumps(r) + "\n" for r in rows)
+        # Written per deck: a run that is cut short keeps what it finished.
+        with (root / "summary.jsonl").open("a") as out_file:
+            out_file.write(json.dumps(row) + "\n")
+        (out / "slides.json").write_text(
+            json.dumps([s.model_dump(mode="json") for s in built.slides])
+        )
+        print(json.dumps(row), flush=True)
     if rows:
         costs = [float(str(r["cost_usd"])) for r in rows]
         print(f"{label}: {len(rows)} decks, median ${statistics.median(costs):.3f}")
@@ -186,6 +193,7 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--label", default="")
     cmd.add_argument("--set", choices=("one", "smoke", "all"), default="smoke")
     cmd.add_argument("--budget", type=float, default=0.5, help="hard cap per deck, USD")
+    cmd.add_argument("--force", action="store_true")
     cmd = sub.add_parser("wall")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--seed", type=int, default=0)

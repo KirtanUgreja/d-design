@@ -23,7 +23,9 @@ Built: 3 themes, 8 vendored OFL font families, 12 exemplars, sanitizer (nh3), CS
 
 First comparison (`bench/runs/2026-09-30-models/wall.html`): DeepSeek v4.1 Flash, Gemini 3.8 Flash and GLM 5.3 Flash, 3 decks each, against the baselines. $0.02–0.06 per deck.
 
-Open: the owner rates that wall and picks a model. Then: a better fallback (about 1 slide in 10 uses it and it is plain), fewer refused compositions, and the full 12-deck run.
+Owner inspected the decks and approved the quality (2026-09-30). Model pinned: `deepseek/deepseek-v4.1-flash`. The fallback is now three designed code layouts. Full 12-deck run: `bench/runs/2026-09-30-full/wall.html` — $0.67 total, median $0.055 per deck, nothing flagged.
+
+Left in phase 22: the with/without-exemplars A/B, images (up to 3 per deck), and the formal blind ratings for the exit gate. About $0.60 of credit remains.
 
 Budget: the owner set a $10 cap and cheap paid models only (no free ones). About $1.30 of credit was left on 2026-09-30.
 

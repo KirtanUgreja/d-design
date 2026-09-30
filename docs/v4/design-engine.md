@@ -167,7 +167,7 @@ Sizes are calibrated to the canvas: 1920px is a 13.33-inch slide, so 1pt is 2px.
 | E6 | Completeness | A field missing, duplicated or differing from the plan; stray text; an unfilled component |
 | E7 | Style | Lint fails, or the **computed-style check** fails: every computed colour, font family and font size must be a theme value. This catches `color-mix`, colour keywords and system colours the static lint misses |
 | E8 | Fonts | A fallback font was used (`document.fonts.check`) |
-| E9 | Wrapping | A headline over 4 lines; a single-word last line; a field with one word per line (3 or more words) — v3's CTA |
+| E9 | Wrapping | A headline over 4 lines; a field with one word per line (3 or more words) — v3's CTA |
 | E10 | Images | Stretched more than 2%, or upscaled more than 1.35× |
 
 **Warnings are reported and tracked, not repaired:**
@@ -180,6 +180,7 @@ Sizes are calibrated to the canvas: 1920px is a 13.33-inch slide, so 1pt is 2px.
 | W4 | Length | Body lines over 75 characters; words over budget by more than 20% |
 | W5 | Rhythm | Adjacent slides' fingerprints overlap more than 0.75; more than 2 centred slides; more than 1 card grid (3 or more equal, filled siblings) |
 | W6 | Projector margin | Body contrast under 7:1 |
+| W7 | Widow | A headline whose last line is a single word. Moved from E9 on 2026-09-30: `text-wrap: balance` removes most, and repairing the rest cost more than it fixed |
 
 Warnings become errors only when the bench shows they track the owner's scores.
 

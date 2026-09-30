@@ -180,37 +180,100 @@ async def repair(
     )
 
 
-def fallback(plan: SlidePlan) -> Composed:
-    """A plain composition built by code from the slide's fields. It is the
-    last rung before a flag: not inspired, never broken.
+_LABEL = (
+    "font-family:var(--f-label);font-size:var(--t-label);letter-spacing:0.08em;"
+    "text-transform:uppercase"
+)
+_DISPLAY = "font-family:var(--f-display);font-weight:var(--w-display)"
+_SOURCE = (
+    ".src{font-family:var(--f-label);font-size:var(--t-label);color:var(--c-ink-2);"
+    "border-top:var(--rule) solid var(--c-rule);padding-top:var(--s-2)}"
+)
 
-    ponytail: one generic stack. Ceiling: every fallback slide looks alike.
+
+def _step(text: str, steps: tuple[tuple[int, str], ...], last: str) -> str:
+    """The largest type step whose character budget the text fits."""
+    return next((step for limit, step in steps if len(text) <= limit), last)
+
+
+def fallback(plan: SlidePlan) -> Composed:
+    """A composition built by code from the slide's fields: the last rung
+    before a flag. Three layouts, chosen by what the slide has — a number, a
+    list, or only a sentence — so a fallback still reads as designed.
+
+    ponytail: three layouts. Ceiling: fallbacks of the same kind look alike.
     Upgrade path: fill the matching exemplar per archetype (phase 25).
     """
-    by = {f.name: f.text for f in plan.fields}
+    by = {f.name: escape(f.text) for f in plan.fields}
     head = by.get("headline", "")
-    size = "h1" if len(head.split()) <= 9 else "h2"
-    parts = ['<section class="s">']
-    if "kicker" in by:
-        parts.append(f'<p class="k" data-field="kicker">{escape(by["kicker"])}</p>')
-    parts.append(f'<h1 class="h" data-field="headline">{escape(head)}</h1>')
-    rest = [f for f in plan.fields if f.name not in ("kicker", "headline", "source")]
-    if rest:
-        parts.append('<div class="r">')
-        parts += [f'<p data-field="{f.name}">{escape(f.text)}</p>' for f in rest]
-        parts.append("</div>")
-    if "source" in by:
-        parts.append(f'<p class="src" data-field="source">{escape(by["source"])}</p>')
-    parts.append("</section>")
-    css = (
-        ".s{display:grid;grid-template-rows:auto auto 1fr auto;gap:var(--s-4);"
-        "padding:var(--margin)}"
-        ".k{font-family:var(--f-label);font-size:var(--t-label);color:var(--c-ink-2)}"
-        f".h{{font-family:var(--f-display);font-weight:var(--w-display);font-size:var(--t-{size});"
-        "line-height:1.02;max-width:1400px}"
-        ".r{align-self:end;display:grid;border-top:var(--rule) solid var(--c-rule)}"
-        ".r p{font-size:var(--t-body);padding:var(--s-3) 0;"
-        "border-bottom:var(--rule) solid var(--c-rule)}"
-        ".src{font-family:var(--f-label);font-size:var(--t-label);color:var(--c-ink-2)}"
+    rest = [f for f in plan.fields if f.name not in ("kicker", "headline", "source", "stat")]
+    rest = [f for f in rest if f.name != "stat-label"]
+    kicker = f'<p class="k" data-field="kicker">{by["kicker"]}</p>' if "kicker" in by else ""
+    source = f'<p class="src" data-field="source">{by["source"]}</p>' if "source" in by else ""
+    items = "".join(f'<li data-field="{f.name}">{escape(f.text)}</li>' for f in rest)
+    base = f".k{{{_LABEL};color:var(--c-ink-2)}}{_SOURCE}"
+
+    if "stat" in by:  # a colour field carries the number; the claim sits beside it
+        size = _step(by["stat"], ((3, "mega"), (5, "d1"), (8, "d2")), "d3")
+        hsize = _step(head, ((36, "h1"),), "h2")
+        label = (
+            f'<p class="lb" data-field="stat-label">{by["stat-label"]}</p>'
+            if "stat-label" in by
+            else ""
+        )
+        html = (
+            f'<section class="s"><div class="f"><p class="st" data-field="stat">{by["stat"]}</p>'
+            f'{label}</div><div class="c"><div class="t">{kicker}'
+            f'<h1 class="h" data-field="headline">{head}</h1></div>'
+            f'<ul class="l">{items}</ul>{source}</div></section>'
+        )
+        css = (
+            ".s{display:grid;grid-template-columns:1fr 1fr}"
+            ".f{background-color:var(--c-accent);color:var(--c-on-accent);padding:var(--margin);"
+            "display:grid;align-content:end;gap:var(--s-3)}"
+            f".st{{{_DISPLAY};font-size:var(--t-{size});line-height:0.9;letter-spacing:-0.02em}}"
+            ".lb{font-size:var(--t-body);max-width:600px}"
+            ".c{padding:var(--margin);display:grid;grid-template-rows:auto 1fr auto;"
+            "gap:var(--s-4)}.t{display:grid;gap:var(--s-3)}"
+            f".h{{{_DISPLAY};font-size:var(--t-{hsize});line-height:1.02}}"
+            ".l{align-self:end;display:grid}"
+            ".l li{font-size:var(--t-body);padding:var(--s-2) 0;"
+            "border-top:var(--rule) solid var(--c-rule)}" + base
+        )
+        return Composed(html, css)
+
+    if rest:  # a ruled list beside the headline
+        hsize = _step(head, ((30, "h1"),), "h2")
+        cols = "5fr 7fr" if hsize == "h1" else "7fr 5fr"
+        html = (
+            f'<section class="s"><div class="t">{kicker}'
+            f'<h1 class="h" data-field="headline">{head}</h1></div>'
+            f'<ul class="l">{items}</ul>{source}</section>'
+        )
+        css = (
+            f".s{{display:grid;grid-template-columns:{cols};grid-template-rows:1fr auto;"
+            "column-gap:var(--s-7);row-gap:var(--s-4);padding:var(--margin)}"
+            ".t{display:grid;gap:var(--s-3);align-content:start}"
+            f".h{{{_DISPLAY};font-size:var(--t-{hsize});line-height:1.02}}"
+            ".l{display:grid;align-self:end}"
+            ".l li{font-size:var(--t-h3);line-height:1.15;padding:var(--s-4) 0;"
+            "border-top:var(--rule) solid var(--c-rule)}"
+            ".src{grid-column:1 / 3}" + base
+        )
+        return Composed(html, css)
+
+    # only a sentence: set it at poster scale against one hard accent bar
+    hsize = _step(head, ((36, "d2"), (62, "d3")), "h1")
+    html = (
+        f'<section class="s">{kicker or "<span></span>"}'
+        f'<h1 class="h" data-field="headline">{head}</h1>{source}'
+        '<dd-texture class="bar" kind="solid" tone="accent"></dd-texture></section>'
     )
-    return Composed("".join(parts), css)
+    css = (
+        ".s{display:grid;grid-template-rows:auto 1fr auto;gap:var(--s-4);"
+        "padding:var(--margin);padding-right:420px}"
+        f".h{{align-self:end;{_DISPLAY};font-size:var(--t-{hsize});line-height:0.96;"
+        "letter-spacing:-0.015em}"
+        ".bar{position:absolute;top:0;right:0;width:300px;height:1080px}" + base
+    )
+    return Composed(html, css)

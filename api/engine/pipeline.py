@@ -142,6 +142,7 @@ async def build(
                 qa=SlideQA(
                     status=status,
                     errors=m.defects(),
+                    warnings=m.warned(),
                     fingerprint=m.fingerprint,
                     screenshot=f"{plan.id}.png",
                 ),
