@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Potluck: Seed Pitch</title>
+<style>
+  :root{
+    --cream:#FBF5EC;
+    --paper:#FFFDF8;
+    --ink:#1F2A24;
+    --muted:#6B726C;
+    --tomato:#E4572E;
+    --tomato-soft:#F9DDD3;
+    --green:#2F5D50;
+    --green-soft:#DCE8E2;
+    --mustard:#F2B134;
+    --mustard-soft:#FCEBC6;
+    --line:#E7DFD2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#2a2a2a;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  .slide{width:1920px;height:1080px;position:relative;overflow:hidden;background:var(--cream);margin:0 auto 40px auto;padding:110px 140px 120px 140px;display:block}
+  .serif{font-family:Georgia,"Times New Roman",serif}
+  .kicker{font-size:22px;letter-spacing:4px;text-transform:uppercase;font-weight:700;color:var(--tomato);margin-bottom:28px;display:flex;align-items:center;gap:16px}
+  .kicker:before{content:"";width:48px;height:4px;background:var(--tomato);border-radius:2px}
+  h1,h2{font-family:Georgia,"Times New Roman",serif;font-weight:400;letter-spacing:-1.5px;line-height:1.05}
+  h2{font-size:76px;max-width:1500px}
+  h2 em{font-style:italic;color:var(--tomato)}
+  .lead{font-size:30px;line-height:1.5;color:var(--muted);max-width:1200px;margin-top:28px}
+  .footer{position:absolute;left:140px;right:140px;bottom:52px;display:flex;justify-content:space-between;font-size:18px;color:var(--muted);letter-spacing:1px;border-top:1px solid var(--line);padding-top:20px}
+  .footer b{color:var(--ink);font-weight:700}
+  .logo{display:inline-flex;align-items:center;gap:14px;font-family:Georgia,serif;font-size:34px;color:var(--ink)}
+  .pot{width:46px;height:46px;border-radius:50%;background:var(--tomato);position:relative;flex:none}
+  .pot:after{content:"";position:absolute;left:10px;right:10px;top:13px;height:6px;background:var(--cream);border-radius:3px}
+  .pot:before{content:"";position:absolute;left:14px;right:14px;top:24px;bottom:12px;background:var(--cream);border-radius:0 0 10px 10px}
+
+  /* Slide 1 */
+  .s1{background:var(--green);color:var(--cream);padding:0}
+  .s1 .left{position:absolute;left:140px;top:120px;width:1000px}
+  .s1 .logo{color:var(--cream);font-size:40px}
+  .s1 h1{font-size:132px;margin-top:150px;color:var(--cream)}
+  .s1 h1 em{color:var(--mustard);font-style:italic}
+  .s1 .sub{font-size:34px;line-height:1.45;margin-top:40px;color:#CFE0D8;max-width:860px}
+  .s1 .meta{position:absolute;left:140px;bottom:90px;display:flex;gap:70px;font-size:20px;letter-spacing:2px;text-transform:uppercase;color:#A9C4B8}
+  .s1 .meta b{display:block;color:var(--cream);font-size:28px;letter-spacing:0;text-transform:none;margin-top:8px;font-weight:600}
+  .plate{position:absolute;border-radius:50%}
+  .p1{width:760px;height:760px;right:-120px;top:160px;background:var(--cream)}
+  .p1:after{content:"";position:absolute;inset:70px;border-radius:50%;border:3px solid var(--line)}
+  .p2{width:300px;height:300px;right:250px;top:390px;background:var(--tomato)}
+  .p3{width:150px;height:150px;right:120px;top:300px;background:var(--mustard)}
+  .p4{width:110px;height:110px;right:520px;top:680px;background:var(--green)}
+  .p5{width:220px;height:220px;right:100px;top:620px;background:var(--tomato-soft)}
+
+  /* Problem */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:80px}
+  .stat{background:var(--paper);border:1px solid var(--line);border-radius:28px;padding:50px 46px;height:430px;position:relative}
+  .stat .num{font-family:Georgia,serif;font-size:120px;letter-spacing:-3px;line-height:1}
+  .stat .num small{font-size:56px}
+  .stat h3{font-size:32px;margin-top:26px;font-weight:700}
+  .stat p{font-size:24px;line-height:1.5;color:var(--muted);margin-top:14px}
+  .stat .bar{position:absolute;left:46px;right:46px;bottom:46px;height:8px;border-radius:4px}
+  .c-t .num{color:var(--tomato)} .c-t .bar{background:var(--tomato)}
+  .c-g .num{color:var(--green)} .c-g .bar{background:var(--green)}
+  .c-m .num{color:#C98A10} .c-m .bar{background:var(--mustard)}
+  .source{position:absolute;left:140px;bottom:110px;font-size:17px;color:var(--muted)}
+
+  /* Solution */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:90px;position:relative}
+  .steps:before{content:"";position:absolute;left:90px;right:calc(33.3% - 90px);top:60px;border-top:3px dashed #D5C9B6}
+  .step{padding-right:70px;position:relative}
+  .step .dot{width:120px;height:120px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Georgia,serif;font-size:56px;color:#fff;position:relative;z-index:1}
+  .step h3{font-family:Georgia,serif;font-weight:400;font-size:48px;margin-top:44px;letter-spacing:-0.5px}
+  .step p{font-size:26px;line-height:1.5;color:var(--muted);margin-top:18px}
+  .step .tag{display:inline-block;margin-top:28px;font-size:20px;font-weight:700;padding:10px 20px;border-radius:40px;letter-spacing:.5px}
+
+  /* Product */
+  .s4{display:flex;gap:120px;align-items:center}
+  .s4 .copy{flex:1}
+  .feat{margin-top:50px;display:flex;flex-direction:column;gap:30px}
+  .feat div{display:flex;gap:26px;align-items:flex-start}
+  .feat i{flex:none;width:54px;height:54px;border-radius:16px;display:block}
+  .feat b{display:block;font-size:28px;margin-bottom:6px}
+  .feat span{font-size:23px;color:var(--muted);line-height:1.45}
+  .phone{width:440px;height:880px;border-radius:64px;background:var(--ink);padding:18px;flex:none;box-shadow:0 40px 80px rgba(31,42,36,.25);margin-top:-10px}
+  .screen{width:100%;height:100%;border-radius:48px;background:var(--paper);overflow:hidden;padding:44px 26px 26px;position:relative}
+  .notch{position:absolute;top:14px;left:50%;margin-left:-60px;width:120px;height:28px;background:var(--ink);border-radius:20px}
+  .scr-h{font-size:15px;color:var(--muted);margin-top:18px}
+  .scr-t{font-family:Georgia,serif;font-size:34px;margin-top:4px}
+  .chips{display:flex;gap:8px;margin-top:16px}
+  .chips span{font-size:13px;padding:7px 13px;border-radius:20px;background:var(--cream);border:1px solid var(--line)}
+  .chips span.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .meal{margin-top:16px;border-radius:22px;border:1px solid var(--line);overflow:hidden;background:#fff}
+  .meal .img{height:130px;position:relative}
+  .meal .img:after{content:"";position:absolute;width:90px;height:90px;border-radius:50%;left:50%;top:50%;margin:-45px 0 0 -45px;background:rgba(255,255,255,.55)}
+  .meal .row{padding:14px 16px;display:flex;justify-content:space-between;align-items:flex-end}
+  .meal .row b{font-size:17px;display:block}
+  .meal .row small{font-size:13px;color:var(--muted)}
+  .meal .price{font-family:Georgia,serif;font-size:24px;color:var(--tomato)}
+  .navbar{position:absolute;left:26px;right:26px;bottom:24px;height:62px;border-radius:31px;background:var(--ink);display:flex;justify-content:space-around;align-items:center}
+  .navbar i{width:22px;height:22px;border-radius:6px;background:#56625B;display:block}
+  .navbar i.on{background:var(--mustard)}
+
+  /* Traction */
+  .s5 .wrap{display:grid;grid-template-columns:1.25fr 1fr;gap:90px;margin-top:70px}
+  .chart{background:var(--paper);border:1px solid var(--line);border-radius:28px;padding:44px 50px;height:560px;position:relative}
+  .chart h4{font-size:22px;color:var(--muted);font-weight:600;letter-spacing:1px;text-transform:uppercase}
+  .chart .big{font-family:Georgia,serif;font-size:60px;margin-top:6px}
+  .chart .big span{font-size:24px;color:var(--green);font-family:Helvetica,Arial,sans-serif;font-weight:700;margin-left:12px}
+  .bars{position:absolute;left:50px;right:50px;bottom:44px;height:300px;display:flex;align-items:flex-end;gap:16px;border-bottom:2px solid var(--line)}
+  .bars div{flex:1;background:var(--green-soft);border-radius:10px 10px 0 0;position:relative}
+  .bars div.hi{background:var(--tomato)}
+  .bars div span{position:absolute;bottom:-34px;left:0;right:0;text-align:center;font-size:16px;color:var(--muted)}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+  .kpi{border-top:4px solid var(--ink);padding-top:22px}
+  .kpi .v{font-family:Georgia,serif;font-size:74px;letter-spacing:-2px;line-height:1}
+  .kpi .l{font-size:22px;color:var(--muted);margin-top:12px;line-height:1.4}
+  .quote{grid-column:1 / 3;background:var(--mustard-soft);border-radius:24px;padding:30px 34px;font-family:Georgia,serif;font-size:26px;line-height:1.45;font-style:italic}
+  .quote small{display:block;font-family:Helvetica,Arial,sans-serif;font-style:normal;font-size:18px;color:var(--muted);margin-top:12px}
+
+  /* Business model */
+  .s6 .wrap{display:grid;grid-template-columns:1fr 1fr;gap:100px;margin-top:70px;align-items:start}
+  .receipt{background:#fff;border-radius:20px;padding:50px 56px;box-shadow:0 30px 60px rgba(31,42,36,.10);border:1px solid var(--line)}
+  .receipt h4{font-family:Georgia,serif;font-weight:400;font-size:34px}
+  .receipt .sm{font-size:19px;color:var(--muted);margin-top:6px}
+  .line{display:flex;justify-content:space-between;font-size:26px;padding:20px 0;border-bottom:1px dashed #DDD2C1}
+  .line span:last-child{font-weight:700}
+  .line.total{border-bottom:none;border-top:3px solid var(--ink);margin-top:10px;font-size:30px}
+  .line.fee span{color:var(--tomato)}
+  .model h3{font-family:Georgia,serif;font-weight:400;font-size:40px;margin-bottom:20px}
+  .model p{font-size:25px;line-height:1.55;color:var(--muted)}
+  .ue{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-top:44px}
+  .ue div{background:var(--green-soft);border-radius:22px;padding:28px 30px}
+  .ue b{font-family:Georgia,serif;font-weight:400;font-size:54px;display:block;color:var(--green)}
+  .ue span{font-size:20px;color:var(--ink);line-height:1.4;display:block;margin-top:6px}
+
+  /* Market */
+  .s7 .wrap{display:flex;gap:110px;align-items:center;margin-top:40px}
+  .rings{width:680px;height:680px;position:relative;flex:none}
+  .ring{position:absolute;border-radius:50%;left:50%;bottom:0;display:flex;justify-content:center;text-align:center}
+  .r1{width:680px;height:680px;margin-left:-340px;background:var(--green-soft)}
+  .r2{width:460px;height:460px;margin-left:-230px;background:#B9D1C6}
+  .r3{width:240px;height:240px;margin-left:-120px;background:var(--green);color:var(--cream);align-items:center}
+  .ring .in{padding-top:60px}
+  .r2 .in{padding-top:52px}
+  .ring b{font-family:Georgia,serif;font-weight:400;font-size:56px;display:block;letter-spacing:-1px}
+  .ring span{font-size:18px;letter-spacing:2px;text-transform:uppercase;font-weight:700}
+  .r3 .in{padding-top:0}
+  .r3 b{font-size:50px}
+  .mk{flex:1}
+  .mk .row{display:flex;gap:30px;padding:30px 0;border-bottom:1px solid var(--line)}
+  .mk .row:first-child{border-top:1px solid var(--line)}
+  .mk .sw{flex:none;width:22px;height:22px;border-radius:50%;margin-top:8px}
+  .mk b{font-size:28px;display:block}
+  .mk p{font-size:22px;color:var(--muted);line-height:1.5;margin-top:6px}
+  .whynow{margin-top:36px;background:var(--ink);color:var(--cream);border-radius:22px;padding:28px 34px;font-size:23px;line-height:1.5}
+  .whynow b{color:var(--mustard)}
+
+  /* GTM & trust */
+  .s8 .wrap{display:grid;grid-template-columns:1fr 1fr;gap:70px;margin-top:70px}
+  .panel{border-radius:28px;padding:50px;height:620px}
+  .panel h3{font-family:Georgia,serif;font-weight:400;font-size:44px;margin-bottom:34px}
+  .panel.a{background:var(--paper);border:1px solid var(--line)}
+  .panel.b{background:var(--green);color:var(--cream)}
+  .flow{display:flex;flex-direction:column;gap:22px}
+  .flow div{display:flex;gap:24px;align-items:center;font-size:25px;line-height:1.35}
+  .flow i{flex:none;width:58px;height:58px;border-radius:50%;background:var(--tomato);color:#fff;font-style:normal;font-family:Georgia,serif;font-size:28px;display:flex;align-items:center;justify-content:center}
+  .flow span small{display:block;font-size:20px;color:var(--muted);margin-top:4px}
+  .checks{display:flex;flex-direction:column;gap:26px}
+  .checks div{display:flex;gap:22px;font-size:25px;line-height:1.4}
+  .checks div:before{content:"✓";flex:none;width:44px;height:44px;border-radius:12px;background:var(--mustard);color:var(--ink);font-weight:700;display:flex;align-items:center;justify-content:center;font-size:24px}
+  .checks small{display:block;color:#A9C4B8;font-size:20px;margin-top:2px}
+
+  /* Team */
+  .team{display:grid;grid-template-columns:repeat(4,1fr);gap:36px;margin-top:80px}
+  .person .av{width:100%;height:330px;border-radius:28px;position:relative;overflow:hidden}
+  .person .av:before{content:"";position:absolute;width:150px;height:150px;border-radius:50%;left:50%;margin-left:-75px;top:60px;background:rgba(255,255,255,.55)}
+  .person .av:after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;left:50%;margin-left:-130px;top:230px;background:rgba(255,255,255,.55)}
+  .person h4{font-family:Georgia,serif;font-weight:400;font-size:36px;margin-top:28px}
+  .person .role{font-size:19px;letter-spacing:2px;text-transform:uppercase;color:var(--tomato);font-weight:700;margin-top:8px}
+  .person p{font-size:22px;color:var(--muted);line-height:1.5;margin-top:14px}
+  .advisors{position:absolute;left:140px;right:140px;bottom:120px;font-size:22px;color:var(--muted)}
+  .advisors b{color:var(--ink)}
+
+  /* Ask */
+  .s10{background:var(--ink);color:var(--cream)}
+  .s10 .kicker{color:var(--mustard)} .s10 .kicker:before{background:var(--mustard)}
+  .s10 h2{color:var(--cream)}
+  .s10 h2 em{color:var(--mustard)}
+  .s10 .wrap{display:grid;grid-template-columns:1fr 1fr;gap:100px;margin-top:70px}
+  .alloc{display:flex;height:34px;border-radius:17px;overflow:hidden;margin-bottom:40px}
+  .leg{display:flex;flex-direction:column;gap:22px}
+  .leg div{display:flex;justify-content:space-between;align-items:center;font-size:26px;padding-bottom:18px;border-bottom:1px solid #3A4740}
+  .leg div span:first-child{display:flex;align-items:center;gap:18px}
+  .leg i{width:18px;height:18px;border-radius:50%;display:block}
+  .leg b{font-family:Georgia,serif;font-weight:400;font-size:32px}
+  .ms h4{font-size:20px;letter-spacing:3px;text-transform:uppercase;color:#A9B8B0;margin-bottom:26px}
+  .ms .m{display:flex;gap:28px;margin-bottom:30px}
+  .ms .m b{flex:none;width:130px;font-family:Georgia,serif;font-weight:400;font-size:44px;color:var(--mustard);line-height:1}
+  .ms .m span{font-size:24px;line-height:1.45;color:#D9E2DD}
+  .s10 .footer{border-top-color:#3A4740;color:#A9B8B0}
+  .s10 .footer b{color:var(--cream)}
+  .contact{margin-top:20px;background:var(--tomato);color:#fff;border-radius:22px;padding:26px 32px;font-size:24px;line-height:1.45}
+  .contact b{font-family:Georgia,serif;font-weight:400;font-size:32px;display:block}
+</style>
+</head>
+<body>
+
+<!-- 1. Title -->
+<section class="slide s1">
+  <div class="plate p1"></div>
+  <div class="plate p5"></div>
+  <div class="plate p2"></div>
+  <div class="plate p3"></div>
+  <div class="plate p4"></div>
+  <div class="left">
+    <div class="logo"><span class="pot"></span>Potluck</div>
+    <h1>Dinner from <em>next door.</em></h1>
+    <p class="sub">The app that lets neighbours share home-cooked meals at cost, turning every street into a kitchen table.</p>
+  </div>
+  <div class="meta">
+    <div>Round<b>$2.5M Seed</b></div>
+    <div>Stage<b>Live in 2 cities</b></div>
+    <div>Date<b>2025</b></div>
+  </div>
+</section>
+
+<!-- 2. Problem -->
+<section class="slide">
+  <div class="kicker">The problem</div>
+  <h2>We cook too much, eat alone, and <em>overpay</em> for takeaway.</h2>
+  <div class="grid3">
+    <div class="stat c-t">
+      <div class="num">30<small>%</small></div>
+      <h3>of home-cooked food is wasted</h3>
+      <p>Recipes serve four. Households average two. The rest ends up in the bin.</p>
+      <div class="bar"></div>
+    </div>
+    <div class="stat c-g">
+      <div class="num">1 <small>in</small> 3</div>
+      <h3>adults eat most meals alone</h3>
+      <p>Loneliness is rising fastest among renters and people who've recently moved.</p>
+      <div class="bar"></div>
+    </div>
+    <div class="stat c-m">
+      <div class="num">3<small>×</small></div>
+      <h3>markup on delivery vs. home</h3>
+      <p>Fees, tips and restaurant margins make a £6 meal cost £18 at the door.</p>
+      <div class="bar"></div>
+    </div>
+  </div>
+  <div class="source">Figures are directional, drawn from public food-waste and social-isolation surveys and our own pilot interviews (n=412).</div>
+  <div class="footer"><span><b>Potluck</b> · Seed 2025</span><span>02</span></div>
+</section>
+
+<!-- 3. Solution -->
+<section class="slide">
+  <div class="kicker">The solution</div>
+  <h2>Cook once. Share the extra. <em>Split the cost.</em></h2>
+  <p class="lead">Potluck connects home cooks with hungry neighbours within a 10-minute walk. No restaurants, no couriers, no markup on the food.</p>
+  <div class="steps">
+    <div class="step">
+      <div class="dot" style="background:var(--tomato)">1</div>
+      <h3>Post a dish</h3>
+      <p>A cook lists tonight's lasagne: portions, pickup time and the ingredient cost per plate.</p>
+      <span class="tag" style="background:var(--tomato-soft);color:var(--tomato)">~60 seconds</span>
+    </div>
+    <div class="step">
+      <div class="dot" style="background:var(--green)">2</div>
+      <h3>Neighbours claim</h3>
+      <p>Verified neighbours nearby see it, reserve a plate and pay in-app, at cost.</p>
+      <span class="tag" style="background:var(--green-soft);color:var(--green)">Avg. £4.80 / plate</span>
+    </div>
+    <div class="step">
+      <div class="dot" style="background:var(--mustard);color:var(--ink)">3</div>
+      <h3>Pick up &amp; connect</h3>
+      <p>Collect from the doorstep or stay to eat together. Ratings build trust on every street.</p>
+      <span class="tag" style="background:var(--mustard-soft);color:#8A5E00">38% stay to eat</span>
+    </div>
+  </div>
+  <div class="footer"><span><b>Potluck</b> · Seed 2025</span><span>03</span></div>
+</section>
+
+<!-- 4. Product -->
+<section class="slide s4">
+  <div class="copy">
+    <div class="kicker">The product</div>
+    <h2 style="font-size:72px">A dinner feed for your <em>street,</em> not your city.</h2>
+    <div class="feat">
+      <div><i style="background:var(--tomato)"></i><span><b>Hyperlocal by design</b>Only meals within walking distance. Density beats reach.</span></div>
+      <div><i style="background:var(--green)"></i><span><b>Cost-split payments</b>Cooks are reimbursed for ingredients instantly. We show the receipt math.</span></div>
+      <div><i style="background:var(--mustard)"></i><span><b>Trust built in</b>ID checks, allergen labels, food-hygiene badges and two-way reviews.</span></div>
+    </div>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <div class="notch"></div>
+      <div class="scr-h">Tonight near Elm Street · 6 cooks</div>
+      <div class="scr-t">What's cooking</div>
+      <div class="chips"><span class="on">All</span><span>Veggie</span><span>Halal</span><span>Kids</span></div>
+      <div class="meal">
+        <div class="img" style="background:var(--tomato)"></div>
+        <div class="row"><span><b>Nonna's lasagne</b><small>Maria · 3 min walk · 4 left</small></span><span class="price">£4.50</span></div>
+      </div>
+      <div class="meal">
+        <div class="img" style="background:var(--mustard)"></div>
+        <div class="row"><span><b>Chana masala &amp; rice</b><small>Priya · 6 min walk · 2 left</small></span><span class="price">£3.80</span></div>
+      </div>
+      <div class="navbar"><i class="on"></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+  <div class="footer"><span><b>Potluck</b> · Seed 2025</span><span>04</span></div>
+</section>
+
+<!-- 5. Traction -->
+<section class="slide s5">
+  <div class="kicker">Traction</div>
+  <h2>Nine months, two neighbourhoods, <em>zero paid ads.</em></h2>
+  <div class="wrap">
+    <div class="chart">
+      <h4>Meals shared per month</h4>
+      <div class="big">4,200 <span>▲ 31% MoM avg.</span></div>
+      <div class="bars">
+        <div style="height:6%"><span>Feb</span></div>
+        <div style="height:10%"><span>Mar</span></div>
+        <div style="height:15%"><span>Apr</span></div>
+        <div style="height:22%"><span>May</span></div>
+        <div style="height:30%"><span>Jun</span></div>
+        <div style="height:42%"><span>Jul</span></div>
+        <div style="height:57%"><span>Aug</span></div>
+        <div style="height:76%"><span>Sep</span></div>
+        <div class="hi" style="height:100%"><span>Oct</span></div>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><div class="v">18k</div><div class="l">meals shared since launch</div></div>
+      <div class="kpi"><div class="v">3,400</div><div class="l">active users, 1,100 of them cooks</div></div>
+      <div class="kpi"><div class="v">46%</div><div class="l">of diners return week 8</div></div>
+      <div class="kpi"><div class="v">71%</div><div class="l">of sign-ups via neighbour referral</div></div>
+      <div class="quote">"I've lived here six years and met more neighbours in two months of Potluck than ever before."<small>Jess, diner &amp; cook, pilot neighbourhood</small></div>
+    </div>
+  </div>
+  <div class="footer"><span><b>Potluck</b> · Seed 2025</span><span>05</span></div>
+</section>
+
+<!-- 6. Business model -->
+<section class="slide s6">
+  <div class="kicker">Business model</div>
+  <h2>Food at cost. We earn on <em>the connection.</em></h2>
+  <div class="wrap">
+    <div class="receipt">
+      <h4>Typical order</h4>
+      <div class="sm">2 plates of lasagne · Tuesday 7pm</div>
+      <div style="margin-top:24px">
+        <div class="line"><span>Ingredients (to cook, at cost)</span><span>£9.00</span></div>
+        <div class="line"><span>Cook's packaging allowance</span><span>£0.60</span></div>
+        <div class="line fee"><span>Potluck service fee (12%)</span><span>£1.15</span></div>
+        <div class="line total"><span>Diner pays</span><span>£10.75</span></div>
+      </div>
+    </div>
+    <div class="model">
+      <h3>Diners pay a transparent service fee; cooks keep 100% of the cost.</h3>
+      <p>Keeping food at cost keeps us on the right side of home-cooking rules, and it's why neighbours trust us. Potluck+ (£4.99/mo) waives fees and unlocks meal plans.</p>
+      <div class="ue">
+        <div><b>£1.20</b><span>net revenue per order</span></div>
+        <div><b>3.1</b><span>orders per active diner / month</span></div>
+        <div><b>£2</b><span>blended CAC (referral-led)</span></div>
+        <div><b>~$0</b><span>inventory, kitchens or couriers</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span><b>Potluck</b> · Seed 2025</span><span>06</span></div>
+</section>
+
+<!-- 7. Market -->
+<section class="slide s7">
+  <div class="kicker">Market</div>
+  <h2>Home meals are the <em>biggest</em> food category no app owns.</h2>
+  <div class="wrap">
+    <div class="rings">
+      <div class="ring r1"><div class="in"><b>$140B</b><span>Takeaway &amp; delivery · UK + US</span></div></div>
+      <div class="ring r2"><div class="in"><b>$22B</b><span>Weeknight dinners · dense urban</span></div></div>
+      <div class="ring r3"><div class="in"><b>$1.1B</b><span>Top 20 cities</span></div></div>
+    </div>
+    <div class="mk">
+      <div class="row"><span class="sw" style="background:var(--green-soft)"></span><div><b>Spend we displace</b><p>Weeknight delivery and ready meals bought by urban households.</p></div></div>
+      <div class="row"><span class="sw" style="background:#B9D1C6"></span><div><b>Where density works</b><p>Neighbourhoods with 8k+ households per km², where a walkable cook network forms fast.</p></div></div>
+      <div class="row"><span class="sw" style="background:var(--green)"></span><div><b>Our 5-year beachhead</b><p>20 cities at pilot-level penetration and fee economics.</p></div></div>
+      <div class="whynow"><b>Why now:</b> cost-of-living pressure, post-pandemic hunger for local community, and clearer home-food rules make at-cost sharing viable at scale.</div>
+    </div>
+  </div>
+  <div class="footer"><span><b>Potluck</b> · Seed 2025</span><span>07</span></div>
+</section>
+
+<!-- 8. GTM & Trust -->
+<section class="slide s8">
+  <div class="kicker">Growth &amp; trust</div>
+  <h2>We grow <em>street by street,</em> and earn trust plate by plate.</h2>
+  <div class="wrap">
+    <div class="panel a">
+      <h3>The neighbourhood playbook</h3>
+      <div class="flow">
+        <div><i>1</i><span>Recruit 25 "founding cooks"<small>via community centres, school groups and supper clubs</small></span></div>
+        <div><i>2</i><span>Seed 5 meals a night within 1 km<small>supply first; density drives every metric</small></span></div>
+        <div><i>3</i><span>Diners become cooks<small>1 in 3 diners lists a dish within 60 days</small></span></div>
+        <div><i>4</i><span>Expand to the adjacent postcode<small>launch cost per neighbourhood: ~£6k</small></span></div>
+      </div>
+    </div>
+    <div class="panel b">
+      <h3>Safety is the product</h3>
+      <div class="checks">
+        <div><span>Verified identity for every cook<small>ID + address check before first listing</small></span></div>
+        <div><span>Food-hygiene training, free<small>certificate badge shown on profile</small></span></div>
+        <div><span>Mandatory allergen labelling<small>14 major allergens, structured fields</small></span></div>
+        <div><span>Two-way ratings &amp; insurance cover<small>0.2% of orders reported an issue in pilot</small></span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span><b>Potluck</b> · Seed 2025</span><span>08</span></div>
+</section>
+
+<!-- 9. Team -->
+<section class="slide">
+  <div class="kicker">Team</div>
+  <h2>Operators who've built <em>marketplaces</em> and fed people.</h2>
+  <div class="team">
+    <div class="person">
+      <div class="av" style="background:var(--tomato)"></div>
+      <h4>Amara Okafor</h4>
+      <div class="role">CEO · Co-founder</div>
+      <p>Ex-Head of Supply at a food-delivery scale-up; launched 14 cities.</p>
+    </div>
+    <div class="person">
+      <div class="av" style="background:var(--green)"></div>
+      <h4>Tom Lindqvist</h4>
+      <div class="role">CTO · Co-founder</div>
+      <p>Built payments and trust systems for a peer-to-peer rental marketplace.</p>
+    </div>
+    <div class="person">
+      <div class="av" style="background:var(--mustard)"></div>
+      <h4>Rosa Martín</h4>
+      <div class="role">Head of Community</div>
+      <p>Ran a 9,000-member supper-club network; trained 300+ home cooks.</p>
+    </div>
+    <div class="person">
+      <div class="av" style="background:#B9D1C6"></div>
+      <h4>Dev Patel</h4>
+      <div class="role">Head of Product</div>
+      <p>Former PM on a neighbourhood social app; grew DAU 5× in 18 months.</p>
+    </div>
+  </div>
+  <div class="advisors"><b>Advisors:</b> former food-safety regulator · marketplace founder (exited) · consumer-growth lead at a top social app</div>
+  <div class="footer"><span><b>Potluck</b> · Seed 2025</span><span>09</span></div>
+</section>
+
+<!-- 10. The Ask -->
+<section class="slide s10">
+  <div class="kicker">The ask</div>
+  <h2>Raising <em>$2.5M</em> to take Potluck to 25 neighbourhoods.</h2>
+  <div class="wrap">
+    <div>
+      <div class="alloc">
+        <div style="width:40%;background:var(--tomato)"></div>
+        <div style="width:30%;background:var(--mustard)"></div>
+        <div style="width:18%;background:#7FA898"></div>
+        <div style="width:12%;background:var(--cream)"></div>
+      </div>
+      <div class="leg">
+        <div><span><i style="background:var(--tomato)"></i>Product &amp; engineering</span><b>$1.0M</b></div>
+        <div><span><i style="background:var(--mustard)"></i>Neighbourhood launches</span><b>$750k</b></div>
+        <div><span><i style="background:#7FA898"></i>Trust, safety &amp; compliance</span><b>$450k</b></div>
+        <div><span><i style="background:var(--cream)"></i>Operations &amp; runway buffer</span><b>$300k</b></div>
+      </div>
+      <div class="contact"><b>Let's eat together.</b>amara@potluck.app · 22-month runway</div>
+    </div>
+    <div class="ms">
+      <h4>Milestones to Series A</h4>
+      <div class="m"><b>25</b><span>live neighbourhoods across London, Manchester and one US pilot city</span></div>
+      <div class="m"><b>60k</b><span>meals shared per month, with 50%+ week-8 diner retention</span></div>
+      <div class="m"><b>$1.5M</b><span>annualised gross bookings run-rate</span></div>
+      <div class="m"><b>1:3</b><span>cook-to-diner ratio sustained without paid supply incentives</span></div>
+    </div>
+  </div>
+  <div class="footer"><span><b>Potluck</b> · Seed 2025</span><span>10</span></div>
+</section>
+
+</body>
+</html>

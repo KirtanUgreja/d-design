@@ -28,6 +28,23 @@ Which models, chosen how, measured with what — and why there is no agent frame
 
 > The one-line rule is unchanged: **spend on the slide, economise everywhere else, and let the bench decide where the line falls.** v3 did the opposite. It ran `gpt-4o-mini` per slide to rewrite copy a stronger model had already written.
 
+### Measured at phase 21 (2026-09-30)
+
+Read from OpenRouter's model list and from live calls through `api/engine/llm/openrouter.py`.
+
+| Candidate | Role | $ per M in / out | Cache read |
+|---|---|---|---|
+| `anthropic/claude-opus-5.5` | design | 4 / 20 | 0.20 |
+| `anthropic/claude-sonnet-5.5` | writing | 2 / 10 | 0.20 |
+| `anthropic/claude-haiku-4.5` | cheap (interview, smoke) | 1 / 5 | 0.10 |
+
+These are the defaults in `api/settings.py` until the phase-22 bake-off pins the winners.
+
+- **Cost comes back on the response.** With `usage: {include: true}` the reply's `usage.cost` is the dollar cost of the call; the ledger records it. A smoke call (177 tokens in, 9 out, Haiku) cost $0.00022.
+- **Strict `json_schema` output works on the Claude models** through OpenRouter: 12 of 12 outline calls parsed first time.
+- **One frozen outline costs about $0.01–0.025** on Sonnet 5.5.
+- Not yet measured: whether `cache_control` registers cached tokens on these models, and the minimum cacheable prefix. Phase 22 measures both on the first compose run.
+
 ## The landscape
 
 Stated so the seam has something concrete to be neutral about. Dated August 2026 and stale on arrival.

@@ -1,0 +1,406 @@
+{
+  "brief": {
+    "id": "pitch-devtools",
+    "prompt": "Series A pitch for Flakeguard, a tool that finds and quarantines flaky CI tests automatically.",
+    "pasted": [
+      {
+        "title": "Traction",
+        "text": "ARR $2.3M, up from $0.6M twelve months ago. 84 paying customers, 9 above $50k ACV. Net revenue retention 131%. Gross margin 88%. Median customer sees CI failures needing a re-run fall from 14% to 3% in the first month. Team of 14, 9 engineers. Founders: ex-CircleCI infrastructure lead and ex-Datadog PM. Burn $210k/month, 16 months runway."
+      }
+    ],
+    "deck_type": "pitch",
+    "audience": "Series A investors at developer-tools funds",
+    "ask": "Lead a $12M Series A at a $60M post-money valuation",
+    "slide_count": 12,
+    "research": false
+  },
+  "outline": {
+    "governing_thought": "Flakeguard removes flaky CI tests automatically, and with 131% net revenue retention it is compounding fast enough to deserve a $12M Series A.",
+    "deck_type": "pitch",
+    "audience": "Series A investors at developer-tools funds",
+    "ask": "Lead a $12M Series A at a $60M post-money valuation",
+    "key_points": [
+      "Flaky tests erode trust in CI and force wasteful re-runs",
+      "Flakeguard finds and quarantines them with no manual triage",
+      "Re-run failures fall from 14% to 3% in month one",
+      "ARR grew from $0.6M to $2.3M in twelve months",
+      "Retention of 131% and 88% margin show durable economics"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "open",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Flakeguard quarantines flaky CI tests before they slow your team",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Series A",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "problem",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Flaky tests teach engineers to distrust CI and re-run builds",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The problem",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "14%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "of CI failures need a re-run for the median customer",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Flakeguard customer data",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "solution",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Flakeguard finds and quarantines flaky tests without manual triage",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The product",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "solution",
+        "intent": "steps",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Three automatic steps turn a noisy suite into a trusted one",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "How it works",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Detect tests that pass and fail unpredictably",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Quarantine them so builds stay green",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Report each one to the owning team",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "proof",
+        "intent": "number-set",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Re-run failures fall from 14% to 3% in the first month",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Customer impact",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "3%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "CI failures needing a re-run after month one, down from 14%",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Median customer, Flakeguard data",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "traction",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "ARR grew almost fourfold in twelve months to $2.3M",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Growth",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "$2.3M",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "ARR, up from $0.6M twelve months ago",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Flakeguard financials",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "traction",
+        "intent": "number-set",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "84 paying customers include nine above $50k in contract value",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Customers",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "84",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "paying customers, 9 above $50k ACV",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Flakeguard financials",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s08",
+        "beat": "traction",
+        "intent": "number-set",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Customers expand after landing, and margins stay software-grade",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Economics",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Net revenue retention of 131%",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Gross margin of 88%",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "131%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "net revenue retention",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Flakeguard financials",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s09",
+        "beat": "team",
+        "intent": "team",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Founders from CircleCI and Datadog lead a 14-person team",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Team",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Ex-CircleCI infrastructure lead",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Ex-Datadog product manager",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Nine of 14 are engineers",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "14",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "people, 9 of them engineers",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Flakeguard",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s10",
+        "beat": "efficiency",
+        "intent": "number-set",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Current burn gives Flakeguard 16 months of runway",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Runway",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "16 months",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "runway at $210k monthly burn",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Flakeguard financials",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s11",
+        "beat": "plan",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "The round funds engineering depth and larger-account sales",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Use of funds",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Grow engineering to deepen detection",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Build sales toward $50k+ accounts",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Extend the retention motion already working",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s12",
+        "beat": "ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Lead our $12M Series A at a $60M post-money valuation",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The ask",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "$12M",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "Series A at $60M post-money",
+            "budget_words": 15
+          }
+        ]
+      }
+    ]
+  }
+}

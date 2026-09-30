@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kiln: 10-Store Pilot Proposal</title>
+<style>
+  :root{
+    --char:#1B1714;
+    --char2:#2A2420;
+    --cream:#F6F0E6;
+    --paper:#FBF8F2;
+    --ember:#E0572B;
+    --ember2:#F08A4B;
+    --gold:#D9A441;
+    --mute:#8A7F74;
+    --line:#E3D9CB;
+    --sage:#5E7A62;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#5a524b;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--char);-webkit-font-smoothing:antialiased}
+  .slide{width:1920px;height:1080px;position:relative;overflow:hidden;background:var(--paper);margin:0 auto 40px;padding:110px 140px 120px}
+  .serif{font-family:Georgia,"Times New Roman",serif}
+  .kicker{font-size:22px;letter-spacing:5px;text-transform:uppercase;color:var(--ember);font-weight:700;margin-bottom:28px}
+  h1{font-family:Georgia,serif;font-weight:400;font-size:128px;line-height:1.02;letter-spacing:-2px}
+  h2{font-family:Georgia,serif;font-weight:400;font-size:68px;line-height:1.1;letter-spacing:-1px;max-width:1500px}
+  p.lead{font-size:30px;line-height:1.5;color:#4a423b;max-width:1300px;margin-top:28px}
+  .foot{position:absolute;left:140px;right:140px;bottom:50px;display:flex;justify-content:space-between;font-size:18px;letter-spacing:2px;text-transform:uppercase;color:var(--mute)}
+  .foot b{color:var(--ember);font-weight:700}
+  .dark{background:var(--char);color:var(--cream)}
+  .dark p.lead{color:#CFC4B6}
+  .dark .foot{color:#7d7268}
+  .mark{display:inline-flex;align-items:center;gap:18px;font-size:34px;font-weight:700;letter-spacing:8px}
+  .mark i{width:44px;height:44px;border-radius:50%;background:radial-gradient(circle at 50% 60%,var(--gold),var(--ember) 55%,#9b2f12);display:block;box-shadow:0 0 40px rgba(224,87,43,.55)}
+  .grid{display:grid;gap:40px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:44px}
+  .num{font-family:Georgia,serif;font-size:120px;line-height:1;letter-spacing:-3px;color:var(--ember)}
+  .lbl{font-size:26px;line-height:1.4;color:#4a423b;margin-top:16px}
+  .tag{display:inline-block;font-size:18px;letter-spacing:3px;text-transform:uppercase;padding:8px 16px;border-radius:40px;border:1.5px solid currentColor;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- 1. TITLE -->
+<section class="slide dark">
+  <div style="position:absolute;right:-260px;top:-200px;width:1100px;height:1100px;border-radius:50%;background:radial-gradient(circle,rgba(224,87,43,.45),rgba(224,87,43,.08) 55%,transparent 70%)"></div>
+  <div style="position:absolute;right:140px;top:300px;width:520px;height:520px;border-radius:50%;border:2px solid rgba(240,138,75,.35)"></div>
+  <div style="position:absolute;right:230px;top:390px;width:340px;height:340px;border-radius:50%;border:2px solid rgba(240,138,75,.55)"></div>
+  <div style="position:absolute;right:320px;top:480px;width:160px;height:160px;border-radius:50%;background:var(--ember);box-shadow:0 0 120px rgba(224,87,43,.8)"></div>
+  <div class="mark" style="position:relative"><i></i>KILN</div>
+  <div style="position:relative;margin-top:190px">
+    <div class="kicker">Proposal · 10-Store Paid Pilot</div>
+    <h1>Every bake,<br>the same bake.</h1>
+    <p class="lead" style="max-width:900px">A smart commercial oven that cuts energy, variance and waste, and fixes most faults remotely.</p>
+  </div>
+  <div class="foot"><span>Prepared for the COO &amp; Head of Operations</span><span>01</span></div>
+</section>
+
+<!-- 2. PROBLEM -->
+<section class="slide">
+  <div class="kicker">The challenge at 60 locations</div>
+  <h2>At scale, small oven problems multiply into big operating costs.</h2>
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:90px">
+    <div class="card" style="border-top:6px solid var(--ember)">
+      <div class="serif" style="font-size:40px;margin-bottom:20px">Inconsistency</div>
+      <div class="lbl">The same recipe bakes differently by store, by shift and by oven.</div>
+    </div>
+    <div class="card" style="border-top:6px solid var(--ember)">
+      <div class="serif" style="font-size:40px;margin-bottom:20px">Energy</div>
+      <div class="lbl">Ovens are one of the largest, least-managed utility loads in a bakery.</div>
+    </div>
+    <div class="card" style="border-top:6px solid var(--ember)">
+      <div class="serif" style="font-size:40px;margin-bottom:20px">Waste</div>
+      <div class="lbl">Every burnt batch costs ingredients, labor and shelf time.</div>
+    </div>
+    <div class="card" style="border-top:6px solid var(--ember)">
+      <div class="serif" style="font-size:40px;margin-bottom:20px">Downtime</div>
+      <div class="lbl">Each fault means a technician visit and an oven out of service.</div>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:80px">Multiply each of these by <b style="color:var(--char)">60 stores</b> and they stop being store issues. They become a line on the P&amp;L.</p>
+  <div class="foot"><span>Kiln · Pilot proposal</span><span>02</span></div>
+</section>
+
+<!-- 3. WHAT KILN IS -->
+<section class="slide">
+  <div class="kicker">What Kiln is</div>
+  <h2>A commercial oven that measures itself, adjusts itself and reports in.</h2>
+  <div style="display:flex;align-items:center;gap:0;margin-top:110px">
+    <div class="card" style="flex:1;text-align:center;padding:56px 40px">
+      <div class="tag" style="color:var(--ember)">Sense</div>
+      <div class="serif" style="font-size:40px;margin:28px 0 16px">Live bake data</div>
+      <div class="lbl">Continuous monitoring inside the chamber during every bake.</div>
+    </div>
+    <div style="width:80px;height:3px;background:var(--ember)"></div>
+    <div class="card" style="flex:1;text-align:center;padding:56px 40px">
+      <div class="tag" style="color:var(--ember)">Control</div>
+      <div class="serif" style="font-size:40px;margin:28px 0 16px">Closed-loop baking</div>
+      <div class="lbl">Adjusts in real time to hit the recipe, not just the timer.</div>
+    </div>
+    <div style="width:80px;height:3px;background:var(--ember)"></div>
+    <div class="card" style="flex:1;text-align:center;padding:56px 40px;background:var(--char);border-color:var(--char);color:var(--cream)">
+      <div class="tag" style="color:var(--ember2)">Connect</div>
+      <div class="serif" style="font-size:40px;margin:28px 0 16px">Remote diagnostics</div>
+      <div class="lbl" style="color:#CFC4B6">Faults are flagged and resolved from HQ, often without a visit.</div>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Pilot proposal</span><span>03</span></div>
+</section>
+
+<!-- 4. RESULTS OVERVIEW -->
+<section class="slide dark">
+  <div class="kicker">Proof · 4-store pilot with another bakery chain</div>
+  <h2>Measured results from stores in live operation.</h2>
+  <div class="grid" style="grid-template-columns:repeat(4,1fr);margin-top:100px;gap:0">
+    <div style="padding:0 40px 0 0;border-right:1px solid #3d352f">
+      <div class="num" style="color:var(--ember2)">−23%</div>
+      <div class="lbl" style="color:#CFC4B6">Energy use per bake</div>
+    </div>
+    <div style="padding:0 40px;border-right:1px solid #3d352f">
+      <div class="num" style="color:var(--ember2)">9→2%</div>
+      <div class="lbl" style="color:#CFC4B6">Bake-time variance</div>
+    </div>
+    <div style="padding:0 40px;border-right:1px solid #3d352f">
+      <div class="num" style="color:var(--ember2)">−61%</div>
+      <div class="lbl" style="color:#CFC4B6">Waste from burnt batches</div>
+    </div>
+    <div style="padding:0 0 0 40px">
+      <div class="num" style="color:var(--ember2)">78%</div>
+      <div class="lbl" style="color:#CFC4B6">Faults resolved remotely, with no site visit</div>
+    </div>
+  </div>
+  <div style="margin-top:120px;padding-top:40px;border-top:1px solid #3d352f;font-size:30px;color:#CFC4B6">
+    Economics: <b style="color:var(--cream)">$18,400 per oven</b>, with <b style="color:var(--cream)">payback in 14 months</b> at average volume.
+  </div>
+  <div class="foot"><span>Kiln · Pilot proposal</span><span>04</span></div>
+</section>
+
+<!-- 5. CONSISTENCY -->
+<section class="slide">
+  <div style="display:grid;grid-template-columns:640px 1fr;gap:100px;height:100%">
+    <div>
+      <div class="kicker">Consistency</div>
+      <h2>Variance cut by more than three-quarters.</h2>
+      <p class="lead">Bake-time variance fell from <b style="color:var(--char)">9% to 2%</b>. Your product in store 12 matches store 48, on the morning shift and the late one.</p>
+    </div>
+    <div style="display:flex;flex-direction:column;justify-content:center;gap:90px;padding-bottom:80px">
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:26px;margin-bottom:20px"><span style="color:var(--mute)">Before Kiln</span><b class="serif" style="font-size:44px;font-weight:400">±9%</b></div>
+        <div style="position:relative;height:90px;background:#EFE7DA;border-radius:10px">
+          <div style="position:absolute;left:5%;width:90%;top:0;bottom:0;background:linear-gradient(90deg,rgba(138,127,116,.15),rgba(138,127,116,.55),rgba(138,127,116,.15));border-radius:10px"></div>
+          <div style="position:absolute;left:50%;top:-14px;bottom:-14px;width:3px;background:var(--char)"></div>
+        </div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:26px;margin-bottom:20px"><span style="color:var(--ember);font-weight:700">With Kiln</span><b class="serif" style="font-size:44px;font-weight:400;color:var(--ember)">±2%</b></div>
+        <div style="position:relative;height:90px;background:#EFE7DA;border-radius:10px">
+          <div style="position:absolute;left:40%;width:20%;top:0;bottom:0;background:linear-gradient(90deg,rgba(224,87,43,.35),var(--ember),rgba(224,87,43,.35));border-radius:10px"></div>
+          <div style="position:absolute;left:50%;top:-14px;bottom:-14px;width:3px;background:var(--char)"></div>
+        </div>
+        <div style="text-align:center;font-size:20px;color:var(--mute);margin-top:30px;letter-spacing:2px;text-transform:uppercase">Target bake time</div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Pilot proposal</span><span>05</span></div>
+</section>
+
+<!-- 6. ENERGY & WASTE -->
+<section class="slide">
+  <div class="kicker">Cost</div>
+  <h2>Less energy in, less product in the bin.</h2>
+  <div class="grid" style="grid-template-columns:1fr 1fr;margin-top:80px;gap:60px">
+    <div class="card" style="padding:56px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <div class="serif" style="font-size:40px">Energy per bake</div>
+        <div class="num" style="font-size:90px">−23%</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:60px;height:380px;margin-top:40px;border-bottom:2px solid var(--line);padding:0 60px">
+        <div style="flex:1;text-align:center"><div style="font-size:24px;color:var(--mute);margin-bottom:12px">100</div><div style="height:320px;background:#D8CDBE;border-radius:8px 8px 0 0"></div></div>
+        <div style="flex:1;text-align:center"><div style="font-size:24px;color:var(--ember);font-weight:700;margin-bottom:12px">77</div><div style="height:246px;background:var(--ember);border-radius:8px 8px 0 0"></div></div>
+      </div>
+      <div style="display:flex;gap:60px;padding:16px 60px 0;font-size:22px;color:var(--mute);text-align:center"><div style="flex:1">Before</div><div style="flex:1">With Kiln</div></div>
+    </div>
+    <div class="card" style="padding:56px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <div class="serif" style="font-size:40px">Burnt-batch waste</div>
+        <div class="num" style="font-size:90px">−61%</div>
+      </div>
+      <div style="display:flex;align-items:flex-end;gap:60px;height:380px;margin-top:40px;border-bottom:2px solid var(--line);padding:0 60px">
+        <div style="flex:1;text-align:center"><div style="font-size:24px;color:var(--mute);margin-bottom:12px">100</div><div style="height:320px;background:#D8CDBE;border-radius:8px 8px 0 0"></div></div>
+        <div style="flex:1;text-align:center"><div style="font-size:24px;color:var(--ember);font-weight:700;margin-bottom:12px">39</div><div style="height:125px;background:var(--ember);border-radius:8px 8px 0 0"></div></div>
+      </div>
+      <div style="display:flex;gap:60px;padding:16px 60px 0;font-size:22px;color:var(--mute);text-align:center"><div style="flex:1">Before</div><div style="flex:1">With Kiln</div></div>
+    </div>
+  </div>
+  <div style="font-size:20px;color:var(--mute);margin-top:28px">Indexed to pre-Kiln baseline = 100. Source: 4-store pilot with another bakery chain.</div>
+  <div class="foot"><span>Kiln · Pilot proposal</span><span>06</span></div>
+</section>
+
+<!-- 7. REMOTE DIAGNOSTICS -->
+<section class="slide dark">
+  <div style="display:grid;grid-template-columns:1fr 640px;gap:120px;align-items:center;height:100%;padding-bottom:40px">
+    <div>
+      <div class="kicker">Operations</div>
+      <h2>Most faults fixed from a screen, not a service van.</h2>
+      <p class="lead">In the pilot, remote diagnostics resolved <b style="color:var(--cream)">78% of faults</b> without a site visit. That means fewer technician call-outs, less oven downtime, and your ops team gets visibility across every connected store.</p>
+    </div>
+    <div style="position:relative;width:560px;height:560px">
+      <div style="position:absolute;inset:0;border-radius:50%;background:conic-gradient(var(--ember) 0 78%,#3d352f 78% 100%)"></div>
+      <div style="position:absolute;inset:70px;border-radius:50%;background:var(--char);display:flex;flex-direction:column;align-items:center;justify-content:center">
+        <div class="num" style="font-size:150px;color:var(--ember2)">78%</div>
+        <div style="font-size:24px;color:#CFC4B6;margin-top:10px;letter-spacing:2px;text-transform:uppercase">Resolved remotely</div>
+      </div>
+      <div style="position:absolute;right:-60px;top:20px;font-size:22px;color:#8a7f74;text-align:right">22%<br>needed a visit</div>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Pilot proposal</span><span>07</span></div>
+</section>
+
+<!-- 8. ECONOMICS -->
+<section class="slide">
+  <div class="kicker">Economics</div>
+  <h2>Each oven pays for itself in 14 months.</h2>
+  <div style="display:grid;grid-template-columns:420px 1fr;gap:80px;margin-top:70px">
+    <div style="display:flex;flex-direction:column;gap:36px">
+      <div class="card" style="padding:40px"><div class="num" style="font-size:84px;color:var(--char)">$18,400</div><div class="lbl">Price per oven</div></div>
+      <div class="card" style="padding:40px;background:var(--char);border-color:var(--char)"><div class="num" style="font-size:84px;color:var(--ember2)">14 mo</div><div class="lbl" style="color:#CFC4B6">Payback at average volume</div></div>
+    </div>
+    <div class="card" style="padding:44px 50px">
+      <div style="font-size:24px;color:var(--mute);margin-bottom:10px">Cumulative net position per oven (illustrative, at average volume)</div>
+      <svg width="100%" height="470" viewBox="0 0 1000 470">
+        <line x1="60" y1="300" x2="980" y2="300" stroke="#E3D9CB" stroke-width="2"/>
+        <line x1="60" y1="40" x2="60" y2="440" stroke="#E3D9CB" stroke-width="2"/>
+        <text x="50" y="306" font-size="20" fill="#8A7F74" text-anchor="end" font-family="Helvetica,Arial">$0</text>
+        <text x="50" y="436" font-size="20" fill="#8A7F74" text-anchor="end" font-family="Helvetica,Arial">−$18.4k</text>
+        <polygon points="60,430 596,300 60,300" fill="rgba(138,127,116,.15)"/>
+        <polygon points="596,300 980,207 980,300" fill="rgba(224,87,43,.18)"/>
+        <line x1="60" y1="430" x2="980" y2="207" stroke="#E0572B" stroke-width="6" stroke-linecap="round"/>
+        <circle cx="596" cy="300" r="14" fill="#E0572B"/>
+        <line x1="596" y1="60" x2="596" y2="300" stroke="#1B1714" stroke-width="2" stroke-dasharray="6 6"/>
+        <text x="596" y="48" font-size="26" fill="#1B1714" text-anchor="middle" font-family="Georgia,serif">Break-even · month 14</text>
+        <text x="60" y="466" font-size="20" fill="#8A7F74" font-family="Helvetica,Arial">Month 0</text>
+        <text x="980" y="466" font-size="20" fill="#8A7F74" text-anchor="end" font-family="Helvetica,Arial">Month 24</text>
+        <text x="880" y="270" font-size="22" fill="#E0572B" text-anchor="middle" font-family="Helvetica,Arial" font-weight="700">Net savings</text>
+      </svg>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Pilot proposal</span><span>08</span></div>
+</section>
+
+<!-- 9. PROPOSED PILOT -->
+<section class="slide">
+  <div class="kicker">The proposal</div>
+  <h2>A 10-store paid pilot, measured against your own baseline.</h2>
+  <div class="grid" style="grid-template-columns:1fr 1fr 1fr;margin-top:80px">
+    <div class="card">
+      <div class="tag" style="color:var(--ember)">Scope</div>
+      <div class="serif" style="font-size:44px;margin:28px 0 18px">10 stores</div>
+      <div class="lbl">A mix of high- and average-volume locations, chosen with your ops team so results reflect the full chain.</div>
+    </div>
+    <div class="card">
+      <div class="tag" style="color:var(--ember)">Measure</div>
+      <div class="serif" style="font-size:44px;margin:28px 0 18px">Four KPIs</div>
+      <div class="lbl">Energy per bake, bake-time variance, burnt-batch waste and remote fault resolution, each compared to pre-install baseline.</div>
+    </div>
+    <div class="card" style="background:var(--char);border-color:var(--char);color:var(--cream)">
+      <div class="tag" style="color:var(--ember2)">Investment</div>
+      <div class="serif" style="font-size:44px;margin:28px 0 18px">$184,000</div>
+      <div class="lbl" style="color:#CFC4B6">10 ovens at $18,400, assuming one oven per pilot store.</div>
+    </div>
+  </div>
+  <div style="margin-top:70px;display:flex;align-items:center;gap:30px;font-size:28px">
+    <div style="width:14px;height:14px;border-radius:50%;background:var(--ember)"></div>
+    <div>Success is defined up front, in writing, and every result goes to a shared dashboard your team can audit.</div>
+  </div>
+  <div class="foot"><span>Kiln · Pilot proposal</span><span>09</span></div>
+</section>
+
+<!-- 10. THE ASK -->
+<section class="slide dark">
+  <div style="position:absolute;left:-300px;bottom:-500px;width:1200px;height:1200px;border-radius:50%;background:radial-gradient(circle,rgba(224,87,43,.35),transparent 65%)"></div>
+  <div style="position:relative">
+    <div class="kicker">The ask</div>
+    <h1 style="font-size:104px;max-width:1500px">Sign the 10-store pilot.<br><span style="color:var(--ember2)">Let your own data decide.</span></h1>
+  </div>
+  <div style="position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:50px;margin-top:110px">
+    <div style="border-top:2px solid var(--ember);padding-top:28px">
+      <div class="serif" style="font-size:54px;color:var(--ember2)">1</div>
+      <div style="font-size:28px;line-height:1.45;margin-top:12px">Agree on pilot stores and success criteria</div>
+    </div>
+    <div style="border-top:2px solid var(--ember);padding-top:28px">
+      <div class="serif" style="font-size:54px;color:var(--ember2)">2</div>
+      <div style="font-size:28px;line-height:1.45;margin-top:12px">Capture baseline data and install ovens</div>
+    </div>
+    <div style="border-top:2px solid var(--ember);padding-top:28px">
+      <div class="serif" style="font-size:54px;color:var(--ember2)">3</div>
+      <div style="font-size:28px;line-height:1.45;margin-top:12px">Review results together and decide on rollout</div>
+    </div>
+  </div>
+  <div class="foot"><span class="mark" style="font-size:20px;letter-spacing:5px;color:var(--cream)"><i style="width:22px;height:22px"></i>KILN</span><span>10</span></div>
+</section>
+
+</body>
+</html>

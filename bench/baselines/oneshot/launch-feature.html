@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Ledgerly Automated Close: Launch</title>
+<style>
+  :root{
+    --ink:#0B1B2B;
+    --ink2:#13283D;
+    --paper:#F6F4EF;
+    --mint:#3DDC97;
+    --mintd:#1FA872;
+    --muted:#8A9BAE;
+    --line:#D9D5CC;
+    --text:#1A2633;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#555;font-family:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;color:var(--text)}
+  .slide{width:1920px;height:1080px;position:relative;overflow:hidden;display:block}
+  .inner{width:1920px;height:1080px;position:relative;overflow:hidden;padding:110px 140px;background:var(--paper);display:flex;flex-direction:column}
+  .dark{background:var(--ink);color:#fff}
+  .kicker{font-size:24px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--mintd);margin-bottom:28px}
+  .dark .kicker{color:var(--mint)}
+  h1{font-size:128px;line-height:1.02;font-weight:800;letter-spacing:-.035em}
+  h2{font-size:76px;line-height:1.08;font-weight:800;letter-spacing:-.03em;max-width:1500px}
+  .lead{font-size:34px;line-height:1.45;color:#4A5868;max-width:1200px;margin-top:32px}
+  .dark .lead{color:#B4C2D0}
+  .foot{position:absolute;left:140px;right:140px;bottom:56px;display:flex;justify-content:space-between;font-size:20px;color:var(--muted);letter-spacing:.04em}
+  .brand{font-weight:800;color:inherit;letter-spacing:-.01em;font-size:22px}
+  .brand b{color:var(--mintd)}
+  .dark .brand b{color:var(--mint)}
+  .mint{color:var(--mint)}
+  .mintd{color:var(--mintd)}
+
+  /* Slide 1 */
+  .s1 .glow{position:absolute;right:-260px;top:-260px;width:1100px;height:1100px;border-radius:50%;background:radial-gradient(circle,rgba(61,220,151,.28),rgba(61,220,151,0) 65%)}
+  .s1 .rings{position:absolute;right:120px;top:50%;transform:translateY(-50%);width:560px;height:560px}
+  .ring{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.12)}
+  .ring.r2{inset:70px}.ring.r3{inset:140px;border-color:rgba(61,220,151,.5)}
+  .ring-center{position:absolute;inset:180px;border-radius:50%;background:var(--mint);display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--ink)}
+  .ring-center .n{font-size:110px;font-weight:800;line-height:1;letter-spacing:-.04em}
+  .ring-center .u{font-size:24px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
+  .s1 .content{margin-top:auto;margin-bottom:auto;max-width:1080px;position:relative}
+  .pill{display:inline-block;border:2px solid var(--mint);color:var(--mint);border-radius:40px;padding:12px 26px;font-size:24px;font-weight:700;letter-spacing:.06em;margin-top:52px}
+
+  /* Slide 2 */
+  .cal{display:grid;grid-template-columns:repeat(10,1fr);gap:14px;margin-top:84px}
+  .day{height:170px;border-radius:14px;background:#E8E4DB;display:flex;flex-direction:column;justify-content:space-between;padding:20px;font-size:22px;color:#6B7785;font-weight:600}
+  .day.busy{background:#E4574C;color:#fff}
+  .day.half{background:linear-gradient(90deg,#E4574C 50%,#E8E4DB 50%);color:#fff}
+  .day span{font-size:18px;font-weight:500;opacity:.85}
+  .legend{display:flex;gap:48px;margin-top:36px;font-size:26px;color:#4A5868}
+  .legend i{display:inline-block;width:22px;height:22px;border-radius:5px;vertical-align:-3px;margin-right:12px}
+
+  /* Slide 3 */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:80px;flex:1;max-height:520px}
+  .step{background:#fff;border-radius:22px;padding:52px 48px;border:1px solid var(--line);position:relative}
+  .step .num{width:72px;height:72px;border-radius:50%;background:var(--ink);color:var(--mint);font-size:32px;font-weight:800;display:flex;align-items:center;justify-content:center;margin-bottom:40px}
+  .step h3{font-size:42px;letter-spacing:-.02em;margin-bottom:20px;line-height:1.15}
+  .step p{font-size:28px;line-height:1.5;color:#55616F}
+  .step.hl{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .step.hl .num{background:var(--mint);color:var(--ink)}
+  .step.hl p{color:#B4C2D0}
+
+  /* Slide 4 */
+  .s4 .grid{display:grid;grid-template-columns:1.35fr 1fr;gap:100px;margin-top:70px;flex:1}
+  .bars{display:flex;flex-direction:column;justify-content:center;gap:56px}
+  .bar-label{font-size:26px;color:#B4C2D0;margin-bottom:16px;font-weight:600;letter-spacing:.02em}
+  .bar{height:120px;border-radius:12px;display:flex;align-items:center;justify-content:flex-end;padding-right:32px;font-size:56px;font-weight:800;letter-spacing:-.02em}
+  .bar.before{width:100%;background:#2A3F55;color:#fff}
+  .bar.after{width:42.1%;background:var(--mint);color:var(--ink)}
+  .axis{display:flex;justify-content:space-between;font-size:20px;color:var(--muted);border-top:1px solid #2A3F55;padding-top:14px}
+  .stats{display:flex;flex-direction:column;justify-content:center;gap:0}
+  .stat{padding:40px 0;border-top:1px solid #2A3F55}
+  .stat:last-child{border-bottom:1px solid #2A3F55}
+  .stat .big{font-size:96px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--mint)}
+  .stat .sm{font-size:28px;color:#B4C2D0;margin-top:12px;line-height:1.4}
+
+  /* Slide 5 */
+  .s5 .grid{display:grid;grid-template-columns:auto 1fr;gap:120px;align-items:center;flex:1}
+  .dots{display:grid;grid-template-columns:repeat(10,62px);gap:14px}
+  .dots i{width:62px;height:62px;border-radius:12px;background:var(--mintd)}
+  .dots i.x{background:transparent;border:3px solid #E4574C}
+  .s5 .big{font-size:220px;font-weight:800;letter-spacing:-.05em;line-height:.9;color:var(--mintd)}
+  .s5 .cap{font-size:40px;font-weight:700;margin-top:24px;line-height:1.25;letter-spacing:-.01em}
+  .s5 .note{font-size:30px;color:#55616F;line-height:1.5;margin-top:36px;max-width:760px}
+  .s5 .key{display:flex;gap:40px;font-size:24px;color:#55616F;margin-top:44px}
+  .s5 .key i{display:inline-block;width:22px;height:22px;border-radius:5px;vertical-align:-3px;margin-right:10px}
+
+  /* Slide 6 */
+  .avail{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:90px}
+  .card{border-top:6px solid var(--ink);padding-top:40px}
+  .card .label{font-size:22px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .card .val{font-size:68px;font-weight:800;letter-spacing:-.03em;margin-top:18px;line-height:1.05}
+  .card p{font-size:28px;color:#55616F;line-height:1.5;margin-top:22px}
+  .card.m{border-top-color:var(--mintd)}
+  .banner{margin-top:auto;margin-bottom:40px;background:var(--ink);color:#fff;border-radius:20px;padding:40px 52px;display:flex;align-items:center;justify-content:space-between;font-size:32px}
+  .banner b{color:var(--mint)}
+
+  /* Slide 7 */
+  .s7 .content{margin:auto 0;position:relative}
+  .s7 .goal{font-size:300px;font-weight:800;letter-spacing:-.06em;line-height:.85;color:var(--mint)}
+  .s7 .row{display:flex;gap:90px;align-items:flex-end}
+  .s7 h2{max-width:900px;font-size:80px}
+  .checklist{margin-top:70px;display:grid;grid-template-columns:repeat(3,1fr);gap:40px;max-width:1640px}
+  .check{border:2px solid #2A3F55;border-radius:18px;padding:34px 36px;font-size:28px;line-height:1.45;color:#D5DEE7}
+  .check b{display:block;color:#fff;font-size:34px;margin-bottom:10px}
+  .check .d{color:var(--mint);font-weight:800;font-size:22px;letter-spacing:.14em;text-transform:uppercase;margin-bottom:16px;display:block}
+  .s7 .stripe{position:absolute;left:0;right:0;bottom:0;height:14px;background:var(--mint)}
+</style>
+</head>
+<body>
+
+<!-- 1. Title -->
+<section class="slide">
+<div class="inner dark s1">
+  <div class="glow"></div>
+  <div class="rings">
+    <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
+    <div class="ring-center"><div class="n">4</div><div class="u">day close</div></div>
+  </div>
+  <div class="brand" style="font-size:30px">Ledger<b>ly</b></div>
+  <div class="content">
+    <div class="kicker">Introducing Automated Close</div>
+    <h1>Close the month in <span class="mint">4 days</span>, not 9.5.</h1>
+    <p class="lead">Automated month-end close for finance teams, tested with 38 beta teams and ready for yours.</p>
+    <div class="pill">Available 14 October 2026 · All paid plans · No extra cost</div>
+  </div>
+  <div class="foot"><span>Customer launch briefing for finance leaders</span><span>01</span></div>
+</div>
+</section>
+
+<!-- 2. Problem -->
+<section class="slide">
+<div class="inner s2">
+  <div class="kicker">The problem</div>
+  <h2>Month-end close still takes up most of two working weeks.</h2>
+  <div class="cal">
+    <div class="day busy">Day 1<span>Close</span></div>
+    <div class="day busy">Day 2<span>Close</span></div>
+    <div class="day busy">Day 3<span>Close</span></div>
+    <div class="day busy">Day 4<span>Close</span></div>
+    <div class="day busy">Day 5<span>Close</span></div>
+    <div class="day busy">Day 6<span>Close</span></div>
+    <div class="day busy">Day 7<span>Close</span></div>
+    <div class="day busy">Day 8<span>Close</span></div>
+    <div class="day busy">Day 9<span>Close</span></div>
+    <div class="day half">Day 10<span>½ day</span></div>
+  </div>
+  <div class="legend">
+    <span><i style="background:#E4574C"></i>Median close before automation: 9.5 working days (beta teams)</span>
+  </div>
+  <p class="lead">Most of that time goes to matching transactions by hand, chasing discrepancies and re-checking work. That time is not left for analysis or forward planning.</p>
+  <div class="foot"><span class="brand">Ledger<b>ly</b></span><span>02</span></div>
+</div>
+</section>
+
+<!-- 3. How it works -->
+<section class="slide">
+<div class="inner s3">
+  <div class="kicker">How it works</div>
+  <h2>Ledgerly does the matching. Your team handles the judgement calls.</h2>
+  <div class="steps">
+    <div class="step">
+      <div class="num">1</div>
+      <h3>Reconcile automatically</h3>
+      <p>Transactions are matched against your ledger as the period closes, without spreadsheets or manual tick-marking.</p>
+    </div>
+    <div class="step">
+      <div class="num">2</div>
+      <h3>Surface only exceptions</h3>
+      <p>Anything that doesn’t match goes to a single review queue, so reviewers can see where attention is needed.</p>
+    </div>
+    <div class="step hl">
+      <div class="num">3</div>
+      <h3>Review, approve, close</h3>
+      <p>Controllers resolve the exceptions and sign off, days earlier than before.</p>
+    </div>
+  </div>
+  <div class="foot"><span class="brand">Ledger<b>ly</b></span><span>03</span></div>
+</div>
+</section>
+
+<!-- 4. Beta results -->
+<section class="slide">
+<div class="inner dark s4">
+  <div class="kicker">Beta results · 38 teams</div>
+  <h2>Beta teams cut their median close by more than half.</h2>
+  <div class="grid">
+    <div class="bars">
+      <div>
+        <div class="bar-label">Before Automated Close</div>
+        <div class="bar before">9.5 days</div>
+      </div>
+      <div>
+        <div class="bar-label">With Automated Close</div>
+        <div class="bar after">4 days</div>
+      </div>
+      <div class="axis"><span>0</span><span>Median working days to close</span><span>9.5</span></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="big">−58%</div><div class="sm">Median close time, from 9.5 to 4 days</div></div>
+      <div class="stat"><div class="big">92%</div><div class="sm">of reconciliations matched automatically</div></div>
+      <div class="stat"><div class="big">&lt;48 hrs</div><div class="sm">Close time for two beta teams</div></div>
+    </div>
+  </div>
+  <div class="foot"><span class="brand">Ledger<b>ly</b></span><span>04</span></div>
+</div>
+</section>
+
+<!-- 5. 92% -->
+<section class="slide">
+<div class="inner s5">
+  <div class="kicker">Where the time comes back</div>
+  <div class="grid">
+    <div>
+      <div class="dots">
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        <i></i><i></i><i class="x"></i><i class="x"></i><i class="x"></i><i class="x"></i><i class="x"></i><i class="x"></i><i class="x"></i><i class="x"></i>
+      </div>
+      <div class="key">
+        <span><i style="background:var(--mintd)"></i>Matched automatically</span>
+        <span><i style="border:3px solid #E4574C"></i>Needs review</span>
+      </div>
+    </div>
+    <div>
+      <div class="big">92%</div>
+      <div class="cap">of reconciliations matched with no manual work.</div>
+      <p class="note">In the beta, your team would have reviewed roughly 8 of every 100 reconciliations. The remaining 92 were matched automatically.</p>
+    </div>
+  </div>
+  <div class="foot"><span class="brand">Ledger<b>ly</b></span><span>05</span></div>
+</div>
+</section>
+
+<!-- 6. Availability -->
+<section class="slide">
+<div class="inner s6">
+  <div class="kicker">Availability</div>
+  <h2>Already included in your plan. Switch it on when you’re ready.</h2>
+  <div class="avail">
+    <div class="card m">
+      <div class="label">Launch date</div>
+      <div class="val">14 Oct 2026</div>
+      <p>Live for every eligible account on launch day.</p>
+    </div>
+    <div class="card">
+      <div class="label">Who gets it</div>
+      <div class="val">All paid plans</div>
+      <p>Every paid Ledgerly plan includes it, with no upgrade needed.</p>
+    </div>
+    <div class="card m">
+      <div class="label">Cost</div>
+      <div class="val">No extra cost</div>
+      <p>No add-on fee and no new contract.</p>
+    </div>
+  </div>
+  <div class="banner">
+    <span>Turn it on before your next month-end to see the difference in <b>one close cycle</b>.</span>
+    <span style="font-weight:800;color:var(--mint)">→</span>
+  </div>
+  <div class="foot"><span class="brand">Ledger<b>ly</b></span><span>06</span></div>
+</div>
+</section>
+
+<!-- 7. CTA -->
+<section class="slide">
+<div class="inner dark s7">
+  <div class="content">
+    <div class="kicker">Join the launch</div>
+    <div class="row">
+      <div class="goal">200</div>
+      <h2 style="padding-bottom:30px">finance teams switching on in the first month. Be one of them.</h2>
+    </div>
+    <div class="checklist">
+      <div class="check"><span class="d">Today</span><b>Pick your close</b>Choose the month-end you want to run on Automated Close.</div>
+      <div class="check"><span class="d">14 October</span><b>Switch it on</b>Turn on the feature in your Ledgerly account. It is included in your plan.</div>
+      <div class="check"><span class="d">First close</span><b>Compare the result</b>Measure your close time against your usual cycle. The beta median was 4 days.</div>
+    </div>
+  </div>
+  <div class="foot"><span class="brand">Ledger<b>ly</b></span><span>07</span></div>
+  <div class="stripe"></div>
+</div>
+</section>
+
+</body>
+</html>

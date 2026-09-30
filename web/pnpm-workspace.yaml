@@ -1,6 +1,0 @@
-# pnpm 11 settings live in the workspace file, not package.json.
-# esbuild is allowlisted because it needs its postinstall to fetch/download its
-# native binary — the one legitimate build-script case in this tree
-# (docs/coderules/dependencies.md -> "The one conflict this creates").
-allowBuilds:
-  esbuild: true

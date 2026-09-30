@@ -1,0 +1,215 @@
+{
+  "brief": {
+    "id": "launch-product",
+    "prompt": "Launch deck for Tessel 2, a note-taking app that now works fully offline and syncs peer to peer.",
+    "deck_type": "launch",
+    "audience": "Existing customers and press at a launch event",
+    "ask": "Get existing users to upgrade and press to cover the offline story",
+    "slide_count": 8
+  },
+  "outline": {
+    "governing_thought": "Tessel 2 keeps your notes yours: it works fully offline and syncs device to device, with no server in the middle.",
+    "deck_type": "launch",
+    "audience": "Existing customers and press at a launch event",
+    "ask": "Get existing users to upgrade and press to cover the offline story",
+    "key_points": [
+      "Notes should work anywhere, with or without a connection",
+      "Tessel 2 runs fully offline and syncs peer to peer",
+      "Your notes stay on your devices, not on our servers",
+      "Upgrade today, and press can tell the offline story"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "Open the launch",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Tessel 2 works everywhere you do",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Launch",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "Name the problem",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Notes fail exactly when you need them most",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The problem",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "Show the cost of cloud dependence",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Cloud-first apps trade your access for their convenience",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Why it breaks",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Flights and tunnels cut you off",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Weak signal stalls every save",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Your notes live on someone else's server",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "Introduce the answer",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Tessel 2 runs fully offline, with nothing missing",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Meet Tessel 2",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "Explain how sync works",
+        "intent": "steps",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Your devices sync directly with each other",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "How it syncs",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Edit anywhere, with no connection needed",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Devices find each other on the same network",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Changes merge automatically, no server involved",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "Deliver the customer benefit",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Your notes stay private, fast, and always within reach",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "What you get",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Instant opening, even in airplane mode",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Data stays on devices you own",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Nothing to lose if a service goes down",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "Give the press a story",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Local-first software puts people back in control of their data",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Why it matters",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s08",
+        "beat": "Close with the ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Upgrade to Tessel 2 today and share the offline story",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Next step",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Customers: update in the app now",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Press: talk with us about the offline story",
+            "budget_words": 10
+          }
+        ]
+      }
+    ]
+  }
+}

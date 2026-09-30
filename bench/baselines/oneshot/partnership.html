@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Relay × Basket — 3-City Pilot Proposal</title>
+<style>
+  :root{
+    --ink:#0E1A2B;
+    --ink-2:#1B2A40;
+    --paper:#F6F3EC;
+    --line:#DAD4C7;
+    --muted:#6B7280;
+    --relay:#FF5A36;
+    --basket:#22A565;
+    --soft-relay:#FFE7DF;
+    --soft-basket:#DDF3E7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#2a2a2a;font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+  .slide{width:1920px;height:1080px;position:relative;overflow:hidden;background:var(--paper);padding:110px 140px 120px;display:flex;flex-direction:column}
+  .slide + .slide{margin-top:0}
+  .dark{background:var(--ink);color:#fff}
+
+  .eyebrow{font-size:22px;letter-spacing:.18em;text-transform:uppercase;font-weight:700;color:var(--relay);margin-bottom:28px;display:flex;align-items:center;gap:16px}
+  .eyebrow::before{content:"";width:48px;height:4px;background:var(--relay);display:block}
+  h1{font-size:128px;line-height:1;letter-spacing:-.035em;font-weight:800}
+  h2{font-size:72px;line-height:1.05;letter-spacing:-.03em;font-weight:800;max-width:1500px}
+  .lede{font-size:32px;line-height:1.45;color:var(--muted);max-width:1300px;margin-top:28px}
+  .dark .lede{color:#A9B4C4}
+
+  .footer{position:absolute;left:140px;right:140px;bottom:52px;display:flex;justify-content:space-between;font-size:20px;color:var(--muted);letter-spacing:.04em}
+  .dark .footer{color:#6F7E94}
+  .brand{font-weight:800;color:var(--ink);letter-spacing:.02em}
+  .dark .brand{color:#fff}
+  .brand b{color:var(--relay)}
+
+  /* Slide 1 */
+  .title-wrap{margin-top:auto;margin-bottom:auto}
+  .lockup{display:flex;align-items:center;gap:28px;font-size:44px;font-weight:800;margin-bottom:70px}
+  .logo{display:flex;align-items:center;gap:16px}
+  .mark{width:64px;height:64px;border-radius:16px;display:grid;place-items:center;font-size:34px;color:#fff}
+  .x{color:#55657C;font-weight:300;font-size:48px}
+  .title-meta{display:flex;gap:80px;margin-top:80px;font-size:24px;color:#A9B4C4}
+  .title-meta div span{display:block;color:#fff;font-weight:700;font-size:28px;margin-top:8px}
+  .route{position:absolute;right:-60px;top:120px;width:760px;height:760px;opacity:.9}
+
+  /* Cards */
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:auto}
+  .card{background:#fff;border:1px solid var(--line);border-radius:24px;padding:48px 44px}
+  .card .num{font-size:96px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--relay)}
+  .card h3{font-size:34px;margin:24px 0 16px;letter-spacing:-.01em}
+  .card p{font-size:25px;line-height:1.5;color:var(--muted)}
+
+  /* Stats slide */
+  .split{display:grid;grid-template-columns:1.05fr 1fr;gap:100px;margin-top:auto;align-items:end}
+  .stats{display:grid;grid-template-columns:1fr 1fr;gap:0}
+  .stat{padding:40px 0;border-top:2px solid rgba(255,255,255,.14)}
+  .stat:nth-child(odd){padding-right:40px}
+  .stat .v{font-size:104px;font-weight:800;letter-spacing:-.04em;line-height:1}
+  .stat .v small{font-size:48px;color:var(--relay)}
+  .stat .l{font-size:24px;color:#A9B4C4;margin-top:12px}
+  .checks{list-style:none}
+  .checks li{font-size:29px;line-height:1.4;padding:26px 0 26px 64px;border-top:2px solid rgba(255,255,255,.14);position:relative}
+  .checks li::before{content:"";position:absolute;left:0;top:32px;width:32px;height:32px;border-radius:50%;background:var(--relay)}
+  .checks li::after{content:"";position:absolute;left:10px;top:40px;width:10px;height:6px;border-left:3px solid #fff;border-bottom:3px solid #fff;transform:rotate(-45deg)}
+  .checks li span{display:block;font-size:23px;color:#A9B4C4;margin-top:6px}
+
+  /* Flow */
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:auto;position:relative}
+  .step{padding:0 40px 0 0;position:relative}
+  .step .dot{width:88px;height:88px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:34px;font-weight:800;position:relative;z-index:2}
+  .step.b .dot{background:var(--basket)}
+  .step.r .dot{background:var(--relay)}
+  .flow::before{content:"";position:absolute;top:43px;left:44px;right:22%;height:3px;background:repeating-linear-gradient(90deg,var(--ink) 0 14px,transparent 14px 26px);z-index:1}
+  .step .who{font-size:20px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;margin-top:40px}
+  .step.b .who{color:var(--basket)}
+  .step.r .who{color:var(--relay)}
+  .step h3{font-size:36px;margin:12px 0 16px;letter-spacing:-.01em}
+  .step p{font-size:25px;line-height:1.5;color:var(--muted)}
+  .band{margin-top:70px;background:var(--ink);color:#fff;border-radius:20px;padding:34px 48px;display:flex;justify-content:space-between;font-size:26px}
+  .band b{color:var(--relay)}
+
+  /* Cities */
+  .cities{display:grid;grid-template-columns:repeat(3,1fr);gap:36px;margin-top:auto}
+  .city{background:#fff;border-radius:24px;border:1px solid var(--line);overflow:hidden}
+  .city .top{background:var(--ink);color:#fff;padding:40px 44px}
+  .city .top .wave{font-size:20px;letter-spacing:.14em;text-transform:uppercase;color:var(--relay);font-weight:700}
+  .city .top h3{font-size:56px;letter-spacing:-.03em;margin-top:10px}
+  .city dl{padding:12px 44px 30px}
+  .city dl div{display:flex;justify-content:space-between;padding:20px 0;border-bottom:1px solid var(--line);font-size:25px}
+  .city dl div:last-child{border:0}
+  .city dt{color:var(--muted)}
+  .city dd{font-weight:700}
+  .scope{display:flex;gap:40px;margin-top:40px;font-size:25px;color:var(--muted)}
+  .scope b{color:var(--ink)}
+  .pill{display:inline-block;background:var(--soft-basket);color:#157A48;padding:10px 20px;border-radius:999px;font-weight:700;font-size:22px}
+
+  /* Metrics table */
+  table{width:100%;border-collapse:collapse;margin-top:auto}
+  th{text-align:left;font-size:20px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:0 0 22px;border-bottom:3px solid var(--ink)}
+  td{font-size:30px;padding:30px 0;border-bottom:1px solid var(--line);vertical-align:middle}
+  td.m{font-weight:700;width:34%}
+  td.d{color:var(--muted);font-size:25px;width:40%;padding-right:40px}
+  td.t{text-align:right}
+  th.t{text-align:right}
+  .target{display:inline-block;background:var(--soft-relay);color:#C73A18;font-weight:800;padding:12px 26px;border-radius:12px;font-size:32px}
+
+  /* Timeline */
+  .tl{margin-top:auto;position:relative}
+  .months{display:grid;grid-template-columns:repeat(5,1fr);font-size:22px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--muted);border-bottom:2px solid var(--line);padding-bottom:18px}
+  .lanes{position:relative;height:330px;margin-top:30px;background:
+      linear-gradient(90deg,var(--line) 1px,transparent 1px) 0 0/20% 100%}
+  .bar{position:absolute;height:78px;border-radius:14px;display:flex;align-items:center;padding:0 28px;font-size:24px;font-weight:700;color:#fff;white-space:nowrap}
+  .bar small{font-weight:400;opacity:.8;margin-left:12px;font-size:21px}
+  .milestones{display:grid;grid-template-columns:repeat(4,1fr);gap:36px;margin-top:56px}
+  .ms{border-left:4px solid var(--relay);padding-left:26px}
+  .ms .d{font-size:22px;font-weight:800;color:var(--relay);letter-spacing:.06em;text-transform:uppercase}
+  .ms .w{font-size:27px;margin-top:10px;line-height:1.4}
+
+  /* Ask */
+  .ask-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:90px;margin-top:auto;align-items:stretch}
+  .terms{border-top:2px solid rgba(255,255,255,.14)}
+  .terms div{display:flex;justify-content:space-between;align-items:baseline;padding:28px 0;border-bottom:2px solid rgba(255,255,255,.14);font-size:27px;gap:30px}
+  .terms div span:first-child{color:#A9B4C4}
+  .terms div span:last-child{font-weight:700;text-align:right}
+  .asks{background:#fff;color:var(--ink);border-radius:28px;padding:54px 56px}
+  .asks h3{font-size:24px;letter-spacing:.14em;text-transform:uppercase;color:var(--relay);margin-bottom:18px}
+  .asks ol{list-style:none;counter-reset:a}
+  .asks li{counter-increment:a;display:flex;gap:28px;padding:26px 0;border-bottom:1px solid var(--line);font-size:29px;line-height:1.35;font-weight:700}
+  .asks li:last-child{border:0}
+  .asks li::before{content:counter(a);flex:0 0 56px;height:56px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:26px}
+  .asks li span{display:block;font-weight:400;color:var(--muted);font-size:23px;margin-top:6px}
+</style>
+</head>
+<body>
+
+<!-- 1. Title -->
+<section class="slide dark">
+  <svg class="route" viewBox="0 0 760 760" fill="none">
+    <circle cx="380" cy="380" r="340" stroke="#1F3049" stroke-width="2"/>
+    <circle cx="380" cy="380" r="240" stroke="#1F3049" stroke-width="2"/>
+    <circle cx="380" cy="380" r="140" stroke="#1F3049" stroke-width="2"/>
+    <path d="M120 560 C 220 420, 300 520, 380 380 S 560 240, 640 180" stroke="#FF5A36" stroke-width="6" stroke-linecap="round" stroke-dasharray="2 18"/>
+    <circle cx="120" cy="560" r="18" fill="#22A565"/>
+    <circle cx="380" cy="380" r="14" fill="#fff"/>
+    <circle cx="640" cy="180" r="26" fill="#FF5A36"/>
+    <circle cx="640" cy="180" r="48" stroke="#FF5A36" stroke-width="2" opacity=".5"/>
+  </svg>
+  <div class="title-wrap">
+    <div class="lockup">
+      <div class="logo"><div class="mark" style="background:var(--relay)">R</div>Relay</div>
+      <div class="x">×</div>
+      <div class="logo"><div class="mark" style="background:var(--basket)">B</div>Basket</div>
+    </div>
+    <h1>A three-city<br>delivery pilot,<br>live in January.</h1>
+    <p class="lede">A proposal to add Relay's courier capacity behind Basket's evening peak — measured, reversible, and ready to launch.</p>
+    <div class="title-meta">
+      <div>Prepared for<span>VP Operations · Head of Partnerships</span></div>
+      <div>Pilot length<span>12 weeks</span></div>
+      <div>Decision needed<span>End of November</span></div>
+    </div>
+  </div>
+  <div class="footer"><span class="brand">Relay<b>.</b></span><span>Confidential · Partnership proposal</span></div>
+</section>
+
+<!-- 2. Problem -->
+<section class="slide">
+  <div class="eyebrow">The opportunity</div>
+  <h2>Grocery delivery promises break in the same three places.</h2>
+  <p class="lede">What we see across the grocery lanes we already run — and what we'd set out to fix with Basket.</p>
+  <div class="grid3">
+    <div class="card">
+      <div class="num">38%</div>
+      <h3>The 4–8pm crunch</h3>
+      <p>Over a third of daily grocery orders land in a four-hour window. Fixed fleets sized for it sit idle the rest of the day.</p>
+    </div>
+    <div class="card">
+      <div class="num">1 in 5</div>
+      <h3>Cold-chain exposure</h3>
+      <p>Orders with chilled or frozen items are the ones most likely to trigger refunds when a drop runs late.</p>
+    </div>
+    <div class="card">
+      <div class="num">3–4%</div>
+      <h3>Failed first attempts</h3>
+      <p>Missed handoffs at apartments and gated homes create redeliveries, spoilage and support tickets.</p>
+    </div>
+  </div>
+  <div class="footer"><span class="brand">Relay<b>.</b></span><span>Source: Relay grocery lane data, trailing 6 months · 02</span></div>
+</section>
+
+<!-- 3. About Relay -->
+<section class="slide dark">
+  <div class="eyebrow">Why Relay</div>
+  <h2>A last-mile network built for flexible, time-critical drops.</h2>
+  <div class="split">
+    <div class="stats">
+      <div class="stat"><div class="v">14</div><div class="l">Metro areas live today</div></div>
+      <div class="stat"><div class="v">6,200</div><div class="l">Active vetted couriers</div></div>
+      <div class="stat"><div class="v">97.4<small>%</small></div><div class="l">On-time rate, grocery lanes</div></div>
+      <div class="stat"><div class="v">31<small>min</small></div><div class="l">Median pickup-to-door</div></div>
+    </div>
+    <ul class="checks">
+      <li>Capacity that flexes by the hour<span>Scale up for the evening peak, down overnight — you pay per delivered order.</span></li>
+      <li>Insulated fleet as standard<span>Every grocery courier carries certified cold bags; temperature logged at handoff.</span></li>
+      <li>Plugs into your dispatch<span>Open API and webhooks — orders stay in Basket's app and brand.</span></li>
+    </ul>
+  </div>
+  <div class="footer"><span class="brand">Relay<b>.</b></span><span>Network figures as of Q3 · 03</span></div>
+</section>
+
+<!-- 4. How it works -->
+<section class="slide">
+  <div class="eyebrow">How it works</div>
+  <h2>Basket keeps the customer. Relay handles the overflow.</h2>
+  <div class="flow">
+    <div class="step b"><div class="dot">1</div><div class="who">Basket</div><h3>Order placed</h3><p>Customer orders in the Basket app, exactly as today. Nothing changes on the front end.</p></div>
+    <div class="step b"><div class="dot">2</div><div class="who">Basket</div><h3>Overflow rule fires</h3><p>When your fleet hits a capacity threshold you set, the order routes to Relay via API.</p></div>
+    <div class="step r"><div class="dot">3</div><div class="who">Relay</div><h3>Courier dispatched</h3><p>Nearest insulated courier assigned in under 90 seconds; live ETA pushed back to Basket.</p></div>
+    <div class="step r"><div class="dot">4</div><div class="who">Relay</div><h3>Verified handoff</h3><p>Photo proof, temperature check and status webhook close the loop in your systems.</p></div>
+  </div>
+  <div class="band"><span>Integration effort: <b>~2 engineer-weeks</b> on Basket's side</span><span>Relay-branded? <b>No</b> — couriers deliver as Basket</span></div>
+  <div class="footer"><span class="brand">Relay<b>.</b></span><span>04</span></div>
+</section>
+
+<!-- 5. Pilot scope -->
+<section class="slide">
+  <div class="eyebrow">Pilot design</div>
+  <h2>Three cities, staggered, with clear volume caps.</h2>
+  <div class="cities">
+    <div class="city">
+      <div class="top"><div class="wave">Wave 1 · 6 Jan</div><h3>Austin</h3></div>
+      <dl>
+        <div><dt>Coverage</dt><dd>Central + East</dd></div>
+        <div><dt>Hours</dt><dd>4–9pm daily</dd></div>
+        <div><dt>Volume cap</dt><dd>1,500 orders / wk</dd></div>
+      </dl>
+    </div>
+    <div class="city">
+      <div class="top"><div class="wave">Wave 2 · 20 Jan</div><h3>Denver</h3></div>
+      <dl>
+        <div><dt>Coverage</dt><dd>Metro core</dd></div>
+        <div><dt>Hours</dt><dd>4–9pm daily</dd></div>
+        <div><dt>Volume cap</dt><dd>1,200 orders / wk</dd></div>
+      </dl>
+    </div>
+    <div class="city">
+      <div class="top"><div class="wave">Wave 2 · 20 Jan</div><h3>Charlotte</h3></div>
+      <dl>
+        <div><dt>Coverage</dt><dd>Uptown + South End</dd></div>
+        <div><dt>Hours</dt><dd>4–9pm daily</dd></div>
+        <div><dt>Volume cap</dt><dd>1,000 orders / wk</dd></div>
+      </dl>
+    </div>
+  </div>
+  <div class="scope">
+    <span class="pill">Unchanged for Basket</span>
+    <span><b>Customer app,</b> pricing, support flows and store partners all stay as they are.</span>
+  </div>
+  <div class="footer"><span class="brand">Relay<b>.</b></span><span>City list open to swap based on Basket's priorities · 05</span></div>
+</section>
+
+<!-- 6. Metrics -->
+<section class="slide">
+  <div class="eyebrow">Success criteria</div>
+  <h2>We agree the scorecard up front — and publish it weekly.</h2>
+  <table>
+    <thead><tr><th>Metric</th><th>How it's measured</th><th class="t">Pilot target</th></tr></thead>
+    <tbody>
+      <tr><td class="m">On-time delivery</td><td class="d">Delivered within Basket's promised window</td><td class="t"><span class="target">≥ 95%</span></td></tr>
+      <tr><td class="m">Cold-chain compliance</td><td class="d">Temperature logged in range at handoff</td><td class="t"><span class="target">≥ 99%</span></td></tr>
+      <tr><td class="m">Failed first attempts</td><td class="d">Orders needing redelivery or refund</td><td class="t"><span class="target">≤ 1.5%</span></td></tr>
+      <tr><td class="m">Cost per delivered order</td><td class="d">Versus Basket's current blended peak cost</td><td class="t"><span class="target">At or below</span></td></tr>
+      <tr><td class="m">Customer rating</td><td class="d">Post-delivery rating in the Basket app</td><td class="t"><span class="target">≥ 4.7 / 5</span></td></tr>
+    </tbody>
+  </table>
+  <div class="footer"><span class="brand">Relay<b>.</b></span><span>Baselines captured from Basket data in December · 06</span></div>
+</section>
+
+<!-- 7. Timeline -->
+<section class="slide">
+  <div class="eyebrow">Timeline</div>
+  <h2>Sign in November, live on 6 January, decide by April.</h2>
+  <div class="tl">
+    <div class="months"><span>November</span><span>December</span><span>January</span><span>February</span><span>March</span></div>
+    <div class="lanes">
+      <div class="bar" style="left:10%;width:10%;top:0;background:var(--ink)">Agree terms</div>
+      <div class="bar" style="left:20%;width:18%;top:0;background:#44546B">Integrate &amp; test<small>sandbox</small></div>
+      <div class="bar" style="left:41%;width:59%;top:100px;background:var(--relay)">Austin live<small>6 Jan → 30 Mar</small></div>
+      <div class="bar" style="left:50%;width:50%;top:200px;background:var(--basket)">Denver + Charlotte live<small>20 Jan → 30 Mar</small></div>
+    </div>
+  </div>
+  <div class="milestones">
+    <div class="ms"><div class="d">29 Nov</div><div class="w">Pilot agreement signed; owners named</div></div>
+    <div class="ms"><div class="d">16 Dec</div><div class="w">API integration passes end-to-end test</div></div>
+    <div class="ms"><div class="d">6 Jan</div><div class="w">Austin go-live; weekly scorecard starts</div></div>
+    <div class="ms"><div class="d">Early Apr</div><div class="w">Joint review: expand, adjust or stop</div></div>
+  </div>
+  <div class="footer"><span class="brand">Relay<b>.</b></span><span>07</span></div>
+</section>
+
+<!-- 8. Terms & ask -->
+<section class="slide dark">
+  <div class="eyebrow">Terms &amp; next steps</div>
+  <h2>Low-risk terms. Three decisions to get us to January.</h2>
+  <div class="ask-grid">
+    <div class="terms">
+      <div><span>Pricing</span><span>Flat per delivered order</span></div>
+      <div><span>Volume minimums</span><span>None</span></div>
+      <div><span>Setup fees</span><span>Waived for pilot</span></div>
+      <div><span>Exit</span><span>30 days' notice, any reason</span></div>
+      <div><span>Service credits</span><span>If on-time falls below 95%</span></div>
+    </div>
+    <div class="asks">
+      <h3>What we need from Basket</h3>
+      <ol>
+        <li><div>Confirm the three pilot cities<span>Austin, Denver, Charlotte — or your preferred swaps</span></div></li>
+        <li><div>Name an ops lead and an engineering contact<span>Weekly 30-minute check-in from kickoff</span></div></li>
+        <li><div>Sign the pilot agreement by 29 November<span>Keeps the 6 January launch date intact</span></div></li>
+      </ol>
+    </div>
+  </div>
+  <div class="footer"><span class="brand">Relay<b>.</b></span><span>Thank you · partnerships@relay.example · 08</span></div>
+</section>
+
+</body>
+</html>

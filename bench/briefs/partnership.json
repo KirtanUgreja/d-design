@@ -1,0 +1,229 @@
+{
+  "brief": {
+    "id": "partnership",
+    "prompt": "Partnership proposal from Relay, a last-mile courier network, to Basket, a grocery delivery app.",
+    "deck_type": "partnership",
+    "audience": "Basket's VP of Operations and head of partnerships",
+    "ask": "Agree a 3-city pilot starting in January",
+    "slide_count": 8
+  },
+  "outline": {
+    "governing_thought": "Relay's courier network can help Basket deliver groceries faster and more reliably, and a three-city pilot starting in January will prove it.",
+    "deck_type": "partnership",
+    "audience": "Basket's VP of Operations and head of partnerships",
+    "ask": "Agree a 3-city pilot starting in January",
+    "key_points": [
+      "Basket's growth depends on reliable delivery windows",
+      "Relay adds flexible courier capacity without fixed cost",
+      "A small pilot proves the model before scaling"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "Open",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Relay and Basket can make every grocery delivery on time",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Partnership proposal",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "Problem",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Late deliveries cost grocery apps their most loyal customers",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The problem",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "Cause",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Fixed fleets break when demand swings by hour and neighborhood",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Why it happens",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Evening peaks outrun in-house capacity",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Quiet hours leave couriers idle",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Cold-chain groceries leave no room for delay",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "Solution",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Relay adds courier capacity exactly where Basket orders spike",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Our approach",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "How it works",
+        "intent": "steps",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Orders flow from Basket's app to a Relay courier in minutes",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "How it works",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Basket sends the order through our API",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Relay matches the nearest trained courier",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Customers track the drop live in Basket",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "Benefit",
+        "intent": "comparison",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Basket swaps fixed fleet cost for capacity that flexes with demand",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "What changes for Basket",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Fewer missed delivery windows",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Costs that follow order volume",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Operations team keeps full control of service levels",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "Pilot",
+        "intent": "timeline",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Three cities in January give both teams clear proof",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The pilot",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Pick three cities with different demand patterns",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Agree shared service and cost measures upfront",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Review results together before any expansion",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s08",
+        "beat": "Ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Agree a three-city pilot starting in January",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Next step",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Confirm the three cities this month",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Name one owner on each side",
+            "budget_words": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Quill · September 2026 Investor Update</title>
+<style>
+  :root{
+    --paper:#F5F1E8;
+    --paper-2:#EDE6D8;
+    --ink:#15213B;
+    --ink-2:#34405A;
+    --muted:#6F6A60;
+    --rule:#D6CDBB;
+    --accent:#B8432A;
+    --accent-soft:#F1DDD4;
+    --green:#2F6B4F;
+    --serif: Georgia, "Times New Roman", Times, serif;
+    --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#2a2a2a;font-family:var(--sans);color:var(--ink)}
+  .slide{
+    width:1920px;height:1080px;position:relative;overflow:hidden;
+    background:var(--paper);padding:110px 140px 120px;
+    display:flex;flex-direction:column;
+  }
+  .slide + .slide{border-top:1px solid #000}
+  .eyebrow{
+    font-size:22px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);font-weight:700;margin-bottom:28px;
+  }
+  h1,h2{font-family:var(--serif);font-weight:400;color:var(--ink);letter-spacing:-.01em}
+  h2{font-size:72px;line-height:1.08;max-width:1500px}
+  h2 em{font-style:italic;color:var(--accent)}
+  .lede{font-size:30px;line-height:1.45;color:var(--ink-2);max-width:1300px;margin-top:28px}
+  .footer{
+    position:absolute;left:140px;right:140px;bottom:56px;
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:19px;color:var(--muted);letter-spacing:.04em;
+    border-top:1px solid var(--rule);padding-top:20px;
+  }
+  .footer b{color:var(--ink);font-family:var(--serif);font-size:22px;font-weight:400;letter-spacing:0}
+  .mark{display:inline-flex;align-items:center;gap:12px}
+  .nib{width:14px;height:14px;background:var(--accent);transform:rotate(45deg)}
+
+  /* Slide 1 */
+  .s1{background:var(--ink);color:var(--paper);padding:130px 140px}
+  .s1 .brand{display:flex;align-items:center;gap:20px;font-family:var(--serif);font-size:44px;color:var(--paper)}
+  .s1 .brand .nib{width:22px;height:22px}
+  .s1 h1{color:var(--paper);font-size:132px;line-height:1.0;margin-top:170px;max-width:1400px}
+  .s1 h1 em{color:#E8927C;font-style:italic}
+  .s1 .sub{font-size:32px;color:#B9C0CF;margin-top:40px;max-width:1200px;line-height:1.45}
+  .s1 .strip{
+    position:absolute;left:140px;right:140px;bottom:110px;
+    display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid #3A4764;
+  }
+  .s1 .strip div{padding-top:30px}
+  .s1 .strip .k{font-size:18px;letter-spacing:.2em;text-transform:uppercase;color:#8E98AE}
+  .s1 .strip .v{font-family:var(--serif);font-size:54px;margin-top:10px;color:var(--paper)}
+  .s1 .strip .v small{font-family:var(--sans);font-size:24px;color:#E8927C;margin-left:10px}
+  .s1 .corner{position:absolute;top:130px;right:140px;font-size:22px;letter-spacing:.2em;text-transform:uppercase;color:#8E98AE}
+
+  /* Metrics grid */
+  .grid4{display:grid;grid-template-columns:1.35fr 1fr 1fr;grid-template-rows:1fr 1fr;gap:28px;margin-top:60px;flex:1;margin-bottom:40px}
+  .card{background:#fff;border:1px solid var(--rule);padding:40px 44px;display:flex;flex-direction:column;justify-content:space-between}
+  .card .k{font-size:20px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .card .v{font-family:var(--serif);font-size:96px;line-height:1;color:var(--ink)}
+  .card .n{font-size:24px;color:var(--ink-2);line-height:1.4}
+  .card.hero{grid-row:span 2;background:var(--ink);border-color:var(--ink)}
+  .card.hero .k{color:#8E98AE}
+  .card.hero .v{color:var(--paper);font-size:180px}
+  .card.hero .n{color:#C9CFDB}
+  .pill{display:inline-block;background:var(--green);color:#fff;font-size:24px;font-weight:700;padding:8px 18px;border-radius:40px;margin-bottom:20px}
+  .spark{display:flex;align-items:flex-end;gap:14px;height:120px;margin:20px 0}
+  .spark span{flex:1;background:#3A4764}
+  .spark span.now{background:#E8927C}
+  .spark-l{display:flex;justify-content:space-between;font-size:18px;color:#8E98AE}
+
+  /* Speed slide */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:100px;margin-top:70px;flex:1}
+  .bars{display:flex;flex-direction:column;gap:56px;justify-content:center}
+  .bar-row .lab{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:16px}
+  .bar-row .lab span{font-size:26px;color:var(--ink-2)}
+  .bar-row .lab strong{font-family:var(--serif);font-weight:400;font-size:64px}
+  .track{height:64px;background:var(--paper-2);position:relative}
+  .fill{height:100%;background:var(--muted)}
+  .fill.q{background:var(--accent)}
+  .ticks{display:flex;justify-content:space-between;font-size:18px;color:var(--muted);margin-top:10px}
+  .callout{border-left:6px solid var(--accent);padding:6px 0 6px 36px}
+  .callout .big{font-family:var(--serif);font-size:150px;line-height:1;color:var(--accent)}
+  .callout p{font-size:28px;color:var(--ink-2);line-height:1.45;margin-top:14px}
+  .ship{margin-top:56px;background:#fff;border:1px solid var(--rule);padding:36px 40px}
+  .ship .tag{font-size:18px;letter-spacing:.18em;text-transform:uppercase;color:var(--green);font-weight:700}
+  .ship h3{font-family:var(--serif);font-weight:400;font-size:44px;margin:10px 0 12px}
+  .ship p{font-size:25px;color:var(--ink-2);line-height:1.45}
+
+  /* Customers */
+  .cust{display:grid;grid-template-columns:1.1fr 1fr;gap:90px;margin-top:70px;flex:1}
+  .ledger{border-top:2px solid var(--ink)}
+  .ledger .row{display:flex;justify-content:space-between;align-items:center;padding:34px 0;border-bottom:1px solid var(--rule)}
+  .ledger .row span{font-size:30px;color:var(--ink-2)}
+  .ledger .row strong{font-family:var(--serif);font-weight:400;font-size:76px}
+  .ledger .row.total{border-bottom:2px solid var(--ink)}
+  .ledger .row.total span{color:var(--ink);font-weight:700}
+  .ledger .row.total strong{color:var(--green)}
+  .pos{color:var(--green)} .neg{color:var(--accent)}
+  .dots{display:flex;gap:18px;margin-top:40px}
+  .dot{width:56px;height:56px;border-radius:50%;background:var(--green)}
+  .dot.x{background:transparent;border:3px dashed var(--accent)}
+  .pipe{background:var(--ink);color:var(--paper);padding:56px 60px;display:flex;flex-direction:column;justify-content:space-between}
+  .pipe .k{font-size:20px;letter-spacing:.18em;text-transform:uppercase;color:#8E98AE;font-weight:700}
+  .pipe .v{font-family:var(--serif);font-size:170px;line-height:1;margin-top:20px}
+  .pipe p{font-size:27px;color:#C9CFDB;line-height:1.45}
+  .pipe .ratio{border-top:1px solid #3A4764;padding-top:30px;display:flex;gap:60px}
+  .pipe .ratio div strong{display:block;font-family:var(--serif);font-weight:400;font-size:52px;color:#E8927C}
+  .pipe .ratio div span{font-size:20px;color:#8E98AE}
+
+  /* Miss slide */
+  .timeline{margin-top:90px;position:relative;height:260px}
+  .tl-line{position:absolute;left:0;right:0;top:60px;height:4px;background:var(--rule)}
+  .tl-slip{position:absolute;top:56px;height:12px;background:repeating-linear-gradient(45deg,var(--accent) 0 10px,var(--accent-soft) 10px 20px);left:50%;width:25%}
+  .tl-pt{position:absolute;top:0;transform:translateX(-50%);text-align:center;width:300px}
+  .tl-pt .m{font-size:22px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .tl-pt .d{width:28px;height:28px;border-radius:50%;background:var(--paper);border:4px solid var(--ink);margin:14px auto 0}
+  .tl-pt .t{font-size:24px;color:var(--ink-2);margin-top:22px;line-height:1.35}
+  .tl-pt.was .d{border-color:var(--muted);border-style:dashed}
+  .tl-pt.was .t{text-decoration:line-through;color:var(--muted)}
+  .tl-pt.new .d{background:var(--accent);border-color:var(--accent)}
+  .tl-pt.new .m{color:var(--accent)}
+  .three{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:30px}
+  .three div{border-top:4px solid var(--ink);padding-top:26px}
+  .three h4{font-family:var(--serif);font-weight:400;font-size:38px;margin-bottom:14px}
+  .three p{font-size:24px;line-height:1.5;color:var(--ink-2)}
+
+  /* Ask */
+  .ask{background:var(--paper-2)}
+  .ask-wrap{display:grid;grid-template-columns:1.05fr 1fr;gap:90px;margin-top:60px;flex:1}
+  .ask-num{font-family:var(--serif);font-size:300px;line-height:.85;color:var(--accent)}
+  .ask-big{font-family:var(--serif);font-size:58px;line-height:1.12;margin-top:24px}
+  .ask-big + p{font-size:28px;color:var(--ink-2);line-height:1.5;margin-top:26px}
+  .list{background:#fff;border:1px solid var(--rule);padding:48px 52px;display:flex;flex-direction:column;gap:30px}
+  .list h3{font-size:20px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .li{display:flex;gap:24px;align-items:flex-start}
+  .li .no{font-family:var(--serif);font-size:34px;color:var(--accent);min-width:44px;line-height:1.1}
+  .li p{font-size:26px;line-height:1.42;color:var(--ink)}
+  .li p span{color:var(--muted)}
+  .cta{margin-top:auto;background:var(--ink);color:var(--paper);padding:28px 34px;font-size:25px;line-height:1.45}
+  .cta b{color:#E8927C}
+</style>
+</head>
+<body>
+
+<!-- 1. Title -->
+<section class="slide s1">
+  <div class="brand"><span class="nib"></span>Quill</div>
+  <div class="corner">Seed Investor Update</div>
+  <h1>September 2026:<br>growing <em>11%</em>, asking for two intros.</h1>
+  <p class="sub">Revenue up, product shipped, one miss on compliance timing — and a specific ask for design partners at mid-size law firms.</p>
+  <div class="strip">
+    <div><div class="k">MRR</div><div class="v">$86k<small>+11% MoM</small></div></div>
+    <div><div class="k">Net new firms</div><div class="v">+2<small>3 in · 1 out</small></div></div>
+    <div><div class="k">Pipeline</div><div class="v">$420k</div></div>
+    <div><div class="k">Cash</div><div class="v">$1.9M<small>~16 mo runway</small></div></div>
+  </div>
+</section>
+
+<!-- 2. Numbers -->
+<section class="slide">
+  <div class="eyebrow">The month in numbers</div>
+  <h2>Double-digit growth with <em>~16 months</em> of runway.</h2>
+  <div class="grid4">
+    <div class="card hero">
+      <div>
+        <div class="k">Monthly recurring revenue</div>
+      </div>
+      <div>
+        <span class="pill">▲ 11% month over month</span>
+        <div class="v">$86k</div>
+      </div>
+      <div>
+        <div class="spark"><span style="height:88%"></span><span class="now" style="height:98%"></span></div>
+        <div class="spark-l"><span>August · ~$77k</span><span>September · $86k</span></div>
+        <p class="n" style="margin-top:20px">≈ $1.03M annualized run-rate</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="k">Firms</div>
+      <div class="v"><span class="pos">+3</span> <span style="color:var(--rule)">/</span> <span class="neg">−1</span></div>
+      <div class="n">3 new firms signed, 1 churned</div>
+    </div>
+    <div class="card">
+      <div class="k">Pipeline</div>
+      <div class="v">$420k</div>
+      <div class="n">Open opportunities entering Q4</div>
+    </div>
+    <div class="card">
+      <div class="k">Monthly burn</div>
+      <div class="v">$120k</div>
+      <div class="n">Net burn for September</div>
+    </div>
+    <div class="card">
+      <div class="k">Cash on hand</div>
+      <div class="v">$1.9M</div>
+      <div class="n">≈ 16 months at current burn</div>
+    </div>
+  </div>
+  <div class="footer"><span class="mark"><span class="nib"></span><b>Quill</b></span><span>September 2026 Investor Update · 02</span></div>
+</section>
+
+<!-- 3. Product -->
+<section class="slide">
+  <div class="eyebrow">Product</div>
+  <h2>A contract review now takes <em>4 minutes</em>, not 47.</h2>
+  <div class="two">
+    <div class="bars">
+      <div class="bar-row">
+        <div class="lab"><span>Manual review · average contract</span><strong>47 min</strong></div>
+        <div class="track"><div class="fill" style="width:100%"></div></div>
+      </div>
+      <div class="bar-row">
+        <div class="lab"><span>With Quill · average contract</span><strong style="color:var(--accent)">4 min</strong></div>
+        <div class="track"><div class="fill q" style="width:8.5%"></div></div>
+        <div class="ticks"><span>0</span><span>15</span><span>30</span><span>45 min</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="callout">
+        <div class="big">91%</div>
+        <p>less time per contract — roughly 43 minutes back to a lawyer on every review, or about 12× the throughput.</p>
+      </div>
+      <div class="ship">
+        <div class="tag">✓ Shipped in September</div>
+        <h3>Clause library v2</h3>
+        <p>The next version of the clause library that powers Quill's reviews is live for customers.</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span class="mark"><span class="nib"></span><b>Quill</b></span><span>September 2026 Investor Update · 03</span></div>
+</section>
+
+<!-- 4. Customers & pipeline -->
+<section class="slide">
+  <div class="eyebrow">Customers &amp; pipeline</div>
+  <h2>Net <em>+2 firms</em>, and a pipeline nearly 5× our MRR.</h2>
+  <div class="cust">
+    <div>
+      <div class="ledger">
+        <div class="row"><span>New firms signed</span><strong class="pos">+3</strong></div>
+        <div class="row"><span>Firms churned</span><strong class="neg">−1</strong></div>
+        <div class="row total"><span>Net change</span><strong>+2</strong></div>
+      </div>
+      <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot x"></span></div>
+      <p class="lede" style="font-size:25px;margin-top:30px">We're reviewing the churned account and will share what we learned in the October update.</p>
+    </div>
+    <div class="pipe">
+      <div>
+        <div class="k">Open pipeline</div>
+        <div class="v">$420k</div>
+      </div>
+      <p>Converting this pipeline is the Q4 priority. Design partners at mid-size firms help us prove Quill in the segment we're selling into.</p>
+      <div class="ratio">
+        <div><strong>4.9×</strong><span>pipeline vs. current MRR</span></div>
+        <div><strong>$86k</strong><span>MRR today</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span class="mark"><span class="nib"></span><b>Quill</b></span><span>September 2026 Investor Update · 04</span></div>
+</section>
+
+<!-- 5. Miss -->
+<section class="slide">
+  <div class="eyebrow">What we missed</div>
+  <h2>Our SOC 2 audit <em>slipped to November.</em></h2>
+  <p class="lede">We committed to this and didn't hit it. Here's where it stands and what we're doing about it.</p>
+  <div class="timeline">
+    <div class="tl-line"></div>
+    <div class="tl-slip"></div>
+    <div class="tl-pt" style="left:10%"><div class="m">Aug</div><div class="d" style="background:var(--ink)"></div><div class="t">Prep underway</div></div>
+    <div class="tl-pt was" style="left:50%"><div class="m">Sep</div><div class="d"></div><div class="t">Original audit target</div></div>
+    <div class="tl-pt" style="left:62.5%"><div class="m">Oct</div><div class="d"></div><div class="t">Close remaining gaps</div></div>
+    <div class="tl-pt new" style="left:75%"><div class="m">Nov</div><div class="d"></div><div class="t"><b>New audit date</b></div></div>
+  </div>
+  <div class="three">
+    <div><h4>Impact</h4><p>Firms that require SOC 2 before signing may need to wait. We're flagging this proactively in active deals.</p></div>
+    <div><h4>Response</h4><p>Security questionnaires and documentation continue to be provided to prospects in the meantime.</p></div>
+    <div><h4>Next check-in</h4><p>We'll report audit status in the October and November updates — on time or not.</p></div>
+  </div>
+  <div class="footer"><span class="mark"><span class="nib"></span><b>Quill</b></span><span>September 2026 Investor Update · 05</span></div>
+</section>
+
+<!-- 6. Ask -->
+<section class="slide ask">
+  <div class="eyebrow">The ask</div>
+  <h2>Introduce us to two mid-size law firms.</h2>
+  <div class="ask-wrap">
+    <div>
+      <div class="ask-num">2</div>
+      <div class="ask-big">design-partner introductions at mid-size law firms.</div>
+      <p>Partners shape the roadmap directly and give us real-world proof in the segment our $420k pipeline depends on.</p>
+    </div>
+    <div class="list">
+      <h3>Who's a great fit</h3>
+      <div class="li"><span class="no">01</span><p>A mid-size firm with steady contract volume <span>— the 47-minute review is their daily reality.</span></p></div>
+      <div class="li"><span class="no">02</span><p>A partner, GC contact, or innovation lead <span>who can commit time to regular feedback.</span></p></div>
+      <div class="li"><span class="no">03</span><p>Open to piloting alongside our SOC 2 timeline <span>— audit scheduled for November.</span></p></div>
+      <div class="cta">A warm intro by email is perfect — <b>reply to this update</b> and we'll handle the rest.</div>
+    </div>
+  </div>
+  <div class="footer"><span class="mark"><span class="nib"></span><b>Quill</b></span><span>September 2026 Investor Update · 06</span></div>
+</section>
+
+</body>
+</html>

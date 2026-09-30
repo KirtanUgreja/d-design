@@ -6,7 +6,7 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 
 | Phase | Size | Status |
 |---|---|---|
-| [21 — reset](21-reset.md) | M | in progress — docs written 2026-09-30; code reset, gate and bench not started |
+| [21 — reset](21-reset.md) | M | built 2026-09-30 — open: 2 baseline decks (credit ran out), the Gamma baselines and the owner's ratings |
 | [22 — engine spike](22-engine-spike.md) | L | not started |
 | [23 — design system](23-design-system.md) | M | not started |
 | [24 — content engine](24-content-engine.md) | M | not started |

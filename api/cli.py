@@ -1,344 +1,140 @@
-"""The v1 pipeline CLI — the lean flow, driven from the terminal.
+"""The CLI. Until the app exists (phase 27) this is how the engine is driven.
 
-v1 has no editor (docs/v1/spec.md -> "What changes from the last version"):
-interview → mapping → build → review → export. This CLI is the v1 driver for
-the first two human steps — run the interview, show the outline, get approval
-— and the later phases plug in as they land. It is deliberately thin: it parses
-input, calls a feature's public function, and shows the result.
-
-The human gate lives here and nowhere else: an outline is only approved by a
-person typing `y`. That is the trust device (spec.md risk 2) — an invented
-claim is visible before any slide is built.
+uv run python -m cli smoke                      one live call; prints its cost
+uv run python -m cli freeze [--set smoke|all]   freeze outlines for bench briefs
+uv run python -m cli baseline [--set smoke|all] one-shot baseline decks + screenshots
+uv run python -m cli wall --run NAME            build the wall page for a human to score
 """
 
 from __future__ import annotations
 
 import argparse
-import base64
-import json
+import asyncio
 import sys
 from pathlib import Path
 
-from ai.complete import ModelError, make_seam
-from ai.images import make_image_seam
+from pydantic import BaseModel
+
+import settings
+from benchtools import baseline, files, outline, shots, wall
+from engine import Seam
 from lib.result import Err
-from pipeline.interview.interview import run_interview
-from pipeline.mapping.mapping import run_mapping
-from pipeline.review.review import revise_slide
-from pipeline.slide_builder.slide_builder import run_build
-from schema.deck import Deck
-from schema.outline import Brief, Outline
 
 
-def _parse_brief(args: argparse.Namespace) -> Brief:
-    return Brief(
-        topic=args.topic,
-        slide_count=args.slides,
-        audience=args.audience or "",
-        goal=args.goal or "",
-        brand_kit={
-            "colors": args.colors or "",
-            "fonts": args.fonts or "",
-            "vibe": args.vibe or "",
-        },
-        extra_info=args.extra or "",
+class _Pong(BaseModel):
+    word: str
+
+
+def _ids(which: str) -> list[str]:
+    return list(files.SMOKE) if which == "smoke" else files.brief_ids()
+
+
+def _seam(cfg: settings.Settings) -> Seam:
+    return Seam(api_key=cfg.openrouter_api_key)
+
+
+async def _smoke(cfg: settings.Settings) -> int:
+    seam = _seam(cfg)
+    result = await seam.complete_json(
+        "smoke",
+        _Pong,
+        system="Answer in JSON.",
+        user='Set word to "pong".',
+        model=cfg.model_cheap,
+        max_tokens=200,
     )
+    entry = seam.ledger[-1] if seam.ledger else None
+    if isinstance(result, Err) or entry is None:
+        print(f"smoke failed: {result}")
+        return 1
+    print(
+        f"ok  model={entry.model} in={entry.input_tokens} out={entry.output_tokens} "
+        f"cost=${entry.cost_usd:.5f} {entry.latency_ms}ms"
+    )
+    return 0
 
 
-def _print_outline(outline: object) -> None:
-    """Print the outline in a form a human reads and approves."""
-
-    # Avoid importing at module top so the CLI stays thin; the outline shape is
-    # stable and known here.
-    title = outline.title  # type: ignore[attr-defined]
-    audience = outline.audience  # type: ignore[attr-defined]
-    goal = outline.goal  # type: ignore[attr-defined]
-    sections = outline.sections  # type: ignore[attr-defined]
-
-    print(f"\n=== {title} ===")
-    print(f"Audience: {audience}")
-    print(f"Goal:     {goal}")
-    print()
-    for i, section in enumerate(sections, 1):
-        print(f"{i}. {section.heading} — {section.summary}")
-        for claim in section.claims:
-            mark = "YOU" if claim.source == "user" else "AI "
-            print(f"   [{mark}] {claim.text}")
-    print()
+async def _freeze(cfg: settings.Settings, which: str, force: bool) -> int:
+    failed = 0
+    for brief_id in _ids(which):
+        item = files.load(brief_id)
+        if item.outline is not None and not force:
+            print(f"{brief_id}: already frozen")
+            continue
+        seam = _seam(cfg)
+        result = await outline.freeze(seam, item.brief, cfg.model_writing)
+        files.append_ledger(files.BENCH / "runs" / "ledger.jsonl", seam.ledger)
+        if isinstance(result, Err):
+            print(f"{brief_id}: FAILED {result.error.kind} {result.error.detail[:200]}")
+            failed += 1
+            continue
+        item.outline = result.value
+        files.save(item)
+        print(f"{brief_id}: {len(result.value.slides)} slides  ${seam.spent_usd:.3f}")
+    return 1 if failed else 0
 
 
-def _show_error(error: ModelError) -> None:
-    print(f"pipeline failed ({error.kind}): {error.detail}", file=sys.stderr)
+async def _baseline(cfg: settings.Settings, which: str, force: bool) -> int:
+    root = files.BASELINES / "oneshot"
+
+    async def one(brief_id: str) -> bool:
+        html_file = root / f"{brief_id}.html"
+        if not html_file.exists() or force:
+            seam = _seam(cfg)
+            result = await baseline.one_shot(seam, files.load(brief_id).brief, cfg.model_design)
+            files.append_ledger(files.BENCH / "runs" / "ledger.jsonl", seam.ledger)
+            if isinstance(result, Err):
+                print(f"{brief_id}: FAILED {result.error.kind} {result.error.detail[:200]}")
+                return False
+            root.mkdir(parents=True, exist_ok=True)
+            html_file.write_text(result.value)
+            last = seam.ledger[-1]
+            print(f"{brief_id}: ${seam.spent_usd:.3f} {last.latency_ms / 1000:.0f}s")
+        (root / brief_id).mkdir(parents=True, exist_ok=True)
+        count = await shots.shoot(html_file.resolve().as_uri(), str(root / brief_id))
+        print(f"{brief_id}: {count} slides screenshotted")
+        return count > 0
+
+    results = await asyncio.gather(*(one(b) for b in _ids(which)))
+    return 0 if all(results) else 1
 
 
-def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="d-design", description="The v1 deck pipeline")
+def _wall(run: str, seed: int) -> int:
+    run_dir = files.BENCH / "runs" / run
+    decks = (
+        wall.collect(run_dir / "engine", "engine")
+        + wall.collect(files.BASELINES / "oneshot", "oneshot")
+        + wall.collect(files.BASELINES / "gamma", "gamma")
+        + wall.collect(files.BASELINES / "v3", "v3")
+    )
+    out: Path = run_dir / "wall.html"
+    count = wall.build(decks, out, run, seed)
+    print(f"{count} decks -> {out}")
+    return 0 if count else 1
+
+
+def main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(prog="cli")
     sub = parser.add_subparsers(dest="command", required=True)
-
-    interview = sub.add_parser("interview", help="Run the AI-led interview and approve the outline")
-    interview.add_argument("--topic", required=True, help="What the deck is about")
-    interview.add_argument("--slides", type=int, default=8, help="Approximate slide count")
-    interview.add_argument("--audience", default="", help="Who the deck is for")
-    interview.add_argument("--goal", default="", help="What the deck should achieve")
-    interview.add_argument("--colors", default="", help="Brand kit: colors (typed text)")
-    interview.add_argument("--fonts", default="", help="Brand kit: fonts (typed text)")
-    interview.add_argument("--vibe", default="", help="Brand kit: vibe (typed text)")
-    interview.add_argument("--extra", default="", help="Extra context")
-    interview.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
-    interview.add_argument(
-        "--out", default="outline.json", help="Where to write the approved outline"
-    )
-
-    mapping = sub.add_parser("mapping", help="Turn an approved outline into a per-slide Deck")
-    mapping.add_argument("--outline", default="outline.json", help="The approved outline file")
-    mapping.add_argument(
-        "--family", default=None, help="Design family id (default: deterministic pick)"
-    )
-    mapping.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
-    mapping.add_argument("--out", default="deck.json", help="Where to write the mapped Deck")
-
-    build = sub.add_parser("build", help="Build every slide of a mapped Deck, one call each")
-    build.add_argument("--deck", default="deck.json", help="The mapped Deck file")
-    build.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
-    build.add_argument(
-        "--image-model", default="openai/gpt-5-image-mini", help="OpenRouter image model id"
-    )
-    build.add_argument(
-        "--out", default="built.json", help="Where to write the built Deck + image assets"
-    )
-
-    review = sub.add_parser(
-        "review",
-        help="Regenerate one slide with written feedback (the human review loop)",
-    )
-    review.add_argument("--built", default="built.json", help="The built Deck + images file")
-    review.add_argument("--slide", type=int, required=True, help="1-based slide index to revise")
-    review.add_argument("--feedback", required=True, help="The reviewer's written feedback")
-    review.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
-    review.add_argument("--out", default="built.json", help="Where to write the revised built Deck")
-
-    critic = sub.add_parser(
-        "critic",
-        help="Run the vision critic on one rendered slide (bounded to one revision)",
-    )
-    critic.add_argument("--built", default="built.json", help="The built Deck + images file")
-    critic.add_argument(
-        "--screenshot", required=True, help="Path to the rendered slide screenshot (png)"
-    )
-    critic.add_argument("--slide", type=int, required=True, help="1-based slide index to critic")
-    critic.add_argument(
-        "--model", default="openai/gpt-4o-mini", help="OpenRouter text model for a revision"
-    )
-    critic.add_argument(
-        "--critic-model",
-        default="openai/gpt-4o-mini",
-        help="OpenRouter vision model that reviews the screenshot",
-    )
-    critic.add_argument(
-        "--out", default="built.json", help="Where to write the revised built Deck (if revised)"
-    )
-
-    acceptance = sub.add_parser(
-        "acceptance",
-        help="Run the golden briefs and assert schema-validity + variety (the fingerprint gate)",
-    )
-    acceptance.add_argument("--model", default="openai/gpt-4o-mini", help="OpenRouter model id")
-    acceptance.add_argument(
-        "--out", default="acceptance.json", help="Where to write the acceptance report"
-    )
-
+    sub.add_parser("smoke")
+    for name in ("freeze", "baseline"):
+        cmd = sub.add_parser(name)
+        cmd.add_argument("--set", choices=("smoke", "all"), default="smoke")
+        cmd.add_argument("--force", action="store_true")
+    cmd = sub.add_parser("wall")
+    cmd.add_argument("--run", required=True)
+    cmd.add_argument("--seed", type=int, default=0)
     args = parser.parse_args(argv)
 
-    if args.command == "interview":
-        brief = _parse_brief(args)
-        seam = make_seam()
-        result = run_interview(brief, seam, model=args.model)
-
-        if isinstance(result, Err):
-            _show_error(result.error)
-            return 1
-
-        outline = result.value
-        # The human gate: show, get explicit approval, loop on rejection.
-        while True:
-            _print_outline(outline)
-            choice = input("Approve this outline? [y/n] ").strip().lower()
-            if choice in ("y", "yes"):
-                break
-            if choice in ("n", "no"):
-                print(
-                    "Outline rejected. Re-run with edited input — the interview "
-                    "is deterministic per brief."
-                )
-                return 2
-            print("Please answer y or n.")
-
-        Path(args.out).write_text(
-            json.dumps(outline.model_dump(), indent=2),
-            encoding="utf8",
-        )
-        print(f"Approved. Wrote {args.out}")
-        return 0
-
-    if args.command == "mapping":
-        try:
-            raw = json.loads(Path(args.outline).read_text(encoding="utf8"))
-        except (FileNotFoundError, json.JSONDecodeError) as exc:
-            print(f"cannot read outline {args.outline}: {exc}", file=sys.stderr)
-            return 1
-        outline = Outline.model_validate(raw)
-        seam = make_seam()
-        result = run_mapping(outline, seam, model=args.model, family_id=args.family)
-
-        if isinstance(result, Err):
-            _show_error(result.error)
-            return 1
-
-        deck = result.value
-        Path(args.out).write_text(
-            json.dumps(deck.model_dump(), indent=2),
-            encoding="utf8",
-        )
-        print(f"Mapped {len(deck.slides)} slides -> {args.out}")
-        return 0
-
-    if args.command == "build":
-        try:
-            raw = json.loads(Path(args.deck).read_text(encoding="utf8"))
-        except (FileNotFoundError, json.JSONDecodeError) as exc:
-            print(f"cannot read deck {args.deck}: {exc}", file=sys.stderr)
-            return 1
-        deck = Deck.model_validate(raw)
-        seam = make_seam()
-        image_seam = make_image_seam()
-        result = run_build(deck, seam, image_seam, model=args.model, image_model=args.image_model)
-
-        if isinstance(result, Err):
-            _show_error(result.error)
-            return 1
-
-        built = result.value
-        # The image assets are data URIs, kept beside the deck (the schema has
-        # no field for them; the exporter inlines them in phase 05).
-        payload = {"deck": built.deck.model_dump(), "images": built.images}
-        Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
-        print(f"Built {len(built.deck.slides)} slides ({len(built.images)} images) -> {args.out}")
-        return 0
-
-    if args.command == "review":
-        try:
-            raw = json.loads(Path(args.built).read_text(encoding="utf8"))
-        except (FileNotFoundError, json.JSONDecodeError) as exc:
-            print(f"cannot read built deck {args.built}: {exc}", file=sys.stderr)
-            return 1
-        built = raw["deck"]
-        images = raw.get("images", {})
-        deck = Deck.model_validate(built)
-        seam = make_seam()
-        result = revise_slide(deck, args.slide - 1, args.feedback, seam, model=args.model)
-
-        if isinstance(result, Err):
-            _show_error(result.error)
-            return 1
-
-        revised = result.value
-        # Replace the slide in place; the review loop is slide-by-slide.
-        slides = deck.model_dump()["slides"]
-        slides[args.slide - 1] = revised.model_dump()
-        payload = {
-            "deck": Deck.model_validate(
-                {"family_id": deck.family_id, "slides": slides}
-            ).model_dump(),
-            "images": images,
-        }
-        Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
-        print(f"Revised slide {args.slide} -> {args.out}")
-        return 0
-
-    if args.command == "critic":
-        from pipeline.vision_critic import run_critic
-
-        try:
-            raw = json.loads(Path(args.built).read_text(encoding="utf8"))
-        except (FileNotFoundError, json.JSONDecodeError) as exc:
-            print(f"cannot read built deck {args.built}: {exc}", file=sys.stderr)
-            return 1
-        built = raw["deck"]
-        images = raw.get("images", {})
-        deck = Deck.model_validate(built)
-
-        # The screenshot is the rendered slide (the render service produces it
-        # in the real flow); read it and embed as a data URI for the vision
-        # model. No URL is fetched — the file is the input.
-        try:
-            png = Path(args.screenshot).read_bytes()
-        except FileNotFoundError as exc:
-            print(f"cannot read screenshot {args.screenshot}: {exc}", file=sys.stderr)
-            return 1
-
-        screenshot = f"data:image/png;base64,{base64.b64encode(png).decode('ascii')}"
-
-        seam = make_seam()
-        result = run_critic(
-            deck,
-            args.slide - 1,
-            screenshot,
-            seam,
-            model=args.model,
-            critic_model=args.critic_model,
-        )
-
-        if isinstance(result, Err):
-            _show_error(result.error)
-            return 1
-
-        outcome = result.value
-        for f in outcome.findings:
-            print(f"  [{f.severity}] {f.kind}: {f.note}")
-        if outcome.revised:
-            payload = {
-                "deck": outcome.deck.model_dump(),
-                "images": images,
-            }
-            Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
-            print(f"critic revised slide {args.slide} -> {args.out}")
-        else:
-            print(f"critic accepted slide {args.slide} (no revision)")
-        return 0
-
-    if args.command == "acceptance":
-        from pipeline.acceptance.acceptance import (
-            acceptance_summary,
-            run_acceptance_brief,
-        )
-        from pipeline.acceptance.briefs import GOLDEN_BRIEFS
-
-        seam = make_seam()
-        results = []
-        failures = []
-        for brief in GOLDEN_BRIEFS:
-            result = run_acceptance_brief(brief, seam, model=args.model)
-            if isinstance(result, Err):
-                failures.append({"topic": brief.topic, "error": result.error.detail})
-            else:
-                results.append(result.value)
-
-        passed, report = acceptance_summary(results)
-        payload = {
-            "passed": passed,
-            "report": report,
-            "briefs": len(GOLDEN_BRIEFS),
-            "succeeded": len(results),
-            "failures": failures,
-        }
-        Path(args.out).write_text(json.dumps(payload, indent=2), encoding="utf8")
-        print(report)
-        print(f"acceptance: {len(results)}/{len(GOLDEN_BRIEFS)} briefs -> {args.out}")
-        return 0 if passed else 1
-
-    parser.print_help()
-    return 1
+    cfg = settings.load()
+    if args.command == "smoke":
+        return asyncio.run(_smoke(cfg))
+    if args.command == "freeze":
+        return asyncio.run(_freeze(cfg, args.set, args.force))
+    if args.command == "baseline":
+        return asyncio.run(_baseline(cfg, args.set, args.force))
+    return _wall(args.run, args.seed)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(main(sys.argv[1:]))

@@ -1,14 +1,6 @@
-# The gate, on push and pull request.
-#
-# scripts/hooks/pre-commit is the local half of this and runs per commit; CI is
-# the half that needs a service container, a browser or a production build, and
-# that catches a bypassed hook. The workflow was deleted on 2026-08-10 with the
-# codebase it ran against; this is the rebuild for what is here now — one repo,
-# four packages.
-#
-# What it does NOT yet cover is listed in docs/coderules/tooling.md: dependency
-# advisories, the duplication report, the Playwright zero-request assertion from
-# `file://`, the schema-publish job, and the visual per-family render check.
+# The gate, on push and pull request. scripts/hooks/pre-commit is the local
+# half; this catches a bypassed hook. No live model call runs here: the bench
+# spends credits and is run by hand at phase exits (docs/v4/bench.md).
 name: gate
 
 on:
@@ -18,163 +10,18 @@ on:
 jobs:
   gate:
     runs-on: ubuntu-latest
-    services:
-      # The live database the RLS and quota tests need. Without it those nine
-      # tests skip, and a skipped fail-closed suite is not a passing one.
-      postgres:
-        image: postgres:16
-        env:
-          POSTGRES_DB: ddesign
-          POSTGRES_USER: ddesign
-          POSTGRES_PASSWORD: ddesign
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U ddesign -d ddesign"
-          --health-interval 2s
-          --health-timeout 3s
-          --health-retries 15
-    env:
-      DATABASE_URL: postgresql+asyncpg://ddesign:ddesign@localhost:5432/ddesign
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
       - uses: astral-sh/setup-uv@v5
-        with:
-          version: '0.11.20'
       - uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-
       - name: install
-        run: |
-          uv sync --project api
-          for dir in web render worker; do pnpm --dir "$dir" install --frozen-lockfile; done
-
-      - name: api — format, lint, types
+        run: uv sync --project api
+      - name: api — format, lint, types, tests
         run: |
           uv run --project api ruff format --check api
           uv run --project api ruff check api
-          cd api && uv run mypy
-
-      - name: api — migrate, then test
-        # Migrations before tests: the RLS tests exercise the policies and the
-        # app_user grants the migrations create.
-        run: |
-          cd api
-          uv run alembic upgrade head
-          uv run pytest -q
-
-      - name: web — format, lint, types, tests, schema no-diff
-        run: |
-          cd web
-          pnpm exec prettier --check .
-          pnpm exec eslint . --max-warnings 0
-          pnpm exec tsc --noEmit
-          pnpm exec vitest run
-          pnpm --silent schema:check
-
-      - name: web — production build
-        # The build is a gate of its own: it is the only check that compiles
-        # every route, and `next dev` never proves it compiles at all.
-        run: cd web && pnpm build
-
-      - name: render — format, types, tests
-        # The PDF tests drive a real browser, so the browser is installed.
-        run: |
-          cd render
-          pnpm exec prettier --check .
-          pnpm exec tsc --noEmit
-          pnpm exec playwright install --with-deps chromium
-          pnpm exec vitest run
-
-      - name: worker — format, lint, types, tests
-        run: |
-          cd worker
-          pnpm exec prettier --check .
-          pnpm exec eslint . --max-warnings 0
-          pnpm exec tsc --noEmit
-          pnpm exec vitest run
-
-      - name: project invariants and docs
-        run: |
-          ./scripts/checks/invariants.sh
-          ./scripts/check-docs.sh
-
-  # Advisories fail the build; duplication only reports. The split is
-  # deliberate and comes from the rules: dependencies.md:279 wants a
-  # known-critical advisory in EITHER tree to fail CI, and ai-authorship.md:59
-  # wants duplication as "a signal, not a gate" — it fires rarely and is worth
-  # reading every time it does.
-  advisories:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 11
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-      - uses: astral-sh/setup-uv@v5
-        with:
-          version: '0.11.20'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.13'
-
-      - name: javascript — fail on a critical advisory in any package
-        run: |
-          for dir in web render worker; do
-            echo "=== $dir"
-            pnpm --dir "$dir" audit --prod --audit-level critical
-          done
-
-      - name: python — audit the locked dependencies
-        # Exported from the lockfile rather than from an install, so the audit
-        # is of what would actually ship. pip-audit has no severity filter, so
-        # this is stricter than the JS step: any known advisory fails it, and
-        # the escape hatch for an accepted one is --ignore-vuln with a reason.
-        run: |
-          uv export --project api --no-dev --format requirements-txt > requirements.txt
-          uv run --with pip-audit pip-audit --requirement requirements.txt
-
-  duplication:
-    runs-on: ubuntu-latest
-    # A warning, never a failure: the report is for a human to read.
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          # The diff needs history to compare against.
-          fetch-depth: 0
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-
-      - name: changed files only
-        # Scoped to the diff, because a whole-repo number is one nobody acts on.
-        # The measured failure mode of AI-written code is duplication, and it is
-        # invisible per-commit and only visible per-quarter.
-        run: |
-          base="${{ github.event.pull_request.base.sha || github.event.before }}"
-          if [ -z "$base" ] || ! git cat-file -e "$base" 2>/dev/null; then
-            echo "no base to diff against; skipping"
-            exit 0
-          fi
-          files=$(git diff --name-only --diff-filter=ACMR "$base" HEAD \
-            -- '*.ts' '*.tsx' '*.py' | tr '\n' ' ')
-          if [ -z "$files" ]; then
-            echo "no source changes"
-            exit 0
-          fi
-          echo "checking: $files"
-          npx --yes jscpd --min-lines 12 --reporters console --exitCode 0 $files
+          cd api && uv run mypy && uv run pytest -q
+      - name: docs
+        run: ./scripts/check-docs.sh

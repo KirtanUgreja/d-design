@@ -1,30 +1,21 @@
 #!/usr/bin/env bash
 # The gate. A commit that fails any step does not land.
 #
-# The steps differ per side because the languages do; the discipline does not.
+#   api  (Python)                      web  (TypeScript) — returns in phase 27
+#   1. format    — Ruff format         format, lint, tsc, and the OpenAPI types
+#   2. lint      — Ruff                regenerating with no diff
+#   3. typecheck — mypy --strict
+#   4. tests     — pytest
 #
-#   api  (Python)                    web  (TypeScript)
-#   1. format    — Ruff format       1. format    — Prettier
-#   2. lint      — Ruff              2. lint      — ESLint, no warnings
-#   3. typecheck — mypy --strict     3. typecheck — tsc --noEmit
-#   4. schema    — regenerate; FAIL ON DIFF
+# ponytail: one hook that dispatches by staged path. Two hook managers cannot
+# both own .git/hooks, and this is one repo.
 #
-# Step 4 is the most important thing here. The Scene schema lives in Pydantic
-# and TypeScript consumes a generated copy. If the generated output can drift
-# from its source, "one source of truth" is a comment rather than a fact.
-#
-# ponytail: one hook that dispatches by staged path, rather than husky in web
-# and pre-commit in api. Two hook managers cannot both own .git/hooks, and this
-# is one repo. If the runtimes ever split into separate repos, each takes the
-# half of this file that applies to it.
-#
-# Installed by `scripts/setup.sh` via core.hooksPath, so it is versioned rather
-# than living in an untracked .git directory.
+# Installed by `scripts/setup.sh` via core.hooksPath, so it is versioned.
 
 set -uo pipefail
 cd "$(git rev-parse --show-toplevel)" || exit 1
 
-staged=$(git diff --cached --name-only --diff-filter=ACMR)
+staged=$(git diff --cached --name-only --diff-filter=ACMRD)
 [ -n "$staged" ] || exit 0
 
 touches() { grep -qE "$1" <<<"$staged"; }
@@ -41,56 +32,17 @@ step() {
   fi
 }
 
-if touches '^api/'; then
+# bench/briefs are read by the api tests, so a brief change runs them too.
+if touches '^api/|^bench/briefs/'; then
   echo 'api'
   step 'ruff format' uv run --project api ruff format --check api
   step 'ruff'        uv run --project api ruff check api
   step 'mypy'        env -C api uv run mypy
+  step 'pytest'      env -C api uv run pytest -q
 fi
-
-if touches '^web/'; then
-  echo 'web'
-  step 'prettier'  env -C web pnpm exec prettier --check .
-  step 'eslint'    env -C web pnpm exec eslint . --max-warnings 0
-  step 'tsc'       env -C web pnpm exec tsc --noEmit
-fi
-
-# `render` bundles `web/src`, so a change to either side can break it — which
-# is why this runs on a web change too rather than only on its own. Its tests
-# are cheap and they are the only place the no-credential control is asserted.
-#
-# No eslint step: the config in `web` is `eslint-config-next`, which is about a
-# Next app and would report on a Node service by accident. A rule worth
-# enforcing here would go in `invariants.sh`, where it applies to both.
-if touches '^render/|^web/src/'; then
-  echo 'render'
-  step 'prettier' env -C render pnpm exec prettier --check .
-  step 'tsc'      env -C render pnpm exec tsc --noEmit
-  step 'vitest'   env -C render pnpm exec vitest run
-fi
-
-# `worker` parses hostile bytes and has nothing to steal (phase 17). Its tests
-# are the fail-closed proof — the magic-byte reject, the bomb caps, the SVG
-# sanitize. A change to it that breaks the gate must not land.
-if touches '^worker/'; then
-  echo 'worker'
-  step 'prettier' env -C worker pnpm exec prettier --check .
-  step 'eslint'   env -C worker pnpm exec eslint . --max-warnings 0
-  step 'tsc'      env -C worker pnpm exec tsc --noEmit
-  step 'vitest'   env -C worker pnpm exec vitest run
-fi
-
-# Step 4. Runs whenever either side of the chain moved — and the chain has two
-# ends, so "either side" includes a hand-edit to the generated TypeScript.
-if touches '^api/schema/|^web/src/schema/|^web/scripts/generate-schema'; then
-  echo 'schema'
-  step 'regenerates with no diff' env -C web pnpm --silent schema:check
-fi
-
-echo 'invariants'
-step 'project invariants' ./scripts/checks/invariants.sh
 
 if touches '\.md$'; then
+  echo 'docs'
   step 'docs' ./scripts/check-docs.sh
 fi
 

@@ -1,21 +1,22 @@
 # Checkpoint — 2026-09-30
 
-Resume point. **Nothing here is committed yet**: the working tree holds the v4 docs on top of `8169fd9`.
+Resume point. Branch `phase-21-reset`, pushed. `main` is still v3 (`8169fd9`, also tagged `v3-final`).
 
 ## Where things stand
 
 | | |
 |---|---|
-| Decided 2026-09-26 | The product is rebuilt as v4: the model designs each slide in HTML inside theme tokens. Plan: `docs/v4/` |
-| Done | `docs/v4/` written (spec, engine, content, design-engine, bench, phases 21–29). `docs/coderules`, `docs/techstack`, `docs/security`, `docs/design`, `docs/findings.md`, `docs/README.md`, `README.md`, `AGENTS.md` updated to v4. `docs/v1`–`v3` deleted |
-| Not done | Everything else in phase 21: tag `v3-final`, delete the v3 code, the `api/` skeleton and model seam, the new gate, the bench and baselines |
-| Still in the tree, to be deleted by phase 21 | `api/` (v3 pipeline), `web/`, `render/`, `worker/`, `docker-compose.yml`, `samples/` |
+| Plan | `docs/v4/` — the model designs each slide in HTML inside theme tokens. Phases 21–29 |
+| Phase 21, built | v3 code deleted. `api/` is the v4 skeleton: data models, the model seam (`engine/llm/openrouter.py`, 13 regression tests), settings, the CLI, the bench tools. New gate (ruff, mypy --strict, pytest, docs), light post-edit hook, CI. 12 bench briefs with frozen outlines, rubric, the wall builder |
+| Phase 21, open | 2 of 12 one-shot baselines failed with HTTP 402: **the OpenRouter credit ran out**. Gamma baselines (owner). The owner's ratings of the baseline wall |
+| Spent so far | $3.30 of model credit |
+
+## Owner's tasks to close phase 21
+
+1. Top up OpenRouter, then: `cd api && uv run python -m cli baseline --set all` (only the 2 missing decks are generated).
+2. Optional but in the plan: generate 6 briefs in Gamma, export each as PNGs into `bench/baselines/gamma/<brief-id>/01.png …`.
+3. `uv run python -m cli wall --run 2026-09-30-baselines`, open `bench/runs/2026-09-30-baselines/wall.html`, rate every deck, download `ratings.json` into that folder.
 
 ## Next
 
-`docs/v4/plan/21-reset.md` → Make. Then phase 22, the make-or-break gate: no later phase starts until the owner rates its wall.
-
-## Owner's tasks in phase 21
-
-- Generate 6 of the bench briefs in Gamma and export them, for the baseline.
-- Rate the baselines on the wall (about 30 minutes).
+Phase 22 (`docs/v4/plan/22-engine-spike.md`) — the make-or-break gate. It needs credit: its budget cap is $100, and a full 12-deck run is about $15.

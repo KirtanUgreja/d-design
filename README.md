@@ -24,7 +24,7 @@
 
 
 > [!NOTE]
-> **Re-decided on 2026-09-26.** Three releases built a pipeline, an editor, accounts and billing, and every generated deck still came out as a bold heading and one line of text on a flat background. The cause was a rule this README used to open with: *the AI never writes styling*. It is reversed. The plan is [`docs/v4/`](docs/v4/README.md); the v3 code still in this tree is deleted by its first phase.
+> **Re-decided on 2026-09-26.** Three releases built a pipeline, an editor, accounts and billing, and every generated deck still came out as a bold heading and one line of text on a flat background. The cause was a rule this README used to open with: *the AI never writes styling*. It is reversed. The plan is [`docs/v4/`](docs/v4/README.md); the v3 code was deleted by its first phase and lives at the tag `v3-final`.
 
 ---
 
@@ -60,7 +60,7 @@ bench/ 12 briefs, baselines, and the wall a human scores            (docs/v4/ben
 
 | Phase | | Status |
 |---|---|---|
-| 21 | Reset: delete the v3 code, new gate, the bench | in progress — docs done |
+| 21 | Reset: delete the v3 code, new gate, the bench | built — waiting on the owner's baseline ratings |
 | 22 | **Engine spike — the make-or-break gate** | not started |
 | 23–25 | Design system · content engine · composition and QA | not started |
 | 26–28 | Player and export · the app · the editor | not started |
@@ -90,7 +90,16 @@ Status lives in [`docs/v4/plan/README.md`](docs/v4/plan/README.md). **No phase c
 ./scripts/hooks/pre-commit       the gate, on demand
 ```
 
-The v3 stack (`docker compose up -d`) still runs until phase 21 removes it. It is not a starting point.
+Until the app exists (phase 27) the engine is driven from the CLI:
+
+```
+cd api
+uv run python -m cli smoke                 one live model call; prints its cost
+uv run python -m cli baseline --set smoke  one-shot baseline decks
+uv run python -m cli wall --run NAME       the wall page a human scores
+```
+
+The v3 code is at the tag `v3-final`. It is not a starting point.
 
 
 ---

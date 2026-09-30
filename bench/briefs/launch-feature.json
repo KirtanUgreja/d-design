@@ -1,0 +1,265 @@
+{
+  "brief": {
+    "id": "launch-feature",
+    "prompt": "Launch deck for Ledgerly's new automated month-end close feature for finance teams.",
+    "pasted": [
+      {
+        "title": "Beta",
+        "text": "38 beta teams. Month-end close fell from a median of 9.5 days to 4 days. 92% of reconciliations matched automatically. Two teams closed in under 48 hours. Available 14 October 2026 on all paid plans, no extra cost."
+      }
+    ],
+    "deck_type": "launch",
+    "audience": "Finance leaders at current customers",
+    "ask": "Drive 200 teams to switch the feature on in the first month",
+    "slide_count": 7,
+    "research": false
+  },
+  "outline": {
+    "governing_thought": "Ledgerly's automated month-end close cut beta teams' close time from 9.5 days to 4, and it is free on every paid plan.",
+    "deck_type": "launch",
+    "audience": "Finance leaders at current customers",
+    "ask": "Drive 200 teams to switch the feature on in the first month",
+    "key_points": [
+      "Beta close time fell from 9.5 days to 4 days",
+      "92% of reconciliations matched automatically",
+      "Live 14 October 2026 on all paid plans at no extra cost",
+      "Goal: 200 teams switch it on in the first month"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "Open",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Ledgerly now closes your month automatically",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Ledgerly launch",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "Problem",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Manual reconciliation keeps your team in the close for days",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The old close",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "9.5 days",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "median close time before automation",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Beta",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "Solution",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Automated close handles reconciliation so your team reviews exceptions",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "What is new",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Reconciliations match without manual effort",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Your team reviews only what does not match",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Built into your existing Ledgerly plan",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "Proof",
+        "intent": "comparison",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Beta teams cut their close from 9.5 days to 4",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Beta results",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Before: 9.5 days median",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "After: 4 days median",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "38 teams took part in the beta",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "4 days",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "median close time in beta",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Beta",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "Proof",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Automation matched nearly every reconciliation without human help",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Accuracy",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "92%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "of reconciliations matched automatically",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Beta",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "Upside",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Two beta teams closed their books in under 48 hours",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Best case",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "48 hours",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "two beta teams closed in under this",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Beta",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "Ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Switch on automated close and join the first 200 teams",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Available 14 October 2026",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Included on all paid plans",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "No extra cost",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Turn it on before your next close",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "200",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "teams switched on in the first month",
+            "budget_words": 15
+          }
+        ]
+      }
+    ]
+  }
+}

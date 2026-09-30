@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Strata — Loyalty Data Proof of Concept</title>
+<style>
+  :root{
+    --ink:#0F1B2D;
+    --ink-2:#1B2A40;
+    --paper:#F6F3EE;
+    --paper-2:#ECE7DF;
+    --line:#D9D2C6;
+    --muted:#6B7280;
+    --accent:#E0643A;
+    --accent-soft:#F6D8CB;
+    --teal:#2C7A74;
+    --teal-soft:#D3E8E5;
+    --sans:"Inter","Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#3A3F47}
+  body{font-family:var(--sans);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .slide{
+    position:relative;width:1920px;height:1080px;overflow:hidden;
+    background:var(--paper);margin:0 auto 40px auto;
+    padding:110px 130px 120px 130px;
+  }
+  .slide.dark{background:var(--ink);color:#F3EFE8}
+
+  /* chrome */
+  .kicker{
+    display:flex;align-items:center;gap:18px;
+    font-size:22px;letter-spacing:.16em;text-transform:uppercase;font-weight:600;color:var(--accent);
+    margin-bottom:34px;
+  }
+  .kicker .num{color:var(--muted);font-variant-numeric:tabular-nums}
+  .dark .kicker .num{color:#8A96A8}
+  .kicker .bar{width:48px;height:3px;background:var(--accent)}
+  h1,h2{font-weight:700;letter-spacing:-.025em;line-height:1.04}
+  h2{font-size:76px;max-width:1500px}
+  h2 em{font-style:normal;color:var(--accent)}
+  .lede{font-size:32px;line-height:1.45;color:#3F4756;max-width:1300px;margin-top:30px}
+  .dark .lede{color:#B9C2CF}
+
+  .footer{
+    position:absolute;left:130px;right:130px;bottom:52px;
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:20px;color:var(--muted);letter-spacing:.04em;
+  }
+  .dark .footer{color:#7D899B}
+  .logo{display:flex;align-items:center;gap:14px;font-weight:700;letter-spacing:.02em;color:var(--ink);font-size:24px}
+  .dark .logo{color:#F3EFE8}
+  .mark{display:flex;flex-direction:column;gap:4px}
+  .mark i{display:block;height:5px;border-radius:2px;background:currentColor}
+  .mark i:nth-child(1){width:26px;background:var(--accent)}
+  .mark i:nth-child(2){width:34px}
+  .mark i:nth-child(3){width:20px;opacity:.55}
+
+  /* strata motif */
+  .strata{position:absolute;right:0;top:0;bottom:0;width:760px;display:flex;flex-direction:column;justify-content:flex-end}
+  .strata div{height:0;border-top-left-radius:0}
+
+  /* ---------- Slide 1 ---------- */
+  .s1 .bands{position:absolute;right:0;top:0;width:820px;height:1080px}
+  .s1 .band{position:absolute;right:0;border-radius:200px 0 0 200px}
+  .s1 h1{font-size:118px;max-width:1080px;margin-top:40px}
+  .s1 h1 em{font-style:normal;color:var(--accent)}
+  .s1 .sub{font-size:36px;line-height:1.4;color:#B9C2CF;max-width:960px;margin-top:40px}
+  .s1 .for{position:absolute;left:130px;bottom:130px;display:flex;gap:80px}
+  .s1 .for div{font-size:22px;color:#8A96A8;letter-spacing:.08em;text-transform:uppercase}
+  .s1 .for b{display:block;margin-top:10px;font-size:30px;color:#F3EFE8;letter-spacing:0;text-transform:none;font-weight:600}
+
+  /* ---------- Slide 2 ---------- */
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:70px}
+  .src{background:#fff;border:1px solid var(--line);border-radius:18px;padding:38px 34px;height:250px;position:relative}
+  .src .tag{font-size:19px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .src h3{font-size:36px;margin-top:18px;letter-spacing:-.01em}
+  .src p{font-size:23px;color:#555D6B;margin-top:14px;line-height:1.4}
+  .src .dot{position:absolute;top:38px;right:34px;width:14px;height:14px;border-radius:50%;background:var(--accent)}
+  .pains{display:grid;grid-template-columns:repeat(3,1fr);gap:60px;margin-top:70px;border-top:2px solid var(--ink);padding-top:40px}
+  .pains h4{font-size:30px;margin-bottom:12px}
+  .pains p{font-size:25px;line-height:1.45;color:#4A5261}
+
+  /* ---------- Slide 3 ---------- */
+  .timeline{margin-top:90px}
+  .tl-row{display:grid;grid-template-columns:330px 1fr;align-items:center;gap:40px;margin-bottom:64px}
+  .tl-label{font-size:30px;font-weight:600}
+  .tl-label small{display:block;font-size:22px;font-weight:400;color:var(--muted);margin-top:6px}
+  .track{position:relative;height:86px;background:var(--paper-2);border-radius:12px}
+  .fill{position:absolute;left:0;top:0;bottom:0;border-radius:12px;display:flex;align-items:center;padding:0 28px;font-size:28px;font-weight:700;color:#fff;white-space:nowrap}
+  .fill.old{width:100%;background:repeating-linear-gradient(135deg,#9AA1AC 0 18px,#A7ADB7 18px 36px)}
+  .fill.new{width:11.5%;background:var(--accent)}
+  .fill.new + .after{position:absolute;left:calc(11.5% + 28px);top:50%;transform:translateY(-50%);font-size:28px;font-weight:600;color:var(--accent)}
+  .scale{display:grid;grid-template-columns:330px 1fr;gap:40px}
+  .ticks{display:flex;justify-content:space-between;font-size:20px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+  .callouts{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:70px}
+  .callouts div{border-left:4px solid var(--accent);padding-left:26px}
+  .callouts b{font-size:30px;display:block;margin-bottom:8px}
+  .callouts span{font-size:24px;color:#4A5261;line-height:1.4}
+
+  /* ---------- Slide 4 ---------- */
+  .arch{margin-top:64px;position:relative;height:560px}
+  .account{position:absolute;inset:0 0 0 0;border:3px dashed var(--teal);border-radius:28px;padding:34px 44px}
+  .account .al{font-size:22px;letter-spacing:.14em;text-transform:uppercase;font-weight:700;color:var(--teal)}
+  .flow{display:grid;grid-template-columns:1fr 70px 1.25fr 70px 1fr;align-items:center;margin-top:36px;height:400px}
+  .node{background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px;height:100%;display:flex;flex-direction:column}
+  .node h4{font-size:30px;margin-bottom:18px}
+  .node ul{list-style:none}
+  .node li{font-size:23px;padding:11px 0;border-top:1px solid var(--paper-2);color:#3F4756}
+  .node.core{background:var(--ink);color:#F3EFE8;border:none}
+  .node.core li{border-color:#2A3A52;color:#C9D1DC}
+  .node.core h4{display:flex;align-items:center;gap:14px}
+  .arrow{height:4px;background:var(--ink);position:relative;margin:0 10px}
+  .arrow:after{content:"";position:absolute;right:-4px;top:-9px;border-left:16px solid var(--ink);border-top:11px solid transparent;border-bottom:11px solid transparent}
+  .arch-note{display:flex;gap:60px;margin-top:40px;font-size:25px;color:#3F4756}
+  .arch-note b{color:var(--teal)}
+
+  /* ---------- Slide 5 ---------- */
+  .case{display:grid;grid-template-columns:1fr 820px;gap:100px;margin-top:40px;align-items:end}
+  .chart{height:640px;display:flex;align-items:flex-end;gap:90px;padding:0 60px;border-bottom:3px solid var(--ink);position:relative}
+  .col{width:230px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end}
+  .col .v{font-size:96px;font-weight:800;letter-spacing:-.03em;margin-bottom:14px}
+  .col .b{width:100%;border-radius:10px 10px 0 0}
+  .col .lab{position:absolute;bottom:-58px;font-size:23px;color:var(--muted);width:230px;text-align:center}
+  .col{position:relative}
+  .delta{position:absolute;right:30px;top:40px;text-align:right}
+  .delta b{font-size:64px;color:var(--teal);display:block;letter-spacing:-.02em}
+  .delta span{font-size:22px;color:var(--muted)}
+  .case-meta .who{font-size:22px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:600}
+  .case-meta h3{font-size:44px;line-height:1.15;margin-top:18px;letter-spacing:-.015em}
+  .case-meta p{font-size:26px;line-height:1.5;color:#4A5261;margin-top:24px}
+
+  /* ---------- Slide 6 ---------- */
+  .money{display:grid;grid-template-columns:1.1fr 1fr;gap:110px;margin-top:30px;align-items:center}
+  .big{font-size:260px;font-weight:800;letter-spacing:-.05em;line-height:.9;color:var(--accent)}
+  .big small{font-size:64px;color:#F3EFE8;letter-spacing:-.02em;font-weight:600;display:block;margin-top:24px}
+  .retired{display:flex;flex-direction:column;gap:22px}
+  .tool{display:flex;align-items:center;gap:26px;background:var(--ink-2);border-radius:16px;padding:28px 32px}
+  .tool .x{width:52px;height:52px;border-radius:50%;border:2px solid var(--accent);color:var(--accent);display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;flex:none}
+  .tool b{font-size:30px;display:block}
+  .tool span{font-size:22px;color:#8A96A8}
+  .tool.keep{background:var(--accent);}
+  .tool.keep .x{border-color:#fff;color:#fff}
+  .tool.keep span{color:#FFE6DC}
+
+  /* ---------- Slide 7 ---------- */
+  .ops{display:grid;grid-template-columns:560px 1fr;gap:90px;margin-top:60px}
+  .sla{background:var(--ink);color:#F3EFE8;border-radius:24px;padding:56px 50px;height:620px;display:flex;flex-direction:column;justify-content:space-between}
+  .sla .pct{font-size:150px;font-weight:800;letter-spacing:-.04em;line-height:1}
+  .sla .pct span{color:var(--accent)}
+  .sla p{font-size:26px;color:#B9C2CF;line-height:1.45}
+  .sla .lbl{font-size:22px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  .checks{display:grid;grid-template-columns:1fr 1fr;gap:34px}
+  .check{border-top:3px solid var(--teal);padding-top:26px}
+  .check h4{font-size:32px;margin-bottom:12px}
+  .check p{font-size:24px;line-height:1.45;color:#4A5261}
+
+  /* ---------- Slide 8 ---------- */
+  .weeks{display:grid;grid-template-columns:repeat(6,1fr);gap:18px;margin-top:70px}
+  .phase{display:grid;grid-template-columns:3fr 2fr 1fr;gap:18px;margin-top:60px}
+  .phase div{height:64px;border-radius:12px;display:flex;align-items:center;padding:0 26px;font-size:24px;font-weight:700;color:#fff}
+  .wk{background:#fff;border:1px solid var(--line);border-radius:16px;padding:30px 26px;height:430px;display:flex;flex-direction:column}
+  .wk .n{font-size:20px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+  .wk h4{font-size:30px;margin:14px 0 16px;line-height:1.15}
+  .wk p{font-size:22px;line-height:1.45;color:#4A5261}
+  .wk .flag{margin-top:auto;font-size:19px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+  .wk.hl{border:2px solid var(--accent);background:#FFF8F4}
+
+  /* ---------- Slide 9 ---------- */
+  .two{display:grid;grid-template-columns:1.25fr 1fr;gap:80px;margin-top:60px}
+  table{width:100%;border-collapse:collapse}
+  th{text-align:left;font-size:20px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:0 0 18px;border-bottom:2px solid var(--ink)}
+  td{font-size:25px;padding:24px 0;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.35}
+  td:first-child{font-weight:600;width:48%;padding-right:30px}
+  td .t{color:var(--teal);font-weight:700}
+  .need{background:var(--paper-2);border-radius:22px;padding:44px}
+  .need h4{font-size:30px;margin-bottom:24px}
+  .need ul{list-style:none}
+  .need li{font-size:24px;line-height:1.4;padding:16px 0 16px 44px;position:relative;border-top:1px solid var(--line)}
+  .need li:before{content:"";position:absolute;left:0;top:25px;width:20px;height:6px;border-radius:3px;background:var(--accent)}
+  .need .us{margin-top:28px;font-size:22px;color:#4A5261;line-height:1.45}
+
+  /* ---------- Slide 10 ---------- */
+  .s10 h2{font-size:104px;max-width:1300px}
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:34px;margin-top:80px}
+  .step{border-top:3px solid #33455F;padding-top:30px}
+  .step .i{font-size:22px;font-weight:700;color:var(--accent);letter-spacing:.1em}
+  .step h4{font-size:34px;margin:14px 0 12px}
+  .step p{font-size:24px;line-height:1.45;color:#B9C2CF}
+  .ask{margin-top:80px;display:flex;align-items:center;justify-content:space-between;background:var(--accent);border-radius:22px;padding:42px 54px}
+  .ask b{font-size:40px;letter-spacing:-.01em}
+  .ask span{font-size:26px;color:#FFE6DC;display:block;margin-top:8px;font-weight:400}
+  .ask .pill{background:var(--ink);color:#fff;font-size:26px;font-weight:700;padding:22px 36px;border-radius:999px;white-space:nowrap}
+</style>
+</head>
+<body>
+
+<!-- 1 · Title -->
+<section class="slide dark s1">
+  <div class="bands">
+    <div class="band" style="top:170px;width:620px;height:110px;background:#E0643A"></div>
+    <div class="band" style="top:310px;width:760px;height:110px;background:#1F3049"></div>
+    <div class="band" style="top:450px;width:520px;height:110px;background:#2C7A74"></div>
+    <div class="band" style="top:590px;width:700px;height:110px;background:#1F3049"></div>
+    <div class="band" style="top:730px;width:420px;height:110px;background:#2A3D5A"></div>
+  </div>
+  <div class="logo"><div class="mark"><i></i><i></i><i></i></div>STRATA</div>
+  <h1 style="margin-top:150px">Your loyalty data, production-ready in <em>3 weeks</em>.</h1>
+  <p class="sub">A proposal for a 6-week proof of concept on the loyalty dataset — run inside your own cloud account.</p>
+  <div class="for">
+    <div>Prepared for<b>Chief Data Officer</b></div>
+    <div>&amp;<b>Head of Data Platform</b></div>
+  </div>
+</section>
+
+<!-- 2 · Problem -->
+<section class="slide">
+  <div class="kicker"><span class="num">02</span><span class="bar"></span>The situation</div>
+  <h2>Loyalty is your richest customer signal — and your hardest pipeline to keep running.</h2>
+  <div class="grid4">
+    <div class="src"><span class="dot"></span><div class="tag">In store</div><h3>POS &amp; receipts</h3><p>Transaction-level baskets from every register</p></div>
+    <div class="src"><span class="dot"></span><div class="tag">Digital</div><h3>E-commerce</h3><p>Orders, returns and browse behaviour</p></div>
+    <div class="src"><span class="dot"></span><div class="tag">Mobile</div><h3>App &amp; offers</h3><p>Coupon clips, redemptions, push engagement</p></div>
+    <div class="src"><span class="dot"></span><div class="tag">Members</div><h3>CRM &amp; profile</h3><p>Identity, tiers, preferences and consent</p></div>
+  </div>
+  <div class="pains">
+    <div><h4>Slow to integrate</h4><p>Stitching these sources together typically takes around six months of integration work.</p></div>
+    <div><h4>Fragile once live</h4><p>Pipeline incidents pull platform engineers off roadmap work and erode trust in the numbers.</p></div>
+    <div><h4>Tool sprawl</h4><p>Multiple ETL tools, each with its own licence, runbook and failure mode.</p></div>
+  </div>
+  <div class="footer"><div class="logo"><div class="mark"><i></i><i></i><i></i></div>STRATA</div><span>02</span></div>
+</section>
+
+<!-- 3 · Speed -->
+<section class="slide">
+  <div class="kicker"><span class="num">03</span><span class="bar"></span>What changes</div>
+  <h2>From a six-month integration to <em>three weeks</em>.</h2>
+  <div class="timeline">
+    <div class="tl-row">
+      <div class="tl-label">Typical integration<small>Custom pipelines, multiple tools</small></div>
+      <div class="track"><div class="fill old">≈ 6 months</div></div>
+    </div>
+    <div class="tl-row">
+      <div class="tl-label">With Strata<small>One platform, your cloud</small></div>
+      <div class="track"><div class="fill new">3 wks</div><span class="after">Loyalty data live — ~5 months back to your team</span></div>
+    </div>
+    <div class="scale">
+      <div></div>
+      <div class="ticks"><span>Week 0</span><span>4</span><span>8</span><span>12</span><span>16</span><span>20</span><span>26</span></div>
+    </div>
+  </div>
+  <div class="callouts">
+    <div><b>Faster time to insight</b><span>Loyalty analytics and personalisation start this quarter, not next half.</span></div>
+    <div><b>Less engineering drag</b><span>Your platform team spends months on the roadmap instead of plumbing.</span></div>
+    <div><b>Lower risk</b><span>A short, bounded integration is easier to scope, staff and govern.</span></div>
+  </div>
+  <div class="footer"><div class="logo"><div class="mark"><i></i><i></i><i></i></div>STRATA</div><span>03</span></div>
+</section>
+
+<!-- 4 · Architecture -->
+<section class="slide">
+  <div class="kicker"><span class="num">04</span><span class="bar"></span>How it works</div>
+  <h2>Strata deploys <em>inside your cloud account</em>. Your data stays where it is.</h2>
+  <div class="arch">
+    <div class="account">
+      <div class="al">Your cloud account · your network · your security controls</div>
+      <div class="flow">
+        <div class="node"><h4>Loyalty sources</h4><ul><li>POS &amp; receipts</li><li>E-commerce orders</li><li>App &amp; offer events</li><li>CRM &amp; member profile</li></ul></div>
+        <div class="arrow"></div>
+        <div class="node core"><h4><span class="mark" style="color:#F3EFE8"><i></i><i></i><i></i></span>Strata platform</h4><ul><li>Ingestion &amp; connectors</li><li>Modelling &amp; transformation</li><li>Pipeline monitoring</li><li>Replaces point ETL tools</li></ul></div>
+        <div class="arrow"></div>
+        <div class="node"><h4>Your consumers</h4><ul><li>Unified loyalty dataset</li><li>Existing warehouse</li><li>BI &amp; analytics</li><li>Data science</li></ul></div>
+      </div>
+    </div>
+  </div>
+  <div class="arch-note"><span><b>No data egress</b> to a vendor environment</span><span><b>Your IAM</b> and governance policies apply</span><span><b>Your cloud spend</b> and commitments</span></div>
+  <div class="footer"><div class="logo"><div class="mark"><i></i><i></i><i></i></div>STRATA</div><span>04</span></div>
+</section>
+
+<!-- 5 · Case study incidents -->
+<section class="slide">
+  <div class="kicker"><span class="num">05</span><span class="bar"></span>Proof · Reference customer</div>
+  <div class="case">
+    <div class="case-meta">
+      <div class="who">900-store grocer</div>
+      <h3 style="font-size:72px;letter-spacing:-.025em;line-height:1.04">Pipeline incidents down from 41 to 6 a quarter.</h3>
+      <p>A retailer with the same shape of problem: high-volume store transactions, many sources, and a platform team stretched across legacy tooling.</p>
+      <p>After moving to Strata, the team went from roughly three incidents a week to about one every two weeks.</p>
+    </div>
+    <div class="chart">
+      <div class="delta"><b>−85%</b><span>incidents per quarter</span></div>
+      <div class="col"><div class="v" style="color:#9AA1AC">41</div><div class="b" style="height:460px;background:repeating-linear-gradient(135deg,#9AA1AC 0 18px,#A7ADB7 18px 36px)"></div><div class="lab">Before Strata</div></div>
+      <div class="col"><div class="v" style="color:var(--teal)">6</div><div class="b" style="height:67px;background:var(--teal)"></div><div class="lab">After Strata</div></div>
+    </div>
+  </div>
+  <div class="footer"><div class="logo"><div class="mark"><i></i><i></i><i></i></div>STRATA</div><span>05</span></div>
+</section>
+
+<!-- 6 · Savings -->
+<section class="slide dark">
+  <div class="kicker"><span class="num">06</span><span class="bar"></span>Proof · Same reference customer</div>
+  <h2>Three legacy ETL tools retired. One platform in their place.</h2>
+  <div class="money" style="margin-top:80px">
+    <div class="big">$1.8M<small>saved every year</small></div>
+    <div class="retired">
+      <div class="tool"><div class="x">✕</div><div><b>Legacy ETL tool 1</b><span>Retired</span></div></div>
+      <div class="tool"><div class="x">✕</div><div><b>Legacy ETL tool 2</b><span>Retired</span></div></div>
+      <div class="tool"><div class="x">✕</div><div><b>Legacy ETL tool 3</b><span>Retired</span></div></div>
+      <div class="tool keep"><div class="x">✓</div><div><b>Strata</b><span>One platform to run, monitor and support</span></div></div>
+    </div>
+  </div>
+  <div class="footer"><div class="logo"><div class="mark"><i></i><i></i><i></i></div>STRATA</div><span>06</span></div>
+</section>
+
+<!-- 7 · Reliability & control -->
+<section class="slide">
+  <div class="kicker"><span class="num">07</span><span class="bar"></span>For the platform team</div>
+  <h2>Built to be run by your team, on your terms.</h2>
+  <div class="ops">
+    <div class="sla">
+      <div class="lbl">Uptime SLA</div>
+      <div class="pct">99.95<span>%</span></div>
+      <p>Contractually committed availability — a standard your loyalty programme and downstream teams can plan around.</p>
+    </div>
+    <div class="checks">
+      <div class="check"><h4>Your cloud account</h4><p>Strata runs in your environment, so data residency and network boundaries stay under your control.</p></div>
+      <div class="check"><h4>Your governance</h4><p>Access follows your existing identity and security policies — no parallel permission model to maintain.</p></div>
+      <div class="check"><h4>Fewer moving parts</h4><p>Consolidating ETL tooling means fewer runbooks, fewer on-call surprises and one place to look.</p></div>
+      <div class="check"><h4>Measured, not promised</h4><p>The POC runs alongside your current pipeline so reliability is compared on your own data.</p></div>
+    </div>
+  </div>
+  <div class="footer"><div class="logo"><div class="mark"><i></i><i></i><i></i></div>STRATA</div><span>07</span></div>
+</section>
+
+<!-- 8 · POC plan -->
+<section class="slide">
+  <div class="kicker"><span class="num">08</span><span class="bar"></span>The proposal</div>
+  <h2>A 6-week proof of concept on the <em>loyalty dataset</em>.</h2>
+  <div class="phase">
+    <div style="background:var(--accent)">Weeks 1–3 · Integrate</div>
+    <div style="background:var(--teal)">Weeks 4–5 · Run side by side</div>
+    <div style="background:var(--ink)">Week 6 · Decide</div>
+  </div>
+  <div class="weeks" style="margin-top:18px">
+    <div class="wk"><div class="n">Week 1</div><h4>Deploy &amp; connect</h4><p>Strata installed in your cloud account. Loyalty sources connected.</p></div>
+    <div class="wk"><div class="n">Week 2</div><h4>Model &amp; build</h4><p>Loyalty data model and pipelines built with your engineers.</p></div>
+    <div class="wk hl"><div class="n">Week 3</div><h4>Loyalty dataset live</h4><p>Unified dataset delivered to your warehouse and BI.</p><div class="flag">Integration complete</div></div>
+    <div class="wk"><div class="n">Week 4</div><h4>Parallel run</h4><p>Strata runs alongside the current pipeline on live data.</p></div>
+    <div class="wk"><div class="n">Week 5</div><h4>Measure</h4><p>Track incidents, freshness and effort against today's baseline.</p></div>
+    <div class="wk hl"><div class="n">Week 6</div><h4>Readout</h4><p>Results against agreed criteria, plus a costed rollout plan.</p><div class="flag">Go / no-go</div></div>
+  </div>
+  <div class="footer"><div class="logo"><div class="mark"><i></i><i></i><i></i></div>STRATA</div><span>08</span></div>
+</section>
+
+<!-- 9 · Success criteria -->
+<section class="slide">
+  <div class="kicker"><span class="num">09</span><span class="bar"></span>How we'll judge it</div>
+  <h2>Success criteria we agree on before day one.</h2>
+  <div class="two">
+    <table>
+      <tr><th>Criterion</th><th>Target to confirm together</th></tr>
+      <tr><td>Time to a production-ready loyalty dataset</td><td><span class="t">≤ 3 weeks</span> from kickoff</td></tr>
+      <tr><td>Pipeline incidents during parallel run</td><td><span class="t">Fewer</span> than your current baseline</td></tr>
+      <tr><td>Platform availability</td><td>Tracked against the <span class="t">99.95%</span> SLA</td></tr>
+      <tr><td>Consolidation opportunity</td><td>ETL tools that <span class="t">could be retired</span>, with savings estimate</td></tr>
+    </table>
+    <div class="need">
+      <h4>What we'll need from you</h4>
+      <ul>
+        <li>Access to the loyalty source systems</li>
+        <li>A cloud account or sandbox for the deployment</li>
+        <li>A named platform engineer, part-time</li>
+        <li>A weekly 30-minute checkpoint with your leads</li>
+      </ul>
+      <p class="us">Strata provides the deployment, solution engineering and the week-6 readout.</p>
+    </div>
+  </div>
+  <div class="footer"><div class="logo"><div class="mark"><i></i><i></i><i></i></div>STRATA</div><span>09</span></div>
+</section>
+
+<!-- 10 · Close -->
+<section class="slide dark s10">
+  <div class="kicker"><span class="num">10</span><span class="bar"></span>Next steps</div>
+  <h2>Six weeks to know, on your own data.</h2>
+  <div class="steps">
+    <div class="step"><div class="i">01</div><h4>Confirm scope</h4><p>Agree the loyalty sources in scope and the success criteria.</p></div>
+    <div class="step"><div class="i">02</div><h4>Provision access</h4><p>Your platform team sets up the cloud account and source access.</p></div>
+    <div class="step"><div class="i">03</div><h4>Kick off</h4><p>Week 1 begins — loyalty dataset live by the end of week 3.</p></div>
+  </div>
+  <div class="ask">
+    <div><b>Book the 6-week loyalty proof of concept</b><span>Choose a kickoff date and we'll hold the solution engineering team.</span></div>
+    <div class="pill">Pick a start date →</div>
+  </div>
+  <div class="footer"><div class="logo"><div class="mark"><i></i><i></i><i></i></div>STRATA</div><span>10</span></div>
+</section>
+
+</body>
+</html>

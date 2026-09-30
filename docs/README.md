@@ -40,9 +40,9 @@
 
 ## What comes next
 
-[v4/plan/README.md](v4/plan/README.md) holds the status. Phase 21 (reset) is in progress: the docs are written; the code reset, the gate and the bench are not started.
+[v4/plan/README.md](v4/plan/README.md) holds the status. Phase 21 (reset) is built; its exit waits on the owner's baseline ratings.
 
-**The one constraint on the build:** the v3 code still in the tree is a different product. Phase 21 deletes it. Port a piece only where a phase names it.
+**The one constraint on the build:** the v3 code (tag `v3-final`) is a different product. Port a piece only where a phase names it.
 
 ## Conventions
 

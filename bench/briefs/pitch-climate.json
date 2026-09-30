@@ -1,0 +1,328 @@
+{
+  "brief": {
+    "id": "pitch-climate",
+    "prompt": "Seed pitch for Thermacore, which retrofits industrial boilers with heat-pump modules that run on waste heat.",
+    "deck_type": "pitch",
+    "audience": "Climate-focused seed investors",
+    "ask": "Raise a $4M seed to fund three paid pilots",
+    "slide_count": 12
+  },
+  "outline": {
+    "governing_thought": "Thermacore retrofits industrial boilers with waste-heat pumps, cutting fuel use without replacing plants, and three paid pilots will prove it.",
+    "deck_type": "pitch",
+    "audience": "Climate-focused seed investors",
+    "ask": "Raise a $4M seed to fund three paid pilots",
+    "key_points": [
+      "Industrial boilers waste heat and burn costly fuel",
+      "Heat-pump modules reuse waste heat inside existing plants",
+      "Retrofit avoids the cost and downtime of full replacement",
+      "Paid pilots turn the technology into repeatable contracts"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "Open",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Thermacore turns wasted plant heat into cheaper, cleaner steam",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Thermacore",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "Problem",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Industrial boilers burn fuel while free heat escapes",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The problem",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "Stakes",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Fuel costs and carbon rules are squeezing plant margins",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Why it matters",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Fuel is a large, volatile operating expense",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Emissions rules tighten year after year",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Plant managers need a fix that keeps production running",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "Insight",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Waste heat can do work that boilers do today",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The insight",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "Solution",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Thermacore retrofits existing boilers with heat-pump modules",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Our solution",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Bolts onto the boiler plants already own",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Runs on heat the plant currently discards",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Cuts fuel burned for every unit of steam",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "How it works",
+        "intent": "steps",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "The module captures waste heat and lifts it to process temperature",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "How it works",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Capture heat from exhaust and process streams",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Lift it to usable temperature with the heat pump",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Feed it into the boiler to displace fuel",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "Differentiation",
+        "intent": "comparison",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Retrofit beats full electrification on cost and downtime",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Why retrofit",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Keeps existing boilers and steam infrastructure",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Installs without a long plant shutdown",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Lower capital hurdle for plant owners",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s08",
+        "beat": "Market",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Every heat-intensive plant with a boiler is a candidate customer",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Who buys",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Food and beverage processing",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Chemicals and paper",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Any site with steady waste heat",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s09",
+        "beat": "Business model",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Pilots convert into repeatable retrofit contracts across each customer's sites",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Business model",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s10",
+        "beat": "Team",
+        "intent": "team",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Our team combines thermal engineering with industrial deployment experience",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Team",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s11",
+        "beat": "Plan",
+        "intent": "timeline",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Paid pilots will prove savings in real operating plants",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Next milestones",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Install modules at pilot sites",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Measure fuel and emissions reductions",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Package results into a repeatable offer",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s12",
+        "beat": "Ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Join our $4M seed to fund three paid pilots",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The ask",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Fund three paid pilot installations",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Generate the proof that unlocks scale-up customers",
+            "budget_words": 10
+          }
+        ]
+      }
+    ]
+  }
+}

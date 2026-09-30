@@ -1,6 +1,6 @@
 # d-design
 
-> **The plan is `docs/v4/`, decided 2026-09-26.** Phase 21 (reset) is in progress: the v4 docs are written, and the v3 code still in the tree (`api/`, `web/`, `render/`, `worker/`) is deleted by that phase. Do not build on it.
+> **The plan is `docs/v4/`, decided 2026-09-26.** Status is in `docs/v4/plan/README.md`. The v3 code is gone (tag `v3-final`); `api/` holds the v4 engine skeleton and `web/` returns in phase 27.
 
 ## What the product is
 
@@ -19,6 +19,13 @@ An AI presentation maker whose edge over Gamma is **design**. A founder or sales
 ./scripts/setup.sh               installs the git hooks — run once per clone
 ./scripts/check-docs.sh          every link resolves, every file is indexed
 ./scripts/hooks/pre-commit       the gate, on demand
+
+cd api
+uv run pytest -q                           the tests
+uv run python -m cli smoke                 one live model call; prints its cost
+uv run python -m cli freeze --set all      freeze outlines for the bench briefs
+uv run python -m cli baseline --set all    one-shot baseline decks + screenshots
+uv run python -m cli wall --run NAME       the wall page the owner scores
 ```
 
 `.env` holds `OPENROUTER_API_KEY`. It is gitignored.
