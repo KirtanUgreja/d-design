@@ -1,0 +1,15 @@
+<!-- {"intent": "statement", "archetype": "stack", "idea": "A pull-quote page: small label top-left, the sentence set large in the lower two thirds, source on a rule", "fields": {"kicker": "Why now", "headline": "Every team ships faster, so every flaky test now costs more", "source": "Flakeguard customer interviews"}} -->
+```html
+<section class="s">
+  <p class="kicker" data-field="kicker">Why now</p>
+  <h1 class="say" data-field="headline">Every team ships faster, so every flaky test now <em>costs more</em></h1>
+  <p class="source" data-field="source">Flakeguard customer interviews</p>
+</section>
+```
+```css
+.s { display: grid; grid-template-rows: auto 1fr auto; padding: var(--margin); padding-left: 360px; }
+.kicker { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.08em; text-transform: uppercase; }
+.say { align-self: center; font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d3); line-height: 1; letter-spacing: -0.015em; }
+.say em { color: var(--c-accent); }
+.source { font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); border-top: var(--rule) solid var(--c-rule); padding-top: var(--s-2); }
+```

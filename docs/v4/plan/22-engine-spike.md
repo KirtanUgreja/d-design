@@ -29,7 +29,7 @@
 - QA errors E1–E10, with **one** repair round.
 - Up to 3 images per deck.
 - A minimal export: arrow keys, fullscreen, scale-to-fit, the CSP.
-- **Bake-off:** the 12 frozen outlines on 2 top models, and at reasoning effort "minimal" vs "medium".
+- **Bake-off:** the 3 smoke outlines on cheap paid models first (owner's decision, 2026-09-30: cheap models, no free ones, quality judged on the wall). A dearer model is tried only if the wall says the cheap ones are not good enough. One full 12-deck run at the end.
 - **A/B:** with exemplars vs without.
 
 ### Design decisions
@@ -59,4 +59,4 @@
 - [ ] At most 1 visible defect per deck
 - [ ] Median ≤ $2 and ≤ 4 minutes per deck
 - [ ] The design model is chosen and pinned; the exemplar A/B result is recorded
-- [ ] Total phase spend ≤ $100
+- [ ] Total phase spend ≤ $10 (owner's budget, 2026-09-30; was $100)

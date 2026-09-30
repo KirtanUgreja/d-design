@@ -9,6 +9,8 @@ dependencies = [
     # Chromium for the bench wall now, and for QA, thumbnails and PDF from
     # phase 22 (docs/coderules/dependencies.md -> the ledger).
     "playwright>=1.47",
+    "nh3>=0.3.6",
+    "tinycss2>=1.5.1",
 ]
 
 [dependency-groups]
@@ -48,3 +50,7 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "ANN", "ASYNC", "S", "RUF"]
 [tool.pydantic-mypy]
 init_typed = true
 init_forbid_extra = true
+
+[[tool.mypy.overrides]]
+module = ["tinycss2", "tinycss2.*"]
+ignore_missing_imports = true

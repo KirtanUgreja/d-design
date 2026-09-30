@@ -36,7 +36,7 @@ def collect(root: Path, system: str) -> list[WallDeck]:
     if not root.is_dir():
         return decks
     for folder in sorted(p for p in root.iterdir() if p.is_dir()):
-        images = tuple(sorted(folder.glob("*.png")))
+        images = tuple(sorted(folder.glob("*.png")))  # 01.png or s01.png
         if images:
             decks.append(WallDeck(system, folder.name, images))
     flat: dict[str, list[Path]] = {}

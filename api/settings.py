@@ -31,10 +31,11 @@ def _load_dotenv(path: Path) -> None:
 @dataclass(frozen=True)
 class Settings:
     openrouter_api_key: str
-    # Candidates until the phase-22 bake-off pins the winners
-    # (docs/techstack/ai-stack.md). Prices read 2026-09-30.
+    # Candidates until the owner's wall ratings pin the winners
+    # (docs/techstack/ai-stack.md). Cheap paid models by the owner's decision
+    # of 2026-09-30; the one-shot baseline was made on claude-opus-5.5.
     model_writing: str = "anthropic/claude-sonnet-5.5"
-    model_design: str = "anthropic/claude-opus-5.5"
+    model_design: str = "deepseek/deepseek-v4.1-flash"
     model_cheap: str = "anthropic/claude-haiku-4.5"
     deck_budget_usd: float = 5.0
 

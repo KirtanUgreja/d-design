@@ -1,0 +1,21 @@
+<!-- {"intent": "ask", "archetype": "band", "idea": "The ask as a full-bleed accent band with the sentence at display size; the terms sit in a plain band under it", "fields": {"kicker": "The ask", "headline": "Lead our $12M Series A at a $60M valuation", "point-1": "Closing in November", "point-2": "16 months of runway today"}} -->
+```html
+<section class="s">
+  <div class="band">
+    <p class="kicker" data-field="kicker">The ask</p>
+    <h1 class="head" data-field="headline">Lead our $12M Series A at a $60M valuation</h1>
+  </div>
+  <div class="terms">
+    <p data-field="point-1">Closing in November</p>
+    <p data-field="point-2">16 months of runway today</p>
+  </div>
+</section>
+```
+```css
+.s { display: grid; grid-template-rows: 7fr 3fr; }
+.band { background-color: var(--c-accent); color: var(--c-on-accent); padding: var(--margin); display: grid; grid-template-rows: auto 1fr; }
+.kicker { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.08em; text-transform: uppercase; }
+.head { align-self: end; font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d2); line-height: 0.94; letter-spacing: -0.02em; }
+.terms { padding: 0 var(--margin); display: grid; grid-template-columns: 1fr 1fr; align-items: center; }
+.terms p { font-size: var(--t-h3); border-left: var(--rule) solid var(--c-rule); padding-left: var(--s-4); }
+```

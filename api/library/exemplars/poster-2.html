@@ -1,0 +1,15 @@
+<!-- {"intent": "statement", "archetype": "poster", "idea": "One sentence at poster scale, cropped tight to the left margin; nothing else competes", "fields": {"headline": "Nobody trusts a build that fails at random", "kicker": "The problem"}} -->
+```html
+<section class="s">
+  <p class="kicker" data-field="kicker">The problem</p>
+  <h1 class="say" data-field="headline">Nobody trusts a build that fails <em>at random</em></h1>
+  <dd-texture class="mark" kind="halftone" tone="accent"></dd-texture>
+</section>
+```
+```css
+.s { display: grid; align-content: center; gap: var(--s-5); padding: var(--margin); padding-right: 320px; }
+.kicker { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.08em; text-transform: uppercase; color: var(--c-ink-2); }
+.say { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d2); line-height: 0.95; letter-spacing: -0.02em; }
+.say em { color: var(--c-accent); }
+.mark { position: absolute; right: 0; bottom: 0; width: 260px; height: 520px; }
+```

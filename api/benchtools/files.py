@@ -13,6 +13,7 @@ BENCH = Path(__file__).resolve().parent.parent.parent / "bench"
 BRIEFS = BENCH / "briefs"
 BASELINES = BENCH / "baselines"
 SMOKE = ("pitch-devtools", "sales-data-platform", "update-q3")
+ONE = ("update-q3",)
 
 
 class BenchBrief(BaseModel):

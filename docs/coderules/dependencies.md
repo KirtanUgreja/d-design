@@ -16,8 +16,6 @@ Not a ban — a speed bump. The cost of a dependency is not install time; it is 
 
 | Package | Where | For | Phase |
 |---|---|---|---|
-| `nh3` | api | The HTML allowlist sanitizer for model-written slides. A sanitizer is on the never-write-your-own side of the line | 22 |
-| `tinycss2` | api | Parsing slide CSS so the lint can walk real declarations. Lint only: scoping is Declarative Shadow DOM, not selector rewriting | 22 |
 | `Pillow` | api | Re-encoding generated images to webp. Webp only | 22–25 |
 | `openapi-typescript` | web (dev) | Generating `web/lib/api/schema.d.ts` | 21 or 27 |
 | Tailwind + shadcn/ui (copy-in source on Radix primitives) | web | Our chrome only, never a deck | 27 |
@@ -107,13 +105,18 @@ Every non-baseline dependency gets one line here: what it does, and why not a fe
 <package>   — <what it does> — <why not stdlib/baseline/ours>
 ```
 
-Installed, as of phase 21 (2026-09-30). The v3 rows left with the packages they described; their text is at the tag `v3-final`.
+Installed, as of phase 22 (2026-09-30). The v3 rows left with the packages they described; their text is at the tag `v3-final`.
 
 ```
 playwright (v4, phase 21) — headless Chromium, in api — screenshots for the
   bench wall now; QA measurement, thumbnails and PDF from phase 22. Writing
   our own browser is not a sentence anyone would finish. It renders
   model-written HTML, so every request is aborted and page scripts are off.
+nh3 (v4, phase 22) — the HTML allowlist sanitizer for model-written slides,
+  in api — a sanitizer is the one place never to write our own.
+tinycss2 (v4, phase 22) — parses slide CSS so the lint walks real
+  declarations, in api — a CSS tokenizer is a parser, not a regex. Lint only:
+  scoping is Declarative Shadow DOM.
 pydantic.mypy (v4, phase 21) — the mypy plugin that ships inside pydantic —
   not a new package. Without it `disallow_any_explicit` rejects every
   BaseModel, because the synthesized __init__ takes **Any.
