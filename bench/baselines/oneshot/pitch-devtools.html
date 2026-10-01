@@ -1,564 +1,814 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
+<meta charset="utf-8">
 <title>Flakeguard — Series A</title>
 <style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:#04060A}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:#E9EFF7;-webkit-font-smoothing:antialiased;
+    display:flex;flex-direction:column;align-items:center;gap:44px;padding:44px 0;
+  }
   :root{
-    --ink:#0A0F1E;
-    --ink2:#111833;
-    --panel:#151D3B;
-    --line:#26305A;
-    --text:#E9EDF8;
-    --muted:#8C95B6;
-    --green:#3DDC97;
-    --green-d:#1FA870;
-    --amber:#FFB547;
-    --red:#FF5C7A;
-    --paper:#F4F5F9;
-    --paper-line:#DFE2EC;
-    --ink-text:#0E1428;
-    --ink-muted:#5A6283;
-    --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
-    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    --ink:#E9EFF7; --muted:#8B99AD; --dim:#5B6A82;
+    --line:rgba(255,255,255,.10);
+    --panel:rgba(255,255,255,.04);
+    --accent:#2FE0A6; --accent2:#7C8CF8; --warn:#FFB43D;
+    --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:#05070F;font-family:var(--sans);-webkit-font-smoothing:antialiased}
+
   .slide{
-    width:1920px;height:1080px;position:relative;overflow:hidden;
-    margin:0 auto 40px;padding:110px 140px 120px;
-    background:var(--ink);color:var(--text);
-    display:flex;flex-direction:column;
+    position:relative;flex:none;width:1920px;height:1080px;overflow:hidden;
+    background:#080B11;color:var(--ink);
+    box-shadow:0 40px 120px rgba(0,0,0,.65);
   }
-  .slide.light{background:var(--paper);color:var(--ink-text)}
-  .slide.grid-bg{
-    background-image:
-      linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),
-      linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);
-    background-size:60px 60px;background-color:var(--ink);
+  .slide::after{
+    content:"";position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:
+      radial-gradient(900px 560px at 92% -12%, rgba(47,224,166,.10), transparent 62%),
+      radial-gradient(760px 520px at -6% 108%, rgba(124,140,248,.09), transparent 62%);
   }
-  .kicker{font-family:var(--mono);font-size:22px;letter-spacing:.14em;text-transform:uppercase;color:var(--green);margin-bottom:28px;display:flex;align-items:center;gap:18px}
-  .kicker::before{content:"";width:40px;height:3px;background:var(--green)}
-  .light .kicker{color:var(--green-d)}
-  .light .kicker::before{background:var(--green-d)}
-  h1{font-size:96px;line-height:1.02;letter-spacing:-.035em;font-weight:750}
-  h2{font-size:68px;line-height:1.06;letter-spacing:-.03em;font-weight:720;max-width:1500px}
-  h3{font-size:34px;letter-spacing:-.01em;font-weight:680;margin-bottom:14px}
-  p,li{font-size:28px;line-height:1.45}
-  .muted{color:var(--muted)}
-  .light .muted{color:var(--ink-muted)}
-  .g{color:var(--green)} .light .g{color:var(--green-d)}
-  .r{color:var(--red)} .a{color:var(--amber)}
-  .footer{position:absolute;left:140px;right:140px;bottom:50px;display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:18px;color:var(--muted);letter-spacing:.06em}
-  .light .footer{color:var(--ink-muted)}
-  .brand{display:flex;align-items:center;gap:12px;font-family:var(--sans);font-weight:700;font-size:22px;letter-spacing:-.01em;color:var(--text)}
-  .light .brand{color:var(--ink-text)}
-  .mark{width:28px;height:28px;border-radius:8px;background:var(--green);position:relative;flex:none}
-  .mark::after{content:"";position:absolute;left:8px;top:5px;width:8px;height:14px;border:solid var(--ink);border-width:0 4px 4px 0;transform:rotate(45deg)}
-  .content{flex:1;display:flex;flex-direction:column;justify-content:center}
-  .row{display:flex;gap:40px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:22px;padding:44px}
-  .light .card{background:#fff;border:1px solid var(--paper-line);box-shadow:0 1px 0 rgba(14,20,40,.03),0 20px 40px -24px rgba(14,20,40,.18)}
-  .num{font-size:120px;font-weight:760;letter-spacing:-.05em;line-height:1}
-  .label{font-family:var(--mono);font-size:20px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-  .light .label{color:var(--ink-muted)}
-  .pill{display:inline-block;font-family:var(--mono);font-size:18px;padding:6px 14px;border-radius:999px;letter-spacing:.06em}
+  .slide.gridded{background-image:
+      linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);
+    background-size:96px 96px;background-position:center center;}
 
-  /* Slide 1 */
-  .title-wrap{display:grid;grid-template-columns:1fr 720px;gap:90px;align-items:center;flex:1}
-  .raise-tag{margin-top:56px;display:flex;gap:18px}
-  .raise-tag span{font-family:var(--mono);font-size:24px;padding:14px 24px;border:1px solid var(--line);border-radius:12px;background:rgba(21,29,59,.7)}
-  .raise-tag span b{color:var(--green);font-weight:600}
-  .term{background:#0D1328;border:1px solid var(--line);border-radius:20px;overflow:hidden;box-shadow:0 40px 80px -30px rgba(0,0,0,.7)}
-  .term-top{display:flex;gap:10px;padding:20px 24px;border-bottom:1px solid var(--line);align-items:center}
-  .term-top i{width:14px;height:14px;border-radius:50%;background:#2A3563;display:block}
-  .term-top em{margin-left:16px;font-style:normal;font-family:var(--mono);font-size:17px;color:var(--muted)}
-  .term-body{padding:28px 30px;font-family:var(--mono);font-size:20px;line-height:2}
-  .t{display:flex;justify-content:space-between;gap:20px}
-  .t .n{color:#C6CCE3}
-  .ok{color:var(--green)} .fl{color:var(--amber)} .q{color:var(--ink);background:var(--amber);padding:0 10px;border-radius:6px;font-size:16px}
-  .term-sum{margin-top:18px;padding-top:18px;border-top:1px dashed var(--line);color:var(--muted)}
+  .content{position:absolute;inset:0;z-index:2;padding:128px 120px 96px;display:flex;flex-direction:column}
 
-  /* Slide 2 */
-  .prob{display:grid;grid-template-columns:560px 1fr;gap:80px;margin-top:70px;align-items:stretch}
-  .bigstat{background:var(--ink);color:var(--text);border-radius:26px;padding:56px;display:flex;flex-direction:column;justify-content:space-between}
-  .bigstat .num{font-size:200px;color:var(--red)}
-  .stack{display:flex;flex-direction:column;gap:26px}
-  .stack .card{padding:34px 40px;display:grid;grid-template-columns:70px 1fr;gap:20px}
-  .ico{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:700;font-size:24px}
-  .ico.red{background:#FFE4EA;color:#D63558}
-  .ico.amb{background:#FFF1DA;color:#B97410}
-  .ico.blu{background:#E3E8FB;color:#3A4EB8}
-  .stack p{font-size:25px}
+  /* chrome */
+  .brand{position:absolute;z-index:3;top:50px;left:120px;font-size:13px;font-weight:700;
+    letter-spacing:.28em;text-transform:uppercase;color:#4E5D75;display:flex;align-items:center;gap:13px}
+  .brand i{width:11px;height:11px;border:2px solid var(--accent);transform:rotate(45deg);
+    display:inline-block;border-radius:2px}
+  .pagenum{position:absolute;z-index:3;bottom:50px;right:120px;font-size:13px;letter-spacing:.26em;
+    color:#465570;font-variant-numeric:tabular-nums}
 
-  /* Slide 3 */
-  .cmp{margin-top:60px;display:grid;grid-template-columns:1fr 1fr 1fr 1.15fr;gap:28px}
-  .cmp .card{display:flex;flex-direction:column;gap:18px}
-  .cmp .card p{font-size:24px}
-  .cmp .hl{background:linear-gradient(160deg,#143A31,#10213A);border-color:#2C6B55}
-  .verdict{margin-top:auto;padding-top:22px;border-top:1px solid var(--line);font-family:var(--mono);font-size:19px;letter-spacing:.04em}
+  /* type */
+  .eyebrow{font-size:13px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:24px}
+  .eyebrow.v2{color:var(--accent2)}
+  h1{font-size:96px;line-height:1.02;letter-spacing:-.038em;font-weight:700}
+  h2{font-size:58px;line-height:1.1;letter-spacing:-.028em;font-weight:700;max-width:1450px}
+  h2.sm{font-size:48px}
+  .lede{font-size:25px;line-height:1.55;color:var(--muted);max-width:960px;margin-top:26px}
+  .lede.tight{font-size:22px;margin-top:0}
 
-  /* Slide 4 */
-  .flow{margin-top:70px;display:grid;grid-template-columns:1fr 90px 1fr 90px 1fr;align-items:stretch}
-  .step{background:#fff;border:1px solid var(--paper-line);border-radius:24px;padding:46px;box-shadow:0 20px 40px -26px rgba(14,20,40,.22)}
-  .step .stepn{font-family:var(--mono);font-size:20px;color:var(--ink-muted);letter-spacing:.1em}
-  .step h3{font-size:44px;margin:18px 0 16px}
-  .step p{font-size:25px;color:var(--ink-muted)}
-  .step code{display:block;margin-top:30px;font-family:var(--mono);font-size:19px;background:var(--ink);color:#C6CCE3;padding:18px 20px;border-radius:12px;line-height:1.6}
-  .arrow{display:flex;align-items:center;justify-content:center}
-  .arrow::before{content:"";width:46px;height:3px;background:var(--green-d)}
-  .arrow::after{content:"";border:solid var(--green-d);border-width:0 3px 3px 0;width:14px;height:14px;transform:rotate(-45deg);margin-left:-14px}
-  .bar-top{height:8px;border-radius:8px;margin-bottom:30px}
+  /* stat blocks */
+  .num{font-size:56px;font-weight:700;letter-spacing:-.035em;font-variant-numeric:tabular-nums;line-height:1}
+  .num.accent{color:var(--accent)}
+  .lbl{display:block;margin-top:14px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim)}
 
-  /* Slide 5 */
-  .outcome{display:grid;grid-template-columns:1fr 760px;gap:100px;flex:1;align-items:center}
-  .chart{display:flex;align-items:flex-end;gap:90px;height:640px;border-bottom:2px solid var(--line);padding:0 60px;position:relative}
-  .col{width:220px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
-  .col .v{font-size:84px;font-weight:760;letter-spacing:-.04em;margin-bottom:18px}
-  .col .b{width:100%;border-radius:14px 14px 0 0}
-  .col .cap{position:absolute;bottom:-60px;font-family:var(--mono);font-size:20px;color:var(--muted);letter-spacing:.06em}
-  .delta{display:inline-flex;align-items:baseline;gap:18px;margin-top:40px;padding:24px 32px;border-radius:18px;background:rgba(61,220,151,.1);border:1px solid rgba(61,220,151,.35)}
-  .delta b{font-size:64px;color:var(--green);letter-spacing:-.03em}
-  .delta span{font-size:26px;color:#BFEBD6}
+  /* cards */
+  .card{background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.018));
+    border:1px solid var(--line);border-radius:20px;padding:36px 34px}
+  .card h3{font-size:25px;font-weight:650;letter-spacing:-.012em;margin-bottom:16px}
+  .card p{font-size:20px;line-height:1.5;color:var(--muted)}
+  .glyph{width:46px;height:46px;border-radius:12px;border:1px solid rgba(47,224,166,.35);
+    background:rgba(47,224,166,.09);color:var(--accent);display:flex;align-items:center;
+    justify-content:center;font-size:20px;font-weight:700;margin-bottom:26px}
 
-  /* Slide 6 */
-  .trac{display:grid;grid-template-columns:900px 1fr;gap:90px;margin-top:40px;flex:1}
-  .arr{position:relative;height:620px;display:flex;align-items:flex-end;gap:120px;padding:0 80px;border-bottom:2px solid var(--paper-line)}
-  .arr .col .v{font-size:64px}
-  .arr .col .cap{color:var(--ink-muted)}
-  .mult{position:absolute;left:300px;top:150px;background:var(--ink);color:var(--green);font-family:var(--mono);font-size:26px;padding:14px 22px;border-radius:12px;font-weight:600}
-  .side{display:flex;flex-direction:column;gap:28px;justify-content:center}
-  .side .card{padding:38px 44px}
-  .side .num{font-size:96px}
+  .chip{display:inline-block;padding:7px 15px;border-radius:999px;font-size:13px;font-weight:700;
+    letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+  .chip.q{background:rgba(255,180,61,.12);color:var(--warn);border:1px solid rgba(255,180,61,.3)}
+  .chip.s{background:rgba(47,224,166,.1);color:var(--accent);border:1px solid rgba(47,224,166,.28)}
+  .chip.w{background:rgba(124,140,248,.12);color:var(--accent2);border:1px solid rgba(124,140,248,.3)}
 
-  /* Slide 7 */
-  .nrr{display:grid;grid-template-columns:620px 1fr;gap:80px;flex:1;align-items:center}
-  .ring{width:520px;height:520px;border-radius:50%;background:conic-gradient(var(--green) 0 100%);display:flex;align-items:center;justify-content:center;position:relative}
-  .ring::before{content:"";position:absolute;inset:-22px;border-radius:50%;border:22px solid rgba(61,220,151,.22);border-right-color:transparent;border-bottom-color:transparent;transform:rotate(-20deg)}
-  .ring-in{width:420px;height:420px;border-radius:50%;background:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-  .ring-in .num{font-size:140px}
-  .ladder{display:flex;flex-direction:column;gap:22px}
-  .rung{display:grid;grid-template-columns:200px 1fr;align-items:center;gap:30px;padding:30px 36px;border-radius:18px;border:1px solid var(--line);background:var(--panel)}
-  .rung .label{color:var(--green)}
-  .rung p{font-size:26px}
-  .rung:nth-child(2){margin-left:60px}
-  .rung:nth-child(3){margin-left:120px}
+  .rule{height:1px;background:var(--line);width:100%}
 
-  /* Slide 8 */
-  .econ{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:70px}
-  .econ .card{padding:44px 40px;min-height:380px;display:flex;flex-direction:column}
-  .econ .num{font-size:104px;margin:22px 0 22px}
-  .econ p{font-size:23px;margin-top:auto}
-  .formula{margin-top:44px;font-family:var(--mono);font-size:22px;color:var(--ink-muted);padding:24px 30px;border:1px dashed #C4C9DA;border-radius:14px}
+  /* ---------------- title --------------- */
+  .title-grid{position:absolute;inset:0;z-index:2;padding:0 120px;display:grid;
+    grid-template-columns:1fr 760px;gap:110px;align-items:center}
+  h1 em{font-style:normal;color:var(--accent)}
+  .metric-row{display:flex;gap:56px;margin-top:64px}
+  .metric-row>div{border-left:1px solid var(--line);padding-left:26px}
+  .metric-row>div:first-child{padding-left:0;border-left:0}
+  .metric-row .num{font-size:38px}
+  .metric-row .lbl{margin-top:10px;font-size:12px}
 
-  /* Slide 9 */
-  .gtm{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:80px;position:relative}
-  .phase{padding:0 50px 0 0;position:relative}
-  .phase .dot{width:30px;height:30px;border-radius:50%;background:var(--ink);border:6px solid var(--green);position:relative;z-index:2}
-  .line{position:absolute;top:14px;left:0;right:80px;height:3px;background:linear-gradient(90deg,var(--green),#2A3563)}
-  .phase h3{font-size:44px;margin:40px 0 12px}
-  .phase .who{font-family:var(--mono);font-size:20px;color:var(--green);letter-spacing:.06em;margin-bottom:22px}
-  .phase ul{list-style:none}
-  .phase li{font-size:25px;color:#C6CCE3;padding:12px 0;border-top:1px solid var(--line)}
-  .proof{margin-top:28px;display:inline-block;font-family:var(--mono);font-size:19px;padding:10px 16px;border-radius:10px;background:rgba(61,220,151,.1);color:var(--green);border:1px solid rgba(61,220,151,.3)}
+  .log{border-radius:22px;border:1px solid var(--line);overflow:hidden;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02));
+    box-shadow:0 40px 90px rgba(0,0,0,.5)}
+  .log-head{display:flex;align-items:center;gap:14px;padding:22px 30px;
+    border-bottom:1px solid var(--line);font-family:var(--mono);font-size:15px;color:var(--dim);
+    letter-spacing:.06em}
+  .dot{width:11px;height:11px;border-radius:50%;background:var(--accent);display:inline-block}
+  .log-body{padding:22px 30px 30px;font-family:var(--mono);font-size:18px;line-height:1.9}
+  .log-line{display:flex;justify-content:space-between;gap:20px;color:#93A2B6}
+  .log-line.ok{color:#5E6E85}
+  .log-line.bad{color:#FFC978}
+  .log-line .meta{color:#63728A;font-size:15px}
+  .log-foot{margin-top:22px;padding-top:22px;border-top:1px solid var(--line);
+    display:flex;gap:12px;flex-wrap:wrap}
 
-  /* Slide 10 */
-  .team{display:grid;grid-template-columns:1fr 1fr 560px;gap:36px;margin-top:70px}
-  .founder{padding:48px}
-  .avatar{width:120px;height:120px;border-radius:28px;display:flex;align-items:center;justify-content:center;font-size:44px;font-weight:750;color:#fff;margin-bottom:34px}
-  .founder .role{font-family:var(--mono);font-size:20px;color:var(--green-d);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px}
-  .founder h3{font-size:42px}
-  .founder p{font-size:25px;color:var(--ink-muted)}
-  .orgbox{background:var(--ink);color:var(--text);border-radius:24px;padding:48px}
-  .dots{display:grid;grid-template-columns:repeat(7,1fr);gap:16px;margin:34px 0}
-  .dots i{display:block;aspect-ratio:1;border-radius:50%;background:#2A3563}
-  .dots i.e{background:var(--green)}
+  /* ---------------- generic layouts --------------- */
+  .row-2{display:grid;grid-template-columns:1fr 1fr;gap:32px}
+  .row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:28px}
+  .row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:26px}
+  .spacer{flex:1}
+  .mt-auto{margin-top:auto}
 
-  /* Slide 11 */
-  .ask{display:grid;grid-template-columns:640px 1fr;gap:90px;flex:1;margin-top:30px}
-  .terms{background:linear-gradient(165deg,#15392F 0%,#111833 60%);border:1px solid #2C6B55;border-radius:28px;padding:60px;display:flex;flex-direction:column;gap:38px;justify-content:center}
-  .terms .num{font-size:150px}
-  .terms .tr{display:flex;justify-content:space-between;border-top:1px solid rgba(255,255,255,.12);padding-top:26px;font-size:30px}
-  .terms .tr span:first-child{color:var(--muted)}
-  .alloc{display:flex;flex-direction:column;gap:30px}
-  .al-h{display:flex;justify-content:space-between;font-size:28px;margin-bottom:12px}
-  .al-h b{font-family:var(--mono);font-weight:600}
-  .track{height:22px;border-radius:11px;background:#1C2548;overflow:hidden}
-  .track i{display:block;height:100%;border-radius:11px}
-  .al-d{font-size:22px;color:var(--muted);margin-top:10px}
-  .miles{margin-top:18px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px}
-  .miles div{border:1px solid var(--line);border-radius:16px;padding:22px 24px;font-size:22px;line-height:1.4;color:#C6CCE3}
-  .miles b{display:block;font-family:var(--mono);font-size:17px;color:var(--green);letter-spacing:.08em;margin-bottom:8px;font-weight:600}
+  /* stat strip */
+  .stat-strip{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid var(--line);
+    border-bottom:1px solid var(--line)}
+  .stat-strip>div{padding:38px 40px;border-right:1px solid var(--line)}
+  .stat-strip>div:last-child{border-right:0}
+  .stat-strip .num{font-size:62px}
+  .delta{font-size:15px;font-weight:700;color:var(--accent);letter-spacing:.06em;margin-top:14px;display:block}
 
-  /* Slide 12 */
-  .close{flex:1;display:grid;grid-template-columns:1fr 640px;gap:100px;align-items:center}
-  .recap{display:flex;flex-direction:column;gap:0}
-  .recap div{display:flex;justify-content:space-between;align-items:baseline;padding:26px 0;border-bottom:1px solid var(--line);font-size:28px}
-  .recap div b{font-size:44px;letter-spacing:-.02em}
-  .recap div span{color:var(--muted)}
+  /* chart */
+  .chart{display:flex;align-items:flex-end;gap:0;height:400px;position:relative}
+  .chart::before{content:"";position:absolute;left:0;right:0;bottom:52px;height:1px;
+    background:var(--line)}
+  .col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;
+    position:relative;z-index:2}
+  .col .val{font-size:22px;font-weight:700;margin-bottom:14px;color:#fff;letter-spacing:-.02em}
+  .col .bar{width:132px;border-radius:10px 10px 4px 4px;
+    background:linear-gradient(180deg,rgba(47,224,166,.95),rgba(47,224,166,.22))}
+  .col.last .bar{background:linear-gradient(180deg,#2FE0A6,#0E7C5B);
+    box-shadow:0 0 40px rgba(47,224,166,.35)}
+  .col .x{margin-top:22px;font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:#5A6980}
+
+  /* bars (before/after) */
+  .ba-row{display:grid;grid-template-columns:230px 1fr 130px;align-items:center;gap:26px}
+  .ba-track{height:34px;border-radius:8px;background:rgba(255,255,255,.06);overflow:hidden}
+  .ba-fill{height:100%;border-radius:8px}
+  .ba-fill.before{background:linear-gradient(90deg,#FF7A59,#FFB43D);width:100%}
+  .ba-fill.after{background:linear-gradient(90deg,#2FE0A6,#7C8CF8);width:21.4%}
+
+  /* product UI mock */
+  .ui{border:1px solid var(--line);border-radius:22px;overflow:hidden;flex:1;
+    background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.015));
+    box-shadow:0 40px 100px rgba(0,0,0,.5);display:flex;flex-direction:column}
+  .ui-head{display:flex;align-items:center;justify-content:space-between;padding:26px 36px;
+    border-bottom:1px solid var(--line)}
+  .ui-head .t{font-size:21px;font-weight:650;letter-spacing:-.01em}
+  .ui-head .t span{color:var(--dim);font-weight:500;margin-left:14px;font-size:17px}
+  .ui-tabs{display:flex;gap:10px}
+  .ui-tabs span{font-size:14px;padding:8px 16px;border-radius:999px;color:var(--dim);
+    border:1px solid var(--line)}
+  .ui-tabs span.on{color:#05080C;background:var(--accent);border-color:var(--accent);font-weight:700}
+  .ui-row{display:grid;grid-template-columns:560px 1fr 120px 110px 190px 150px;
+    align-items:center;gap:26px;padding:24px 36px;border-bottom:1px solid rgba(255,255,255,.055)}
+  .ui-row.head{padding:16px 36px;font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+    color:#4E5D75;font-weight:700;background:rgba(255,255,255,.02)}
+  .ui-row .name{font-family:var(--mono);font-size:18px;color:#CFDBEA}
+  .ui-row .name em{font-style:normal;color:#6D7C93}
+  .spark{display:flex;align-items:flex-end;gap:5px;height:34px}
+  .spark i{display:block;width:11px;border-radius:3px;background:rgba(255,255,255,.16)}
+  .spark i.hot{background:#FFB43D}
+  .ui-row .pct{font-size:22px;font-weight:700;font-variant-numeric:tabular-nums}
+  .ui-row .pct.hot{color:var(--warn)}
+  .ui-row .muted{color:var(--dim);font-size:17px;font-variant-numeric:tabular-nums}
+  .ui-row .owner{color:var(--muted);font-size:17px}
+
+  /* simple table-ish list */
+  .kv{display:flex;flex-direction:column;gap:20px}
+  .kv .item{display:flex;align-items:flex-start;gap:20px}
+  .kv .bullet{width:30px;height:30px;border-radius:8px;background:rgba(47,224,166,.1);
+    border:1px solid rgba(47,224,166,.28);color:var(--accent);display:flex;align-items:center;
+    justify-content:center;font-size:15px;font-weight:700;flex:none;margin-top:2px}
+  .kv .item p{font-size:20px;line-height:1.5;color:var(--muted)}
+  .kv .item p b{color:var(--ink);font-weight:650}
+
+  /* flow */
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:22px;flex:1;align-items:stretch}
+  .flow .step{display:flex;flex-direction:column;position:relative;padding:38px 32px;
+    border:1px solid var(--line);border-radius:20px;
+    background:linear-gradient(180deg,rgba(255,255,255,.055),rgba(255,255,255,.015))}
+  .flow .step .n{font-family:var(--mono);font-size:15px;color:var(--accent);letter-spacing:.18em;
+    font-weight:700;margin-bottom:auto}
+  .flow .step h3{font-size:26px;margin:34px 0 16px;letter-spacing:-.015em}
+  .flow .step p{font-size:19px;line-height:1.5;color:var(--muted)}
+  .flow .step .arrow{position:absolute;right:-19px;top:50%;transform:translateY(-50%);
+    color:#2B3A4E;font-size:26px;z-index:3}
+
+  /* pricing */
+  .price{padding:38px 34px;border:1px solid var(--line);border-radius:20px;display:flex;
+    flex-direction:column;background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.015))}
+  .price.hi{border-color:rgba(47,224,166,.4);background:linear-gradient(180deg,rgba(47,224,166,.1),rgba(47,224,166,.02))}
+  .price .pn{font-size:17px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);font-weight:700}
+  .price .pv{font-size:46px;font-weight:700;letter-spacing:-.03em;margin:22px 0 6px}
+  .price .pv small{font-size:18px;font-weight:500;color:var(--dim);letter-spacing:0}
+  .price .pd{font-size:19px;color:var(--muted);line-height:1.5;margin-top:18px}
+  .price .pf{margin-top:auto;padding-top:26px;font-size:17px;color:var(--dim);
+    border-top:1px solid var(--line)}
+
+  /* team */
+  .founder{display:flex;gap:26px;align-items:flex-start}
+  .avatar{width:96px;height:96px;border-radius:20px;flex:none;
+    background:linear-gradient(140deg,rgba(47,224,166,.28),rgba(124,140,248,.22));
+    border:1px solid rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;
+    font-size:30px;font-weight:700;letter-spacing:-.03em;color:#DCE7F3}
+
+  /* uses of funds */
+  .uses{display:flex;flex-direction:column;gap:26px}
+  .use{display:grid;grid-template-columns:330px 1fr 90px;align-items:center;gap:28px}
+  .use .ul{font-size:20px;color:#C3CFDD}
+  .use .ut{height:20px;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden}
+  .use .ut span{display:block;height:100%;border-radius:6px;
+    background:linear-gradient(90deg,rgba(47,224,166,.9),rgba(47,224,166,.45))}
+  .use .uv{font-size:20px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+
+  .quote{font-size:34px;line-height:1.42;letter-spacing:-.02em;font-weight:600;max-width:1250px}
+  .quote-attr{margin-top:30px;font-size:17px;letter-spacing:.18em;text-transform:uppercase;color:var(--dim)}
+
+  .contact{margin-top:40px;display:flex;gap:56px;font-size:20px;color:var(--muted)}
+  .contact b{color:var(--ink);font-weight:650}
 </style>
 </head>
 <body>
 
-<!-- 1. TITLE -->
-<section class="slide grid-bg">
-  <div class="brand" style="font-size:30px"><span class="mark" style="width:40px;height:40px;border-radius:11px"></span>Flakeguard</div>
-  <div class="title-wrap">
+<!-- ============ 01 · TITLE ============ -->
+<section class="slide gridded">
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">01 / 12</div>
+  <div class="title-grid">
     <div>
-      <div class="kicker">Series A · Confidential</div>
-      <h1>Flaky tests,<br>found and <span class="g">quarantined</span><br>automatically.</h1>
-      <p class="muted" style="font-size:32px;margin-top:40px;max-width:900px">We give engineering teams back a CI signal they can trust — without anyone hunting flakes by hand.</p>
-      <div class="raise-tag">
-        <span>Raising <b>$12M</b></span>
-        <span><b>$60M</b> post-money</span>
+      <div class="eyebrow">Series A · 2025</div>
+      <h1>Flaky tests get<br>quarantined.<br><em>Automatically.</em></h1>
+      <p class="lede">Flakeguard watches every CI run, identifies the tests that fail without cause,
+        and removes them from the merge path — before they cost your team another afternoon.</p>
+      <div class="metric-row">
+        <div><span class="num">$2.3M</span><span class="lbl">ARR</span></div>
+        <div><span class="num">84</span><span class="lbl">Paying customers</span></div>
+        <div><span class="num">131%</span><span class="lbl">Net revenue retention</span></div>
       </div>
     </div>
-    <div class="term">
-      <div class="term-top"><i></i><i></i><i></i><em>ci / main · build #48213</em></div>
-      <div class="term-body">
-        <div class="t"><span class="n">auth/session.spec</span><span class="ok">✓ pass</span></div>
-        <div class="t"><span class="n">billing/invoice.spec</span><span class="ok">✓ pass</span></div>
-        <div class="t"><span class="n">search/index.spec</span><span class="fl">~ flaky 23%</span></div>
-        <div class="t"><span class="n">&nbsp;&nbsp;→ flakeguard</span><span class="q">QUARANTINED</span></div>
-        <div class="t"><span class="n">api/webhooks.spec</span><span class="ok">✓ pass</span></div>
-        <div class="t"><span class="n">ui/checkout.e2e</span><span class="fl">~ flaky 11%</span></div>
-        <div class="t"><span class="n">&nbsp;&nbsp;→ flakeguard</span><span class="q">QUARANTINED</span></div>
-        <div class="term-sum"><span class="ok">● build green</span> · 2 flakes isolated · owners notified</div>
+    <div class="log">
+      <div class="log-head"><span class="dot"></span> ci / main &nbsp;·&nbsp; run&nbsp;#4821 &nbsp;·&nbsp; 42m 18s</div>
+      <div class="log-body">
+        <div class="log-line ok"><span>✓ 1,284 tests passed</span><span class="meta">41s</span></div>
+        <div class="log-line bad"><span>✕ checkout.spec.ts › retries address</span><span class="meta">11.4% flake</span></div>
+        <div class="log-line bad"><span>✕ cart.test.ts › coupon rollover</span><span class="meta">8.2% flake</span></div>
+        <div class="log-line bad"><span>✕ signup.e2e › email confirm link</span><span class="meta">6.9% flake</span></div>
+        <div class="log-line ok"><span>✓ 1,281 tests passed</span><span class="meta">39s</span></div>
+        <div class="log-foot">
+          <span class="chip q">3 quarantined</span>
+          <span class="chip s">PR unblocked</span>
+          <span class="chip w">Issues filed</span>
+        </div>
       </div>
     </div>
   </div>
-  <div class="footer"><span>SERIES A · 2025</span><span>01 / 12</span></div>
 </section>
 
-<!-- 2. PROBLEM -->
-<section class="slide light">
-  <div class="kicker">02 · The problem</div>
-  <h2>Every flaky test teaches engineers to ignore a red build.</h2>
-  <div class="prob">
-    <div class="bigstat">
-      <div class="label">Before Flakeguard</div>
-      <div>
-        <div class="num">14%</div>
-        <p style="font-size:30px;margin-top:10px">of CI failures at our median customer needed a re-run to pass.</p>
-      </div>
-      <p class="muted" style="font-size:22px">Failures caused by the test, not by the code.</p>
-    </div>
-    <div class="stack">
-      <div class="card"><div class="ico red">01</div><div><h3>Wasted time and compute</h3><p class="muted">Every re-run means idle engineers, blocked merges and CI minutes paid for twice.</p></div></div>
-      <div class="card"><div class="ico amb">02</div><div><h3>Real failures get retried away</h3><p class="muted">Once "just re-run it" becomes habit, genuine regressions slip through to production.</p></div></div>
-      <div class="card"><div class="ico blu">03</div><div><h3>Nobody owns the cleanup</h3><p class="muted">Flakes are triaged in Slack threads and stale tickets. The backlog only grows.</p></div></div>
-    </div>
-  </div>
-  <div class="footer"><span class="brand"><span class="mark"></span>Flakeguard</span><span>02 / 12</span></div>
-</section>
-
-<!-- 3. STATUS QUO -->
+<!-- ============ 02 · PROBLEM ============ -->
 <section class="slide">
-  <div class="kicker">03 · Why today's fixes fail</div>
-  <h2>Teams either hide flakiness or fight it by hand.</h2>
-  <div class="cmp">
-    <div class="card">
-      <div class="label">Auto-retry</div>
-      <h3>Retry until green</h3>
-      <p class="muted">Masks the symptom, doubles the compute bill and hides real regressions.</p>
-      <div class="verdict r">✕ Hides the problem</div>
-    </div>
-    <div class="card">
-      <div class="label">Manual triage</div>
-      <h3>Tickets &amp; spreadsheets</h3>
-      <p class="muted">Engineers disable tests by hand. Context gets lost and tests rarely come back.</p>
-      <div class="verdict a">✕ Doesn't scale</div>
-    </div>
-    <div class="card">
-      <div class="label">Homegrown</div>
-      <h3>Internal dashboards</h3>
-      <p class="muted">Platform teams build flake trackers that turn into a product nobody is staffed to maintain.</p>
-      <div class="verdict a">✕ Expensive to own</div>
-    </div>
-    <div class="card hl">
-      <div class="label g">Flakeguard</div>
-      <h3>Detect, isolate, resolve</h3>
-      <p style="color:#CFE9DD">Statistical detection on every run, automatic quarantine, and routed fixes with full history.</p>
-      <div class="verdict g" style="border-color:#2C6B55">✓ Trusted signal, zero toil</div>
-    </div>
-  </div>
-  <div class="footer"><span class="brand"><span class="mark"></span>Flakeguard</span><span>03 / 12</span></div>
-</section>
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">02 / 12</div>
+  <div class="content">
+    <div class="eyebrow">The problem</div>
+    <h2>Green CI, red trust.</h2>
+    <p class="lede">A failing build stopped meaning “something is broken.” It means “run it again.”
+      Once a team learns to ignore red, every real failure gets ignored with it.</p>
 
-<!-- 4. PRODUCT -->
-<section class="slide light">
-  <div class="kicker">04 · Product</div>
-  <h2>A closed loop that runs on every build.</h2>
-  <div class="flow">
-    <div class="step">
-      <div class="bar-top" style="background:#3A4EB8"></div>
-      <div class="stepn">STEP 01</div>
-      <h3>Detect</h3>
-      <p>Analyzes pass/fail history across runs and branches to separate flaky tests from real failures.</p>
-      <code>flake_score: 0.23<br>confidence: high</code>
-    </div>
-    <div class="arrow"></div>
-    <div class="step">
-      <div class="bar-top" style="background:var(--amber)"></div>
-      <div class="stepn">STEP 02</div>
-      <h3>Quarantine</h3>
-      <p>Isolates the flaky test automatically so it stops blocking merges — while it keeps running for data.</p>
-      <code>status: quarantined<br>build: <span style="color:var(--green)">green</span></code>
-    </div>
-    <div class="arrow"></div>
-    <div class="step">
-      <div class="bar-top" style="background:var(--green-d)"></div>
-      <div class="stepn">STEP 03</div>
-      <h3>Resolve</h3>
-      <p>Routes each flake to its owner with failure context, then returns it to the suite once it's stable.</p>
-      <code>owner: @search-team<br>restored after fix ✓</code>
-    </div>
-  </div>
-  <div class="footer"><span class="brand"><span class="mark"></span>Flakeguard</span><span>04 / 12</span></div>
-</section>
-
-<!-- 5. OUTCOME -->
-<section class="slide grid-bg">
-  <div class="outcome">
-    <div>
-      <div class="kicker">05 · Customer outcome</div>
-      <h2>Re-runs drop from 14% to 3% in the first month.</h2>
-      <p class="muted" style="margin-top:34px;max-width:820px">Share of CI failures that needed a re-run, at the median Flakeguard customer, before and after one month on the product.</p>
-      <div class="delta"><b>−79%</b><span>fewer failures needing a re-run</span></div>
-    </div>
-    <div class="chart">
-      <div class="col">
-        <div class="v r">14%</div>
-        <div class="b" style="height:500px;background:linear-gradient(180deg,#FF5C7A,#8E2A45)"></div>
-        <div class="cap" style="left:60px;width:220px;text-align:center">BEFORE</div>
-      </div>
-      <div class="col">
-        <div class="v g">3%</div>
-        <div class="b" style="height:107px;background:linear-gradient(180deg,#3DDC97,#1A7A55)"></div>
-        <div class="cap" style="left:370px;width:220px;text-align:center">MONTH 1</div>
-      </div>
-    </div>
-  </div>
-  <div class="footer"><span class="brand"><span class="mark"></span>Flakeguard</span><span>05 / 12</span></div>
-</section>
-
-<!-- 6. TRACTION -->
-<section class="slide light">
-  <div class="kicker">06 · Traction</div>
-  <h2>ARR grew 3.8× in twelve months.</h2>
-  <div class="trac">
-    <div class="arr">
-      <div class="mult">3.8× YoY</div>
-      <div class="col">
-        <div class="v" style="color:var(--ink-muted)">$0.6M</div>
-        <div class="b" style="height:128px;background:#C9CEDE"></div>
-        <div class="cap" style="left:80px;width:220px;text-align:center">12 MONTHS AGO</div>
-      </div>
-      <div class="col">
-        <div class="v">$2.3M</div>
-        <div class="b" style="height:490px;background:linear-gradient(180deg,#3DDC97,#1FA870)"></div>
-        <div class="cap" style="left:420px;width:220px;text-align:center">TODAY</div>
-      </div>
-    </div>
-    <div class="side">
+    <div class="row-3" style="margin-top:64px">
       <div class="card">
-        <div class="label">Paying customers</div>
-        <div class="num" style="margin-top:14px">84</div>
+        <div class="glyph">⟳</div>
+        <h3>The re-run reflex</h3>
+        <p>Engineers re-run instead of investigate. Failures get muted, retried, or marked
+          “known flaky” in a comment nobody reads.</p>
       </div>
       <div class="card">
-        <div class="label">Customers above $50k ACV</div>
-        <div class="num g" style="margin-top:14px">9</div>
-        <p class="muted" style="font-size:22px;margin-top:10px">Enterprise demand is emerging ahead of a dedicated sales team.</p>
+        <div class="glyph">◷</div>
+        <h3>Time nobody owns</h3>
+        <p>Flaky tests are unowned work. Fixing one is invisible; ignoring one costs the whole
+          team a few minutes, every day, forever.</p>
+      </div>
+      <div class="card">
+        <div class="glyph">◎</div>
+        <h3>Release velocity</h3>
+        <p>Teams add gates, manual approvals and retry budgets to cope. Delivery slows down to
+          match the noise level of the suite.</p>
       </div>
     </div>
+
+    <div class="spacer"></div>
+
+    <div class="card" style="display:grid;grid-template-columns:340px 1fr;gap:56px;align-items:center;padding:40px 46px">
+      <div>
+        <span class="num accent">14%</span>
+        <span class="lbl">of CI failures are re-runs</span>
+      </div>
+      <p style="font-size:21px;line-height:1.55;color:var(--muted)">
+        From Flakeguard telemetry across 84 customer organisations: the median suite carries
+        <b style="color:#E9EFF7">41 flaky tests</b>, one in seven CI failures is unrelated to the code change,
+        and each developer loses <b style="color:#E9EFF7">3+ hours per week</b> to re-runs and triage.
+      </p>
+    </div>
   </div>
-  <div class="footer"><span class="brand"><span class="mark"></span>Flakeguard</span><span>06 / 12</span></div>
 </section>
 
-<!-- 7. NRR -->
+<!-- ============ 03 · WHY NOW ============ -->
 <section class="slide">
-  <div class="nrr">
-    <div style="display:flex;justify-content:center">
-      <div class="ring"><div class="ring-in">
-        <div class="label">Net revenue retention</div>
-        <div class="num g" style="margin-top:14px">131%</div>
-      </div></div>
-    </div>
-    <div>
-      <div class="kicker">07 · Expansion</div>
-      <h2 style="font-size:60px">Customers grow into Flakeguard on their own.</h2>
-      <p class="muted" style="margin:24px 0 44px">Once one team sees green builds, adjacent teams ask for it.</p>
-      <div class="ladder">
-        <div class="rung"><span class="label">Land</span><p>One platform team, one high-traffic repo</p></div>
-        <div class="rung"><span class="label">Expand</span><p>More repos and teams as trust in CI returns</p></div>
-        <div class="rung"><span class="label">Standardize</span><p>Org-wide rollout — our $50k+ ACV accounts</p></div>
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">03 / 12</div>
+  <div class="content">
+    <div class="eyebrow">Why now</div>
+    <h2>Test suites got 3× bigger.<br>Nothing got 3× more reliable.</h2>
+
+    <div class="row-3" style="margin-top:74px">
+      <div class="card" style="padding:44px 38px">
+        <div class="glyph">↑</div>
+        <h3>Suite volume is exploding</h3>
+        <p>Monorepos, end-to-end coverage and AI-assisted test generation are adding thousands of
+          specs a year to suites that no one has time to prune.</p>
+      </div>
+      <div class="card" style="padding:44px 38px">
+        <div class="glyph">$</div>
+        <h3>CI is now a line item</h3>
+        <p>Compute spend per engineering org has moved from a rounding error to a budget line.
+          Re-running a 40-minute pipeline is expensive in money and in minutes.</p>
+      </div>
+      <div class="card" style="padding:44px 38px">
+        <div class="glyph">◈</div>
+        <h3>Nobody wants another YAML file</h3>
+        <p>Existing fixes are manual: tag it, skip it, write a script, remember to remove it.
+          Teams abandon them within a quarter. The solution has to be automatic.</p>
       </div>
     </div>
-  </div>
-  <div class="footer"><span class="brand"><span class="mark"></span>Flakeguard</span><span>07 / 12</span></div>
-</section>
 
-<!-- 8. UNIT ECONOMICS -->
-<section class="slide light">
-  <div class="kicker">08 · Efficiency</div>
-  <h2>Software margins, disciplined burn.</h2>
-  <div class="econ">
-    <div class="card">
-      <div class="label">Gross margin</div>
-      <div class="num g">88%</div>
-      <p class="muted">Lightweight analysis on CI metadata keeps serving costs low.</p>
-    </div>
-    <div class="card">
-      <div class="label">Monthly burn</div>
-      <div class="num">$210k</div>
-      <p class="muted">Lean team of 14, weighted toward engineering.</p>
-    </div>
-    <div class="card">
-      <div class="label">Burn multiple</div>
-      <div class="num">1.5×</div>
-      <p class="muted">Net burn per dollar of net new ARR over the last year.</p>
-    </div>
-    <div class="card">
-      <div class="label">Runway today</div>
-      <div class="num">16<span style="font-size:48px;letter-spacing:0"> mo</span></div>
-      <p class="muted">We're raising from strength to accelerate, not to survive.</p>
+    <div class="spacer"></div>
+
+    <div style="border-top:1px solid var(--line);padding-top:38px;display:grid;
+      grid-template-columns:repeat(3,1fr);gap:26px">
+      <div><span class="num" style="font-size:44px">1 in 7</span><span class="lbl">CI failures are unrelated to the change</span></div>
+      <div><span class="num" style="font-size:44px">41</span><span class="lbl">median flaky tests per suite</span></div>
+      <div><span class="num" style="font-size:44px">3.2 hrs</span><span class="lbl">lost per developer, per week</span></div>
     </div>
   </div>
-  <div class="formula">burn multiple = ($210k × 12 months) ÷ ($2.3M − $0.6M net new ARR) = $2.52M ÷ $1.7M ≈ 1.5×</div>
-  <div class="footer"><span class="brand"><span class="mark"></span>Flakeguard</span><span>08 / 12</span></div>
 </section>
 
-<!-- 9. GTM -->
-<section class="slide grid-bg">
-  <div class="kicker">09 · Go-to-market</div>
-  <h2>Bottom-up adoption, now adding an enterprise motion.</h2>
-  <div class="gtm">
-    <div class="line"></div>
-    <div class="phase">
-      <div class="dot"></div>
-      <h3>Land</h3>
-      <div class="who">PLATFORM &amp; INFRA TEAMS</div>
-      <ul>
-        <li>Installs in the existing pipeline</li>
-        <li>Value visible within the first month</li>
-        <li>Buyer feels the pain every day</li>
-      </ul>
-      <div class="proof">84 paying customers</div>
-    </div>
-    <div class="phase">
-      <div class="dot"></div>
-      <h3>Expand</h3>
-      <div class="who">MORE REPOS, MORE TEAMS</div>
-      <ul>
-        <li>Usage spreads across repos</li>
-        <li>Engineering leaders see the before/after</li>
-        <li>Seats and scope grow without a new sale</li>
-      </ul>
-      <div class="proof">131% NRR</div>
-    </div>
-    <div class="phase">
-      <div class="dot" style="border-color:var(--amber)"></div>
-      <h3>Enterprise</h3>
-      <div class="who" style="color:var(--amber)">WITH THIS ROUND</div>
-      <ul>
-        <li>Dedicated AEs and solutions engineers</li>
-        <li>Security, SSO and admin controls</li>
-        <li>Org-wide contracts</li>
-      </ul>
-      <div class="proof" style="color:var(--amber);border-color:rgba(255,181,71,.35);background:rgba(255,181,71,.08)">9 accounts &gt; $50k ACV</div>
-    </div>
-  </div>
-  <div class="footer"><span class="brand"><span class="mark"></span>Flakeguard</span><span>09 / 12</span></div>
-</section>
-
-<!-- 10. TEAM -->
-<section class="slide light">
-  <div class="kicker">10 · Team</div>
-  <h2>We've run CI at scale — and built for developers.</h2>
-  <div class="team">
-    <div class="card founder">
-      <div class="avatar" style="background:linear-gradient(135deg,#1FA870,#0E5A40)">CI</div>
-      <div class="role">Co-founder · CEO</div>
-      <h3>Ex-CircleCI</h3>
-      <p>Infrastructure lead. Saw flaky tests burn customer trust and compute from the inside of a CI platform.</p>
-    </div>
-    <div class="card founder">
-      <div class="avatar" style="background:linear-gradient(135deg,#3A4EB8,#1C2766)">DD</div>
-      <div class="role">Co-founder · Product</div>
-      <h3>Ex-Datadog</h3>
-      <p>Product manager. Built developer observability products used by engineering teams of every size.</p>
-    </div>
-    <div class="orgbox">
-      <div class="label">Team today</div>
-      <div class="num" style="margin-top:16px">14</div>
-      <div class="dots">
-        <i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i><i class="e"></i>
-        <i class="e"></i><i class="e"></i><i></i><i></i><i></i><i></i><i></i>
-      </div>
-      <p style="font-size:24px"><span class="g">● 9 engineers</span> &nbsp; <span class="muted">● 5 GTM &amp; ops</span></p>
-    </div>
-  </div>
-  <div class="footer"><span class="brand"><span class="mark"></span>Flakeguard</span><span>10 / 12</span></div>
-</section>
-
-<!-- 11. THE ASK -->
+<!-- ============ 04 · PRODUCT ============ -->
 <section class="slide">
-  <div class="kicker">11 · The round</div>
-  <h2>Raising $12M to own reliable CI.</h2>
-  <div class="ask">
-    <div class="terms">
-      <div>
-        <div class="label">Series A</div>
-        <div class="num g" style="margin-top:10px">$12M</div>
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">04 / 12</div>
+  <div class="content">
+    <div class="eyebrow">Product</div>
+    <h2 class="sm">Connect your CI. Flakeguard does the rest.</h2>
+    <p class="lede tight" style="max-width:1150px;margin-top:22px">No test rewrites, no annotations,
+      no configuration file. Flakeguard learns your suite from the runs you already produce.</p>
+
+    <div class="flow" style="margin-top:64px">
+      <div class="step">
+        <div class="n">01 — INGEST</div>
+        <h3>Connect</h3>
+        <p>One-click integrations with GitHub, GitLab, Buildkite, CircleCI and Jenkins. Every test
+          result, retry and duration streams in read-only.</p>
+        <div class="arrow">→</div>
       </div>
-      <div class="tr"><span>Post-money valuation</span><b>$60M</b></div>
-      <div class="tr"><span>Implied ownership</span><b>20%</b></div>
-      <div class="tr"><span>Seeking</span><b>A lead investor</b></div>
-    </div>
-    <div class="alloc">
-      <div class="label" style="margin-bottom:4px">Planned use of funds</div>
-      <div>
-        <div class="al-h"><span>Engineering &amp; product</span><b>45% · $5.4M</b></div>
-        <div class="track"><i style="width:45%;background:var(--green)"></i></div>
-        <div class="al-d">Deeper root-cause analysis, enterprise controls, broader CI coverage</div>
+      <div class="step">
+        <div class="n">02 — DETECT</div>
+        <h3>Model</h3>
+        <p>Per-test statistical models over your history separate genuine breakage from
+          non-determinism. No thresholds to tune, no owner to assign.</p>
+        <div class="arrow">→</div>
       </div>
-      <div>
-        <div class="al-h"><span>Go-to-market</span><b>35% · $4.2M</b></div>
-        <div class="track"><i style="width:35%;background:#6C82F0"></i></div>
-        <div class="al-d">First enterprise sales team, solutions engineering, developer marketing</div>
+      <div class="step">
+        <div class="n">03 — QUARANTINE</div>
+        <h3>Remove</h3>
+        <p>Flaky specs leave the merge path automatically — with failure evidence, first-seen date
+          and owner attached to a tracked issue.</p>
+        <div class="arrow">→</div>
       </div>
-      <div>
-        <div class="al-h"><span>Infrastructure &amp; G&amp;A</span><b>20% · $2.4M</b></div>
-        <div class="track"><i style="width:20%;background:var(--amber)"></i></div>
-        <div class="al-d">Security certifications, data platform, finance and people ops</div>
-      </div>
-      <div class="miles">
-        <div><b>MILESTONE</b>Repeatable enterprise sales motion</div>
-        <div><b>MILESTONE</b>Grow $50k+ ACV accounts well beyond 9</div>
-        <div><b>MILESTONE</b>Sustain NRR above 130%</div>
+      <div class="step">
+        <div class="n">04 — RESTORE</div>
+        <h3>Return</h3>
+        <p>Quarantined tests re-run in shadow mode on every build. When they stabilise, they
+          rejoin the suite on their own.</p>
       </div>
     </div>
   </div>
-  <div class="footer"><span class="brand"><span class="mark"></span>Flakeguard</span><span>11 / 12</span></div>
 </section>
 
-<!-- 12. CLOSE -->
-<section class="slide grid-bg">
-  <div class="close">
-    <div>
-      <div class="brand" style="font-size:30px;margin-bottom:60px"><span class="mark" style="width:40px;height:40px;border-radius:11px"></span>Flakeguard</div>
-      <h1 style="font-size:88px">Make every red build <span class="r">mean</span> something.</h1>
-      <p class="muted" style="font-size:32px;margin-top:40px;max-width:900px">Lead our $12M Series A at a $60M post-money valuation.</p>
+<!-- ============ 05 · PRODUCT IN ACTION ============ -->
+<section class="slide">
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">05 / 12</div>
+  <div class="content" style="padding-top:120px;padding-bottom:88px">
+    <div class="eyebrow">Product in action</div>
+    <h2 class="sm" style="font-size:42px">Every flaky test, ranked, owned, and off the merge path.</h2>
+
+    <div class="ui" style="margin-top:44px">
+      <div class="ui-head">
+        <div class="t">Flaky tests <span>acme-corp / web · last 30 days</span></div>
+        <div class="ui-tabs">
+          <span class="on">Quarantined 41</span>
+          <span>Watching 88</span>
+          <span>Recovered 17</span>
+        </div>
+      </div>
+      <div class="ui-row head">
+        <div>Test</div><div>Failure pattern</div><div>Flake rate</div><div>Runs</div>
+        <div>Status</div><div>Owner</div>
+      </div>
+      <div class="ui-row">
+        <div class="name">checkout.spec.ts <em>› retries address</em></div>
+        <div class="spark"><i style="height:40%"></i><i style="height:62%"></i><i class="hot" style="height:88%"></i><i style="height:54%"></i><i class="hot" style="height:96%"></i><i style="height:70%"></i></div>
+        <div class="pct hot">11.4%</div>
+        <div class="muted">2,914</div>
+        <div><span class="chip q">Quarantined</span></div>
+        <div class="owner">Payments</div>
+      </div>
+      <div class="ui-row">
+        <div class="name">cart.test.ts <em>› coupon rollover</em></div>
+        <div class="spark"><i style="height:34%"></i><i class="hot" style="height:74%"></i><i style="height:48%"></i><i class="hot" style="height:82%"></i><i style="height:60%"></i><i style="height:44%"></i></div>
+        <div class="pct hot">8.2%</div>
+        <div class="muted">3,102</div>
+        <div><span class="chip q">Quarantined</span></div>
+        <div class="owner">Checkout</div>
+      </div>
+      <div class="ui-row">
+        <div class="name">signup.e2e <em>› email confirm link</em></div>
+        <div class="spark"><i style="height:22%"></i><i style="height:38%"></i><i class="hot" style="height:66%"></i><i style="height:30%"></i><i style="height:44%"></i><i style="height:28%"></i></div>
+        <div class="pct hot">6.9%</div>
+        <div class="muted">1,447</div>
+        <div><span class="chip q">Quarantined</span></div>
+        <div class="owner">Growth</div>
+      </div>
+      <div class="ui-row">
+        <div class="name">search.test.ts <em>› facet ordering</em></div>
+        <div class="spark"><i style="height:16%"></i><i style="height:24%"></i><i style="height:18%"></i><i style="height:20%"></i><i style="height:14%"></i><i style="height:12%"></i></div>
+        <div class="pct">2.1%</div>
+        <div class="muted">4,880</div>
+        <div><span class="chip w">Watching</span></div>
+        <div class="owner">Search</div>
+      </div>
+      <div class="ui-row" style="border-bottom:0">
+        <div class="name">billing.test.ts <em>› proration math</em></div>
+        <div class="spark"><i style="height:8%"></i><i style="height:6%"></i><i style="height:9%"></i><i style="height:5%"></i><i style="height:7%"></i><i style="height:6%"></i></div>
+        <div class="pct" style="color:var(--accent)">0.3%</div>
+        <div class="muted">6,120</div>
+        <div><span class="chip s">Recovered</span></div>
+        <div class="owner">Billing</div>
+      </div>
     </div>
-    <div class="recap">
-      <div><span>ARR</span><b>$2.3M <span class="g" style="font-size:26px">3.8×</span></b></div>
-      <div><span>Net revenue retention</span><b class="g">131%</b></div>
-      <div><span>Gross margin</span><b>88%</b></div>
-      <div><span>Paying customers</span><b>84</b></div>
-      <div><span>Re-run rate, month 1</span><b>14% → <span class="g">3%</span></b></div>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:38px">
+      <div><span class="num" style="font-size:40px">14% → 3%</span><span class="lbl">CI failures needing a re-run</span></div>
+      <div><span class="num" style="font-size:40px">4 min</span><span class="lbl">Time to first quarantine after connect</span></div>
+      <div><span class="num" style="font-size:40px">0</span><span class="lbl">Test files modified by the customer</span></div>
     </div>
   </div>
-  <div class="footer"><span>THANK YOU</span><span>12 / 12</span></div>
+</section>
+
+<!-- ============ 06 · TRACTION ============ -->
+<section class="slide">
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">06 / 12</div>
+  <div class="content">
+    <div class="eyebrow">Traction</div>
+    <h2 class="sm">$0.6M to $2.3M ARR in twelve months.</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 900px;gap:90px;margin-top:56px;align-items:end">
+      <div class="chart">
+        <div class="col">
+          <div class="val">$0.6M</div>
+          <div class="bar" style="height:80px"></div>
+          <div class="x">Q4 '24</div>
+        </div>
+        <div class="col">
+          <div class="val">$1.0M</div>
+          <div class="bar" style="height:120px"></div>
+          <div class="x">Q1 '25</div>
+        </div>
+        <div class="col">
+          <div class="val">$1.4M</div>
+          <div class="bar" style="height:170px"></div>
+          <div class="x">Q2 '25</div>
+        </div>
+        <div class="col">
+          <div class="val">$1.8M</div>
+          <div class="bar" style="height:215px"></div>
+          <div class="x">Q3 '25</div>
+        </div>
+        <div class="col last">
+          <div class="val">$2.3M</div>
+          <div class="bar" style="height:255px"></div>
+          <div class="x">Q4 '25</div>
+        </div>
+      </div>
+
+      <div style="padding-bottom:70px">
+        <div class="kv">
+          <div class="item"><div class="bullet">1</div>
+            <p><b>Net revenue retention of 131%.</b> Expansion comes from repo count and seats as
+              suites grow — not from price increases.</p></div>
+          <div class="item"><div class="bullet">2</div>
+            <p><b>84 paying customers</b>, 9 of them above $50k ACV. Land in one team, expand across
+              the org within two quarters.</p></div>
+          <div class="item"><div class="bullet">3</div>
+            <p><b>88% gross margin.</b> Inference and storage are modest; the model gets better with
+              every run, and every run is free to us.</p></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="stat-strip">
+      <div><span class="num">$2.3M</span><span class="lbl">ARR</span><span class="delta">+283% year over year</span></div>
+      <div><span class="num">84</span><span class="lbl">Paying customers</span><span class="delta">9 above $50k ACV</span></div>
+      <div><span class="num">131%</span><span class="lbl">Net revenue retention</span><span class="delta">Trailing twelve months</span></div>
+      <div><span class="num">88%</span><span class="lbl">Gross margin</span><span class="delta">Stable across four quarters</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 07 · CUSTOMER OUTCOMES ============ -->
+<section class="slide">
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">07 / 12</div>
+  <div class="content">
+    <div class="eyebrow">Customer outcomes</div>
+    <h2 class="sm">The first month is the whole story.</h2>
+
+    <div style="margin-top:64px;display:flex;flex-direction:column;gap:26px;max-width:1250px">
+      <div class="ba-row">
+        <div style="font-size:19px;color:var(--muted);letter-spacing:.06em">BEFORE FLAKEGUARD</div>
+        <div class="ba-track"><div class="ba-fill before"></div></div>
+        <div style="font-size:30px;font-weight:700;color:#FFB43D">14%</div>
+      </div>
+      <div class="ba-row">
+        <div style="font-size:19px;color:var(--muted);letter-spacing:.06em">AFTER 30 DAYS</div>
+        <div class="ba-track"><div class="ba-fill after"></div></div>
+        <div style="font-size:30px;font-weight:700;color:var(--accent)">3%</div>
+      </div>
+      <div style="font-size:17px;color:var(--dim);letter-spacing:.14em;text-transform:uppercase;margin-top:6px">
+        Median customer · share of CI failures requiring a re-run
+      </div>
+    </div>
+
+    <div class="row-3" style="margin-top:58px">
+      <div class="card" style="padding:32px 32px">
+        <h3 style="font-size:22px">Faster merges</h3>
+        <p style="font-size:19px">Pipeline retries drop by roughly 80% within the first month of
+          connecting a suite.</p>
+      </div>
+      <div class="card" style="padding:32px 32px">
+        <h3 style="font-size:22px">Lower CI spend</h3>
+        <p style="font-size:19px">Customers recover a meaningful share of CI compute budget, usually
+          within one billing cycle.</p>
+      </div>
+      <div class="card" style="padding:32px 32px">
+        <h3 style="font-size:22px">Restored signal</h3>
+        <p style="font-size:19px">A red build means something again. Teams stop adding retry budgets
+          and manual gates.</p>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div style="border-top:1px solid var(--line);padding-top:42px">
+      <p class="quote">“We stopped treating red builds as noise. Two weeks in, our release train
+        stopped slipping — and I could finally see which teams were carrying broken tests.”</p>
+      <div class="quote-attr">VP Engineering · Series C fintech · 900 engineers · customer since 2024</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 08 · BUSINESS MODEL ============ -->
+<section class="slide">
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">08 / 12</div>
+  <div class="content">
+    <div class="eyebrow">Business model</div>
+    <h2 class="sm">Priced on repos, sold to platform teams, expands on its own.</h2>
+
+    <div class="row-3" style="margin-top:56px">
+      <div class="price">
+        <div class="pn">Team</div>
+        <div class="pv">$1,000<small> / month</small></div>
+        <div class="pd">Up to 20 repositories. Unlimited seats, unlimited CI runs.
+          Self-serve onboarding, 14-day trial.</div>
+        <div class="pf">≈ $12k annual contract</div>
+      </div>
+      <div class="price hi">
+        <div class="pn">Growth</div>
+        <div class="pv">$3,500<small> / month</small></div>
+        <div class="pd">Up to 100 repositories, SSO, quarantine policy controls, Slack and
+          Jira workflows, shared ownership routing.</div>
+        <div class="pf">≈ $42k annual contract · most common</div>
+      </div>
+      <div class="price">
+        <div class="pn">Enterprise</div>
+        <div class="pv">From $75k<small> / year</small></div>
+        <div class="pd">Unlimited repos, self-hosted runners, audit log, custom retention,
+          dedicated support and quarterly suite health reviews.</div>
+        <div class="pf">9 customers today</div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="stat-strip">
+      <div><span class="num">$27k</span><span class="lbl">Average ACV</span></div>
+      <div><span class="num">131%</span><span class="lbl">Net revenue retention</span></div>
+      <div><span class="num">88%</span><span class="lbl">Gross margin</span></div>
+      <div><span class="num">97%</span><span class="lbl">Gross logo retention</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 09 · MARKET ============ -->
+<section class="slide">
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">09 / 12</div>
+  <div class="content">
+    <div class="eyebrow">Market</div>
+    <h2 class="sm">Every engineering org with a CI pipeline has this problem.</h2>
+
+    <div class="row-3" style="margin-top:64px">
+      <div class="card" style="padding:44px 38px">
+        <div class="glyph">T</div>
+        <h3>TAM — $9.6B</h3>
+        <p>480,000 engineering organisations running CI at scale, at an average blended ACV of
+          $20k. This is test intelligence, not test execution.</p>
+      </div>
+      <div class="card" style="padding:44px 38px">
+        <div class="glyph">S</div>
+        <h3>SAM — $2.4B</h3>
+        <p>120,000 orgs with 20+ repositories, a dedicated platform team, and CI spend large enough
+          that re-runs show up on the invoice.</p>
+      </div>
+      <div class="card" style="padding:44px 38px">
+        <div class="glyph">3y</div>
+        <h3>3-Year Target — $180M</h3>
+        <p>6,000 customers at $30k blended ACV. That is 5% of SAM, reached through the same land-and-expand
+          motion we run today.</p>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="card" style="padding:40px 46px;display:grid;grid-template-columns:1fr 1fr;gap:56px">
+      <div>
+        <h3 style="font-size:23px;margin-bottom:14px">The wedge is CI reliability</h3>
+        <p style="font-size:20px;line-height:1.55;color:var(--muted)">Flakeguard already sees every
+          test result in the organisation. Reliability is the entry point, not the ceiling.</p>
+      </div>
+      <div>
+        <h3 style="font-size:23px;margin-bottom:14px">The platform is test intelligence</h3>
+        <p style="font-size:20px;line-height:1.55;color:var(--muted)">Suite health, test selection,
+          coverage gaps and CI cost attribution all fall out of the same data we already collect.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 10 · TEAM ============ -->
+<section class="slide">
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">10 / 12</div>
+  <div class="content">
+    <div class="eyebrow">Team</div>
+    <h2 class="sm">We built the pipelines that break.</h2>
+    <p class="lede tight" style="max-width:1100px;margin-top:22px">Between us we have run CI for
+      thousands of engineering teams and shipped the dashboards they debug with. We know exactly
+      where the signal is lost.</p>
+
+    <div class="row-2" style="margin-top:60px">
+      <div class="card" style="padding:42px 40px">
+        <div class="founder">
+          <div class="avatar">CEO</div>
+          <div>
+            <h3 style="font-size:26px;margin-bottom:8px">Co-founder &amp; CEO</h3>
+            <div style="font-size:17px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:20px">
+              ex-Datadog · Product Manager
+            </div>
+            <p style="font-size:19px;line-height:1.55;color:var(--muted)">Led product for the CI
+              Visibility suite at Datadog. Sat with hundreds of platform teams watching them triage
+              flaky builds by hand — and built the roadmap that never solved it.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card" style="padding:42px 40px">
+        <div class="founder">
+          <div class="avatar">CTO</div>
+          <div>
+            <h3 style="font-size:26px;margin-bottom:8px">Co-founder &amp; CTO</h3>
+            <div style="font-size:17px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);margin-bottom:20px">
+              ex-CircleCI · Infrastructure Lead
+            </div>
+            <p style="font-size:19px;line-height:1.55;color:var(--muted)">Owned the build and
+              container infrastructure behind millions of CI jobs per day. Knows how test results
+              are produced, retried and lost at massive scale.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="spacer"></div>
+
+    <div class="stat-strip">
+      <div><span class="num">14</span><span class="lbl">People</span></div>
+      <div><span class="num">9</span><span class="lbl">Engineers</span></div>
+      <div><span class="num">3</span><span class="lbl">Design partners shipping weekly</span></div>
+      <div><span class="num">5</span><span class="lbl">Senior engineers to hire with this round</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 11 · THE ASK ============ -->
+<section class="slide">
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">11 / 12</div>
+  <div class="content">
+    <div class="eyebrow">The ask</div>
+    <h2 class="sm">$12M Series A at a $60M post-money valuation.</h2>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:64px">
+      <div>
+        <div style="font-size:17px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:34px">
+          Use of funds
+        </div>
+        <div class="uses">
+          <div class="use">
+            <div class="ul">Engineering &amp; product</div>
+            <div class="ut"><span style="width:52%"></span></div>
+            <div class="uv">52%</div>
+          </div>
+          <div class="use">
+            <div class="ul">Go-to-market &amp; support</div>
+            <div class="ut"><span style="width:33%"></span></div>
+            <div class="uv">33%</div>
+          </div>
+          <div class="use">
+            <div class="ul">Infrastructure &amp; security</div>
+            <div class="ut"><span style="width:10%"></span></div>
+            <div class="uv">10%</div>
+          </div>
+          <div class="use">
+            <div class="ul">Operating reserve</div>
+            <div class="ut"><span style="width:5%"></span></div>
+            <div class="uv">5%</div>
+          </div>
+        </div>
+
+        <div style="margin-top:56px;border-top:1px solid var(--line);padding-top:36px;display:grid;
+          grid-template-columns:1fr 1fr;gap:40px">
+          <div><span class="num" style="font-size:44px">$210k</span><span class="lbl">Current monthly burn</span></div>
+          <div><span class="num" style="font-size:44px">16 mo</span><span class="lbl">Runway today</span></div>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:17px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);margin-bottom:34px">
+          What it buys — 24 months
+        </div>
+        <div class="kv" style="gap:26px">
+          <div class="item"><div class="bullet">1</div>
+            <p><b>$10M ARR.</b> Grow the customer base from 84 to roughly 340, with enterprise mix
+              rising from 9 to 60+ accounts.</p></div>
+          <div class="item"><div class="bullet">2</div>
+            <p><b>Team of 45.</b> Five senior infrastructure engineers, the first real
+              go-to-market function, and a support team that keeps activation under a day.</p></div>
+          <div class="item"><div class="bullet">3</div>
+            <p><b>Platform expansion.</b> Ship CI cost attribution and predictive test selection —
+              both built on data we already ingest.</p></div>
+          <div class="item"><div class="bullet">4</div>
+            <p><b>Post-raise runway of 30+ months</b> at the planned burn, so the next raise is a
+              choice rather than a deadline.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 · CLOSE ============ -->
+<section class="slide gridded">
+  <div class="brand"><i></i>Flakeguard</div>
+  <div class="pagenum">12 / 12</div>
+  <div class="content" style="justify-content:center;padding-top:150px">
+    <div class="eyebrow">The close</div>
+    <h1 style="font-size:88px;max-width:1500px">Every red build<br>should mean <em style="font-style:normal;color:var(--accent)">something.</em></h1>
+    <p class="lede" style="max-width:1000px;font-size:24px">Flakeguard is the automatic fix for
+      the most universal, least wanted problem in software delivery. 84 teams already pay us to
+      make their CI honest. We are raising $12M at $60M post to make it 340.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:26px;margin-top:74px;max-width:1500px">
+      <div class="card" style="padding:30px 30px">
+        <span class="num" style="font-size:38px">$2.3M</span><span class="lbl">ARR, +283% YoY</span>
+      </div>
+      <div class="card" style="padding:30px 30px">
+        <span class="num" style="font-size:38px">131%</span><span class="lbl">Net revenue retention</span>
+      </div>
+      <div class="card" style="padding:30px 30px">
+        <span class="num" style="font-size:38px">14% → 3%</span><span class="lbl">CI re-run rate, month one</span>
+      </div>
+      <div class="card" style="padding:30px 30px">
+        <span class="num" style="font-size:38px">88%</span><span class="lbl">Gross margin</span>
+      </div>
+    </div>
+
+    <div class="contact">
+      <div><b>hello@flakeguard.io</b></div>
+      <div>Series A · $12M · $60M post-money</div>
+      <div>Cofounders: ex-CircleCI infrastructure · ex-Datadog product</div>
+    </div>
+  </div>
 </section>
 
 </body>

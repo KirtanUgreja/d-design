@@ -13,6 +13,7 @@ One row per run (docs/v4/bench.md -> "What a run records"). Runs themselves live
 | 2026-09-30 | — | `qwen/qwen3.8-flash` | 0 | — | stalled for over 10 minutes on the first deck; dropped | — |
 | 2026-09-30 | `2026-09-30-full` | Engine, all 12 briefs, `deepseek/deepseek-v4.1-flash`, `compose.v1`, three-layout fallback | 12 of 12 | median $0.055, total $0.67 | about 1 minute per deck | owner looked at the decks and approved the quality; no ratings file. 0 slides flagged |
 | 2026-09-30 | `2026-09-30-ab` | Exemplar A/B: the 3 smoke briefs **without** exemplars, DeepSeek | 3 | median $0.061 | 45–89 s | owner to compare. 21 of 30 slides clean first pass (26 of 30 with exemplars in `2026-09-30-models`), 2 fallback, 0 flagged |
+| 2026-10-01 | `2026-09-30-full` (wall) | One-shot baseline rebuilt on the engine's model, `deepseek/deepseek-v4.1-flash`, prompt `bench-oneshot.v1`, so each blind pair compares the engine with one prompt to the same model (docs/v4/plan/22-engine-spike.md). The Opus set is in git at `4247825` | 12 of 12. `sales-agency` truncated once at 32k tokens and passed on retry | median $0.026 per deck, $0.38 total with the failed calls | median 98 s | pending |
 
 **The bar phase 22 has to beat:** a single prompt to the best model costs about $0.21 and 93 seconds per deck, and already looks far better than v3. It also shows the look v4 is built to avoid: rounded cards, numbered badges, one centred system font.
 

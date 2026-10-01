@@ -1,454 +1,670 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Harbor · Q3 2026 Investor Update</title>
+<meta charset="utf-8">
+<title>Harbor — Q3 2026 Investor Update</title>
 <style>
+  *{margin:0;padding:0;box-sizing:border-box}
   :root{
-    --navy:#0A2540;
-    --navy-2:#12324F;
-    --ink:#1B2A3A;
-    --muted:#5E6E80;
-    --line:#DDE3EA;
-    --paper:#F5F7FA;
-    --teal:#17A89B;
-    --teal-soft:#DDF3F0;
-    --amber:#E39B2F;
-    --amber-soft:#FBEBD3;
-    --white:#FFFFFF;
+    --bg:#0B1A2B;
+    --panel:#0F2235;
+    --panel2:#122A41;
+    --line:rgba(255,255,255,.10);
+    --line2:rgba(255,255,255,.06);
+    --text:#EAF2FA;
+    --muted:#93A9BF;
+    --dim:#63798F;
+    --teal:#35D0BA;
+    --blue:#5AA9FF;
+    --amber:#F5B23D;
+    --red:#FF8A90;
   }
-  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#050C15}
   body{
-    background:#C9D1DA;
-    font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
-    color:var(--ink);
+    font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+    color:var(--text);
     -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
   }
   .slide{
     position:relative;
     width:1920px;height:1080px;
-    margin:0 auto 40px auto;
-    background:var(--white);
+    padding:80px 100px 130px;
+    background:var(--bg);
+    display:flex;flex-direction:column;
     overflow:hidden;
-    padding:110px 140px 120px 140px;
+    border-bottom:1px solid rgba(255,255,255,.05);
   }
-  .slide:first-child{margin-top:40px}
 
-  /* shared chrome */
-  .kicker{
-    font-size:22px;letter-spacing:.18em;text-transform:uppercase;
-    color:var(--teal);font-weight:700;margin-bottom:22px;
-  }
-  h1.title{
-    font-size:64px;line-height:1.1;font-weight:700;color:var(--navy);
-    letter-spacing:-.01em;max-width:1500px;
-  }
-  .sub{font-size:28px;color:var(--muted);margin-top:22px;max-width:1400px;line-height:1.45}
-  .footer{
-    position:absolute;left:140px;right:140px;bottom:48px;
+  /* ---------- shared type ---------- */
+  .s-head{margin-bottom:42px}
+  .s-eyebrow{font-size:18px;letter-spacing:.22em;text-transform:uppercase;color:var(--teal);font-weight:700;margin-bottom:16px}
+  .s-title{font-size:56px;font-weight:700;letter-spacing:-.025em;line-height:1.08;max-width:1500px}
+  .s-sub{font-size:24px;color:var(--muted);margin-top:14px;line-height:1.45;max-width:1250px}
+  .s-body{flex:1;min-height:0;display:flex;flex-direction:column;gap:24px}
+  .s-foot{
+    position:absolute;left:100px;right:100px;bottom:44px;
     display:flex;justify-content:space-between;align-items:center;
-    font-size:18px;color:#8A98A8;border-top:1px solid var(--line);padding-top:20px;
+    font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:#5E7690;font-weight:600;
   }
-  .footer .brand{display:flex;align-items:center;gap:12px;font-weight:600;color:var(--navy)}
-  .mark{
-    width:22px;height:22px;border-radius:50%;
-    border:4px solid var(--teal);position:relative;
+
+  /* ---------- chips + accents ---------- */
+  .chip{font-size:15px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;padding:8px 16px;border-radius:999px;border:1px solid transparent;white-space:nowrap}
+  .chip.warn{color:#F7C978;background:rgba(245,178,61,.12);border-color:rgba(245,178,61,.36)}
+  .chip.pos{color:#5FE3CE;background:rgba(53,208,186,.12);border-color:rgba(53,208,186,.36)}
+  .chip.neu{color:#A6BACD;background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.14)}
+  .pos{color:var(--teal)}
+  .neg{color:var(--red)}
+  .warn{color:var(--amber)}
+
+  /* ---------- panels ---------- */
+  .panel{
+    background:linear-gradient(180deg,#102639,#0C1E30);
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:42px 46px;
+    display:flex;flex-direction:column;min-height:0;
   }
-  .mark:after{content:"";position:absolute;left:3px;right:3px;bottom:-9px;height:4px;background:var(--teal);border-radius:2px}
-
-  .tag{display:inline-block;font-size:18px;font-weight:700;padding:6px 14px;border-radius:40px;letter-spacing:.04em}
-  .tag.good{background:var(--teal-soft);color:#0E7C72}
-  .tag.warn{background:var(--amber-soft);color:#A5660B}
-
-  /* ---------- slide 1 ---------- */
-  .cover{background:var(--navy);color:var(--white);padding:0}
-  .cover .waves{position:absolute;inset:0}
-  .cover .wave{position:absolute;left:-10%;width:120%;border-radius:50%;border-top:2px solid rgba(23,168,155,.35)}
-  .cover .inner{position:absolute;left:140px;top:150px;right:140px}
-  .cover .logo{display:flex;align-items:center;gap:20px;font-size:40px;font-weight:700;letter-spacing:.02em}
-  .cover .logo .mark{width:40px;height:40px;border-width:7px}
-  .cover .logo .mark:after{height:7px;bottom:-16px;left:4px;right:4px}
-  .cover h1{font-size:112px;line-height:1.02;font-weight:700;margin-top:150px;letter-spacing:-.02em}
-  .cover h1 span{color:var(--teal)}
-  .cover .meta{font-size:30px;color:#A9BACB;margin-top:36px}
-  .cover .askbar{
-    position:absolute;left:140px;right:140px;bottom:110px;
-    display:flex;gap:0;border-top:1px solid rgba(255,255,255,.18);padding-top:40px;
+  .panel-title{font-size:15px;letter-spacing:.2em;text-transform:uppercase;color:#7E95AB;font-weight:700;margin-bottom:26px}
+  .panel-ask{
+    background:linear-gradient(180deg,rgba(53,208,186,.13),rgba(53,208,186,.03));
+    border-color:rgba(53,208,186,.32);
   }
-  .cover .askbar div{flex:1;padding-right:40px}
-  .cover .askbar .lbl{font-size:18px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);font-weight:700}
-  .cover .askbar .val{font-size:34px;margin-top:12px;font-weight:600;line-height:1.3}
+  .cols-2{display:grid;grid-template-columns:1fr 1fr;gap:26px;flex:1;min-height:0}
 
-  /* ---------- slide 2 KPI ---------- */
-  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:70px}
-  .kpi{
-    background:var(--paper);border-radius:18px;padding:40px 44px;
-    border-top:6px solid var(--teal);min-height:280px;position:relative;
+  /* ================= SLIDE 1 : COVER ================= */
+  .cover{padding:0;background:#08151F}
+  .cover-inner{position:relative;z-index:3;height:100%;display:flex;flex-direction:column;padding:70px 100px 86px}
+  .glow-a{position:absolute;width:1200px;height:1200px;right:-300px;top:-460px;border-radius:50%;
+    background:radial-gradient(circle,rgba(53,208,186,.22),rgba(53,208,186,0) 62%)}
+  .glow-b{position:absolute;width:1000px;height:1000px;left:-340px;bottom:-460px;border-radius:50%;
+    background:radial-gradient(circle,rgba(90,169,255,.18),rgba(90,169,255,0) 65%)}
+  .cover-lines{position:absolute;inset:0;z-index:1;
+    background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+    background-size:120px 120px;
+    -webkit-mask-image:radial-gradient(circle at 68% 30%,rgba(0,0,0,.95),transparent 70%);
+    mask-image:radial-gradient(circle at 68% 30%,rgba(0,0,0,.95),transparent 70%);
   }
-  .kpi.warn{border-top-color:var(--amber)}
-  .kpi .lbl{font-size:22px;color:var(--muted);font-weight:600;letter-spacing:.02em}
-  .kpi .val{font-size:88px;font-weight:700;color:var(--navy);margin-top:14px;letter-spacing:-.02em;line-height:1}
-  .kpi .note{font-size:22px;color:var(--muted);margin-top:22px}
-  .kpi .tag{position:absolute;top:36px;right:36px}
-  .kpi.summary{background:var(--navy);border-top-color:var(--navy);color:#fff}
-  .kpi.summary .lbl{color:var(--teal)}
-  .kpi.summary p{font-size:30px;line-height:1.4;margin-top:18px;font-weight:500}
+  .brandbar{display:flex;justify-content:space-between;align-items:center}
+  .brand{display:flex;align-items:center;gap:16px}
+  .mark{width:46px;height:46px;border-radius:13px;background:linear-gradient(140deg,#3EDCC4,#2E9BD6);
+    color:#061B28;font-weight:800;font-size:24px;display:flex;align-items:center;justify-content:center;
+    letter-spacing:-.03em;box-shadow:0 10px 28px rgba(53,208,186,.22)}
+  .brandname{font-size:27px;font-weight:700;letter-spacing:.01em}
+  .tag{font-size:16px;letter-spacing:.16em;text-transform:uppercase;color:#6E869D;font-weight:600;
+    border:1px solid var(--line);padding:12px 22px;border-radius:999px}
+  .cover-copy{margin-top:auto;margin-bottom:auto;padding-top:60px}
+  .cover-copy .s-eyebrow{margin-bottom:26px}
+  .cover h1{font-size:104px;line-height:1.03;font-weight:700;letter-spacing:-.035em;max-width:1420px}
+  .hl{background:linear-gradient(100deg,#3EDCC4,#5AA9FF);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{font-size:27px;line-height:1.6;color:#9FB6CC;max-width:1080px;margin-top:38px}
+  .cover-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding-top:38px}
+  .askbar{display:flex;align-items:center;gap:20px;background:rgba(53,208,186,.10);
+    border:1px solid rgba(53,208,186,.30);border-radius:999px;padding:20px 36px}
+  .pulse{width:12px;height:12px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 6px rgba(53,208,186,.16)}
+  .askbar-label{font-size:15px;letter-spacing:.18em;text-transform:uppercase;color:var(--teal);font-weight:700}
+  .askbar-text{font-size:22px;color:#D3E6F3}
+  .cover-date{font-size:21px;letter-spacing:.08em;color:var(--dim)}
 
-  /* ---------- slide 3 misses ---------- */
-  .two{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:70px}
-  .panel h3{font-size:28px;color:var(--navy);font-weight:700;margin-bottom:8px}
-  .panel .cap{font-size:21px;color:var(--muted);margin-bottom:36px}
-  .wf{position:relative;height:470px;display:flex;align-items:flex-end;gap:56px;padding-left:10px;border-bottom:2px solid var(--line)}
-  .wf .col{width:170px;position:relative;display:flex;flex-direction:column;justify-content:flex-end;height:100%}
-  .wf .bar{border-radius:8px 8px 0 0;position:relative}
-  .wf .num{font-size:34px;font-weight:700;color:var(--navy);text-align:center;margin-bottom:10px}
-  .wf .axis{position:absolute;bottom:-50px;left:0;right:0;text-align:center;font-size:20px;color:var(--muted);font-weight:600}
-  .gapbar{background:repeating-linear-gradient(135deg,var(--amber) 0 12px,#EDB566 12px 24px);border-radius:8px}
-  .hbars{margin-top:10px}
-  .hrow{margin-bottom:44px}
-  .hrow .top{display:flex;justify-content:space-between;font-size:22px;color:var(--muted);font-weight:600;margin-bottom:12px}
-  .hrow .top b{color:var(--navy);font-size:30px}
-  .track{height:48px;background:var(--paper);border-radius:8px;position:relative;overflow:hidden}
-  .fill{height:100%;border-radius:8px}
-  .callout{
-    margin-top:30px;background:var(--amber-soft);border-left:6px solid var(--amber);
-    padding:26px 30px;border-radius:0 12px 12px 0;font-size:23px;line-height:1.45;color:#5A3E12
-  }
-  .callout b{color:#3E2A08}
+  /* ================= SLIDE 2 : EXEC SUMMARY ================= */
+  .strip{display:grid;grid-template-columns:repeat(5,1fr);
+    background:linear-gradient(180deg,#122A41,#0E2135);border:1px solid var(--line);border-radius:20px;overflow:hidden}
+  .strip-item{padding:28px 34px;border-right:1px solid var(--line2);display:flex;flex-direction:column;gap:9px}
+  .strip-item:last-child{border-right:none}
+  .strip-label{font-size:15px;letter-spacing:.18em;text-transform:uppercase;color:#7E95AB;font-weight:700}
+  .strip-value{font-size:46px;font-weight:700;letter-spacing:-.025em;line-height:1}
+  .strip-note{font-size:18px;color:#8FA6BC}
 
-  /* ---------- slide 4 fundamentals ---------- */
-  .three{display:grid;grid-template-columns:1.25fr 1fr 1fr;gap:40px;margin-top:70px}
-  .card{background:var(--paper);border-radius:18px;padding:44px;height:560px;position:relative}
-  .card .lbl{font-size:22px;color:var(--muted);font-weight:600}
-  .card .big{font-size:72px;font-weight:700;color:var(--navy);margin-top:8px;letter-spacing:-.02em}
-  .card .desc{font-size:21px;color:var(--muted);line-height:1.45;position:absolute;left:44px;right:44px;bottom:40px}
-  .gmv{display:flex;align-items:flex-end;gap:50px;height:240px;margin-top:30px;border-bottom:2px solid var(--line);padding-left:10px}
-  .gmv .c{width:130px;text-align:center}
-  .gmv .b{border-radius:8px 8px 0 0}
-  .gmv .v{font-size:26px;font-weight:700;color:var(--navy);margin-bottom:8px}
-  .gmv .x{font-size:19px;color:var(--muted);margin-top:10px;font-weight:600}
-  .delta{
-    position:absolute;right:44px;top:44px;background:var(--teal);color:#fff;
-    font-weight:700;font-size:26px;padding:10px 20px;border-radius:40px
-  }
-  .donut{
-    width:230px;height:230px;border-radius:50%;margin:34px auto 0;
-    background:conic-gradient(var(--teal) 0 88%, #D5DDE5 88% 100%);
-    position:relative
-  }
-  .donut:after{content:"";position:absolute;inset:34px;border-radius:50%;background:var(--paper)}
-  .donut span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:54px;font-weight:700;color:var(--navy);z-index:2}
-  .equation{margin-top:40px;font-size:24px;color:var(--ink);line-height:1.7}
-  .equation .row{display:flex;justify-content:space-between;border-bottom:1px solid var(--line);padding:8px 0}
-  .equation .row b{color:var(--navy)}
+  .points{display:flex;flex-direction:column;gap:30px}
+  .point{display:flex;gap:22px}
+  .pt-num{font-size:16px;font-weight:700;color:var(--teal);letter-spacing:.1em;padding-top:7px;min-width:38px}
+  .pt-title{font-size:26px;font-weight:700;letter-spacing:-.01em;margin-bottom:8px}
+  .pt-text{font-size:21px;line-height:1.55;color:#98AEC4;max-width:820px}
 
-  /* ---------- slide 5 team ---------- */
-  .split{display:grid;grid-template-columns:720px 1fr;gap:90px;margin-top:70px}
-  .hire{background:var(--navy);color:#fff;border-radius:20px;padding:56px;height:600px;position:relative}
-  .hire .avatar{width:120px;height:120px;border-radius:50%;background:linear-gradient(135deg,var(--teal),#0E6E66);display:flex;align-items:center;justify-content:center;font-size:40px;font-weight:700}
-  .hire h3{font-size:46px;margin-top:40px}
-  .hire .when{font-size:24px;color:var(--teal);font-weight:700;margin-top:10px;letter-spacing:.06em;text-transform:uppercase}
-  .hire p{font-size:26px;color:#B8C7D6;line-height:1.5;margin-top:30px}
-  .steps{display:flex;flex-direction:column;gap:28px}
-  .step{display:flex;gap:32px;align-items:flex-start;padding:30px 36px;border:1px solid var(--line);border-radius:16px}
-  .step .n{flex:0 0 64px;height:64px;border-radius:50%;background:var(--teal-soft);color:#0E7C72;font-weight:700;font-size:28px;display:flex;align-items:center;justify-content:center}
-  .step h4{font-size:30px;color:var(--navy);margin-bottom:8px}
-  .step p{font-size:22px;color:var(--muted);line-height:1.45}
+  .ask-block{margin-bottom:24px}
+  .ask-num{font-size:74px;font-weight:700;letter-spacing:-.035em;line-height:1}
+  .ask-lab{font-size:21px;color:#9FE0D4;margin-top:8px;font-weight:600}
+  .ask-div{height:1px;background:rgba(53,208,186,.28);margin:18px 0 26px}
+  .ask-note{font-size:19px;line-height:1.55;color:#9DBFB8;margin-top:auto;padding-top:22px;border-top:1px solid rgba(53,208,186,.2)}
 
-  /* ---------- slide 6 runway ---------- */
-  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:64px}
-  .stat{border-left:6px solid var(--navy);padding:8px 0 8px 30px}
-  .stat .lbl{font-size:22px;color:var(--muted);font-weight:600}
-  .stat .val{font-size:76px;font-weight:700;color:var(--navy);letter-spacing:-.02em;margin-top:6px}
-  .stat.warn{border-left-color:var(--amber)}
-  .runway{margin-top:80px;position:relative}
-  .rw-row{display:flex;align-items:center;margin-bottom:34px}
-  .rw-row .name{width:280px;font-size:24px;font-weight:700;color:var(--navy)}
-  .rw-row .name small{display:block;font-size:19px;color:var(--muted);font-weight:500;margin-top:4px}
-  .rw-track{position:relative;width:1320px;height:64px;background:var(--paper);border-radius:10px}
-  .rw-fill{position:absolute;left:0;top:0;bottom:0;border-radius:10px;display:flex;align-items:center;justify-content:flex-end;padding-right:22px;color:#fff;font-size:24px;font-weight:700}
-  .ticks{margin-left:280px;width:1320px;position:relative;height:40px;border-top:2px solid var(--line)}
-  .ticks span{position:absolute;top:10px;font-size:18px;color:var(--muted);transform:translateX(-50%)}
+  /* ================= SLIDE 3 : SCORECARD ================= */
+  .kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:24px;flex:1;min-height:0}
+  .kpi{background:linear-gradient(180deg,#122A41,#0D2032);border:1px solid var(--line);border-radius:20px;
+    padding:34px 40px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+  .kpi::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+  .kpi.is-pos::before{background:linear-gradient(180deg,#3EDCC4,#2E9BD6)}
+  .kpi.is-warn::before{background:linear-gradient(180deg,#F5B23D,#E08A2B)}
+  .kpi.is-neu::before{background:linear-gradient(180deg,#5AA9FF,#3C7FC9)}
+  .kpi-top{display:flex;justify-content:space-between;align-items:center;gap:16px}
+  .kpi-label{font-size:15px;letter-spacing:.18em;text-transform:uppercase;color:#7E95AB;font-weight:700}
+  .kpi-value{font-size:84px;font-weight:700;letter-spacing:-.035em;line-height:1}
+  .kpi-value .u{font-size:.58em;color:#8FA6BC;margin-left:2px;font-weight:600}
+  .kpi-note{font-size:20px;color:#8FA6BC;line-height:1.4}
+  .kpi-note b{font-weight:700}
 
-  /* ---------- slide 7 ask ---------- */
-  .ask-wrap{display:grid;grid-template-columns:760px 1fr;gap:90px;margin-top:70px}
-  .ask-big{background:var(--navy);border-radius:22px;color:#fff;padding:64px;height:600px;position:relative;overflow:hidden}
-  .ask-big .lbl{font-size:22px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);font-weight:700}
-  .ask-big .amt{font-size:200px;font-weight:700;letter-spacing:-.04em;line-height:1;margin-top:40px}
-  .ask-big .what{font-size:36px;color:#C9D6E3;margin-top:14px}
-  .ask-big .foot{position:absolute;left:64px;right:64px;bottom:56px;border-top:1px solid rgba(255,255,255,.18);padding-top:28px;font-size:24px;color:#B8C7D6;line-height:1.5}
-  .ask-big .ring{position:absolute;right:-160px;top:-160px;width:460px;height:460px;border-radius:50%;border:2px solid rgba(23,168,155,.35)}
-  .ask-big .ring.r2{right:-100px;top:-100px;width:340px;height:340px}
-  .why h3{font-size:30px;color:var(--navy);margin-bottom:30px}
-  .why ul{list-style:none}
-  .why li{font-size:26px;line-height:1.45;padding:26px 0 26px 50px;border-bottom:1px solid var(--line);position:relative;color:var(--ink)}
-  .why li:before{content:"";position:absolute;left:0;top:36px;width:22px;height:22px;border-radius:50%;background:var(--teal)}
-  .why li b{color:var(--navy)}
+  /* ================= SLIDE 4 : WHY WE MISSED ================= */
+  .pull{font-size:44px;font-weight:700;letter-spacing:-.028em;line-height:1.18;margin-bottom:34px}
+  .pull em{font-style:normal;color:var(--amber)}
+  .bullets{display:flex;flex-direction:column;gap:22px}
+  .bullet{display:flex;gap:18px;font-size:21px;line-height:1.5;color:#9DB3C8}
+  .bullet .dot{width:9px;height:9px;border-radius:50%;background:var(--teal);margin-top:12px;flex:none}
+  .lane{margin-bottom:34px}
+  .lane:last-of-type{margin-bottom:0}
+  .lane-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+  .lane-name{font-size:23px;font-weight:600;letter-spacing:-.01em}
+  .lane-bar{display:flex;gap:10px;height:66px}
+  .seg{flex:1;display:flex;align-items:center;justify-content:center;font-size:19px;border-radius:12px;letter-spacing:.01em}
+  .seg.ghost{background:rgba(255,255,255,.045);border:1px dashed rgba(255,255,255,.22);color:#8AA0B6}
+  .seg.live{background:linear-gradient(100deg,rgba(245,178,61,.22),rgba(245,178,61,.09));
+    border:1px solid rgba(245,178,61,.48);color:#F7C978;font-weight:600}
+  .lane-note{font-size:19px;color:#8AA0B6;margin-top:18px;line-height:1.5}
 
-  /* ---------- slide 8 decisions ---------- */
-  .decisions{display:grid;grid-template-columns:1fr 1fr;gap:48px;margin-top:70px}
-  .dec{border-radius:20px;padding:56px;height:520px;position:relative;border:2px solid var(--line)}
-  .dec.primary{background:var(--navy);border-color:var(--navy);color:#fff}
-  .dec .num{font-size:22px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--teal)}
-  .dec h3{font-size:52px;line-height:1.15;margin-top:24px;color:var(--navy)}
-  .dec.primary h3{color:#fff}
-  .dec p{font-size:25px;line-height:1.5;margin-top:26px;color:var(--muted)}
-  .dec.primary p{color:#B8C7D6}
-  .dec .owner{position:absolute;left:56px;right:56px;bottom:48px;font-size:21px;font-weight:600;padding-top:22px;border-top:1px solid var(--line);color:var(--muted)}
-  .dec.primary .owner{border-top-color:rgba(255,255,255,.18);color:#8FA6BC}
-  .closing{margin-top:44px;font-size:26px;color:var(--muted)}
-  .closing b{color:var(--navy)}
+  .callout{display:flex;align-items:center;gap:22px;border-radius:18px;padding:26px 36px;
+    background:rgba(255,255,255,.035);border:1px solid var(--line)}
+  .callout .tagline{font-size:15px;letter-spacing:.18em;text-transform:uppercase;color:var(--amber);font-weight:700;white-space:nowrap}
+  .callout .txt{font-size:20px;color:#9DB3C8;line-height:1.45}
+
+  /* ================= SLIDE 5 : MARKETPLACE ================= */
+  .chart{flex:1;display:flex;align-items:flex-end;gap:90px;padding:20px 30px 0}
+  .barcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+  .bar{width:100%;max-width:200px;border-radius:14px 14px 6px 6px;position:relative}
+  .bar.q2{height:84.7%;background:linear-gradient(180deg,rgba(90,169,255,.55),rgba(90,169,255,.18));border:1px solid rgba(90,169,255,.35);border-bottom:none}
+  .bar.q3{height:100%;background:linear-gradient(180deg,rgba(53,208,186,.75),rgba(53,208,186,.22));border:1px solid rgba(53,208,186,.5);border-bottom:none}
+  .bar-val{position:absolute;top:-48px;left:0;right:0;text-align:center;font-size:30px;font-weight:700;letter-spacing:-.02em}
+  .bar-cap{margin-top:22px;font-size:19px;letter-spacing:.14em;text-transform:uppercase;color:#8FA6BC;font-weight:600}
+  .chart-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line2);margin-top:26px;padding-top:24px}
+  .chart-foot .k{font-size:19px;color:#8FA6BC}
+  .chart-foot .v{font-size:24px;font-weight:700;color:var(--teal)}
+
+  .statrow{display:flex;gap:26px;padding:26px 0;border-bottom:1px solid var(--line2);align-items:flex-start}
+  .statrow:first-child{padding-top:0}
+  .statrow:last-child{border-bottom:none;padding-bottom:0}
+  .statrow .big{font-size:56px;font-weight:700;letter-spacing:-.03em;line-height:1;min-width:200px}
+  .statrow .big .u{font-size:.55em;color:#8FA6BC;font-weight:600}
+  .statrow .desc{font-size:20px;line-height:1.5;color:#98AEC4;padding-top:8px}
+  .statrow .desc strong{color:var(--text);font-weight:600}
+
+  /* ================= SLIDE 6 : CASH ================= */
+  .cash-row{display:flex;justify-content:space-between;align-items:baseline;padding:30px 0;border-bottom:1px solid var(--line2)}
+  .cash-row:first-of-type{padding-top:0}
+  .cash-row:last-of-type{border-bottom:none;padding-bottom:0}
+  .cash-row .lab{font-size:21px;color:#8FA6BC}
+  .cash-row .val{font-size:54px;font-weight:700;letter-spacing:-.03em;line-height:1}
+  .cash-row .val .u{font-size:.5em;color:#8FA6BC;font-weight:600}
+  .cash-note{font-size:19px;line-height:1.55;color:#8299AF;margin-top:auto;padding-top:26px;border-top:1px solid var(--line2)}
+
+  .runway-track{display:flex;gap:8px;height:96px;margin-top:8px}
+  .rw{display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:18px;text-align:center;padding:0 12px;line-height:1.25}
+  .rw-cash{flex:80;background:linear-gradient(100deg,rgba(53,208,186,.28),rgba(53,208,186,.12));
+    border:1px solid rgba(53,208,186,.5);color:#7FE6D5;font-weight:600}
+  .rw-bridge{flex:47;background:linear-gradient(100deg,rgba(245,178,61,.26),rgba(245,178,61,.10));
+    border:1px dashed rgba(245,178,61,.55);color:#F7C978;font-weight:600}
+  .rw-gap{flex:4;background:transparent}
+  .runway-axis{display:flex;justify-content:space-between;margin-top:16px;font-size:17px;letter-spacing:.1em;
+    text-transform:uppercase;color:#6E869D;font-weight:600}
+  .runway-caption{margin-top:auto;padding-top:26px;border-top:1px solid var(--line2);
+    display:flex;justify-content:space-between;align-items:center;gap:20px}
+  .runway-caption .k{font-size:19px;color:#8FA6BC}
+  .runway-caption .v{font-size:34px;font-weight:700;letter-spacing:-.02em;color:var(--amber)}
+
+  /* ================= SLIDE 7 : THE ASK ================= */
+  .ask-cards{display:grid;grid-template-columns:1fr 1fr;gap:26px}
+  .ask-card{background:linear-gradient(180deg,rgba(53,208,186,.14),rgba(53,208,186,.03));
+    border:1px solid rgba(53,208,186,.34);border-radius:22px;padding:44px 48px;display:flex;flex-direction:column}
+  .ask-card.alt{background:linear-gradient(180deg,rgba(90,169,255,.13),rgba(90,169,255,.03));
+    border-color:rgba(90,169,255,.34)}
+  .ask-card .kick{font-size:15px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--teal);margin-bottom:22px}
+  .ask-card.alt .kick{color:#8CC2FF}
+  .ask-card .figure{font-size:96px;font-weight:700;letter-spacing:-.04em;line-height:1;margin-bottom:14px}
+  .ask-card .title{font-size:27px;font-weight:700;letter-spacing:-.01em;margin-bottom:14px}
+  .ask-card .body{font-size:20px;line-height:1.55;color:#9DB3C8}
+
+  .uop-wrap{flex:1;display:flex;flex-direction:column;justify-content:center}
+  .uop-bar{display:flex;gap:8px;height:88px;margin-bottom:26px}
+  .uop-seg{display:flex;align-items:center;justify-content:center;border-radius:12px;font-size:18px;
+    font-weight:600;padding:0 16px;text-align:center;line-height:1.2}
+  .s1{background:linear-gradient(100deg,rgba(53,208,186,.30),rgba(53,208,186,.13));border:1px solid rgba(53,208,186,.5);color:#7FE6D5}
+  .s2{background:linear-gradient(100deg,rgba(90,169,255,.28),rgba(90,169,255,.12));border:1px solid rgba(90,169,255,.5);color:#9CCBFF}
+  .s3{background:linear-gradient(100deg,rgba(245,178,61,.24),rgba(245,178,61,.10));border:1px solid rgba(245,178,61,.48);color:#F7C978}
+  .uop-note{font-size:19px;color:#8299AF;line-height:1.5}
+
+  /* ================= SLIDE 8 : Q4 ================= */
+  .ms-list{display:flex;flex-direction:column;gap:0;flex:1;justify-content:space-between}
+  .ms{display:flex;gap:26px;padding:22px 0;border-bottom:1px solid var(--line2)}
+  .ms:last-child{border-bottom:none}
+  .ms-idx{font-size:17px;font-weight:700;color:var(--teal);letter-spacing:.1em;padding-top:8px;min-width:44px}
+  .ms-title{font-size:26px;font-weight:700;letter-spacing:-.01em;margin-bottom:8px}
+  .ms-text{font-size:20px;line-height:1.5;color:#98AEC4;max-width:820px}
+
+  .decision{display:flex;flex-direction:column;justify-content:center;height:100%}
+  .decision .kick{font-size:15px;letter-spacing:.2em;text-transform:uppercase;font-weight:700;color:var(--teal);margin-bottom:24px}
+  .decision .head{font-size:42px;font-weight:700;letter-spacing:-.03em;line-height:1.15;margin-bottom:34px}
+  .dline{display:flex;gap:18px;align-items:flex-start;font-size:21px;line-height:1.5;color:#B4C9DC;padding:18px 0;
+    border-top:1px solid rgba(53,208,186,.22)}
+  .dline:last-child{border-bottom:1px solid rgba(53,208,186,.22)}
+  .dline .tick{width:22px;height:22px;border-radius:7px;border:2px solid var(--teal);flex:none;margin-top:4px;
+    background:rgba(53,208,186,.16)}
+  .motion{margin-top:34px;font-size:21px;line-height:1.5;color:#D3E6F3}
+  .motion b{color:var(--teal)}
 </style>
 </head>
 <body>
 
-<!-- 1. Cover -->
+<!-- ================= 01 · COVER ================= -->
 <section class="slide cover">
-  <div class="waves">
-    <div class="wave" style="top:620px;height:900px"></div>
-    <div class="wave" style="top:680px;height:900px;border-top-color:rgba(23,168,155,.22)"></div>
-    <div class="wave" style="top:740px;height:900px;border-top-color:rgba(23,168,155,.12)"></div>
-  </div>
-  <div class="inner">
-    <div class="logo"><div class="mark"></div>Harbor</div>
-    <h1>Q3 2026<br><span>Investor Update</span></h1>
-    <div class="meta">Prepared for existing investors and the Board · Confidential</div>
-  </div>
-  <div class="askbar">
-    <div><div class="lbl">Q3 in one line</div><div class="val">GMV up 18% QoQ; revenue short of plan on two slipped deals</div></div>
-    <div><div class="lbl">Ask #1</div><div class="val">Approve a $3M bridge round</div></div>
-    <div><div class="lbl">Ask #2</div><div class="val">Two intros to enterprise shippers</div></div>
+  <div class="cover-lines"></div>
+  <div class="glow-a"></div>
+  <div class="glow-b"></div>
+  <div class="cover-inner">
+    <div class="brandbar">
+      <div class="brand"><span class="mark">H</span><span class="brandname">Harbor</span></div>
+      <div class="tag">Confidential · Board materials</div>
+    </div>
+
+    <div class="cover-copy">
+      <div class="s-eyebrow">Q3 2026 · Investor Update</div>
+      <h1>Freight booking,<br><span class="hl">at marketplace scale.</span></h1>
+      <p class="lede">$41M in quarterly GMV, up 18% quarter over quarter, on a steady 9.5% take rate. Revenue landed at $3.9M — 11% below plan — on two enterprise shipper deals that slipped into Q4.</p>
+    </div>
+
+    <div class="cover-foot">
+      <div class="askbar">
+        <span class="pulse"></span>
+        <span class="askbar-label">Approval requested</span>
+        <span class="askbar-text">$3M bridge round &nbsp;·&nbsp; two enterprise shipper introductions</span>
+      </div>
+      <div class="cover-date">November 2026</div>
+    </div>
   </div>
 </section>
 
-<!-- 2. Q3 at a glance -->
+<!-- ================= 02 · EXECUTIVE SUMMARY ================= -->
 <section class="slide">
-  <div class="kicker">Q3 at a glance</div>
-  <h1 class="title">The marketplace grew; revenue and margin came in below plan</h1>
-  <div class="kpis">
-    <div class="kpi warn">
-      <span class="tag warn">−$0.5M vs plan</span>
-      <div class="lbl">Revenue</div>
-      <div class="val">$3.9M</div>
-      <div class="note">Plan: $4.4M</div>
-    </div>
-    <div class="kpi">
-      <span class="tag good">+18% QoQ</span>
-      <div class="lbl">Gross merchandise value</div>
-      <div class="val">$41M</div>
-      <div class="note">Freight booked through Harbor</div>
-    </div>
-    <div class="kpi">
-      <div class="lbl">Take rate</div>
-      <div class="val">9.5%</div>
-      <div class="note">Revenue as a share of GMV</div>
-    </div>
-    <div class="kpi warn">
-      <span class="tag warn">−3 pts vs plan</span>
-      <div class="lbl">Gross margin</div>
-      <div class="val">34%</div>
-      <div class="note">Plan: 37%</div>
-    </div>
-    <div class="kpi">
-      <div class="lbl">Shipper retention</div>
-      <div class="val">88%</div>
-      <div class="note">Existing shippers kept booking</div>
-    </div>
-    <div class="kpi summary">
-      <div class="lbl">Bottom line</div>
-      <p>Two enterprise deals caused the miss. The deals moved to Q4. Demand did not weaken.</p>
-    </div>
+  <div class="s-head">
+    <div class="s-eyebrow">Executive Summary</div>
+    <h2 class="s-title">Growth is working. The quarter broke on timing.</h2>
   </div>
-  <div class="footer"><div class="brand"><div class="mark"></div>Harbor</div><div>Q3 2026 Investor Update · Confidential</div><div>02</div></div>
-</section>
 
-<!-- 3. Where we missed -->
-<section class="slide">
-  <div class="kicker">Where we missed</div>
-  <h1 class="title">Two enterprise deals slipped to Q4, opening a $0.5M revenue gap</h1>
-  <div class="two">
-    <div class="panel">
-      <h3>Revenue: plan vs. actual</h3>
-      <div class="cap">$ millions, Q3 2026</div>
-      <div class="wf">
-        <div class="col">
-          <div class="num">$4.4M</div>
-          <div class="bar" style="height:390px;background:#C4CFDA"></div>
-          <div class="axis">Plan</div>
-        </div>
-        <div class="col">
-          <div class="num" style="color:#A5660B">−$0.5M</div>
-          <div class="gapbar" style="height:44px;margin-bottom:346px"></div>
-          <div class="axis">Slipped deals</div>
-        </div>
-        <div class="col">
-          <div class="num">$3.9M</div>
-          <div class="bar" style="height:346px;background:var(--navy)"></div>
-          <div class="axis">Actual</div>
-        </div>
+  <div class="s-body">
+    <div class="strip">
+      <div class="strip-item">
+        <div class="strip-label">Revenue</div>
+        <div class="strip-value">$3.9M</div>
+        <div class="strip-note warn">Plan $4.4M</div>
+      </div>
+      <div class="strip-item">
+        <div class="strip-label">GMV</div>
+        <div class="strip-value">$41M</div>
+        <div class="strip-note pos">+18% QoQ</div>
+      </div>
+      <div class="strip-item">
+        <div class="strip-label">Gross margin</div>
+        <div class="strip-value">34%</div>
+        <div class="strip-note warn">Plan 37%</div>
+      </div>
+      <div class="strip-item">
+        <div class="strip-label">Retention</div>
+        <div class="strip-value">88%</div>
+        <div class="strip-note">Shipper, TTM</div>
+      </div>
+      <div class="strip-item">
+        <div class="strip-label">Runway</div>
+        <div class="strip-value">8 mo</div>
+        <div class="strip-note">$5.1M cash</div>
       </div>
     </div>
-    <div class="panel">
-      <h3>Gross margin: plan vs. actual</h3>
-      <div class="cap">Share of revenue, Q3 2026</div>
-      <div class="hbars">
-        <div class="hrow">
-          <div class="top"><span>Plan</span><b>37%</b></div>
-          <div class="track"><div class="fill" style="width:74%;background:#C4CFDA"></div></div>
-        </div>
-        <div class="hrow">
-          <div class="top"><span>Actual</span><b>34%</b></div>
-          <div class="track"><div class="fill" style="width:68%;background:var(--amber)"></div></div>
+
+    <div class="cols-2">
+      <div class="panel">
+        <div class="panel-title">The read</div>
+        <div class="points">
+          <div class="point">
+            <div class="pt-num">01</div>
+            <div>
+              <div class="pt-title">Demand is compounding</div>
+              <div class="pt-text">GMV grew 18% quarter over quarter to $41M while the take rate held at 9.5%. Volume, not pricing, is driving the curve.</div>
+            </div>
+          </div>
+          <div class="point">
+            <div class="pt-num">02</div>
+            <div>
+              <div class="pt-title">The miss was timing</div>
+              <div class="pt-text">Two late-stage enterprise shipper deals pushed their signatures past quarter-end. Revenue came in at $3.9M against a $4.4M plan; gross margin landed at 34% against 37%.</div>
+            </div>
+          </div>
+          <div class="point">
+            <div class="pt-num">03</div>
+            <div>
+              <div class="pt-title">The enterprise motion is now staffed</div>
+              <div class="pt-text">A VP Sales joined in August, and net burn held at $640K per month. Both slipped deals remain live with Q4 close dates.</div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="callout">
-        <b>Timing, not demand loss.</b> Both enterprise deals are still active and now fall in Q4. GMV grew 18% and retention held at 88% during the same quarter.
+
+      <div class="panel panel-ask">
+        <div class="panel-title" style="color:#7FE6D5">The ask</div>
+        <div class="ask-block">
+          <div class="ask-num">$3M</div>
+          <div class="ask-lab">Bridge round</div>
+        </div>
+        <div class="ask-div"></div>
+        <div class="ask-block" style="margin-bottom:0">
+          <div class="ask-num">2</div>
+          <div class="ask-lab">Enterprise shipper introductions</div>
+        </div>
+        <div class="ask-note">Why now — eight months of runway, a funded Q4 enterprise plan, and two deals already in the funnel. The bridge carries us through the Q4 closes without slowing the plan.</div>
       </div>
     </div>
   </div>
-  <div class="footer"><div class="brand"><div class="mark"></div>Harbor</div><div>Q3 2026 Investor Update · Confidential</div><div>03</div></div>
+
+  <div class="s-foot"><span>Harbor · Q3 2026 Investor Update</span><span>02</span></div>
 </section>
 
-<!-- 4. Fundamentals -->
+<!-- ================= 03 · SCORECARD ================= -->
 <section class="slide">
-  <div class="kicker">Marketplace fundamentals</div>
-  <h1 class="title">The core marketplace is healthy: volume up, pricing and retention stable</h1>
-  <div class="three">
-    <div class="card">
-      <div class="delta">+18% QoQ</div>
-      <div class="lbl">GMV</div>
-      <div class="big">$41M</div>
-      <div class="gmv">
-        <div class="c"><div class="v">~$34.7M</div><div class="b" style="height:160px;background:#C4CFDA"></div><div class="x">Q2 2026</div></div>
-        <div class="c"><div class="v">$41M</div><div class="b" style="height:190px;background:var(--teal)"></div><div class="x">Q3 2026</div></div>
+  <div class="s-head">
+    <div class="s-eyebrow">Q3 2026 · Scorecard</div>
+    <h2 class="s-title">Where we landed against plan</h2>
+  </div>
+
+  <div class="s-body">
+    <div class="kpi-grid">
+      <div class="kpi is-warn">
+        <div class="kpi-top"><span class="kpi-label">Revenue</span><span class="chip warn">Below plan</span></div>
+        <div class="kpi-value">$3.9<span class="u">M</span></div>
+        <div class="kpi-note">Plan $4.4M &nbsp;·&nbsp; <b class="neg">−$0.5M · −11%</b></div>
       </div>
-      <div class="desc">Q2 is implied by the 18% growth rate.</div>
-    </div>
-    <div class="card">
-      <div class="lbl">Take rate</div>
-      <div class="big">9.5%</div>
-      <div class="equation">
-        <div class="row"><span>GMV</span><b>$41.0M</b></div>
-        <div class="row"><span>× Take rate</span><b>9.5%</b></div>
-        <div class="row"><span>= Revenue</span><b>$3.9M</b></div>
+
+      <div class="kpi is-pos">
+        <div class="kpi-top"><span class="kpi-label">GMV</span><span class="chip pos">On track</span></div>
+        <div class="kpi-value">$41<span class="u">M</span></div>
+        <div class="kpi-note">Q2 2026 $34.7M &nbsp;·&nbsp; <b class="pos">+18% QoQ</b></div>
       </div>
-      <div class="desc">Revenue scales directly with GMV. The gap to plan came from volume, not from price.</div>
-    </div>
-    <div class="card">
-      <div class="lbl">Shipper retention</div>
-      <div class="donut"><span>88%</span></div>
-      <div class="desc">Nearly 9 in 10 shippers kept booking. The customer base is stable while we add enterprise accounts.</div>
+
+      <div class="kpi is-neu">
+        <div class="kpi-top"><span class="kpi-label">Take rate</span><span class="chip neu">Stable</span></div>
+        <div class="kpi-value">9.5<span class="u">%</span></div>
+        <div class="kpi-note">$41M GMV &nbsp;·&nbsp; <b>$3.9M revenue</b></div>
+      </div>
+
+      <div class="kpi is-warn">
+        <div class="kpi-top"><span class="kpi-label">Gross margin</span><span class="chip warn">Below plan</span></div>
+        <div class="kpi-value">34<span class="u">%</span></div>
+        <div class="kpi-note">Plan 37% &nbsp;·&nbsp; <b class="neg">−3 pts</b></div>
+      </div>
+
+      <div class="kpi is-pos">
+        <div class="kpi-top"><span class="kpi-label">Shipper retention</span><span class="chip pos">Healthy</span></div>
+        <div class="kpi-value">88<span class="u">%</span></div>
+        <div class="kpi-note">Shipper cohort retention, trailing twelve months</div>
+      </div>
+
+      <div class="kpi is-warn">
+        <div class="kpi-top"><span class="kpi-label">Net burn</span><span class="chip warn">Watch</span></div>
+        <div class="kpi-value">$640<span class="u">K</span></div>
+        <div class="kpi-note">Per month &nbsp;·&nbsp; <b class="warn">$5.1M cash, 8 months</b></div>
+      </div>
     </div>
   </div>
-  <div class="footer"><div class="brand"><div class="mark"></div>Harbor</div><div>Q3 2026 Investor Update · Confidential</div><div>04</div></div>
+
+  <div class="s-foot"><span>Harbor · Q3 2026 Investor Update</span><span>03</span></div>
 </section>
 
-<!-- 5. Team / enterprise motion -->
+<!-- ================= 04 · WHY WE MISSED ================= -->
 <section class="slide">
-  <div class="kicker">Enterprise go-to-market</div>
-  <h1 class="title">A dedicated sales leader now owns the enterprise pipeline</h1>
-  <div class="split">
-    <div class="hire">
-      <div class="avatar">VP</div>
-      <div class="when">Joined August 2026</div>
-      <h3>VP Sales</h3>
-      <p>Our first dedicated sales executive. The enterprise pipeline now has one accountable owner, and the two slipped deals top the Q4 list.</p>
+  <div class="s-head">
+    <div class="s-eyebrow">Q3 2026 · Variance analysis</div>
+    <h2 class="s-title">Why we missed plan</h2>
+  </div>
+
+  <div class="s-body">
+    <div class="cols-2" style="grid-template-columns:1fr 1.12fr">
+      <div class="panel">
+        <div class="pull">We did not lose deals.<br>We lost <em>time</em>.</div>
+        <div class="bullets">
+          <div class="bullet"><span class="dot"></span><span>Both enterprise opportunities reached late-stage procurement and legal review inside Q3.</span></div>
+          <div class="bullet"><span class="dot"></span><span>Signatures pushed past quarter-end — neither account was lost.</span></div>
+          <div class="bullet"><span class="dot"></span><span>Each now carries a Q4 close date and is already reflected in the Q4 revenue plan.</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Deal slippage</div>
+
+        <div class="lane">
+          <div class="lane-head">
+            <span class="lane-name">Enterprise shipper deal 1</span>
+            <span class="chip warn">Slipped to Q4</span>
+          </div>
+          <div class="lane-bar">
+            <div class="seg ghost">Q3 · expected close</div>
+            <div class="seg live">Q4 · current close</div>
+          </div>
+        </div>
+
+        <div class="lane">
+          <div class="lane-head">
+            <span class="lane-name">Enterprise shipper deal 2</span>
+            <span class="chip warn">Slipped to Q4</span>
+          </div>
+          <div class="lane-bar">
+            <div class="seg ghost">Q3 · expected close</div>
+            <div class="seg live">Q4 · current close</div>
+          </div>
+        </div>
+
+        <div class="lane-note">Together, the two accounts account for the $0.5M revenue shortfall against plan and the bulk of the gross margin gap — enterprise volume carries more margin than spot, so the delay moved mix against us.</div>
+      </div>
     </div>
-    <div class="steps">
-      <div class="step">
-        <div class="n">1</div>
-        <div><h4>Close the two slipped deals in Q4</h4><p>These deals account for the Q3 revenue gap. Closing them is the fastest way back to plan.</p></div>
-      </div>
-      <div class="step">
-        <div class="n">2</div>
-        <div><h4>Build an enterprise pipeline that doesn't depend on a few deals</h4><p>More late-stage opportunities, so one slipped signature doesn't cause a plan miss.</p></div>
-      </div>
-      <div class="step">
-        <div class="n">3</div>
-        <div><h4>Get warm enterprise shipper intros from this group</h4><p>Your networks help the VP Sales shorten early sales cycles. See the ask on slide 8.</p></div>
-      </div>
+
+    <div class="callout">
+      <span class="tagline">Impact</span>
+      <span class="txt">Revenue $3.9M vs. $4.4M plan &nbsp;·&nbsp; gross margin 34% vs. 37% plan &nbsp;·&nbsp; GMV and retention unaffected — +18% QoQ and 88%, respectively.</span>
     </div>
   </div>
-  <div class="footer"><div class="brand"><div class="mark"></div>Harbor</div><div>Q3 2026 Investor Update · Confidential</div><div>05</div></div>
+
+  <div class="s-foot"><span>Harbor · Q3 2026 Investor Update</span><span>04</span></div>
 </section>
 
-<!-- 6. Cash & runway -->
+<!-- ================= 05 · MARKETPLACE HEALTH ================= -->
 <section class="slide">
-  <div class="kicker">Cash &amp; runway</div>
-  <h1 class="title">We have 8 months of runway; the bridge extends it to about 12.7 months</h1>
-  <div class="stats">
-    <div class="stat"><div class="lbl">Cash on hand</div><div class="val">$5.1M</div></div>
-    <div class="stat"><div class="lbl">Monthly net burn</div><div class="val">$640K</div></div>
-    <div class="stat warn"><div class="lbl">Runway at current burn</div><div class="val">8 mo</div></div>
+  <div class="s-head">
+    <div class="s-eyebrow">Marketplace health</div>
+    <h2 class="s-title">The marketplace is compounding</h2>
   </div>
-  <div class="runway">
-    <div class="rw-row">
-      <div class="name">Today<small>$5.1M cash</small></div>
-      <div class="rw-track"><div class="rw-fill" style="width:57.1%;background:var(--amber)">8.0 months</div></div>
-    </div>
-    <div class="rw-row">
-      <div class="name">With $3M bridge<small>$8.1M cash</small></div>
-      <div class="rw-track"><div class="rw-fill" style="width:90.4%;background:var(--teal)">~12.7 months</div></div>
-    </div>
-    <div class="ticks">
-      <span style="left:0%">0</span>
-      <span style="left:14.3%">2</span>
-      <span style="left:28.6%">4</span>
-      <span style="left:42.9%">6</span>
-      <span style="left:57.1%">8</span>
-      <span style="left:71.4%">10</span>
-      <span style="left:85.7%">12</span>
-      <span style="left:100%">14 months</span>
+
+  <div class="s-body">
+    <div class="cols-2" style="grid-template-columns:1.08fr 1fr">
+      <div class="panel">
+        <div class="panel-title">GMV by quarter</div>
+        <div class="chart">
+          <div class="barcol">
+            <div class="bar q2"><div class="bar-val">$34.7M</div></div>
+            <div class="bar-cap">Q2 2026</div>
+          </div>
+          <div class="barcol">
+            <div class="bar q3"><div class="bar-val" style="color:#5FE3CE">$41.0M</div></div>
+            <div class="bar-cap">Q3 2026</div>
+          </div>
+        </div>
+        <div class="chart-foot">
+          <span class="k">Quarter-over-quarter growth</span>
+          <span class="v">+18%</span>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Marketplace math</div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          <div class="statrow">
+            <div class="big">9.5<span class="u">%</span></div>
+            <div class="desc"><strong>Take rate held flat.</strong> No pricing changes in Q3 — revenue scales with volume at a stable rate: $41M GMV × 9.5% ≈ $3.9M revenue.</div>
+          </div>
+          <div class="statrow">
+            <div class="big">34<span class="u">%</span></div>
+            <div class="desc"><strong>Gross margin, vs. 37% plan.</strong> The gap tracks the enterprise mix shift created by the two delayed closes, not a change in unit cost structure.</div>
+          </div>
+          <div class="statrow">
+            <div class="big">88<span class="u">%</span></div>
+            <div class="desc"><strong>Shipper retention.</strong> Cohort retention over the trailing twelve months — the accounts we win, we keep.</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="footer"><div class="brand"><div class="mark"></div>Harbor</div><div>Runway = cash ÷ monthly net burn, assuming burn stays at $640K/month</div><div>06</div></div>
+
+  <div class="s-foot"><span>Harbor · Q3 2026 Investor Update</span><span>05</span></div>
 </section>
 
-<!-- 7. The ask: bridge -->
+<!-- ================= 06 · CASH & RUNWAY ================= -->
 <section class="slide">
-  <div class="kicker">Ask #1 · For Board approval</div>
-  <h1 class="title">We're asking for approval of a $3M bridge round</h1>
-  <div class="ask-wrap">
-    <div class="ask-big">
-      <div class="ring"></div><div class="ring r2"></div>
-      <div class="lbl">Bridge round</div>
-      <div class="amt">$3M</div>
-      <div class="what">from existing investors</div>
-      <div class="foot">Adds about 4.7 months of runway at current burn, taking us from 8 months to about 12.7.</div>
-    </div>
-    <div class="why">
-      <h3>Why a bridge, and why now</h3>
-      <ul>
-        <li><b>The miss was timing.</b> The two deals behind the gap moved to Q4 and are still active.</li>
-        <li><b>The marketplace is growing.</b> GMV rose 18% QoQ at a steady 9.5% take rate, with 88% shipper retention.</li>
-        <li><b>The sales team is in place.</b> The VP Sales, hired in August, needs time to convert the enterprise pipeline.</li>
-        <li><b>It keeps us out of a rushed raise.</b> Eight months of runway is too short to raise from a position of strength.</li>
-      </ul>
+  <div class="s-head">
+    <div class="s-eyebrow">Balance sheet</div>
+    <h2 class="s-title">Cash position and runway</h2>
+  </div>
+
+  <div class="s-body">
+    <div class="cols-2" style="grid-template-columns:1fr 1.15fr">
+      <div class="panel">
+        <div class="panel-title">Position at quarter end</div>
+        <div style="flex:1;display:flex;flex-direction:column;justify-content:center">
+          <div class="cash-row">
+            <span class="lab">Cash on hand</span>
+            <span class="val">$5.1<span class="u">M</span></span>
+          </div>
+          <div class="cash-row">
+            <span class="lab">Net burn</span>
+            <span class="val">$640<span class="u">K / mo</span></span>
+          </div>
+          <div class="cash-row">
+            <span class="lab">Runway</span>
+            <span class="val warn">8<span class="u"> months</span></span>
+          </div>
+        </div>
+        <div class="cash-note">Burn is unchanged from the prior quarter despite the August VP Sales hire. The cost base is disciplined; the constraint is time, not spend.</div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Runway with a $3M bridge</div>
+        <div class="runway-track">
+          <div class="rw rw-cash">Existing cash<br>8.0 months</div>
+          <div class="rw rw-bridge">Bridge<br>+4.7 months</div>
+          <div class="rw rw-gap"></div>
+        </div>
+        <div class="runway-axis">
+          <span>Today</span>
+          <span>Month 8</span>
+          <span>Month 12.7</span>
+        </div>
+        <div class="runway-caption">
+          <span class="k">Runway with bridge, at current burn</span>
+          <span class="v">≈ 12.7 months</span>
+        </div>
+      </div>
     </div>
   </div>
-  <div class="footer"><div class="brand"><div class="mark"></div>Harbor</div><div>Q3 2026 Investor Update · Confidential</div><div>07</div></div>
+
+  <div class="s-foot"><span>Harbor · Q3 2026 Investor Update</span><span>06</span></div>
 </section>
 
-<!-- 8. Decisions & intros -->
+<!-- ================= 07 · THE ASK ================= -->
 <section class="slide">
-  <div class="kicker">What we need from you</div>
-  <h1 class="title">Two requests for today</h1>
-  <div class="decisions">
-    <div class="dec primary">
-      <div class="num">Decision 01</div>
-      <h3>Approve the $3M bridge round</h3>
-      <p>This extends runway from 8 to about 12.7 months, giving the enterprise pipeline time to convert before our next raise.</p>
-      <div class="owner">Requested from: Board · Vote today</div>
+  <div class="s-head">
+    <div class="s-eyebrow">The ask</div>
+    <h2 class="s-title">Two things, both small enough to move this week</h2>
+  </div>
+
+  <div class="s-body">
+    <div class="ask-cards">
+      <div class="ask-card">
+        <div class="kick">Ask 01</div>
+        <div class="figure">$3M</div>
+        <div class="title">Bridge round</div>
+        <div class="body">A convertible bridge that extends runway to roughly 12.7 months at current burn and funds the enterprise ramp through the Q4 closes — without a spend cut or a repriced round.</div>
+      </div>
+
+      <div class="ask-card alt">
+        <div class="kick">Ask 02</div>
+        <div class="figure">2</div>
+        <div class="title">Enterprise introductions</div>
+        <div class="body">Two warm introductions to enterprise shipper decision-makers — ideally supply-chain or logistics leaders at accounts that fit our enterprise profile. An intro is the single highest-leverage thing this room can do.</div>
+      </div>
     </div>
-    <div class="dec">
-      <div class="num">Request 02</div>
-      <h3>Introduce us to two enterprise shippers</h3>
-      <p>Warm intros from your portfolio or network to shippers with meaningful freight volume. Our VP Sales will follow up directly.</p>
-      <div class="owner">Requested from: Investors &amp; Board members · Share names this week</div>
+
+    <div class="panel" style="flex:1">
+      <div class="panel-title">Planned use of proceeds</div>
+      <div class="uop-wrap">
+        <div class="uop-bar">
+          <div class="uop-seg s1" style="width:55%">Sales &amp; GTM capacity · 55%</div>
+          <div class="uop-seg s2" style="width:30%">Product &amp; marketplace ops · 30%</div>
+          <div class="uop-seg s3" style="width:15%">Working capital · 15%</div>
+        </div>
+        <div class="uop-note">Allocation is weighted to the enterprise sales motion the new VP Sales is now standing up. The bridge is sized to reach the next round from a position of demonstrated enterprise execution — not to buy time.</div>
+      </div>
     </div>
   </div>
-  <div class="closing"><b>Thank you.</b> We'll report Q4 progress on the two slipped deals at the next update.</div>
-  <div class="footer"><div class="brand"><div class="mark"></div>Harbor</div><div>Q3 2026 Investor Update · Confidential</div><div>08</div></div>
+
+  <div class="s-foot"><span>Harbor · Q3 2026 Investor Update</span><span>07</span></div>
+</section>
+
+<!-- ================= 08 · Q4 PLAN & DECISION ================= -->
+<section class="slide">
+  <div class="s-head">
+    <div class="s-eyebrow">Q4 2026 plan</div>
+    <h2 class="s-title">Four milestones, one decision</h2>
+  </div>
+
+  <div class="s-body">
+    <div class="cols-2" style="grid-template-columns:1.2fr 1fr">
+      <div class="panel">
+        <div class="panel-title">What we will deliver in Q4</div>
+        <div class="ms-list">
+          <div class="ms">
+            <div class="ms-idx">01</div>
+            <div>
+              <div class="ms-title">Close both slipped enterprise accounts</div>
+              <div class="ms-text">Signatures expected inside Q4; both deals are already reflected in the Q4 plan.</div>
+            </div>
+          </div>
+          <div class="ms">
+            <div class="ms-idx">02</div>
+            <div>
+              <div class="ms-title">Return revenue to plan</div>
+              <div class="ms-text">Q4 plan includes the enterprise revenue that moved out of Q3, on top of continued mid-market volume growth.</div>
+            </div>
+          </div>
+          <div class="ms">
+            <div class="ms-idx">03</div>
+            <div>
+              <div class="ms-title">Restore gross margin toward 37%</div>
+              <div class="ms-text">Mix shifts back toward enterprise volume as the delayed deals close.</div>
+            </div>
+          </div>
+          <div class="ms">
+            <div class="ms-idx">04</div>
+            <div>
+              <div class="ms-title">Hold net burn at or below $640K / month</div>
+              <div class="ms-text">The bridge funds the plan without expanding the cost base ahead of the next round.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel panel-ask">
+        <div class="decision">
+          <div class="kick">Decision requested today</div>
+          <div class="head">Approve the bridge.<br>Make two introductions.</div>
+          <div class="dline"><span class="tick"></span><span>Approve a $3M bridge round</span></div>
+          <div class="dline"><span class="tick"></span><span>Provide two enterprise shipper introductions</span></div>
+          <div class="motion">Motion: <b>approve the $3M bridge and open two enterprise introductions.</b> Both actions are in motion this week if we have your support.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="s-foot"><span>Harbor · Q3 2026 Investor Update</span><span>08</span></div>
 </section>
 
 </body>

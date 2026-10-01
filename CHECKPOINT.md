@@ -13,7 +13,7 @@ Resume point. Branch `phase-22-engine-spike`. `main` is still v3 (`8169fd9`, als
 
 ## Owner's tasks to close phase 21
 
-1. Top up OpenRouter, then: `cd api && uv run python -m cli baseline --set all` (only the 2 missing decks are generated).
+1. Done 2026-10-01: all 12 one-shot baselines, on DeepSeek.
 2. Gamma baselines: dropped for now (owner, 2026-10-01).
 3. `uv run python -m cli wall --run 2026-09-30-baselines`, open `bench/runs/2026-09-30-baselines/wall.html`, rate every deck, download `ratings.json` into that folder.
 
@@ -25,7 +25,7 @@ First comparison (`bench/runs/2026-09-30-models/wall.html`): DeepSeek v4.1 Flash
 
 Owner inspected the decks and approved the quality (2026-09-30). Model pinned: `deepseek/deepseek-v4.1-flash`. The fallback is now three designed code layouts. Full 12-deck run: `bench/runs/2026-09-30-full/wall.html` — $0.67 total, median $0.055 per deck, nothing flagged.
 
-Exemplar A/B done: keep the library (fewer repairs, near-zero cost). Images deferred to phase 25 (owner, 2026-10-01): no frozen outline asks for one. Verify suites built 2026-10-01: hostile slides, one fixture per QA code, the offline test; the hostile suite found and closed a `</style>` breakout in model CSS. Left in phase 22: only the owner's blind ratings, which need the 2 missing one-shot baselines (about $0.50 on Opus; $0.40 left). Gamma baselines dropped for now (owner, 2026-10-01). OpenRouter credit left: $0.40 (2026-10-01).
+Exemplar A/B done: keep the library (fewer repairs, near-zero cost). Images deferred to phase 25 (owner, 2026-10-01): no frozen outline asks for one. Verify suites built 2026-10-01: hostile slides, one fixture per QA code, the offline test; the hostile suite found and closed a `</style>` breakout in model CSS. One-shot baselines rebuilt on DeepSeek, all 12 (2026-10-01, $0.38). Left in phase 22: only the owner's blind ratings on `bench/runs/2026-09-30-full/wall.html`. Gamma baselines dropped for now (owner, 2026-10-01). OpenRouter credit left: $0.40 (2026-10-01).
 
 Budget: the owner set a $10 cap and cheap paid models only (no free ones). About $1.30 of credit was left on 2026-09-30.
 
