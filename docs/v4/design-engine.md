@@ -44,6 +44,13 @@
 - **Three looks, as far apart as possible.** The first is random; each next one maximises a weighted distance over the axes. No two looks share a pairing or a grid.
 - **Shuffle** uses a new seed, excludes the pairings already shown, and is instant.
 
+**Measured adjustments (2026-10-01).** Running every exemplar under 50 sampled themes broke 55 times before these rules; each fixes a cause, not a threshold:
+
+- **Display steps are scaled down by the face's measured width** (`meta.json`; reference 0.5 em, factor 0.6–1.0, h1/h2 never below 56px), so a headline holds about as many characters per line in Syne as in Archivo. Never up: a narrow face's figures are not narrow.
+- **Margins stay within 96–144px** whatever the density: wider starves columns, narrower puts large figures into the safe area.
+- **Extreme scale needs a display face at most 0.52 em wide**; it moves the display steps (mega 400, d1 256), not the headline steps.
+- **Every motif has a pattern kind**, so nothing needs a large solid block (E11).
+
 `design/theme.py` turns the axes into a `Theme`:
 
 | Part | Contents |

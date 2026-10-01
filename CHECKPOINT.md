@@ -36,3 +36,7 @@ Budget: the owner set a $10 cap and cheap paid models only (no free ones). About
 ## Next
 
 Phase 22 (`docs/v4/plan/22-engine-spike.md`) — the make-or-break gate. It needs credit: its budget cap is $100, and a full 12-deck run is about $15.
+
+## Phase 23, built (branch `phase-24-content-engine`)
+
+33 OFL families measured, 7 OKLCH palettes (0 contrast failures in 1,000 seeds), 24 pairings, 5 grids, 10 motifs, a seeded sampler, brand mapping, style tiles. 12 decks on sampled themes: 0 flagged, $0.66. Gate: 9 of 10 pairings (chance; see `bench/results.md`). **Owner's tasks:** `bench/runs/2026-10-01-phase23/tiles.html` (36 looks: ≥30 usable, no sibling trios) and `wall.html` (no two decks mistakable).

@@ -34,9 +34,9 @@
 
 ## Verify
 
-- [ ] 1,000 random seeds produce zero contrast failures
-- [ ] Every exemplar passes lint and QA under 50 sampled themes
-- [ ] The same seed gives the same theme
+- [x] 1,000 random seeds produce zero contrast failures — including the five chart colours and a brand colour on every seventh seed (`tests/test_design.py`)
+- [x] Every exemplar passes lint and QA under 50 sampled themes — after fixing 55 breaks at their causes (design-engine.md → "Measured adjustments")
+- [x] The same seed gives the same theme; a shuffle repeats no pairing
 - [ ] **Human:** 36 tiles on a wall; at least 30 usable, and no trio looks like siblings
 - [ ] **Human:** the 12-deck wall with sampled themes; no two decks mistakable
 
@@ -47,6 +47,6 @@
 
 ## Exit gate
 
-- [ ] Phase 22's gate still holds with sampled themes
-- [ ] At least 10 pairings and 5 palette strategies appear across the 12 decks
-- [ ] Brand colours visibly applied on 2 branded briefs
+- [ ] Phase 22's gate still holds with sampled themes — automated lines hold (0 flagged, $0.058 and 50 s median); the owner's wall is open: `bench/runs/2026-10-01-phase23/wall.html`
+- [ ] At least 10 pairings and 5 palette strategies appear across the 12 decks — 9 and 5 (2026-10-01); 12 random draws from 24 pairings average 9.7
+- [x] Brand colours visibly applied on 2 branded briefs — Potluck and Kiln (brands added to those two briefs; outlines unchanged)

@@ -38,8 +38,8 @@
 - [x] Detector fixtures: every v3 sample headline is caught — 20 of 20, and 0 of the bench's 109 assertion headlines (`tests/test_content_rules.py`)
 - [x] The injection corpus: no case changes the output channel — 8 cases (7 recovered from v3, 1 hostile search result): 7 held, 1 refused by the provider (2026-10-01)
 - [x] A number with no quote in its source is discarded (`tests/test_research.py`)
-- [ ] **Human:** at least 5 of 6 outlines approvable with ≤3 edits
-- [ ] **Human:** a 20-fact spot check at the sources; ≤1 wrong
+- [ ] **Human:** at least 5 of 6 outlines approvable with ≤3 edits — skipped by the owner (2026-10-01); the owner ran the interactive gate once instead, which found the proof-suggestion bug
+- [ ] **Human:** a 20-fact spot check at the sources; ≤1 wrong — skipped by the owner (2026-10-01). The sample is in `bench/runs/2026-10-01-content/review.md`; gate 2 is the next human check
 
 ## Skipped
 

@@ -176,8 +176,13 @@ def parse_fenced(text: str, *langs: str) -> Result[dict[str, str], str]:
     return ok(found)
 
 
+# The slowest call measured is about a minute. A stalled connection on a 300 s
+# timeout, with two retries, held a deck for 15 minutes (2026-10-01).
+TIMEOUT_S = 120.0
+
+
 def _default_transport() -> Transport:
-    return httpx.AsyncClient(timeout=300.0)
+    return httpx.AsyncClient(timeout=TIMEOUT_S)
 
 
 def _utcnow() -> datetime:
