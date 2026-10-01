@@ -167,3 +167,10 @@ def test_hostile_css_is_proven_live_then_refused_and_inert(tmp_path: Path) -> No
         return failures
 
     assert asyncio.run(run()) == {}
+
+
+def test_lint_refuses_page_selectors_but_not_classes_named_like_them() -> None:
+    for selector in ("body", "html .s", ":root", ":host", "body>.s", ".s body"):
+        assert lint(f"{selector}{{color:var(--c-ink)}}"), selector
+    for selector in (".body", ".html-note", ".s .body", "#body", ".tbody"):
+        assert lint(f"{selector}{{color:var(--c-ink)}}") == [], selector

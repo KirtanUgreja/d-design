@@ -124,7 +124,8 @@ _NAMED = frozenset(
 )
 _OK_COLOR_WORDS = frozenset({"transparent", "currentcolor", "inherit", "none"})
 _VAR = re.compile(r"var\(\s*(--[a-z0-9-]+)\s*\)")
-_BAD_SELECTOR = re.compile(r":host|:root|\bhtml\b|\bbody\b|\\")
+# html and body as type selectors only: ".body" is an ordinary class name.
+_BAD_SELECTOR = re.compile(r":host|:root|(?<![\w.#-])(?:html|body)(?![\w-])|\\")
 _EMOJI = re.compile("[\U0001f000-\U0001faff☀-➿⬀-⯿️]")
 
 
