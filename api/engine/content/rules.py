@@ -113,12 +113,20 @@ def emoji(text: str) -> bool:
     return bool(_EMOJI.search(text))
 
 
-def numbers(text: str) -> list[str]:
-    """The numbers in a piece of copy. A bare year is a date, not a statistic."""
+_NAME_BEFORE = re.compile(r"[^\s.!?:;]\s+[A-Z][A-Za-z]+\s$")
+
+
+def numbers(text: str, *, names: bool = False) -> list[str]:
+    """The numbers in a piece of copy. A bare year is a date, not a statistic,
+    and a bare integer after a capitalised word mid-sentence is part of a name
+    ("Tessel 2", "Windows 11"). ponytail: numbers written as words ("nine in
+    ten") are not seen; the upgrade is a word-number parser."""
     out = []
     for m in _NUMBER.finditer(text):
         token = m.group(0).strip()
         if _YEAR.match(token):
+            continue
+        if not names and token.isdigit() and _NAME_BEFORE.search(text[: m.start()]):
             continue
         out.append(token)
     return out
@@ -131,7 +139,8 @@ def _digits(token: str) -> str:
 def quoted(number: str, passage: str) -> bool:
     """No quote, no fact: the number's digits appear verbatim in the passage."""
     want = _digits(number)
-    return bool(want) and any(_digits(n) == want for n in numbers(passage))
+    # A source passage is searched for every number, names included.
+    return bool(want) and any(_digits(n) == want for n in numbers(passage, names=True))
 
 
 def sourced(number: str, facts: Iterable[Fact]) -> bool:
