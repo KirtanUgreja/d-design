@@ -4,6 +4,9 @@ uv run python -m cli smoke                      one live call; prints its cost
 uv run python -m cli freeze [--set smoke|all]   freeze outlines for bench briefs
 uv run python -m cli baseline [--set smoke|all] one-shot baseline decks + screenshots
 uv run python -m cli wall --run NAME            build the wall page for a human to score
+uv run python -m cli outline --brief ID         interview, research, storyline, the gate, notes
+uv run python -m cli content --run NAME         phase 24 bench: every brief, metrics, inverse spec
+uv run python -m cli injection --run NAME       the injection corpus through the content stages
 """
 
 from __future__ import annotations
@@ -13,12 +16,13 @@ import asyncio
 import json
 import statistics
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 from pydantic import BaseModel
 
 import settings
-from benchtools import baseline, files, outline, shots, wall
+from benchtools import baseline, content, files, outline, shots, wall
 from engine import Seam, pipeline
 from engine.design.theme import THEMES
 from lib.result import Err
@@ -179,6 +183,95 @@ def _wall(run: str, seed: int, baselines: bool) -> int:
     return 0 if count else 1
 
 
+def _year() -> int:
+    return datetime.now(UTC).year
+
+
+async def _outline(cfg: settings.Settings, brief_id: str, run: str) -> int:
+    seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{run}-{brief_id}")
+    made = await content.make(
+        seam, files.load(brief_id).brief, model=cfg.model_writing, year=_year(), ask=input
+    )
+    files.append_ledger(files.BENCH / "runs" / "ledger.jsonl", seam.ledger)
+    if isinstance(made, str):
+        print(made)
+        return 1
+    out = files.BENCH / "runs" / run / "content" / f"{brief_id}.json"
+    content.save(out, made)
+    print(content.show(made.story, made.facts))
+    print(f"\napproved -> {out}  ${seam.spent_usd:.3f}")
+    return 0
+
+
+async def _content(cfg: settings.Settings, run: str, which: str) -> int:
+    root = files.BENCH / "runs" / run / "content"
+    rows: list[dict[str, object]] = []
+    for brief_id in _ids(which):
+        brief = files.load(brief_id).brief
+        out = root / f"{brief_id}.json"
+        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{run}-{brief_id}")
+        if out.exists():
+            story, _ = content.load(out)
+            row = json.loads(out.read_text())["row"]
+        else:
+            made = await content.make(seam, brief, model=cfg.model_writing, year=_year(), ask=None)
+            if isinstance(made, str):
+                print(f"{brief_id}: {made}")
+                files.append_ledger(files.BENCH / "runs" / "ledger.jsonl", seam.ledger)
+                continue
+            story, row = made.story, made.row
+            content.save(out, made)
+        if not isinstance(row.get("inverse"), dict):
+            score = await content.inverse(seam, brief, story, model=cfg.model_cheap)
+            row["inverse"] = score
+            data = json.loads(out.read_text())
+            data["row"] = row
+            out.write_text(json.dumps(data, indent=2))
+        files.append_ledger(files.BENCH / "runs" / "ledger.jsonl", seam.ledger)
+        row["notes_unsourced"] = content.notes_unsourced(brief, *content.load(out))
+        rows.append(row)
+        print(json.dumps(row), flush=True)
+    if not rows:
+        return 1
+    page = root.parent / "review.md"
+    page.write_text(content.review(sorted(root.glob("*.json"))))
+    print(f"review -> {page}")
+    inv = [r.get("inverse") for r in rows]
+    scores = [float(str(i["mean"])) for i in inv if isinstance(i, dict)]
+    print(
+        f"{len(rows)} outlines · numbers without an approved fact "
+        f"{sum(int(str(r['numbers_without_approved_fact'])) for r in rows)} · banned "
+        f"{sum(int(str(r['banned_after'])) for r in rows)} · max topic labels before "
+        f"{max(int(str(r['topic_labels_before'])) for r in rows)} · inverse spec "
+        f"{statistics.mean(scores) if scores else 0:.2f} · max research "
+        f"${max(float(str(r['research_usd'])) for r in rows):.3f} · numbers in notes no fact "
+        f"states {sum(int(str(r['notes_unsourced'])) for r in rows)} · notes "
+        f"{sum(int(str(r['notes'])) for r in rows)}/{sum(int(str(r['slides'])) for r in rows)}"
+    )
+    return 0
+
+
+async def _injection(cfg: settings.Settings, run: str) -> int:
+    leaked = 0
+    for path in sorted((files.BENCH / "injection").glob("*.json")):
+        case = content.Case.model_validate_json(path.read_text())
+        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{run}-{case.id}")
+        found = await content.injection(seam, case, model=cfg.model_writing)
+        files.append_ledger(files.BENCH / "runs" / "ledger.jsonl", seam.ledger)
+        if isinstance(found, str):
+            leaked += found == "unmeasured"
+            print(f"{case.id}: {found}  ${seam.spent_usd:.3f}", flush=True)
+            continue
+        leaked += bool(found)
+        print(
+            f"{case.id}: {'LEAKED ' + ', '.join(found) if found else 'held'}  "
+            f"${seam.spent_usd:.3f}",
+            flush=True,
+        )
+    print(f"{leaked} of the corpus changed the output or went unmeasured")
+    return 1 if leaked else 0
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="cli")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -195,6 +288,14 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--budget", type=float, default=0.5, help="hard cap per deck, USD")
     cmd.add_argument("--force", action="store_true")
     cmd.add_argument("--no-exemplars", action="store_true", help="the phase-22 A/B")
+    cmd = sub.add_parser("outline")
+    cmd.add_argument("--brief", required=True)
+    cmd.add_argument("--run", default="outlines")
+    cmd = sub.add_parser("content")
+    cmd.add_argument("--run", required=True)
+    cmd.add_argument("--set", choices=("one", "smoke", "all"), default="smoke")
+    cmd = sub.add_parser("injection")
+    cmd.add_argument("--run", required=True)
     cmd = sub.add_parser("wall")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--seed", type=int, default=0)
@@ -210,6 +311,12 @@ def main(argv: list[str]) -> int:
         return asyncio.run(_baseline(cfg, args.set, args.force))
     if args.command == "build":
         return asyncio.run(_build(cfg, args))
+    if args.command == "outline":
+        return asyncio.run(_outline(cfg, args.brief, args.run))
+    if args.command == "content":
+        return asyncio.run(_content(cfg, args.run, args.set))
+    if args.command == "injection":
+        return asyncio.run(_injection(cfg, args.run))
     return _wall(args.run, args.seed, args.baselines)
 
 

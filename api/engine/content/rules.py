@@ -73,7 +73,12 @@ _META = re.compile(
 _EMOJI = re.compile("[\U0001f000-\U0001faff☀-➿⬀-⯿️]")
 
 # A number as it appears in copy: "$4.2M", "68%", "3x", "1,200", "0.6".
-_NUMBER = re.compile(r"[$€£]?\d(?:[\d,]*\d)?(?:\.\d+)?\s?(?:%|x|\u00d7|bn|[kmb]n?\b)?", re.I)
+_NUMBER = re.compile(
+    r"(?<![A-Za-z])[$€£]?\d(?:[\d,]*\d)?(?:\.\d+)?"
+    r"\s?(?:%|x|\u00d7|thousand\b|million\b|billion\b|bn\b|[kmb]\b)?",
+    re.I,
+)
+_SCALE = {"k": 1e3, "thousand": 1e3, "m": 1e6, "million": 1e6, "b": 1e9, "bn": 1e9, "billion": 1e9}
 _YEAR = re.compile(r"^(19|20)\d\d$")
 
 
@@ -116,7 +121,17 @@ def emoji(text: str) -> bool:
 _NAME_BEFORE = re.compile(r"[^\s.!?:;]\s+[A-Z][A-Za-z]+\s$")
 
 
-def numbers(text: str, *, names: bool = False) -> list[str]:
+_NAMED = re.compile(r"[^\s.!?:;]\s+([A-Z][A-Za-z]+)\s(\d+)\b")
+_WORD_BEFORE = re.compile(r"([A-Z][A-Za-z]+)\s$")
+
+
+def known_names(text: str) -> frozenset[str]:
+    """Product names with a number, learned from the brief ("Tessel 2"), so the
+    same name reads as a name at the start of a headline too."""
+    return frozenset(f"{w} {n}" for w, n in _NAMED.findall(text))
+
+
+def numbers(text: str, *, names: bool = False, known: frozenset[str] = frozenset()) -> list[str]:
     """The numbers in a piece of copy. A bare year is a date, not a statistic,
     and a bare integer after a capitalised word mid-sentence is part of a name
     ("Tessel 2", "Windows 11"). ponytail: numbers written as words ("nine in
@@ -126,21 +141,28 @@ def numbers(text: str, *, names: bool = False) -> list[str]:
         token = m.group(0).strip()
         if _YEAR.match(token):
             continue
-        if not names and token.isdigit() and _NAME_BEFORE.search(text[: m.start()]):
-            continue
+        if not names and token.isdigit():
+            before = text[: m.start()]
+            word = _WORD_BEFORE.search(before)
+            if _NAME_BEFORE.search(before) or (word and f"{word.group(1)} {token}" in known):
+                continue
         out.append(token)
     return out
 
 
-def _digits(token: str) -> str:
-    return re.sub(r"[^\d.]", "", token.replace(",", "")).rstrip(".")
+def value(token: str) -> float | None:
+    """What a number token is worth: "$4.2M", "$4,200,000" and "4.2 million" are equal."""
+    m = re.match(r"[$€£]?([\d,]*\d(?:\.\d+)?)\s?([a-z%\u00d7]*)", token.lower())
+    if not m:
+        return None
+    return float(m.group(1).replace(",", "")) * _SCALE.get(m.group(2), 1.0)
 
 
 def quoted(number: str, passage: str) -> bool:
-    """No quote, no fact: the number's digits appear verbatim in the passage."""
-    want = _digits(number)
+    """No quote, no fact: the passage states the same number, in any notation."""
+    want = value(number)
     # A source passage is searched for every number, names included.
-    return bool(want) and any(_digits(n) == want for n in numbers(passage, names=True))
+    return want is not None and any(value(n) == want for n in numbers(passage, names=True))
 
 
 def sourced(number: str, facts: Iterable[Fact]) -> bool:
@@ -151,7 +173,9 @@ def sourced(number: str, facts: Iterable[Fact]) -> bool:
     )
 
 
-def check(storyline: Storyline, facts: list[Fact]) -> list[Issue]:
+def check(
+    storyline: Storyline, facts: list[Fact], known: frozenset[str] = frozenset()
+) -> list[Issue]:
     """Every content-rule issue in a storyline, field by field."""
     by_id = {f.id: f for f in facts}
     issues: list[Issue] = []
@@ -173,7 +197,7 @@ def check(storyline: Storyline, facts: list[Fact]) -> list[Issue]:
             linked = [by_id[i] for i in field.fact_ids if i in by_id]
             issues += [
                 Issue("unsourced", slide.id, field.name, n)
-                for n in numbers(text)
+                for n in numbers(text, known=known)
                 if not sourced(n, linked)
             ]
     return issues

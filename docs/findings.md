@@ -27,6 +27,8 @@ The output space of the art-direction layer, counted on 2026-08-10 against the t
 
 **Model CSS is an HTML injection point (2026-10-01).** CSS placed raw in a `<style>` element can close it: `</style><a href=…>` put a full-slide link into the exported deck, and the player advances on click. CSP blocks the script and image variants and cannot block a link. The lint passed it, because tinycss2 tokenises `<` without complaint; it also passed unquoted `url()`, which tinycss2 reads as a `url` token rather than a function. Both were found by proving each payload live on a bare page first, which is the only way a hostile suite means anything.
 
+**Checking numbers in copy (2026-10-01).** Three ways the number check was wrong before it was right, each found on real outlines: a product name ("Tessel 2") read as a statistic at the start of a headline but as a name mid-sentence, so the same deck disagreed with itself — names are now learned from the brief; the same number in two notations ("$50k" and "$50,000") failed to match — numbers are now compared by value; and "Q2" yielded a "2". Numbers written as words ("nine in ten") are still not seen.
+
 ## Measured 2026-09-26 — the v1–v3 build
 
 An audit of the code at `8169fd9` and of the three `samples/*.html` decks opened in a browser. It is why v4 exists ([v4/spec.md](v4/spec.md)).

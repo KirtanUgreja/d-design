@@ -5,6 +5,7 @@ Pure by rule 6: nothing under ``engine`` imports a web framework or reads the
 environment. The model client and the clock are injected.
 """
 
+from engine.content import arcs, interview, notes, research, rules, storyline
 from engine.llm.openrouter import (
     ModelError,
     Reply,
@@ -36,5 +37,11 @@ __all__ = [
     "SlidePlan",
     "Storyline",
     "Transport",
+    "arcs",
+    "interview",
+    "notes",
     "parse_fenced",
+    "research",
+    "rules",
+    "storyline",
 ]

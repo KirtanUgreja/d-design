@@ -10,6 +10,8 @@ Rule failures get one targeted rewrite.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from pydantic import BaseModel, Field
 
 from engine.content import rules
@@ -69,6 +71,14 @@ class Draft(BaseModel):
     governing_thought: str
     key_points: list[str]
     slides: list[DraftSlide]
+
+
+@dataclass(frozen=True)
+class Written:
+    story: Storyline
+    facts: list[Fact]  # the input facts plus proposed illustrative ones
+    before: list[rules.Issue]  # rule issues on the first draft, before the rewrite
+    after: list[rules.Issue]  # what is left for the user to see
 
 
 class Rewrite(BaseModel):
@@ -138,10 +148,15 @@ def _provenance(text: str, linked: list[Fact], brief: Brief) -> Provenance:
     return "AI"
 
 
+def names(brief: Brief) -> frozenset[str]:
+    return rules.known_names(" ".join([brief.prompt, brief.ask] + [p.text for p in brief.pasted]))
+
+
 def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, list[Fact]]:
     """Turn a draft into plans. Pure. Returns the storyline and the full fact
     list, including a proposed illustrative Fact for every unsourced number."""
     live = {f.id: f for f in facts if f.status != "rejected"}
+    known = names(brief)
     out_facts = list(facts)
     plans: list[SlidePlan] = []
     for index, d in enumerate(draft.slides, start=1):
@@ -160,7 +175,7 @@ def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, 
             # A field links the facts that state its numbers, from those the
             # slide offered first, then from any live fact.
             ids: list[str] = []
-            for number in rules.numbers(text):
+            for number in rules.numbers(text, known=known):
                 match = next(
                     (f for f in [*offered, *live.values()] if rules.sourced(number, [f])), None
                 )
@@ -221,9 +236,8 @@ def _apply(story: Storyline, fixes: list[Rewrite]) -> None:
 
 async def write(
     seam: Seam, brief: Brief, facts: list[Fact], *, model: str
-) -> Result[tuple[Storyline, list[Fact], list[rules.Issue]], ModelError]:
-    """One call for the storyline, one more only if a rule fails. Returns the
-    storyline, the facts (with proposed illustrative ones) and what is left."""
+) -> Result[Written, ModelError]:
+    """One call for the storyline, one more only if a rule fails."""
     result = await seam.complete_json(
         "storyline",
         Draft,
@@ -244,7 +258,8 @@ async def write(
         )
     story, all_facts = assemble(draft, brief, facts)
     wording = {"topic_label", "banned", "meta", "emoji"}
-    issues = [i for i in rules.check(story, all_facts) if i.kind in wording]
+    before = rules.check(story, all_facts, names(brief))
+    issues = [i for i in before if i.kind in wording]
     if issues:
         listed = "\n".join(
             f"- {i.slide_id} {i.field}: {_text(story, i)!r} — {i.kind}: {i.found}" for i in issues
@@ -263,7 +278,7 @@ async def write(
         )
         if not isinstance(fix, Err):
             _apply(story, fix.value.fixes)
-    return ok((story, all_facts, rules.check(story, all_facts)))
+    return ok(Written(story, all_facts, before, rules.check(story, all_facts, names(brief))))
 
 
 def _text(story: Storyline, issue: rules.Issue) -> str:

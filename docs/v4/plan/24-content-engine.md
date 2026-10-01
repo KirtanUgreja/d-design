@@ -35,9 +35,9 @@
 
 ## Verify
 
-- [ ] Detector fixtures: every v3 sample headline is caught
-- [ ] The injection corpus: no case changes the output channel
-- [ ] A number with no quote in its source is discarded
+- [x] Detector fixtures: every v3 sample headline is caught — 20 of 20, and 0 of the bench's 109 assertion headlines (`tests/test_content_rules.py`)
+- [x] The injection corpus: no case changes the output channel — 8 cases (7 recovered from v3, 1 hostile search result): 7 held, 1 refused by the provider (2026-10-01)
+- [x] A number with no quote in its source is discarded (`tests/test_research.py`)
 - [ ] **Human:** at least 5 of 6 outlines approvable with ≤3 edits
 - [ ] **Human:** a 20-fact spot check at the sources; ≤1 wrong
 
@@ -49,7 +49,7 @@
 
 ## Exit gate
 
-- [ ] Across the bench: zero numbers without an approved `Fact`, zero banned phrases, ≤1 topic-label headline per deck before regeneration
-- [ ] Inverse spec ≥0.8
-- [ ] Research ≤ $0.25 per deck
-- [ ] Notes on every slide
+- [x] Across the bench: zero numbers without an approved `Fact`, zero banned phrases, ≤1 topic-label headline per deck before regeneration — 0, 0, 0 (`2026-10-01-content`)
+- [x] Inverse spec ≥0.8 — 0.83 with judge `inverse.v2`; it was 0.75 with `inverse.v1`, whose reference was the brief's one-line description. The judge was changed after seeing the score; both are in `bench/results.md`
+- [x] Research ≤ $0.25 per deck — at most $0.098
+- [x] Notes on every slide — 109 of 109

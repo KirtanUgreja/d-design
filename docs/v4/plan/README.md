@@ -9,7 +9,7 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 | [21 — reset](21-reset.md) | M | built 2026-09-30 — open: the owner's ratings. Gamma baselines dropped for now (2026-10-01) |
 | [22 — engine spike](22-engine-spike.md) | L | **closed 2026-10-01 on design** — owner re-read gate 1 after two failures: the engine wins Designed, loses Says something; content gap → 24, re-tested at gate 2 |
 | [23 — design system](23-design-system.md) | M | not started |
-| [24 — content engine](24-content-engine.md) | M | in progress — started 2026-10-01, before 23 (owner) |
+| [24 — content engine](24-content-engine.md) | M | built 2026-10-01 — automated exit lines pass; open: the owner's outline review and 20-fact spot check (`bench/runs/2026-10-01-content/review.md`) |
 | [25 — composition and QA](25-composition-qa.md) | L | not started |
 | [26 — player and export](26-player-export.md) | M | not started |
 | [27 — app: create flow](27-app-create-flow.md) | L | not started |

@@ -64,10 +64,17 @@ def test_no_quote_no_fact() -> None:
     assert rules.quoted("68%", passage)
     assert rules.quoted("1200", passage)
     assert not rules.quoted("86%", passage)
+    assert rules.quoted("$50,000", "Nine accounts above $50k ACV")
+    assert rules.quoted("$3.9 million", "Revenue was $3.9M")
+    assert not rules.quoted("$3.9 billion", "Revenue was $3.9M")
+    assert rules.numbers("Up 18% on Q2") == ["18%"]
     assert rules.numbers("Founded in 2019, now $4.2M ARR and 3x growth") == ["$4.2M", "3x"]
     assert rules.numbers("Upgrade to Tessel 2 for 3 devices") == ["3"]
     assert rules.numbers("3 teams moved to Windows 11") == ["3"]
     assert rules.numbers("Launched in May. Drive 200 teams") == ["200"]
+    known = rules.known_names("Launch deck for Tessel 2, the offline notes app.")
+    assert known == {"Tessel 2"}
+    assert rules.numbers("Tessel 2 works offline for 3 devices", known=known) == ["3"]
 
 
 def test_check_flags_unsourced_and_ignores_rejected_facts() -> None:
