@@ -11,7 +11,13 @@
     "deck_type": "sales",
     "audience": "The chain's COO and head of operations",
     "ask": "Sign a 10-store paid pilot",
-    "research": false
+    "research": false,
+    "brand": {
+      "name": "Kiln",
+      "colors": [
+        "#1f4e9c"
+      ]
+    }
   },
   "outline": {
     "governing_thought": "Kiln ovens cut energy, waste and bake variance across a bakery chain, and a 10-store paid pilot will prove it in your own stores.",

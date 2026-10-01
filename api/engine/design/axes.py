@@ -271,8 +271,8 @@ MOTIFS: tuple[Motif, ...] = (
     Motif("weave", ("weave", "solid"), "a quiet canvas weave in large fields"),
     Motif("grain", ("grain", "solid"), "paper grain fields; the quietest texture"),
     Motif("rules", ("lines", "solid"), "ruled lines: hairlines and thick rules organise the page"),
-    Motif("frames", ("solid",), "framed panels: a thick ruled frame around one element"),
-    Motif("numerals", ("solid",), "oversized numerals (data-deco) as the visual anchor"),
+    Motif("frames", ("lines", "solid"), "framed panels: a thick ruled frame around one element"),
+    Motif("numerals", ("grain", "solid"), "oversized numerals (data-deco) as the visual anchor"),
     Motif("grid-paper", ("grid", "solid"), "a drafting grid in fields; plans and measurement"),
 )
 TEXTURE_KINDS = frozenset(k for m in MOTIFS for k in m.textures) | {"halftone", "hatch", "grid"}

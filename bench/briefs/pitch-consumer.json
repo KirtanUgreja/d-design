@@ -4,7 +4,13 @@
     "prompt": "Seed pitch for Potluck, an app that lets neighbours share home-cooked meals at cost.",
     "deck_type": "pitch",
     "audience": "Consumer seed investors",
-    "ask": "Raise $2.5M seed"
+    "ask": "Raise $2.5M seed",
+    "brand": {
+      "name": "Potluck",
+      "colors": [
+        "#e4572e"
+      ]
+    }
   },
   "outline": {
     "governing_thought": "Potluck turns the meals neighbours already cook into a trusted, at-cost local network, and $2.5M seed funds proving it works city by city.",

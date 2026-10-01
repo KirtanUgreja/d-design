@@ -8,6 +8,7 @@ uv run python -m cli outline --brief ID         interview, research, storyline, 
 uv run python -m cli content --run NAME         phase 24 bench: every brief, metrics, inverse spec
 uv run python -m cli injection --run NAME       the injection corpus through the content stages
 uv run python -m cli fonts                      measure the vendored faces into meta.json
+uv run python -m cli tiles --run NAME           3 sampled looks per brief, as style tiles
 """
 
 from __future__ import annotations
@@ -24,8 +25,11 @@ from pydantic import BaseModel
 
 import settings
 from benchtools import baseline, content, files, fonts, outline, shots, wall
-from engine import Seam, pipeline
-from engine.design.theme import THEMES
+from engine import Brief, Seam, pipeline
+from engine.design import tiles
+from engine.design.sampler import sample
+from engine.design.theme import THEMES, Theme
+from engine.design.theme import build as build_theme
 from lib.result import Err
 
 
@@ -125,7 +129,7 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             print(f"{brief_id}: already built")
             continue
         out.mkdir(parents=True, exist_ok=True)
-        theme = themes[index % len(themes)]
+        theme = themes[index % len(themes)] if args.themes == "fixed" else _sampled(item.brief)[0]
         seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{args.run}-{label}-{brief_id}")
         built = await pipeline.build(
             seam,
@@ -182,6 +186,50 @@ def _wall(run: str, seed: int, baselines: bool) -> int:
     count = wall.build(decks, out, run, seed)
     print(f"{count} decks -> {out}")
     return 0 if count else 1
+
+
+def _sampled(brief: Brief) -> list[Theme]:
+    """The brief's three looks; the bench builds with the first."""
+    brand_hex = brief.brand.colors[0] if brief.brand and brief.brand.colors else None
+    return [
+        build_theme(look)
+        for look in sample(brief.id, deck_type=brief.deck_type, brand_hex=brand_hex)
+    ]
+
+
+async def _tiles(run: str, which: str) -> int:
+    root = files.BENCH / "runs" / run / "tiles"
+    root.mkdir(parents=True, exist_ok=True)
+    rows: list[str] = []
+    broken = 0
+    for brief_id in _ids(which):
+        item = files.load(brief_id)
+        if item.outline is None:
+            continue
+        cells: list[str] = []
+        for variant, theme in enumerate(_sampled(item.brief)):
+            frames, bad = await tiles.render(
+                theme, item.outline, variant, str(root / "work.html"), str(root)
+            )
+            broken += len(bad)
+            look = theme.look
+            caption = (
+                f"{look['pairing']} · {look['palette']} · {look['grid']} · {look['motif']} · "
+                f"{look['scale']}" + (f" · <b>QA {'; '.join(bad)}</b>" if bad else "")
+            )
+            imgs = "".join(f'<img src="tiles/{f.slide_id}.png">' for f in frames)
+            cells.append(f"<figure>{imgs}<figcaption>{caption}</figcaption></figure>")
+        rows.append(f"<section><h2>{brief_id}</h2><div class=row>{''.join(cells)}</div></section>")
+    page = files.BENCH / "runs" / run / "tiles.html"
+    page.write_text(
+        "<!doctype html><meta charset=utf-8><title>Style tiles</title><style>"
+        "body{font:14px system-ui;margin:24px;background:#ddd}h2{margin:24px 0 8px}"
+        ".row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}"
+        "figure{margin:0;background:#fff;padding:8px}img{width:100%;display:block;margin-bottom:6px}"
+        "</style>" + "".join(rows)
+    )
+    print(f"{len(rows)} briefs x 3 looks -> {page}  ({broken} tiles with QA errors)")
+    return 0
 
 
 def _year() -> int:
@@ -289,6 +337,10 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--budget", type=float, default=0.5, help="hard cap per deck, USD")
     cmd.add_argument("--force", action="store_true")
     cmd.add_argument("--no-exemplars", action="store_true", help="the phase-22 A/B")
+    cmd.add_argument("--themes", choices=("sampled", "fixed"), default="sampled")
+    cmd = sub.add_parser("tiles")
+    cmd.add_argument("--run", required=True)
+    cmd.add_argument("--set", choices=("one", "smoke", "all"), default="all")
     cmd = sub.add_parser("outline")
     cmd.add_argument("--brief", required=True)
     cmd.add_argument("--run", default="outlines")
@@ -319,6 +371,8 @@ def main(argv: list[str]) -> int:
         return asyncio.run(_content(cfg, args.run, args.set))
     if args.command == "injection":
         return asyncio.run(_injection(cfg, args.run))
+    if args.command == "tiles":
+        return asyncio.run(_tiles(args.run, args.set))
     if args.command == "fonts":
         measured = asyncio.run(fonts.measure())
         for family, meta in measured.items():
