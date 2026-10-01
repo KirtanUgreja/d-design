@@ -78,6 +78,8 @@ class Fact(BaseModel):
     source: Literal["user", "cited", "illustrative"]
     citation: Citation | None = None
     status: Literal["proposed", "approved", "rejected"] = "proposed"
+    as_of: str = ""  # the year the number describes, when the source says
+    flags: list[str] = Field(default_factory=list)  # "older than 3 years" · "conflicts with f3"
 
 
 class PlanField(BaseModel):
