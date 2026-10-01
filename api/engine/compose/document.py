@@ -46,6 +46,25 @@ _TILES = {
         "<path d='M-4 4 L4 -4 M0 20 L20 0 M16 24 L24 16' stroke='#000' stroke-width='5'/>", 20
     ),
     "grid": _svg("<path d='M0 0H40V3H0ZM0 0V40H3V0Z'/>", 40),
+    # Ported from v3's texture/patterns.ts without its light-source bloom.
+    "dither": _svg(
+        "".join(
+            f"<rect x='{x * 4}' y='{y * 4}' width='4' height='4'/>"
+            for y, row in enumerate(((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5)))
+            for x, t in enumerate(row)
+            if t < 6
+        ),
+        16,
+    ),
+    "crosshatch": _svg("<rect width='16' height='2.5'/><rect width='2.5' height='16'/>", 16),
+    "weave": _svg("<rect width='5' height='8'/><rect x='8' y='8' width='5' height='8'/>", 16),
+    "lines": _svg("<rect width='24' height='3'/>", 24),
+    "grain": _svg(
+        "<filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' "
+        "stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+        "-1.6 1.1'/></filter><rect width='64' height='64' filter='url(#g)'/>",
+        64,
+    ),
 }
 
 # Ours, not the model's: it may use :host, masks and url(). The model's CSS is

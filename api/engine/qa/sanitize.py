@@ -13,6 +13,7 @@ from html.parser import HTMLParser
 
 import nh3
 
+from engine.design.axes import TEXTURE_KINDS as _AXES_TEXTURES
 from lib.result import Result, err, ok
 
 TAGS = frozenset(
@@ -46,7 +47,7 @@ _GLOBAL = frozenset(
     {"class", "data-field", "data-deco", "data-layer", "data-bleed", "data-build", "aria-hidden"}
 )
 ATTRIBUTES: dict[str, set[str]] = {"*": set(_GLOBAL), "dd-texture": {"kind", "tone"}}
-TEXTURE_KINDS = frozenset({"halftone", "hatch", "grid", "solid"})
+TEXTURE_KINDS = _AXES_TEXTURES
 TEXTURE_TONES = frozenset({"accent", "ink", "surface"})
 
 MAX_ELEMENTS = 150

@@ -19,7 +19,7 @@ from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "compose.v2"
+PROMPT_VERSION = "compose.v3"
 
 RULES = """You are a senior editorial designer. You design ONE presentation slide as HTML and CSS.
 The slide is projected at exactly 1920x1080px. It must look designed by a person with a point of
@@ -38,9 +38,10 @@ HTML CONTRACT
   not add, drop or rewrite words.
 - Any other visible text must be decoration: at most 3 words, in an element with data-deco
   (a folio like "04", a big numeral). Do not invent labels, captions or numbers.
-- <dd-texture kind="solid|halftone|hatch|grid" tone="accent|ink|surface"></dd-texture> is flat
-  colour or pattern. Size and place it with a class. Use at most two. A solid one is a rule or bar
-  (under 48px thick); a large one is a pattern, or it sits behind text.
+- <dd-texture kind="…" tone="accent|ink|surface"></dd-texture> is flat colour ("solid") or a
+  pattern; use only the kinds this look lists under THEME TOKENS. Size and place it with a
+  class. Use at most two. A solid one is a rule or bar (under 48px thick); a large one is a
+  pattern, or it sits behind text.
 - Attributes allowed: class, data-field, data-deco, data-layer, data-bleed, and kind/tone on
   dd-texture. No style attribute, no id.
 

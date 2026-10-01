@@ -1,12 +1,23 @@
 """Themes: the only source of visual truth (docs/v4/design-engine.md).
 
-Phase 22 ships three hand-specified themes. Phase 23 replaces the constants
-with a sampler; the ``Theme`` shape and ``css()`` stay. No model call here.
+Phase 22 shipped three hand-specified themes, kept as THEMES. Phase 23 adds
+``build()``: sampled axes (design/sampler.py) into a Theme. No model call here.
 """
 
 from __future__ import annotations
 
+import functools
 from dataclasses import dataclass, field
+from pathlib import Path
+from typing import TYPE_CHECKING
+
+from pydantic import BaseModel
+
+from engine.design.axes import DENSITIES, EDGES, SCALES
+from engine.design.palettes import series
+
+if TYPE_CHECKING:
+    from engine.design.sampler import Look
 
 
 @dataclass(frozen=True)
@@ -49,6 +60,10 @@ class Theme:
     # it a descender meets the capital under it. Measured in Chromium on
     # 2026-10-01. Exposed as --lh-display; QA reports tighter as E3.
     leading: float = 0.9
+    cols: int = 12
+    textures: tuple[str, ...] = ("halftone", "hatch", "grid", "solid")
+    guidance: str = ""  # the grid, motif and pairing notes, for the compose prompt
+    look: dict[str, str] = field(default_factory=dict)  # the sampled axes, for the record
 
     @property
     def faces(self) -> tuple[Face, ...]:
@@ -77,6 +92,7 @@ class Theme:
             f"--radius:{self.radius}px;",
             f"--rule:{self.rule}px;",
             f"--lh-display:{self.leading};",
+            f"--cols:{self.cols};",
             "--shadow-hard:14px 14px 0 var(--c-ink);",
         ]
         return ":root{" + "".join(lines) + "}"
@@ -98,7 +114,11 @@ class Theme:
             f"Spacing: {spaces}; --margin ({self.margin}px) is the page margin; "
             f"--gutter ({self.gutter}px). --radius is {self.radius}px. "
             f"--rule ({self.rule}px) is the line weight. --shadow-hard is a hard offset shadow.\n"
-            f"--lh-display ({self.leading}) is the tightest display line-height; tighter collides."
+            f"--lh-display ({self.leading}) is the tightest display line-height; "
+            "tighter collides.\n"
+            f"--cols ({self.cols}) columns. dd-texture kinds in this look: "
+            f"{', '.join(self.textures)}."
+            + (f"\nThis look: {self.guidance}" if self.guidance else "")
         )
 
 
@@ -176,3 +196,97 @@ THEMES: dict[str, Theme] = {
         leading=0.99,
     ),
 }
+
+
+# --- sampled themes -------------------------------------------------------------
+
+_FONTS = Path(__file__).resolve().parent.parent.parent / "library" / "fonts"
+
+
+class _Metrics(BaseModel):
+    leading: float
+    width: float
+
+
+class _FontMeta(BaseModel):
+    family: str
+    weights: list[int]
+    metrics: dict[str, _Metrics]
+
+
+@functools.cache
+def _meta() -> dict[str, tuple[str, _FontMeta]]:
+    """family -> (folder, meta), parsed once from library/fonts/*/meta.json."""
+    out: dict[str, tuple[str, _FontMeta]] = {}
+    for path in _FONTS.glob("*/meta.json"):
+        meta = _FontMeta.model_validate_json(path.read_text())
+        out[meta.family] = (path.parent.name, meta)
+    return out
+
+
+def face(family: str) -> Face:
+    folder, meta = _meta()[family]
+    return Face(family, folder, tuple(meta.weights))
+
+
+def display_width(family: str, weight: int) -> float:
+    """Average advance in em, measured (benchtools/fonts.py)."""
+    return _meta()[family][1].metrics[str(weight)].width
+
+
+def _leading(family: str, weight: int) -> float:
+    return _meta()[family][1].metrics[str(weight)].leading
+
+
+# A display face's average advance, in em, that the base scale is drawn for
+# (Archivo 900 is 0.53). Wider faces are set smaller, so a headline holds about
+# as many characters per line in any pairing. Never larger: a narrow face's
+# figures are not narrow, and enlarging them pushed numbers into the margin.
+_REFERENCE_WIDTH = 0.5
+_DISPLAY_STEPS = ("mega", "d1", "d2", "d3", "h1", "h2", "h3")
+_FLOOR = {"h1": 56, "h2": 56, "h3": 40}  # QA's headline minimum (E4) stays reachable
+
+
+def _fit_width(scale: dict[str, int], family: str, weight: int) -> dict[str, int]:
+    width = display_width(family, weight)
+    k = min(1.0, max(0.6, _REFERENCE_WIDTH / width))
+    out = dict(scale)
+    for step in _DISPLAY_STEPS:
+        out[step] = max(_FLOOR.get(step, 0), round(scale[step] * k / 2) * 2)
+    return out
+
+
+def build(look: Look) -> Theme:
+    """Sampled axes into a Theme. Pure and deterministic."""
+    pairing = look.pairing
+    display, text, label = face(pairing.display), face(pairing.text), face(pairing.label)
+    roles = look.roles
+    colors = {role: c.hex for role, c in roles.items()}
+    colors |= {f"series-{n}": c.hex for n, c in enumerate(series(roles), start=1)}
+    radius, rule, _ = EDGES[look.edge]
+    k = DENSITIES[look.density]
+    grid = look.grid
+    motif = look.motif
+    return Theme(
+        id=look.id,
+        summary=f"{pairing.note}; {look.palette} palette; {grid.id} grid; {motif.id} motif.",
+        colors=colors,
+        display=display,
+        text=text,
+        label=label,
+        w_display=pairing.display_weight,
+        w_bold=max(text.weights),
+        scale=_fit_width(SCALES[look.scale], pairing.display, pairing.display_weight),
+        space=tuple(round(px * k) for px in (8, 16, 24, 40, 64, 96, 128, 192)),
+        # Density moves the margin within 96-144px: wider starves the columns, and
+        # narrower puts large figures into the 64px safe area.
+        margin=min(144, max(96, round(grid.margin * k))),
+        gutter=grid.gutter,
+        radius=radius,
+        rule=rule,
+        leading=_leading(pairing.display, pairing.display_weight),
+        cols=grid.cols,
+        textures=motif.textures,
+        guidance=f"{grid.note}. Motif: {motif.note}. Type: {pairing.note}.",
+        look=look.record(),
+    )
