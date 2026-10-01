@@ -54,6 +54,9 @@
 
 ## Exit gate
 
+> **Closed 2026-10-01 on design, by the owner's decision after two failed attempts.** The preference and usable lines failed (8 then 6 of 12; 10 then 7 of 12). The owner re-read gate 1 as a design gate, which the engine wins: Designed 4.25 and 4.42 against the one-shot's 3.83 and 3.75, and 6 wins, 4 ties, 2 losses on Designed alone in attempt 2. It loses on Says something, which the frozen outline caps. This re-reading was made **after** seeing the results, and is recorded as such. The exemplar-fill pivot is not taken; the content gap goes to phase 24 and is re-tested against the one-shot at gate 2. Evidence: `bench/results.md`.
+
+
 - [ ] At least 8 of 12 decks rated "designed, would present with ≤2 fixes" — 10 of 12 on attempt 1, 7 of 12 on attempt 2
 - [ ] Preferred over the one-shot baseline in at least 9 of 12 blind pairs — 8 of 12 on attempt 1, 6 of 12 on attempt 2
 - [x] At most 1 visible defect per deck — 0
