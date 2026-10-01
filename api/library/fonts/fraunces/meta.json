@@ -1,0 +1,27 @@
+{
+  "family": "Fraunces",
+  "role": "serif-display",
+  "weights": [
+    400,
+    700
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.47,
+      "cap": 0.72,
+      "descender": 0.245,
+      "width": 0.478,
+      "leading": 0.97
+    },
+    "700": {
+      "x_height": 0.477,
+      "cap": 0.717,
+      "descender": 0.245,
+      "width": 0.507,
+      "leading": 0.97
+    }
+  }
+}

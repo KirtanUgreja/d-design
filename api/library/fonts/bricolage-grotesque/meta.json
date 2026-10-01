@@ -1,0 +1,27 @@
+{
+  "family": "Bricolage Grotesque",
+  "role": "grotesk",
+  "weights": [
+    500,
+    800
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "500": {
+      "x_height": 0.52,
+      "cap": 0.66,
+      "descender": 0.19,
+      "width": 0.488,
+      "leading": 0.86
+    },
+    "800": {
+      "x_height": 0.528,
+      "cap": 0.66,
+      "descender": 0.208,
+      "width": 0.507,
+      "leading": 0.87
+    }
+  }
+}

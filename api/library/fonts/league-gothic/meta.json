@@ -1,0 +1,19 @@
+{
+  "family": "League Gothic",
+  "role": "condensed",
+  "weights": [
+    400
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.547,
+      "cap": 0.735,
+      "descender": 0.196,
+      "width": 0.266,
+      "leading": 0.94
+    }
+  }
+}

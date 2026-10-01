@@ -1,0 +1,27 @@
+{
+  "family": "Unbounded",
+  "role": "wide",
+  "weights": [
+    500,
+    800
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "500": {
+      "x_height": 0.569,
+      "cap": 0.75,
+      "descender": 0.18,
+      "width": 0.621,
+      "leading": 0.93
+    },
+    "800": {
+      "x_height": 0.573,
+      "cap": 0.75,
+      "descender": 0.182,
+      "width": 0.647,
+      "leading": 0.94
+    }
+  }
+}

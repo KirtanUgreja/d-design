@@ -1,0 +1,27 @@
+{
+  "family": "IBM Plex Mono",
+  "role": "mono",
+  "weights": [
+    400,
+    500
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": "Plex",
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.516,
+      "cap": 0.698,
+      "descender": 0.212,
+      "width": 0.6,
+      "leading": 0.91
+    },
+    "500": {
+      "x_height": 0.516,
+      "cap": 0.698,
+      "descender": 0.212,
+      "width": 0.6,
+      "leading": 0.91
+    }
+  }
+}

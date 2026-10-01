@@ -1,0 +1,27 @@
+{
+  "family": "Newsreader",
+  "role": "serif",
+  "weights": [
+    400,
+    600
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.44,
+      "cap": 0.712,
+      "descender": 0.26,
+      "width": 0.434,
+      "leading": 0.98
+    },
+    "600": {
+      "x_height": 0.445,
+      "cap": 0.714,
+      "descender": 0.26,
+      "width": 0.454,
+      "leading": 0.98
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "family": "Work Sans",
+  "role": "sans",
+  "weights": [
+    400,
+    600
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.5,
+      "cap": 0.66,
+      "descender": 0.215,
+      "width": 0.51,
+      "leading": 0.88
+    },
+    "600": {
+      "x_height": 0.5,
+      "cap": 0.66,
+      "descender": 0.215,
+      "width": 0.51,
+      "leading": 0.88
+    }
+  }
+}

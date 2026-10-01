@@ -1,0 +1,27 @@
+{
+  "family": "Zilla Slab",
+  "role": "slab",
+  "weights": [
+    400,
+    700
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.445,
+      "cap": 0.651,
+      "descender": 0.231,
+      "width": 0.441,
+      "leading": 0.89
+    },
+    "700": {
+      "x_height": 0.451,
+      "cap": 0.65,
+      "descender": 0.235,
+      "width": 0.448,
+      "leading": 0.89
+    }
+  }
+}

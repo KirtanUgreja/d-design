@@ -1,0 +1,19 @@
+{
+  "family": "Gloock",
+  "role": "serif-display",
+  "weights": [
+    400
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.508,
+      "cap": 0.75,
+      "descender": 0.224,
+      "width": 0.465,
+      "leading": 0.98
+    }
+  }
+}

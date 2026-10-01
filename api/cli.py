@@ -7,6 +7,7 @@ uv run python -m cli wall --run NAME            build the wall page for a human 
 uv run python -m cli outline --brief ID         interview, research, storyline, the gate, notes
 uv run python -m cli content --run NAME         phase 24 bench: every brief, metrics, inverse spec
 uv run python -m cli injection --run NAME       the injection corpus through the content stages
+uv run python -m cli fonts                      measure the vendored faces into meta.json
 """
 
 from __future__ import annotations
@@ -22,7 +23,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 import settings
-from benchtools import baseline, content, files, outline, shots, wall
+from benchtools import baseline, content, files, fonts, outline, shots, wall
 from engine import Seam, pipeline
 from engine.design.theme import THEMES
 from lib.result import Err
@@ -296,6 +297,7 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--set", choices=("one", "smoke", "all"), default="smoke")
     cmd = sub.add_parser("injection")
     cmd.add_argument("--run", required=True)
+    sub.add_parser("fonts")
     cmd = sub.add_parser("wall")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--seed", type=int, default=0)
@@ -317,6 +319,11 @@ def main(argv: list[str]) -> int:
         return asyncio.run(_content(cfg, args.run, args.set))
     if args.command == "injection":
         return asyncio.run(_injection(cfg, args.run))
+    if args.command == "fonts":
+        measured = asyncio.run(fonts.measure())
+        for family, meta in measured.items():
+            print(family, json.dumps(meta["metrics"]))
+        return 0
     return _wall(args.run, args.seed, args.baselines)
 
 
