@@ -54,9 +54,9 @@
 
 ## Exit gate
 
-- [ ] At least 8 of 12 decks rated "designed, would present with ≤2 fixes"
-- [ ] Preferred over the one-shot baseline in at least 9 of 12 blind pairs
-- [ ] At most 1 visible defect per deck
-- [ ] Median ≤ $2 and ≤ 4 minutes per deck
-- [ ] The design model is chosen and pinned; the exemplar A/B result is recorded
+- [x] At least 8 of 12 decks rated "designed, would present with ≤2 fixes" — 10 of 12 (attempt 1, 2026-10-01)
+- [ ] Preferred over the one-shot baseline in at least 9 of 12 blind pairs — 8 of 12 on attempt 1
+- [x] At most 1 visible defect per deck — 0
+- [x] Median ≤ $2 and ≤ 4 minutes per deck — $0.055, about 1 minute
+- [x] The design model is chosen and pinned; the exemplar A/B result is recorded
 - [ ] Total phase spend ≤ $10 (owner's budget, 2026-09-30; was $100)
