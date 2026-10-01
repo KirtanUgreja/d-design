@@ -27,7 +27,6 @@
 - `qa/sanitize.py` (nh3) and `qa/lint.py` (tinycss2).
 - `compose/document.py`: one shadow root per slide.
 - QA errors E1–E10, with **one** repair round.
-- Up to 3 images per deck.
 - A minimal export: arrow keys, fullscreen, scale-to-fit, the CSP.
 - **Bake-off:** the 3 smoke outlines on cheap paid models first (owner's decision, 2026-09-30: cheap models, no free ones, quality judged on the wall). A dearer model is tried only if the wall says the cheap ones are not good enough. One full 12-deck run at the end.
 - **A/B:** with exemplars vs without.
@@ -51,6 +50,7 @@
 - The sampler — trigger: phase 23.
 - The content engine — trigger: phase 24.
 - Charts, the full player, the app — triggers: phases 25, 26, 27.
+- Images — trigger: phase 25, which owns `dd-image` and the image-model bake-off. None of the frozen outlines asks for an image, so a phase-22 pipeline would have had nothing to draw (owner's decision, 2026-10-01).
 
 ## Exit gate
 

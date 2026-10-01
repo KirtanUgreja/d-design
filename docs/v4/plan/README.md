@@ -7,7 +7,7 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 | Phase | Size | Status |
 |---|---|---|
 | [21 — reset](21-reset.md) | M | built 2026-09-30 — open: 2 baseline decks (credit ran out), the Gamma baselines and the owner's ratings |
-| [22 — engine spike](22-engine-spike.md) | L | in progress — 12-deck run done on DeepSeek ($0.055 a deck, nothing flagged); owner approved the look. Exemplar A/B done (keep). Open: images, blind ratings |
+| [22 — engine spike](22-engine-spike.md) | L | in progress — 12-deck run done on DeepSeek ($0.055 a deck, nothing flagged); owner approved the look. Exemplar A/B done (keep). Images deferred to 25. Open: the owner's blind ratings |
 | [23 — design system](23-design-system.md) | M | not started |
 | [24 — content engine](24-content-engine.md) | M | not started |
 | [25 — composition and QA](25-composition-qa.md) | L | not started |

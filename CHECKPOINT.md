@@ -1,6 +1,6 @@
-# Checkpoint — 2026-09-30
+# Checkpoint — 2026-10-01
 
-Resume point. Branch `phase-21-reset`, pushed. `main` is still v3 (`8169fd9`, also tagged `v3-final`).
+Resume point. Branch `phase-22-engine-spike`. `main` is still v3 (`8169fd9`, also tagged `v3-final`).
 
 ## Where things stand
 
@@ -25,7 +25,7 @@ First comparison (`bench/runs/2026-09-30-models/wall.html`): DeepSeek v4.1 Flash
 
 Owner inspected the decks and approved the quality (2026-09-30). Model pinned: `deepseek/deepseek-v4.1-flash`. The fallback is now three designed code layouts. Full 12-deck run: `bench/runs/2026-09-30-full/wall.html` — $0.67 total, median $0.055 per deck, nothing flagged.
 
-Exemplar A/B done: keep the library (fewer repairs, near-zero cost). Left in phase 22: images (up to 3 per deck; needs a credit top-up) and the formal blind ratings for the exit gate. About $0.60 of credit remains.
+Exemplar A/B done: keep the library (fewer repairs, near-zero cost). Images deferred to phase 25 (owner, 2026-10-01): no frozen outline asks for one. Left in phase 22: only the owner's blind ratings for the exit gate. OpenRouter credit left: $0.40 (2026-10-01).
 
 Budget: the owner set a $10 cap and cheap paid models only (no free ones). About $1.30 of credit was left on 2026-09-30.
 
