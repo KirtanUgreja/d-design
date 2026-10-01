@@ -39,10 +39,10 @@
 
 ## Verify
 
-- [ ] A hostile-slide suite: script, handlers, `url()`, `@import`, links — none survive, and each payload is first proven to run unsandboxed
-- [ ] One failing fixture per QA error code
-- [ ] The offline test: zero requests from `file://`
-- [ ] Cost and time per deck recorded from the ledger
+- [x] A hostile-slide suite: script, handlers, `url()`, `@import`, links — none survive, and each payload is first proven to run unsandboxed (`tests/test_hostile.py`, 2026-10-01). It found a `</style>` breakout and unquoted `url()` passing the lint; both fixed
+- [x] One failing fixture per QA error code, E1–E9 (`tests/test_qa_codes.py`). E10 moves to phase 25 with images
+- [x] The offline test: zero requests from `file://` (`tests/test_offline.py`), itself proven to catch a leak
+- [x] Cost and time per deck recorded from the ledger (`bench/results.md`)
 - [ ] **Human (gate 1):** blind wall ratings of 12 decks against the baselines
 
 ## Skipped

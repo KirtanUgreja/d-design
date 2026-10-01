@@ -198,6 +198,8 @@ The model now writes markup, so the output channel carries the risk. Three indep
 **Layer 2: lint the CSS** (`qa/lint.py`, tinycss2)
 - **Scoping is the browser's job.** Each slide lives in its own Declarative Shadow DOM root, so its CSS cannot reach the player or another slide. We lint; we never rewrite selectors.
 - No `url()`, no at-rules of any kind, no `:host` / `:root` / `html` / `body` selectors, no backslash escapes.
+- No `<` anywhere: `</style>` inside slide CSS ends the element and turns the rest into live HTML — a full-slide link survives the CSP. The document also writes `</` in slide CSS as `<\/`, so a frame that skipped the lint stays inside its `<style>`.
+- tinycss2 reads an unquoted `url(...)` as its own token, not a function. The lint checks both.
 - The token rule and the rest of the bans are in [design-engine.md](design-engine.md) → "Slide lint".
 
 **Layer 3: the browser**

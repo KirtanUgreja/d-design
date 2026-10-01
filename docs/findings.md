@@ -25,6 +25,8 @@ The output space of the art-direction layer, counted on 2026-08-10 against the t
 - **A token read is the abstraction working; a branch is the abstraction failing.** "Any renderer change means the abstraction is wrong" was too blunt — a hardcoded value becoming a token is the exercise succeeding. A `mode` prop or an `if (id === …)` is it failing.
 - **The values a system holds globally are the ones it holds because it only ever had one instance.** Four of the seven costs of the second art direction were exactly this shape, and three more appeared in the third. Expect it wherever a second instance of anything arrives.
 
+**Model CSS is an HTML injection point (2026-10-01).** CSS placed raw in a `<style>` element can close it: `</style><a href=…>` put a full-slide link into the exported deck, and the player advances on click. CSP blocks the script and image variants and cannot block a link. The lint passed it, because tinycss2 tokenises `<` without complaint; it also passed unquoted `url()`, which tinycss2 reads as a `url` token rather than a function. Both were found by proving each payload live on a bare page first, which is the only way a hostile suite means anything.
+
 ## Measured 2026-09-26 — the v1–v3 build
 
 An audit of the code at `8169fd9` and of the three `samples/*.html` decks opened in a browser. It is why v4 exists ([v4/spec.md](v4/spec.md)).

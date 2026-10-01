@@ -86,9 +86,12 @@ def font_face_css(theme: Theme) -> str:
 
 
 def _host(frame: Frame) -> str:
+    # The lint refuses "<"; this keeps a frame that skipped it inside its
+    # <style> anyway. CSS reads "<\/" as "</", and no valid rule contains it.
+    css = frame.css.replace("</", "<\\/")
     return (
         f'<div class="dd-slide" data-slide="{frame.slide_id}">'
-        f'<template shadowrootmode="open"><style>{_BASE}{frame.css}</style>{frame.html}'
+        f'<template shadowrootmode="open"><style>{_BASE}{css}</style>{frame.html}'
         "</template></div>"
     )
 

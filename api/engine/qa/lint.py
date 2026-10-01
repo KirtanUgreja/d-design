@@ -131,7 +131,10 @@ _EMOJI = re.compile("[\U0001f000-\U0001faff☀-➿⬀-⯿️]")
 def _functions(tokens: list[Node]) -> list[str]:
     found: list[str] = []
     for token in tokens:
-        if token.type == "function":
+        if token.type == "url":
+            # tinycss2 reads an unquoted url(...) as its own token, not a function.
+            found.append("url")
+        elif token.type == "function":
             found.append(token.lower_name)
             found += _functions(token.arguments)
         elif token.type in ("() block", "[] block", "{} block"):
@@ -226,6 +229,9 @@ def lint(css: str) -> list[str]:
     problems: list[str] = []
     if _EMOJI.search(css):
         problems.append("emoji in css")
+    if "<" in css:
+        # "</style>" would end the element and turn the rest into live HTML.
+        problems.append("'<' is not allowed in css")
     rules = tinycss2.parse_stylesheet(css, skip_comments=True, skip_whitespace=True)
     for rule in rules:
         if rule.type == "error":
