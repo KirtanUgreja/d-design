@@ -96,6 +96,11 @@
       const lines = [...new Set(tops)].sort((a, b) => a - b);
       if (name === "headline" && lines.length > 4) add("E9", name, lines.length + " lines", "4 lines");
       if (words >= 3 && lines.length === words) add("E9", name, "one word per line", "wider box");
+      // E3 lines of one field set tighter than the display face survives
+      if (lines.length >= 2 && fam === arg.theme.display) {
+        const lh = parseFloat(cs.lineHeight) / size;
+        if (lh < arg.theme.leading - 0.005) add("E3", name, "line-height " + lh.toFixed(2), String(arg.theme.leading));
+      }
       if (name === "headline" && lines.length >= 2 && words >= 5 && tops.filter((t) => t === lines[lines.length - 1]).length === 1) warn("W7", name, "single word on the last line", "at least 2 words");
       rects.push({ name, el, r, layer: !!el.closest("[data-layer]") });
     }
@@ -114,7 +119,21 @@
         if (v && opaque(v) && !arg.theme.colors.includes(v)) { add("E7", el.dataset.field || null, k + " " + v, "a theme colour"); break; }
       }
     }
+    // E11 an empty block: a solid field with nothing on it. Rules, bars and
+    // patterns pass; so does a field that text sits on or over.
     const s = root.querySelector(".s"), scs = getComputedStyle(s);
+    const groundOf = (el) => (el.parentElement ? bgOf(el.parentElement).join() : "");
+    for (const el of root.querySelectorAll("*")) {
+      if (el === s || el.tagName === "STYLE" || el.querySelector("[data-field]") || el.closest("[data-field]")) continue;
+      const texture = el.tagName === "DD-TEXTURE";
+      if (texture && el.getAttribute("kind") !== "solid") continue;
+      const bg = getComputedStyle(el).backgroundColor;
+      if (!texture && (!opaque(bg) || rgb(bg).join() === groundOf(el))) continue;
+      const r = rel(el.getBoundingClientRect()), w = r.r - r.l, h = r.b - r.t;
+      if (Math.min(w, h) < 48 || w * h < 0.03 * 1920 * 1080) continue;
+      const under = rects.some((f) => Math.min(f.r.r, r.r) - Math.max(f.r.l, r.l) > 4 && Math.min(f.r.b, r.b) - Math.max(f.r.t, r.t) > 4);
+      if (!under) add("E11", null, `empty block ${Math.round(w)}x${Math.round(h)}px`, "a solid field carries text, or is under 48px thick");
+    }
     const centred = rects.length && rects.filter((x) => getComputedStyle(x.el).textAlign === "center").length > rects.length / 2;
     const fingerprint = [scs.display, scs.gridTemplateColumns.split(" ").length, scs.gridTemplateRows.split(" ").length, centred ? "c" : "l", fields.map((f) => f.dataset.field.replace(/-\d+$/, "")).join(">"), root.querySelectorAll("dd-texture").length].join("|");
     out[id] = { measured: true, errors, warnings, fingerprint, centred };

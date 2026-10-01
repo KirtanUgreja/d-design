@@ -45,6 +45,10 @@ class Theme:
     gutter: int = 32
     radius: int = 0
     rule: int = 3
+    # The display face's cap height plus descender, in em, rounded up: below
+    # it a descender meets the capital under it. Measured in Chromium on
+    # 2026-10-01. Exposed as --lh-display; QA reports tighter as E3.
+    leading: float = 0.9
 
     @property
     def faces(self) -> tuple[Face, ...]:
@@ -72,6 +76,7 @@ class Theme:
             f"--gutter:{self.gutter}px;",
             f"--radius:{self.radius}px;",
             f"--rule:{self.rule}px;",
+            f"--lh-display:{self.leading};",
             "--shadow-hard:14px 14px 0 var(--c-ink);",
         ]
         return ":root{" + "".join(lines) + "}"
@@ -92,7 +97,8 @@ class Theme:
             f"Type sizes (use only these): {sizes}.\n"
             f"Spacing: {spaces}; --margin ({self.margin}px) is the page margin; "
             f"--gutter ({self.gutter}px). --radius is {self.radius}px. "
-            f"--rule ({self.rule}px) is the line weight. --shadow-hard is a hard offset shadow."
+            f"--rule ({self.rule}px) is the line weight. --shadow-hard is a hard offset shadow.\n"
+            f"--lh-display ({self.leading}) is the tightest display line-height; tighter collides."
         )
 
 
@@ -144,13 +150,14 @@ THEMES: dict[str, Theme] = {
         w_display=700,
         w_bold=600,
         rule=2,
+        leading=0.97,
     ),
     "nightshift": Theme(
         id="nightshift",
         summary=(
-            "A poster at night. Near-black ground, bone text, one signal yellow used in solid "
-            "blocks. Tall condensed display type at enormous sizes, cropped and stacked; mono "
-            "labels; flat colour fields and hard edges, never glow."
+            "A poster at night. Near-black ground, bone text, one signal yellow that carries "
+            "the slide's key number or phrase. Tall condensed display type at large sizes, "
+            "given air between lines; mono labels; hard edges, never glow."
         ),
         colors={
             "ground": "#0f1317",
@@ -166,5 +173,6 @@ THEMES: dict[str, Theme] = {
         label=_PLEX_MONO,
         w_display=400,
         w_bold=600,
+        leading=0.99,
     ),
 }

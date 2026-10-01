@@ -19,7 +19,7 @@ from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "compose.v1"
+PROMPT_VERSION = "compose.v2"
 
 RULES = """You are a senior editorial designer. You design ONE presentation slide as HTML and CSS.
 The slide is projected at exactly 1920x1080px. It must look designed by a person with a point of
@@ -38,8 +38,9 @@ HTML CONTRACT
   not add, drop or rewrite words.
 - Any other visible text must be decoration: at most 3 words, in an element with data-deco
   (a folio like "04", a big numeral). Do not invent labels, captions or numbers.
-- <dd-texture kind="solid|halftone|hatch|grid" tone="accent|ink|surface"></dd-texture> is an empty
-  block of flat colour or pattern. Size and place it with a class. Use at most two.
+- <dd-texture kind="solid|halftone|hatch|grid" tone="accent|ink|surface"></dd-texture> is flat
+  colour or pattern. Size and place it with a class. Use at most two. A solid one is a rule or bar
+  (under 48px thick); a large one is a pattern, or it sits behind text.
 - Attributes allowed: class, data-field, data-deco, data-layer, data-bleed, and kind/tone on
   dd-texture. No style attribute, no id.
 
@@ -63,7 +64,10 @@ DESIGN RULES
 - Contrast: --c-ink or --c-ink-2 on --c-ground/--c-surface; --c-on-accent on --c-accent;
   --c-ground on --c-ink. Use --c-accent as a TEXT colour only at 64px or larger.
 - Make one thing on the slide much bigger than everything else. Align to a grid. Use rules
-  (border with var(--rule)) and flat colour fields instead of boxes.
+  (border with var(--rule)) instead of boxes.
+- A field of flat colour must carry something: the headline, the number, the list. An empty
+  coloured rectangle is decoration with nothing to say, and it is refused (E11). Let the ground
+  be the empty space.
 - NEVER: cards or boxes around each point, rounded panels, icon rows, pills or badges, drop
   shadows, centred-everything layouts, emoji, numbered circles.
 """
@@ -238,7 +242,7 @@ def fallback(plan: SlidePlan) -> Composed:
             ".s{display:grid;grid-template-columns:1fr 1fr}"
             ".f{background-color:var(--c-accent);color:var(--c-on-accent);padding:var(--margin);"
             "display:grid;align-content:end;gap:var(--s-3)}"
-            f".st{{{_DISPLAY};font-size:var(--t-{size});line-height:0.9;letter-spacing:-0.02em}}"
+            f".st{{{_DISPLAY};font-size:var(--t-{size});line-height:var(--lh-display);letter-spacing:-0.02em}}"
             ".lb{font-size:var(--t-body);max-width:600px}"
             ".c{padding:var(--margin);display:grid;grid-template-rows:auto 1fr auto;"
             "gap:var(--s-4)}.t{display:grid;gap:var(--s-3)}"
@@ -274,12 +278,12 @@ def fallback(plan: SlidePlan) -> Composed:
     html = (
         f'<section class="s">{kicker or "<span></span>"}'
         f'<h1 class="h" data-field="headline">{head}</h1>{source}'
-        '<dd-texture class="bar" kind="solid" tone="accent"></dd-texture></section>'
+        '<dd-texture class="bar" kind="halftone" tone="accent"></dd-texture></section>'
     )
     css = (
         ".s{display:grid;grid-template-rows:auto 1fr auto;gap:var(--s-4);"
         "padding:var(--margin);padding-right:420px}"
-        f".h{{align-self:end;{_DISPLAY};font-size:var(--t-{hsize});line-height:0.96;"
+        f".h{{align-self:end;{_DISPLAY};font-size:var(--t-{hsize});line-height:var(--lh-display);"
         "letter-spacing:-0.015em}"
         ".bar{position:absolute;top:0;right:0;width:300px;height:1080px}" + base
     )

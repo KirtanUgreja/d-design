@@ -3,14 +3,14 @@
 <section class="s">
   <p class="kicker" data-field="kicker">Series A · October 2026</p>
   <h1 class="title" data-field="headline">Flaky tests cost every team a <em>day a week</em></h1>
-  <dd-texture class="bar" kind="solid" tone="accent"></dd-texture>
+  <dd-texture class="bar" kind="halftone" tone="accent"></dd-texture>
   <span class="folio" data-deco>01</span>
 </section>
 ```
 ```css
 .s { display: grid; grid-template-rows: auto 1fr; padding: var(--margin); padding-right: 420px; }
 .kicker { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.08em; text-transform: uppercase; border-top: var(--rule) solid var(--c-rule); padding-top: var(--s-3); }
-.title { align-self: end; font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d2); line-height: 0.92; letter-spacing: -0.02em; }
+.title { align-self: end; font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d2); line-height: var(--lh-display); letter-spacing: -0.02em; }
 .title em { color: var(--c-accent); }
 .bar { position: absolute; top: 0; right: 0; width: 300px; height: 1080px; }
 .folio { position: absolute; right: 112px; bottom: 112px; font-family: var(--f-label); font-size: var(--t-label); color: var(--c-on-accent); }

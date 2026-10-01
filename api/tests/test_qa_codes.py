@@ -3,6 +3,10 @@
 Each fixture is the clean slide below with one thing broken, and must raise its
 code. The clean slide must raise nothing, so a check that fires on everything
 cannot pass. E10 (images) arrives with images in phase 25.
+
+E3 and E11 each have a second fixture: lines set tighter than the display face
+survives, and an empty solid field. The clean slide keeps a thin rule, a
+pattern field and a colour field under text, which must all still pass.
 """
 
 from __future__ import annotations
@@ -23,12 +27,16 @@ BODY = "Annual recurring revenue reached two million."
 FIELDS = {"headline": HEADLINE, "body": BODY}
 HTML = (
     f'<section class="s"><h1 class="h" data-field="headline">{HEADLINE}</h1>'
-    f'<p class="b" data-field="body">{BODY}</p></section>'
+    f'<p class="b" data-field="body">{BODY}</p>'
+    '<dd-texture class="rule" kind="solid" tone="accent"></dd-texture>'
+    '<dd-texture class="dots" kind="halftone" tone="accent"></dd-texture></section>'
 )
 CSS = (
     ".s{padding:var(--margin);display:grid;align-content:start;gap:var(--s-4)}"
     ".h{font-family:var(--f-display);font-weight:var(--w-display);font-size:var(--t-h1)}"
-    ".b{font-size:var(--t-body)}"
+    ".b{font-size:var(--t-body);background-color:var(--c-surface)}"
+    ".rule{position:absolute;left:0;bottom:0;width:1920px;height:24px}"
+    ".dots{position:absolute;right:0;top:0;width:400px;height:1080px}"
 )
 
 # code -> (extra css, fields)
@@ -41,6 +49,8 @@ BROKEN: dict[str, tuple[str, dict[str, str]]] = {
     "E6": ("", {**FIELDS, "body": "The planned words, which the slide changed."}),
     "E7": (".b{font-size:35px}", FIELDS),
     "E9": (".h{width:260px}", FIELDS),
+    "E3-leading": (".h{width:900px;line-height:0.8}", FIELDS),
+    "E11": (".rule{height:400px;width:600px}", FIELDS),
 }
 
 
@@ -58,7 +68,7 @@ def test_clean_slide_and_one_fixture_per_code(tmp_path: Path) -> None:
     result = asyncio.run(browser.measure(THEME, frames, fields, str(tmp_path / "qa.html")))
     assert _codes(result, "clean") == set()
     got = {code: _codes(result, code) for code in BROKEN}
-    assert {code: sorted(c) for code, c in got.items() if code not in c} == {}
+    assert {k: sorted(c) for k, c in got.items() if k.split("-")[0] not in c} == {}
 
 
 def test_e8_a_face_that_failed_to_load(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:

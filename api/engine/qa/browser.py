@@ -80,6 +80,8 @@ async def measure(
             "colors": [_rgb(c) for c in theme.colors.values()],
             "families": [face.family for face in theme.faces],
             "sizes": list(theme.scale.values()),
+            "display": theme.display.family,
+            "leading": theme.leading,
         },
     }
     async with async_playwright() as pw:

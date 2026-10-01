@@ -50,7 +50,7 @@
 |---|---|
 | Colour roles | `--c-ground`, `--c-surface`, `--c-ink`, `--c-ink-2`, `--c-accent`, `--c-on-accent`, `--c-rule`, and 4–6 chart series colours, distinct and contrast-checked |
 | Type | `--f-display`, `--f-text`, `--f-label`. A scale `--t-mega`, `--t-d1…d3`, `--t-h1…h3`, `--t-body`, `--t-small`, `--t-label` in px for the 1920 canvas. Weights `--w-*`, only the embedded ones |
-| Space and edge | `--s-1…8`, `--cols`, `--gutter`, `--margin`, `--radius`, `--shadow-hard`, rule weight |
+| Space and edge | `--s-1…8`, `--cols`, `--gutter`, `--margin`, `--radius`, `--shadow-hard`, rule weight, `--lh-display` (the display face's cap height plus descender, measured: Archivo 0.90, Fraunces 0.97, Anton 0.99) |
 | Page frame | Margins, folio style, source-line style. Constant across the deck, and the main source of cohesion |
 | Contrast table | Every fg/bg pair with its WCAG and APCA values, stored on the theme |
 
@@ -161,7 +161,7 @@ Sizes are calibrated to the canvas: 1920px is a 13.33-inch slide, so 1pt is 2px.
 |---|---|---|
 | E1 | Text clipped | A field's scroll size exceeds its client size by more than 1px |
 | E2 | Safe area | Text within 64px of the edge |
-| E3 | Collision | Text line boxes overlap (except `data-deco` and `data-layer`) |
+| E3 | Collision | Text line boxes overlap (except `data-deco` and `data-layer`); or a multi-line display field set tighter than `--lh-display`, where a descender meets the capital below |
 | E4 | Type size | Body under 32px, sources under 22px, headlines under 56px |
 | E5 | Contrast | WCAG 2 below 4.5 (below 3 at 64px and up); APCA Lc below 60 body / 45 display. Measured on a screenshot with the text hidden, against the worst 10% of background pixels |
 | E6 | Completeness | A field missing, duplicated or differing from the plan; stray text; an unfilled component |
@@ -169,6 +169,7 @@ Sizes are calibrated to the canvas: 1920px is a 13.33-inch slide, so 1pt is 2px.
 | E8 | Fonts | A fallback font was used (`document.fonts.check`) |
 | E9 | Wrapping | A headline over 4 lines; a field with one word per line (3 or more words) — v3's CTA |
 | E10 | Images | Stretched more than 2%, or upscaled more than 1.35× |
+| E11 | Empty block | A solid field with no text on or over it, at least 48px on its short side and 3% of the canvas. Added 2026-10-01 after gate 1: the empty accent rectangle was the most repeated tell on the low-rated decks, and the prompt and an exemplar had taught it. Rules, bars and pattern textures pass |
 
 **Warnings are reported and tracked, not repaired:**
 
