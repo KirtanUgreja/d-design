@@ -119,3 +119,23 @@ def test_bench_outlines_invent_no_numbers() -> None:
             for f in slide.fields:
                 if f.name != "source":
                     assert all(rules.sourced(n, facts) for n in rules.numbers(f.text)), f.text
+
+
+def test_a_proof_suggestion_asks_for_the_proof_itself() -> None:
+    from benchtools.content import run_interview
+    from engine.content.interview import Question
+
+    q = Question(
+        fills="proof",
+        question="What proof do you have?",
+        suggestions=["None yet", "Search the web", "Beta tester quotes"],
+    )
+    replies = iter(["3", "“It never lost a note on the Tube.” — beta tester"])
+    [(_, text)] = run_interview([q], lambda _: next(replies))
+    assert text.startswith("“It never lost")
+    replies = iter(["3", ""])
+    [(_, text)] = run_interview([q], lambda _: next(replies))
+    assert text == ""  # nothing pasted: treated as no proof, not as a description
+    replies = iter(["1"])
+    [(_, text)] = run_interview([q], lambda _: next(replies))
+    assert text == "None yet"

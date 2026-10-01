@@ -15,7 +15,7 @@ Resume point. Branch `phase-22-engine-spike`. `main` is still v3 (`8169fd9`, als
 
 1. Done 2026-10-01: all 12 one-shot baselines, on DeepSeek.
 2. Gamma baselines: dropped for now (owner, 2026-10-01).
-3. `uv run python -m cli wall --run 2026-09-30-baselines`, open `bench/runs/2026-09-30-baselines/wall.html`, rate every deck, download `ratings.json` into that folder.
+3. `cd api && uv run python -m cli wall --run 2026-09-30-baselines`, open `bench/runs/2026-09-30-baselines/wall.html`, rate every deck, download `ratings.json` into that folder.
 
 ## Phase 22, in progress (branch `phase-22-engine-spike`)
 

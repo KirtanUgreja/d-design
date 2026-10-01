@@ -19,6 +19,7 @@ from lib.result import Err, Result, ok
 
 PROMPT_VERSION = "interview.v1"
 MAX_QUESTIONS = 5
+NO_PROOF = ("none yet", "search the web")
 
 Fills = Literal["audience", "ask", "thought", "proof", "length", "extra"]
 
@@ -30,7 +31,8 @@ each with exactly three suggested answers written for THIS brief:
 2. ask — what should they do at the end (the amount, the decision, the next meeting)?
 3. thought — the one sentence they must remember. Suggestions are candidate theses.
 4. proof — what proof do you have (traction, revenue, customers, pilots, quotes)? Suggestions
-   include "None yet" and "Search the web".
+   are exactly "None yet", "Search the web", and one naming the kind of proof this speaker
+   likely has; picking that one asks them to paste it.
 5. length — how many minutes, and presenting live or sending it?
 
 Skip a question the brief already answers, and use the freed place for one deck-type question
@@ -88,7 +90,7 @@ def apply(brief: Brief, answered: list[tuple[Question, str]]) -> Brief:
             update["audience"] = text
         elif q.fills == "ask":
             update["ask"] = text
-        elif q.fills == "proof" and text.lower() not in ("none yet", "search the web"):
+        elif q.fills == "proof" and text.lower() not in NO_PROOF:
             pasted.append(Pasted(title="Proof, from the interview", text=text))
         elif q.fills == "length":
             minutes = re.search(r"\d+", text)

@@ -64,6 +64,9 @@ def run_interview(questions: list[interview.Question], ask: Ask) -> Answered:
             break
         if reply in ("1", "2", "3"):
             reply = q.suggestions[int(reply) - 1]
+            if q.fills == "proof" and reply.lower() not in interview.NO_PROOF:
+                # A suggestion names a kind of proof; the deck needs the proof itself.
+                reply = ask("  paste it here (Enter if you have none yet): ").strip()
         answered.append((q, reply))
     return answered
 

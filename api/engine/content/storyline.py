@@ -20,7 +20,7 @@ from engine.llm.openrouter import ModelError, Seam
 from engine.models import Brief, Fact, PlanField, Provenance, SlidePlan, Storyline
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "storyline.v1"
+PROMPT_VERSION = "storyline.v2"
 SEND_FACTOR = 1.5  # a deck that is sent must explain itself
 
 FRAME = (
@@ -50,6 +50,9 @@ Rules:
   source line is added for you.
 - intent is one of: cover, statement, number, number-set, points, comparison, steps, timeline,
   quote, team, case, section, ask.
+- Never promise material you were not given. A slide states its evidence or does not exist:
+  no "Customer quotes, in their own words", no "Results from our testing" without the quotes or
+  results themselves. If the user has no proof yet, the deck argues without it.
 - No stage directions and no sentences about the deck ("This slide shows…"). No emoji. Sentence
   case, active voice, concrete nouns, numbers with units. Never use: unlock, leverage, seamless,
   robust, game-changer, revolutionize, empower, elevate, landscape, delve, harness, synergy,
