@@ -1,6 +1,15 @@
-# Checkpoint — 2026-10-01
+# Checkpoint — 2026-10-05 (PAUSED)
 
-Resume point. Branch `phase-22-engine-spike`. `main` is still v3 (`8169fd9`, also tagged `v3-final`).
+**Paused by the owner while topping up OpenRouter credit.** Resume point: branch `phase-25-composition-qa` at `07ec6ff`, clean, not pushed. Branches `phase-24-content-engine` (also holds phase 23) and `phase-26-player-export` are committed and unpushed too; `main` is still v3.
+
+**To resume phase 25:** top up, then build `dd-image` and run the image-model bake-off; then `cd api && uv run python -m cli build --run <date>-phase25 --model deepseek/deepseek-v4.1-flash --label engine --set all` on content-engine outlines (12 × 2 seeds, about $2–4); then the gate 2 wall. Credit left before the top-up: about $2.10.
+
+**While paused:** the UI plan (`docs/v4/ui-research.md` and phases 30–35).
+
+
+## History (older entries, oldest first below)
+
+`main` is still v3 (`8169fd9`, tagged `v3-final`).
 
 ## Where things stand
 
