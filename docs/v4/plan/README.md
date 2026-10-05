@@ -15,6 +15,12 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 | [27 — app: create flow](27-app-create-flow.md) | L | not started |
 | [28 — editor](28-editor.md) | L | not started |
 | [29 — accounts and deploy](29-accounts-deploy.md) | M/L | not started |
+| [30 — UI prototype](30-ui-prototype.md) | M | not started — can run now, no credit needed |
+| [31 — first run](31-first-run.md) | M | not started |
+| [32 — watch and reveal](32-watch-reveal.md) | M | not started |
+| [33 — trust and control](33-trust-control.md) | M | not started |
+| [34 — presenter confidence](34-presenter-confidence.md) | S/M | not started |
+| [35 — measure, learn, ethics](35-measure-learn.md) | S/M | not started |
 
 ## Dependency graph
 
@@ -31,6 +37,20 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
                  │
                  ▼
         27 app: create flow ──▶ 28 editor ──▶ 29 accounts + deploy
+```
+
+### The user side (phases 30–35, planned 2026-10-05)
+
+Phases 27–29 build what the app *does*; phases 30–35 make it *feel* right, each tested on real users against a baseline. The evidence and the ethics line are in [../ui-research.md](../ui-research.md).
+
+```
+26 player ──┬──▶ 30 UI prototype (no credit) ──┬──▶ 27 create flow ──▶ 31 first run ──┐
+23 tiles ───┘                                  │          │       ──▶ 32 watch+reveal ─┤
+                                               │          ▼                            ├──▶ 35 measure,
+                                               └────▶ 28 editor ──▶ 33 trust+control ──┤    learn, ethics
+                                                          │       ──▶ 34 presenter ────┘
+                                                          ▼
+                                                   29 accounts + deploy (31's sign-up, 35's data)
 ```
 
 ## Recommended build order

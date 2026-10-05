@@ -23,6 +23,7 @@ The app is rebuilt around that flow: composer → interview → outline → pick
 | [content.md](content.md) | The interview, research and the `Fact` ledger, storyline arcs, content rules, and content evals |
 | [design-engine.md](design-engine.md) | The design-system registry, the sampler and theme, compositions and exemplars, the slide contract, the lint, QA metrics and repair |
 | [bench.md](bench.md) | The 12 briefs, the baselines, the wall, the rubric, what each run records, and the budgets |
+| [ui-research.md](ui-research.md) | The user side: attention, motivation and trust, the evidence behind each technique, competitors, ten rules, and the ethics line |
 | [plan/README.md](plan/README.md) | Phase status, dependency graph, build order |
 | [plan/21-reset.md](plan/21-reset.md) | Phase 21 — delete what v4 replaces, set the rules and the gate, build the bench |
 | [plan/22-engine-spike.md](plan/22-engine-spike.md) | Phase 22 — decks that look designed, from the CLI, on frozen outlines. **The make-or-break gate** |
@@ -33,6 +34,12 @@ The app is rebuilt around that flow: composer → interview → outline → pick
 | [plan/27-app-create-flow.md](plan/27-app-create-flow.md) | Phase 27 — the new web app: composer → interview → outline → looks → streaming watch |
 | [plan/28-editor.md](plan/28-editor.md) | Phase 28 — the editor: inline edits, AI edits per slide, design tweaks, versions |
 | [plan/29-accounts-deploy.md](plan/29-accounts-deploy.md) | Phase 29 — accounts, Postgres, cost metering, budget caps, deploy |
+| [plan/30-ui-prototype.md](plan/30-ui-prototype.md) | Phase 30 — the five hot surfaces as a clickable prototype on real decks, tested with 5 users; the UI baseline. No credit |
+| [plan/31-first-run.md](plan/31-first-run.md) | Phase 31 — the first minute: a $0 recorded demo, a brief that survives sign-up, their words in three looks |
+| [plan/32-watch-reveal.md](plan/32-watch-reveal.md) | Phase 32 — the peak and the end: the cover first, real work visible, a reveal worth showing |
+| [plan/33-trust-control.md](plan/33-trust-control.md) | Phase 33 — provenance you can open, AI changes as proposals, labelled undo, resume |
+| [plan/34-presenter-confidence.md](plan/34-presenter-confidence.md) | Phase 34 — rehearse mode, pacing against their minutes, a ready check |
+| [plan/35-measure-learn.md](plan/35-measure-learn.md) | Phase 35 — content-free funnel events, monthly user tests, the ethics gate, a UI scorecard |
 
 ## Find it fast
 

@@ -313,6 +313,7 @@ Artefact accessibility is not this document's problem. The engine measures contr
 | | |
 |---|---|
 | [principles.md](principles.md) | Why these five surfaces and not the other twenty |
+| [../v4/ui-research.md](../v4/ui-research.md) | The evidence behind the attention, motivation and trust choices, and the ethics line; phases 30–35 |
 | [brand.md](brand.md) | The palette the chrome is built from, and the check against the canvas |
 | [website.md](website.md) | What happened before "Start" |
 | [../v4/plan/27-app-create-flow.md](../v4/plan/27-app-create-flow.md) | Where the composer, the interview + outline gate, Pick a look and the watch are built |
