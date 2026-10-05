@@ -21,6 +21,7 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 | [33 — trust and control](33-trust-control.md) | M | not started |
 | [34 — presenter confidence](34-presenter-confidence.md) | S/M | not started |
 | [35 — measure, learn, ethics](35-measure-learn.md) | S/M | not started |
+| [36 — independent design](36-independent-design.md) | L | planned 2026-10-05 (owner) — **before 25's gate 2**: every slide's composition generated toward unexplored design space and checked against an archive of all slides; no exemplars, archetypes or menus in the compose path |
 
 ## Dependency graph
 

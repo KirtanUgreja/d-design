@@ -39,6 +39,7 @@ The app is rebuilt around that flow: composer → interview → outline → watc
 | [plan/32-watch-reveal.md](plan/32-watch-reveal.md) | Phase 32 — the peak and the end: the cover first, real work visible, a reveal worth showing |
 | [plan/33-trust-control.md](plan/33-trust-control.md) | Phase 33 — provenance you can open, AI changes as proposals, labelled undo, resume |
 | [plan/34-presenter-confidence.md](plan/34-presenter-confidence.md) | Phase 34 — rehearse mode, pacing against their minutes, a ready check |
+| [plan/36-independent-design.md](plan/36-independent-design.md) | Phase 36 — no stored layouts: per-slide composition targets in unexplored design space, a novelty archive, continuous palettes and variable fonts. Before gate 2 |
 | [plan/35-measure-learn.md](plan/35-measure-learn.md) | Phase 35 — content-free funnel events, monthly user tests, the ethics gate, a UI scorecard |
 
 ## Find it fast
