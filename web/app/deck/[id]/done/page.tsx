@@ -6,6 +6,7 @@ import Link from "next/link";
 import { SlideThumb } from "@/components/slide-thumb";
 import { StepBar } from "@/components/step-bar";
 import { getDeck, type DeckParams } from "@/lib/deck";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default async function DonePage(props: DeckParams) {
   const deck = await getDeck(props);
@@ -34,10 +35,17 @@ export default async function DonePage(props: DeckParams) {
             <p className="mt-2 text-ink-2">{deck.slides.length} slides · one file · works offline, anywhere</p>
           </div>
           {flagged.length > 0 && (
-            <p className="border-l-2 border-flag pl-3 text-sm">
-              {flagged.length} slide{flagged.length > 1 ? "s need" : " needs"} attention before you send it:{" "}
-              {flagged.map((s) => s.id).join(", ")}. <Link href={`/deck/${deck.id}/edit`} className="underline">Open in the editor</Link>
-            </p>
+            <Alert variant="destructive">
+              <AlertTitle>
+                {flagged.length} slide{flagged.length > 1 ? "s need" : " needs"} attention before you send it
+              </AlertTitle>
+              <AlertDescription>
+                {flagged.map((s) => s.id).join(", ")} ·{" "}
+                <Link href={`/deck/${deck.id}/edit`} className="underline">
+                  Open in the editor
+                </Link>
+              </AlertDescription>
+            </Alert>
           )}
           <ul className="grid gap-3">
             <li>

@@ -29,3 +29,26 @@ jobs:
           cd api && uv run mypy && uv run pytest -q
       - name: docs
         run: ./scripts/check-docs.sh
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - name: install
+        run: cd web && pnpm install --frozen-lockfile
+      - name: lint and types
+        run: cd web && pnpm exec eslint . && pnpm exec tsc --noEmit
+      - name: browsers
+        run: cd web && pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: end to end, on recorded runs
+        env:
+          DD_ENGINES: chromium,firefox,webkit
+        run: cd web && pnpm exec playwright test

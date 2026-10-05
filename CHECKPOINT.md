@@ -4,7 +4,7 @@
 
 **To resume phase 25:** top up, then build `dd-image` and run the image-model bake-off; then `cd api && uv run python -m cli build --run <date>-phase25 --model deepseek/deepseek-v4.1-flash --label engine --set all` on content-engine outlines (12 × 2 seeds, about $2–4); then the gate 2 wall. Credit left before the top-up: about $2.10.
 
-**While paused:** the UI plan (`docs/v4/ui-research.md` and phases 30–35).
+**While paused:** the UI plan (`docs/v4/ui-research.md`, phases 30–35) and **phase 30, built** on branch `phase-30-ui-prototype`: `cd web && pnpm install && pnpm build && pnpm start`, then open http://localhost:3000. Owner's task: 5 moderated sessions with `bench/ui/session-script.md`, results into `bench/ui/baseline.md`.
 
 
 ## History (older entries, oldest first below)

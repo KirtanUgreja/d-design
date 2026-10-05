@@ -6,6 +6,9 @@
 import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 
+import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
 interface Example {
   id: string;
   prompt: string;
@@ -60,35 +63,33 @@ export function Composer({ examples }: { examples: Example[] }) {
         />
         <div className="flex items-center justify-between border-t border-rule px-4 py-3">
           <span className="text-sm text-ink-2">Paste notes or numbers into the box — they become your facts.</span>
-          <button
-            type="submit"
-            className="rounded-[var(--radius-chrome)] bg-accent px-5 py-2 text-sm font-medium text-accent-ink"
-          >
+          <Button type="submit" size="lg">
             Start
-          </button>
+          </Button>
         </div>
       </div>
       {examples.length > 0 && (
         <div className="grid gap-2">
           <p className="text-sm text-ink-2">Or start from a real brief:</p>
-          <ul className="flex flex-wrap gap-2">
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            spacing={2}
+            value={picked ?? ""}
+            onValueChange={(id) => {
+              const x = examples.find((e) => e.id === id);
+              setPicked(x ? x.id : null);
+              if (x) setText(x.prompt);
+            }}
+            className="flex-wrap"
+          >
             {examples.map((x) => (
-              <li key={x.id}>
-                <button
-                  type="button"
-                  aria-pressed={picked === x.id}
-                  onClick={() => {
-                    setText(x.prompt);
-                    setPicked(x.id);
-                  }}
-                  className="rounded-[var(--radius-chrome)] border border-rule px-3 py-1.5 text-left text-sm hover:border-ink aria-pressed:border-ink"
-                >
-                  <span className="text-ink-2">{TYPE_LABEL[x.type] ?? x.type} · </span>
-                  {x.prompt.length > 70 ? `${x.prompt.slice(0, 70)}…` : x.prompt}
-                </button>
-              </li>
+              <ToggleGroupItem key={x.id} value={x.id} className="h-auto py-1.5 text-left">
+                <span className="text-muted-foreground">{TYPE_LABEL[x.type] ?? x.type} ·</span>
+                {x.prompt.length > 70 ? `${x.prompt.slice(0, 70)}…` : x.prompt}
+              </ToggleGroupItem>
             ))}
-          </ul>
+          </ToggleGroup>
         </div>
       )}
     </form>

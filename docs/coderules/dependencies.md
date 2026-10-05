@@ -18,8 +18,21 @@ Not a ban — a speed bump. The cost of a dependency is not install time; it is 
 |---|---|---|---|
 | `Pillow` | api | Re-encoding generated images to webp. Webp only | 22–25 |
 | `openapi-typescript` | web (dev) | Generating `web/lib/api/schema.d.ts` | 21 or 27 |
-| Tailwind + shadcn/ui (copy-in source on Radix primitives) | web | Our chrome only, never a deck | 27 |
+| Tailwind + shadcn/ui (copy-in source on Radix primitives) | web | Our chrome only, never a deck | **added in phase 30** (2026-10-05), rows below |
 | A managed-auth SDK, a JWT/JWKS verifier, SQLAlchemy + asyncpg + Alembic | web / api | Accounts and Postgres | 29 |
+
+**Added in phase 30 (2026-10-05), for the UI prototype** — `web/`, which pnpm 11 installs with its release-age gate and install scripts blocked:
+
+| Package | Where | For |
+|---|---|---|
+| `next`, `react`, `react-dom`, `tailwindcss`, `@tailwindcss/postcss`, `typescript`, `eslint`, `eslint-config-next`, `@types/*` | web | The stack [../techstack/frontend.md](../techstack/frontend.md) names |
+| `server-only` | web | Makes a client import of a server module a build error ([structure.md](structure.md)) |
+| `radix-ui` | web | The primitives under shadcn/ui: focus traps, layers, keyboard navigation |
+| `class-variance-authority`, `cn` | web | shadcn/ui's variant and class-merge helpers; `cn` is published by shadcn-ui itself (`github.com/shadcn-ui/cn`) |
+| `tw-animate-css`, `shadcn` | web | shadcn's open/close keyframes and its base CSS, imported by `app/globals.css`; both off under reduced motion |
+| `@playwright/test` | web (dev) | The app's end-to-end tests, on Chromium and WebKit locally and all three engines in CI |
+
+shadcn's icon set (Phosphor) is **not** installed, in line with the line below: the one component that wanted an icon, the dialog's close button, uses a text glyph.
 
 **Deliberately not added:**
 - **`fonttools` + `brotli`.** Vendored Latin-subset woff2 are embedded as-is. Trigger: a non-Latin locale, or fonts exceeding 1 MB of an export.

@@ -15,7 +15,7 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 | [27 — app: create flow](27-app-create-flow.md) | L | not started |
 | [28 — editor](28-editor.md) | L | not started |
 | [29 — accounts and deploy](29-accounts-deploy.md) | M/L | not started |
-| [30 — UI prototype](30-ui-prototype.md) | M | not started — can run now, no credit needed |
+| [30 — UI prototype](30-ui-prototype.md) | M | built 2026-10-05 — automated checks pass; open: the owner's 5 moderated sessions (`bench/ui/session-script.md`) |
 | [31 — first run](31-first-run.md) | M | not started |
 | [32 — watch and reveal](32-watch-reveal.md) | M | not started |
 | [33 — trust and control](33-trust-control.md) | M | not started |

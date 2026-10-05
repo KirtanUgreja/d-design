@@ -8,6 +8,7 @@ import { useState } from "react";
 
 import { SlideThumb } from "@/components/slide-thumb";
 import type { Look, Recording } from "@/lib/fixtures";
+import { Button } from "@/components/ui/button";
 
 const PALETTE: Record<string, string> = {
   paper: "ink on paper",
@@ -35,13 +36,9 @@ export function LookPicker({ deck }: { deck: Recording }) {
             Your own headline, set three ways. These are previews; every slide is composed for the look you pick.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setSet((n) => (n + 1) % sets.length)}
-          className="rounded-[var(--radius-chrome)] border border-ink px-4 py-2 text-sm"
-        >
+        <Button variant="outline" size="lg" onClick={() => setSet((n) => (n + 1) % sets.length)}>
           Shuffle
-        </button>
+        </Button>
       </div>
       <ul className="grid gap-8 md:grid-cols-3">
         {looks.map((look) => (

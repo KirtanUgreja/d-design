@@ -30,11 +30,13 @@
 - **Real decks only.** A prototype on lorem ipsum tests nothing that matters here ([../ui-research.md](../ui-research.md) → competitors: Pitch).
 - **The prototype is the start of `web/`, not a throwaway.** Phase 27 replaces the fixtures with the API.
 
+**Built 2026-10-05.** `web/` runs the five hot surfaces and the states page on two recorded runs (`cli record`, $0.13 in all), styled with shadcn/ui (Radix, the lyra style) restyled to our brand: square corners, no shadows, hairlines, the olive accent twice a screen. To build the recordings, the pipeline now runs one ladder per slide and emits the spec's events. The session kit is `bench/ui/session-script.md`; the baseline waits in `bench/ui/baseline.md`.
+
 ## Verify
 
-- [ ] Every interaction in the prototype answers in under 400 ms (Doherty threshold)
-- [ ] Every row of the states table is reachable and has human copy
-- [ ] Keyboard-complete; visible focus; works at 200% zoom
+- [x] Every interaction in the prototype answers in under 400 ms (Doherty threshold) — measured for the brief chips, shuffle and tabs in `web/e2e/prototype.spec.ts`
+- [x] Every row of the states table is reachable and has human copy (`/states`)
+- [x] Keyboard-complete; visible focus; works at 200% zoom — Radix primitives via shadcn/ui; no sideways scroll at 720px on any screen (e2e, Chromium and WebKit)
 - [ ] **Human:** 5 moderated sessions with founders or salespeople, recorded
 
 ## Skipped

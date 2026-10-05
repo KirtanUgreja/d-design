@@ -9,15 +9,20 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { SlideThumb } from "@/components/slide-thumb";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import type { Recording } from "@/lib/fixtures";
 
-type Tab = "slide" | "notes" | "design";
 interface Version {
   label: string;
   thumbs: Record<string, string>;
 }
 
-const STYLE_REACH = /\b(red|blue|green|yellow|orange|purple|pink|black|white|colou?r|font|typeface|bold|italic|bigger|smaller|size)\b/i;
+const STYLE_REACH =
+  /\b(red|blue|green|yellow|orange|purple|pink|black|white|colou?r|font|typeface|bold|italic|bigger|smaller|size)\b/i;
 const QUICK = ["Regenerate", "Different layout", "Shorter", "Turn into chart", "Split"] as const;
 
 export function Editor({ deck }: { deck: Recording }) {
@@ -25,17 +30,16 @@ export function Editor({ deck }: { deck: Recording }) {
   const [history, setHistory] = useState<Version[]>([{ label: "Generated", thumbs: base }]);
   const [at, setAt] = useState(0);
   const [selected, setSelected] = useState(deck.slides[0]?.id ?? "");
-  const [tab, setTab] = useState<Tab>("slide");
   const [proposal, setProposal] = useState<string | null>(null);
   const [reply, setReply] = useState<string | null>(null);
   const [instruction, setInstruction] = useState("");
 
-  const current = history[at] ?? history[0];
-  const thumbs = current?.thumbs ?? base;
+  const thumbs = (history[at] ?? history[0])?.thumbs ?? base;
   const index = deck.slides.findIndex((s) => s.id === selected);
   const plan = deck.outline.find((p) => p.id === selected);
   const look = deck.looks.find((l) => l.id === deck.chosen);
   const canPropose = deck.proposal?.slideId === selected;
+  const src = (file: string | undefined) => `/fixtures/${deck.id}/${file ?? ""}`;
 
   const commit = (label: string, next: Record<string, string>) => {
     setHistory((h) => [...h.slice(0, at + 1), { label, thumbs: next }]);
@@ -46,7 +50,7 @@ export function Editor({ deck }: { deck: Recording }) {
     setProposal(null);
     if (STYLE_REACH.test(text)) {
       setReply(
-        "Colour and type come from the look, so every slide stays one deck. To change them, open Design and pick another palette or pairing — or ask this slide for more emphasis on what matters.",
+        "Colour and type come from the look, so every slide stays one deck. Open Design to pick another palette or pairing — or ask this slide for more emphasis on what matters.",
       );
     } else if (canPropose && /layout/i.test(text) && deck.proposal) {
       setReply(null);
@@ -57,11 +61,11 @@ export function Editor({ deck }: { deck: Recording }) {
   };
 
   return (
-    <main className="grid h-[calc(100dvh-57px)] grid-cols-[12rem_1fr_22rem] grid-rows-[1fr_auto]">
-      <nav aria-label="Slides" className="row-span-2 overflow-y-auto border-r border-rule p-3">
-        <ol className="grid gap-3">
+    <main className="grid min-h-[calc(100dvh-57px)] grid-cols-1 lg:h-[calc(100dvh-57px)] lg:grid-cols-[12rem_1fr_22rem] lg:grid-rows-[1fr_auto]">
+      <nav aria-label="Slides" className="overflow-x-auto border-b border-rule p-3 lg:row-span-2 lg:overflow-y-auto lg:border-r lg:border-b-0">
+        <ol className="flex gap-3 lg:flex-col">
           {deck.slides.map((s, i) => (
-            <li key={s.id}>
+            <li key={s.id} className="w-32 shrink-0 lg:w-auto">
               <button
                 type="button"
                 aria-current={s.id === selected ? "true" : undefined}
@@ -70,11 +74,11 @@ export function Editor({ deck }: { deck: Recording }) {
                   setProposal(null);
                   setReply(null);
                 }}
-                className="grid w-full grid-cols-[1.25rem_1fr] gap-2 text-left text-xs text-ink-2 aria-[current=true]:text-ink"
+                className="grid w-full grid-cols-[1.25rem_1fr] gap-2 text-left text-xs text-muted-foreground aria-[current=true]:text-foreground"
               >
                 <span>{i + 1}</span>
                 <span className={s.id === selected ? "outline outline-2 outline-offset-2 outline-ink" : ""}>
-                  <SlideThumb src={`/fixtures/${deck.id}/${thumbs[s.id] ?? s.thumb}`} alt={`Slide ${i + 1}`} />
+                  <SlideThumb src={src(thumbs[s.id] ?? s.thumb)} alt={`Slide ${i + 1}`} />
                 </span>
               </button>
             </li>
@@ -82,151 +86,136 @@ export function Editor({ deck }: { deck: Recording }) {
         </ol>
       </nav>
 
-      <section aria-label="Canvas" className="grid place-items-center overflow-auto bg-paper-2 p-8">
+      <section aria-label="Canvas" className="grid place-items-center overflow-auto bg-muted p-8">
         {proposal ? (
           <div className="grid w-full max-w-5xl gap-4 md:grid-cols-2">
-            <figure>
-              <figcaption className="mb-2 text-sm text-ink-2">Now</figcaption>
-              <SlideThumb src={`/fixtures/${deck.id}/${thumbs[selected] ?? ""}`} alt="The slide now" />
+            <figure className="flex flex-col gap-2">
+              <figcaption className="text-sm text-muted-foreground">Now</figcaption>
+              <SlideThumb src={src(thumbs[selected])} alt="The slide now" />
             </figure>
-            <figure>
-              <figcaption className="mb-2 text-sm text-ink-2">Proposed — a different layout, same words</figcaption>
-              <SlideThumb src={`/fixtures/${deck.id}/${proposal}`} alt="The proposed slide" />
+            <figure className="flex flex-col gap-2">
+              <figcaption className="text-sm text-muted-foreground">Proposed — a different layout, same words</figcaption>
+              <SlideThumb src={src(proposal)} alt="The proposed slide" className="outline outline-2 outline-offset-4 outline-accent" />
             </figure>
           </div>
         ) : (
           <div className="w-full max-w-5xl">
-            <SlideThumb src={`/fixtures/${deck.id}/${thumbs[selected] ?? ""}`} alt={`Slide ${index + 1}`} />
+            <SlideThumb src={src(thumbs[selected])} alt={`Slide ${index + 1}`} />
           </div>
         )}
       </section>
 
-      <aside aria-label="Slide panel" className="row-span-2 grid grid-rows-[auto_1fr] border-l border-rule">
-        <div role="tablist" className="flex border-b border-rule text-sm">
-          {(["slide", "notes", "design"] as const).map((t) => (
-            <button
-              key={t}
-              role="tab"
-              type="button"
-              aria-selected={tab === t}
-              onClick={() => setTab(t)}
-              className="flex-1 py-3 capitalize text-ink-2 aria-selected:border-b-2 aria-selected:border-ink aria-selected:text-ink"
+      <aside aria-label="Slide panel" className="border-t border-rule lg:row-span-2 lg:overflow-y-auto lg:border-t-0 lg:border-l">
+        <Tabs defaultValue="slide" className="gap-0">
+          <TabsList variant="line" className="w-full border-b border-rule px-2">
+            <TabsTrigger value="slide">Slide</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="design">Design</TabsTrigger>
+          </TabsList>
+          <TabsContent value="slide" className="flex flex-col gap-4 p-5 text-sm">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (instruction.trim()) ask(instruction);
+              }}
+              className="flex flex-col gap-2"
             >
-              {t}
-            </button>
-          ))}
-        </div>
-        <div role="tabpanel" className="overflow-y-auto p-5 text-sm">
-          {tab === "slide" && (
-            <div className="grid gap-4">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (instruction.trim()) ask(instruction);
-                }}
-                className="grid gap-2"
-              >
-                <label htmlFor="ask" className="text-ink-2">
-                  Ask this slide for a change
-                </label>
-                <textarea
-                  id="ask"
-                  rows={3}
-                  value={instruction}
-                  onChange={(e) => setInstruction(e.target.value)}
-                  placeholder="Lead with the number. Make it more visual."
-                  className="border border-rule bg-paper p-2 outline-none focus:border-ink"
-                />
-                <button type="submit" className="justify-self-start underline">
-                  Ask
-                </button>
-              </form>
-              <ul className="flex flex-wrap gap-2">
-                {QUICK.map((q) => (
-                  <li key={q}>
-                    <button type="button" onClick={() => ask(q)} className="rounded-[var(--radius-chrome)] border border-rule px-2 py-1 hover:border-ink">
-                      {q}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-              {canPropose && !proposal && <p className="text-ink-2">Try “Different layout” on this slide.</p>}
-              {proposal && (
-                <div className="flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      commit(`Different layout on slide ${index + 1}`, { ...thumbs, [selected]: proposal });
-                      setProposal(null);
-                    }}
-                    className="rounded-[var(--radius-chrome)] bg-accent px-4 py-2 font-medium text-accent-ink"
-                  >
-                    Use it
-                  </button>
-                  <button type="button" onClick={() => setProposal(null)} className="underline">
-                    Keep mine
-                  </button>
+              <label htmlFor="ask" className="text-muted-foreground">
+                Ask this slide for a change
+              </label>
+              <Textarea
+                id="ask"
+                rows={3}
+                value={instruction}
+                onChange={(e) => setInstruction(e.target.value)}
+                placeholder="Lead with the number. Make it more visual."
+              />
+              <Button type="submit" variant="outline" className="self-start">
+                Ask
+              </Button>
+            </form>
+            <ul className="flex flex-wrap gap-2">
+              {QUICK.map((q) => (
+                <li key={q}>
+                  <Button variant="outline" size="sm" onClick={() => ask(q)}>
+                    {q}
+                  </Button>
+                </li>
+              ))}
+            </ul>
+            {canPropose && !proposal && <p className="text-muted-foreground">Try “Different layout” on this slide.</p>}
+            {proposal && (
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => {
+                    commit(`Different layout on slide ${index + 1}`, { ...thumbs, [selected]: proposal });
+                    setProposal(null);
+                  }}
+                >
+                  Use it
+                </Button>
+                <Button variant="ghost" onClick={() => setProposal(null)}>
+                  Keep mine
+                </Button>
+              </div>
+            )}
+            {reply && (
+              <Alert role="status">
+                <AlertDescription>{reply}</AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
+          <TabsContent value="notes" className="flex flex-col gap-2 p-5 text-sm">
+            <p className="text-muted-foreground">What you say on this slide — only you see these.</p>
+            <p className="leading-relaxed">{plan?.notes || "No notes on this slide."}</p>
+          </TabsContent>
+          <TabsContent value="design" className="p-5 text-sm">
+            {look && (
+              <dl className="flex flex-col gap-3">
+                <div>
+                  <dt className="text-muted-foreground">Type</dt>
+                  <dd>{look.fonts.slice(0, 2).join(" with ")}</dd>
                 </div>
-              )}
-              {reply && (
-                <p role="status" className="border-l-2 border-ink pl-3">
-                  {reply}
+                <div>
+                  <dt className="text-muted-foreground">Palette</dt>
+                  <dd>{look.palette}</dd>
+                </div>
+                <div>
+                  <dt className="text-muted-foreground">Grid and texture</dt>
+                  <dd>
+                    {look.grid} · {look.motif}
+                  </dd>
+                </div>
+                <Separator className="my-1" />
+                <p className="text-muted-foreground">
+                  Colour and type belong to the look, so the deck stays one deck. Change the whole look, a palette
+                  variant or the pairing — never one slide by hand. (Not wired in this prototype.)
                 </p>
-              )}
-            </div>
-          )}
-          {tab === "notes" && (
-            <div className="grid gap-2">
-              <p className="text-ink-2">What you say on this slide — only you see these.</p>
-              <p className="leading-relaxed">{plan?.notes || "No notes on this slide."}</p>
-            </div>
-          )}
-          {tab === "design" && look && (
-            <dl className="grid gap-3">
-              <div>
-                <dt className="text-ink-2">Type</dt>
-                <dd>{look.fonts.slice(0, 2).join(" with ")}</dd>
-              </div>
-              <div>
-                <dt className="text-ink-2">Palette</dt>
-                <dd>{look.palette}</dd>
-              </div>
-              <div>
-                <dt className="text-ink-2">Grid and texture</dt>
-                <dd>
-                  {look.grid} · {look.motif}
-                </dd>
-              </div>
-              <p className="mt-2 text-ink-2">
-                Colour and type belong to the look, so the deck stays one deck. Change the whole look, a palette variant or the pairing — never one slide by hand. (Not wired in this prototype.)
-              </p>
-            </dl>
-          )}
-        </div>
+              </dl>
+            )}
+          </TabsContent>
+        </Tabs>
       </aside>
 
-      <footer className="flex items-center justify-between border-t border-rule px-6 py-3 text-sm">
-        <div className="flex items-center gap-3">
-          <button type="button" disabled={at === 0} onClick={() => setAt((n) => n - 1)} className="underline disabled:no-underline disabled:opacity-40">
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-rule px-6 py-3 text-sm">
+        <div className="flex items-center gap-1">
+          <Button variant="ghost" disabled={at === 0} onClick={() => setAt((n) => n - 1)}>
             Undo{at > 0 ? `: ${history[at]?.label}` : ""}
-          </button>
-          <button
-            type="button"
-            disabled={at >= history.length - 1}
-            onClick={() => setAt((n) => n + 1)}
-            className="underline disabled:no-underline disabled:opacity-40"
-          >
+          </Button>
+          <Button variant="ghost" disabled={at >= history.length - 1} onClick={() => setAt((n) => n + 1)}>
             Redo{at < history.length - 1 ? `: ${history[at + 1]?.label}` : ""}
-          </button>
-          <span className="text-ink-2">· version {at + 1}</span>
+          </Button>
+          <span className="text-muted-foreground">· version {at + 1}</span>
         </div>
-        <div className="flex items-center gap-3">
-          <a href={`/fixtures/${deck.id}/${deck.exports.present}`} target="_blank" rel="noopener" className="rounded-[var(--radius-chrome)] border border-ink px-4 py-2">
-            Present
-          </a>
-          <Link href={`/deck/${deck.id}/done`} className="rounded-[var(--radius-chrome)] bg-accent px-4 py-2 font-medium text-accent-ink">
-            Export
-          </Link>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="lg">
+            <a href={src(deck.exports.present)} target="_blank" rel="noopener">
+              Present
+            </a>
+          </Button>
+          <Button asChild size="lg">
+            <Link href={`/deck/${deck.id}/done`}>Export</Link>
+          </Button>
         </div>
       </footer>
     </main>

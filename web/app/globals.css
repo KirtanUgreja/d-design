@@ -1,4 +1,7 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
 
 /* Our chrome, not a deck (docs/design/brand.md): light warm paper, near-black
    ink, hairlines instead of shadows, one quiet accent used for focus and the
@@ -34,4 +37,43 @@ body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
 @keyframes settle {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
+}
+
+/* shadcn's semantic tokens, pointed at our brand. Components use these;
+   pages use the brand names above. No dark mode for the chrome yet: the
+   brand is a light gallery wall (docs/design/brand.md). */
+@theme inline {
+  --color-background: var(--color-paper);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-paper);
+  --color-card-foreground: var(--color-ink);
+  --color-popover: var(--color-paper);
+  --color-popover-foreground: var(--color-ink);
+  --color-primary: var(--color-accent);
+  --color-primary-foreground: var(--color-accent-ink);
+  --color-secondary: var(--color-paper-2);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-paper-2);
+  --color-muted-foreground: var(--color-ink-2);
+  --color-destructive: var(--color-flag);
+  --color-border: var(--color-rule);
+  --color-input: var(--color-rule);
+  --color-ring: var(--color-accent);
+  --font-heading: var(--font-display);
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: var(--radius-chrome);
+  --radius-xl: var(--radius-chrome);
+  --radius-2xl: var(--radius-chrome); /* rounded-2xl is banned; it can only ever be 4px here */
+  --radius-3xl: var(--radius-chrome);
+  --radius-4xl: var(--radius-chrome);
+  --shadow-xs: none;
+  --shadow-sm: none;
+  --shadow-md: none;
+  --shadow-lg: none; /* hairlines, never soft shadows */
+}
+
+@layer base {
+  * { @apply border-border outline-ring/50; }
+  body { @apply bg-background text-foreground; }
 }

@@ -9,6 +9,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { SlideThumb } from "@/components/slide-thumb";
 import type { Recording } from "@/lib/fixtures";
+import { Button } from "@/components/ui/button";
 
 type SlotState = { kind: "composing" } | { kind: "ready"; flagged: boolean };
 
@@ -85,31 +86,30 @@ export function Watch({ deck }: { deck: Recording }) {
         <div className="flex items-center gap-4">
           <span className="font-mono text-sm tabular-nums text-ink-2">{Math.floor(elapsed)}s</span>
           {finished ? (
-            <Link href={`/deck/${deck.id}/edit`} className="rounded-[var(--radius-chrome)] bg-accent px-5 py-2 text-sm font-medium text-accent-ink">
-              Open your deck
-            </Link>
+            <Button asChild size="lg">
+              <Link href={`/deck/${deck.id}/edit`}>Open your deck</Link>
+            </Button>
           ) : aborted ? (
-            <button
-              type="button"
+            <Button
+              size="lg"
               onClick={() => {
                 setRunning(true);
                 schedule(elapsed);
               }}
-              className="rounded-[var(--radius-chrome)] bg-accent px-5 py-2 text-sm font-medium text-accent-ink"
             >
               Continue
-            </button>
+            </Button>
           ) : (
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="lg"
               onClick={() => {
                 stop();
                 setRunning(false);
               }}
-              className="rounded-[var(--radius-chrome)] border border-ink px-4 py-2 text-sm"
             >
               Stop
-            </button>
+            </Button>
           )}
         </div>
       </div>
