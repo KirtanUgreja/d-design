@@ -1,0 +1,37 @@
+@import "tailwindcss";
+
+/* Our chrome, not a deck (docs/design/brand.md): light warm paper, near-black
+   ink, hairlines instead of shadows, one quiet accent used for focus and the
+   primary action only. Nothing here may style a slide: slides live in images
+   and sandboxed frames. */
+@theme {
+  --color-paper: #f6f3ec;
+  --color-paper-2: #ece7dc;
+  --color-ink: #1d1c19;
+  --color-ink-2: #5d5a52;
+  --color-rule: #d6d0c3;
+  --color-accent: #3f5220; /* dark olive; 7.9:1 on paper */
+  --color-accent-ink: #f6f3ec;
+  --color-flag: #8a3b12;
+  /* ponytail: placeholder faces until our licensed display face is chosen
+     (docs/design/questions.md #36). Neither is in the deck registry. */
+  --font-display: "Iowan Old Style", "Charter", "Georgia", serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --radius-chrome: 4px;
+}
+
+html { background: var(--color-paper); color: var(--color-ink); }
+body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* A slide settling into its slot: no bounce, gone under reduced motion. */
+@keyframes settle {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
