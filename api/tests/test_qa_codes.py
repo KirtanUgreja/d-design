@@ -90,3 +90,23 @@ def test_e8_a_face_that_failed_to_load(tmp_path: Path, monkeypatch: pytest.Monke
         browser.measure(THEME, [Frame("e8", HTML, css)], {"e8": FIELDS}, str(tmp_path / "q.html"))
     )
     assert "E8" in _codes(result, "e8")
+
+
+def test_e5_on_pixels_sees_text_over_a_texture(tmp_path: Path) -> None:
+    # The computed-colour check sees the plain ground behind the body and
+    # passes it; the screenshot sees the ink-coloured dots under the words.
+    html = HTML.replace(
+        "</section>", '<dd-texture class="dots" kind="halftone" tone="ink"></dd-texture></section>'
+    )
+    css = CSS + (
+        ".b{position:relative;z-index:2}"
+        ".dots{position:absolute;left:0;top:0;width:1920px;height:1080px;z-index:1}"
+    )
+    frames = [Frame("tex", html, css)]
+    result = asyncio.run(browser.measure(THEME, frames, {"tex": FIELDS}, str(tmp_path / "q.html")))
+    e5 = [d for d in result["tex"].errors if d.code == "E5"]
+    assert e5 and all("pixels" in str(d.measured) for d in e5)
+    off = asyncio.run(
+        browser.measure(THEME, frames, {"tex": FIELDS}, str(tmp_path / "r.html"), pixels=False)
+    )
+    assert not [d for d in off["tex"].errors if d.code == "E5"]

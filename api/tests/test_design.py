@@ -71,3 +71,19 @@ def test_exemplars_pass_qa_under_50_sampled_themes(tmp_path: Path) -> None:
                 key = f"{slide} @ {look['pairing']}/{look['scale']}/{look['palette']}"
                 bad[key] = [(d.code, d.field, str(d.measured)) for d in m.errors]
     assert bad == {}
+
+
+def test_the_hand_themes_meet_the_sampled_contrast_targets() -> None:
+    from engine.design.theme import THEMES
+
+    for theme in THEMES.values():
+        c = {k: from_hex(v) for k, v in theme.colors.items()}
+        pairs = [
+            ("ink", "ground", TEXT),
+            ("ink", "surface", BODY),
+            ("ink-2", "ground", BODY),
+            ("ink-2", "surface", BODY),
+            ("on-accent", "accent", BODY),
+            ("accent", "ground", LARGE),
+        ]
+        assert [(a, b) for a, b, n in pairs if not passes(c[a], c[b], n)] == [], theme.id

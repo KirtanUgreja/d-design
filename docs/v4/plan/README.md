@@ -10,7 +10,7 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 | [22 — engine spike](22-engine-spike.md) | L | **closed 2026-10-01 on design** — owner re-read gate 1 after two failures: the engine wins Designed, loses Says something; content gap → 24, re-tested at gate 2 |
 | [23 — design system](23-design-system.md) | M | built 2026-10-01 — automated checks pass but one: 9 of 10 pairings across 12 decks. Open: the owner's tile wall and deck wall |
 | [24 — content engine](24-content-engine.md) | M | **closed 2026-10-01** — automated exit lines pass; the two human checks skipped by the owner |
-| [25 — composition and QA](25-composition-qa.md) | L | not started |
+| [25 — composition and QA](25-composition-qa.md) | L | in progress — the free half built 2026-10-05; images, the end-to-end run and gate 2 need a credit top-up |
 | [26 — player and export](26-player-export.md) | M | built 2026-10-05 — automated checks green on Chromium and WebKit; Firefox in CI. Open: the owner's stage test (external display + clicker) and the email-attachment test |
 | [27 — app: create flow](27-app-create-flow.md) | L | not started |
 | [28 — editor](28-editor.md) | L | not started |

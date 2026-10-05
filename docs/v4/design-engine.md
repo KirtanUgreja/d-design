@@ -192,6 +192,8 @@ Sizes are calibrated to the canvas: 1920px is a 13.33-inch slide, so 1pt is 2px.
 
 Warnings become errors only when the bench shows they track the owner's scores.
 
+**Measured on pixels (2026-10-05).** `qa/pixels.js` decodes a screenshot of each slide, taken with every field's text made transparent, in the same Chromium page — no imaging dependency — and `qa/metrics.py` applies E5 to the worst 10% of the pixels behind each field. Its first run found that the hand theme nightshift's `ink-2` reached APCA Lc 54 on its ground; it is now fitted to 60.
+
 ---
 
 ## Repair ladder

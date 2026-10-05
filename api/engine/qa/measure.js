@@ -50,7 +50,7 @@
       else if (norm(deco.textContent).split(" ").length > 3) add("E6", null, "data-deco over 3 words", "3 words");
     }
 
-    const rects = [];
+    const rects = [], boxes = [];
     for (const el of fields) {
       const name = el.dataset.field, cs = getComputedStyle(el), r = rel(el.getBoundingClientRect());
       const size = parseFloat(cs.fontSize);
@@ -104,6 +104,7 @@
       }
       if (name === "headline" && lines.length >= 2 && words >= 5 && tops.filter((t) => t === lines[lines.length - 1]).length === 1) warn("W7", name, "single word on the last line", "at least 2 words");
       rects.push({ name, el, r, layer: !!el.closest("[data-layer]") });
+      boxes.push({ field: name, l: ink.l, t: ink.t, r: ink.r, b: ink.b, color: rgb(cs.color).slice(0, 3), size, lines: lines.length, chars: norm(el.textContent).length, contrast: c });
     }
     // E3 collisions between fields
     for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
@@ -137,7 +138,7 @@
     }
     const centred = rects.length && rects.filter((x) => getComputedStyle(x.el).textAlign === "center").length > rects.length / 2;
     const fingerprint = [scs.display, scs.gridTemplateColumns.split(" ").length, scs.gridTemplateRows.split(" ").length, centred ? "c" : "l", fields.map((f) => f.dataset.field.replace(/-\d+$/, "")).join(">"), root.querySelectorAll("dd-texture").length].join("|");
-    out[id] = { measured: true, errors, warnings, fingerprint, centred };
+    out[id] = { measured: true, errors, warnings, fingerprint, centred, boxes };
   }
   return out;
 }

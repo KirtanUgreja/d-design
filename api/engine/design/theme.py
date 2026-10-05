@@ -183,7 +183,8 @@ THEMES: dict[str, Theme] = {
             "ground": "#0f1317",
             "surface": "#1c232a",
             "ink": "#eeefe8",
-            "ink-2": "#a3a89f",
+            # Fitted 2026-10-05: #a3a89f reached APCA Lc 54 on this ground; 60 is the target.
+            "ink-2": "#b3b8af",
             "accent": "#e9c53f",
             "on-accent": "#15140f",
             "rule": "#eeefe8",

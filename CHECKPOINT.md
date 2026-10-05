@@ -44,3 +44,7 @@ Phase 22 (`docs/v4/plan/22-engine-spike.md`) — the make-or-break gate. It need
 ## Phase 26, built (branch `phase-26-player-export`)
 
 The real player (`api/engine/export/player.js`, `player.css`): arrows, Space, PgUp/PgDn, Home/End, number + Enter, swipe, click, F, O overview, B black, `#n`, P presenter popup (current, next, notes, timer, clock; keys work in either window), step reveals with reduced motion. `assemble.py`: "present" (notes as inert JSON) and "send" (none); AI metadata, export SHA-256 logged, disclosure in the chrome. `pdf.py` prints "send". `cli export --run NAME [--pdf]` re-assembles built decks for $0. CI now installs Chromium, Firefox and WebKit — before this, every browser test would have failed there. **Owner's tasks:** present `bench/runs/2026-10-01-phase23/engine/<brief>/deck.html` on a laptop with an external display and a clicker (press P for the presenter view); open a `deck-send.html` from an email attachment in 3 browsers.
+
+## Phase 25, the free half (branch `phase-25-composition-qa`)
+
+Charts from approved facts (bar, column, line, donut; golden files), the planner's 10 archetypes and rhythm rules, the repair ladder (2 rounds → exemplar-fill → code layout → flag), a budget guard in the seam that fails closed, E5 on real pixels and warnings W1–W6. 67 tests green. **Needs credit next:** `dd-image` and its bake-off, the 12 briefs × 2 seeds end-to-end run, and gate 2 (owner).

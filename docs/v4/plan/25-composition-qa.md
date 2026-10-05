@@ -34,11 +34,13 @@
 - **A failed image never fails a deck.**
 - **Warnings stay warnings** until the bench shows they track the owner's scores.
 
+**Built without model credit (2026-10-05):** charts from approved facts; the planner's 10 archetypes and rhythm rules; the repair ladder (2 rounds → exemplar-fill → code layout → flag); the seam's budget guard; E5 on pixels and warnings W1–W6 (`qa/pixels.js`, `qa/metrics.py`). **Still to build, needing credit:** `dd-image` and the image-model bake-off; then the 12 × 2 end-to-end run and gate 2. The exemplar library stays at 12 until the owner curates drafts.
+
 ## Verify
 
-- [ ] Chart golden files
+- [x] Chart golden files (`tests/golden/charts/`, 2026-10-05)
 - [ ] 12 briefs × 2 seeds, end to end from the content engine's outlines
-- [ ] A budget check that throws refuses the call
+- [x] A budget check that throws refuses the call (`tests/test_seam.py`)
 - [ ] **Human (gate 2):** "would send this to an investor or a customer", blind, against the baselines
 
 ## Skipped

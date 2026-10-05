@@ -20,7 +20,7 @@ from engine.design.theme import Theme
 from engine.export.assemble import assemble
 from engine.llm.openrouter import Seam
 from engine.models import Slide, SlidePlan, SlideQA, Storyline
-from engine.qa import browser
+from engine.qa import browser, metrics
 from lib.result import Err
 
 PARALLEL = 5
@@ -163,9 +163,13 @@ async def build(
             measured = await measure()
     # Rung 3 is the flag, set below from what is still measured as broken.
 
+    rhythm = metrics.deck_warnings(
+        [measured[p.id].fingerprint for p in plans], [measured[p.id].centred for p in plans]
+    )
     slides: list[Slide] = []
-    for plan in plans:
+    for index, plan in enumerate(plans):
         m = measured[plan.id]
+        m.warnings += [browser._Found(**w.model_dump()) for w in rhythm.get(index, [])]
         status: Literal["passed", "flagged", "unmeasured"] = (
             "unmeasured" if not m.measured else "flagged" if m.errors else "passed"
         )
