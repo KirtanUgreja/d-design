@@ -205,3 +205,24 @@ def test_strict_schema_requires_everything_and_closes_objects() -> None:
     assert isinstance(strict, dict)
     assert strict["additionalProperties"] is False
     assert strict["required"] == ["count", "name"]
+
+
+def test_a_budget_check_that_throws_refuses_the_call() -> None:
+    transport = StubTransport([_reply('{"name": "a", "count": 1}')])
+
+    def broken() -> bool:
+        raise RuntimeError("the ledger is unreadable")
+
+    seam = Seam(api_key="k", transport=transport, sleep=_no_sleep, allow=broken)
+    result = asyncio.run(seam.complete_json("smoke", Thing, system="s", user="u", model="m"))
+    assert isinstance(result, Err) and result.error.kind == "budget"
+    assert transport.bodies == []  # nothing was sent
+
+
+def test_a_spent_budget_refuses_the_repair_too() -> None:
+    transport = StubTransport([_reply("not json", cost=0.5), _reply('{"name": "a", "count": 1}')])
+    seam = Seam(api_key="k", transport=transport, sleep=_no_sleep)
+    seam.allow = lambda: seam.spent_usd < 0.4
+    result = asyncio.run(seam.complete_json("smoke", Thing, system="s", user="u", model="m"))
+    assert isinstance(result, Err) and result.error.kind == "budget"
+    assert len(transport.bodies) == 1  # the first call went out; the repair did not

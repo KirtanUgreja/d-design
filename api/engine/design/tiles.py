@@ -11,9 +11,9 @@ seconds in Chromium. The real slides are composed after the pick.
 
 from __future__ import annotations
 
-import html
 import re
 
+from engine.compose import exemplars
 from engine.compose.document import Frame
 from engine.compose.exemplars import Exemplar, load_all
 from engine.design.theme import Theme
@@ -24,19 +24,9 @@ COVERS = ("poster-1", "corner-1", "poster-2", "band-1", "corner-2")
 
 
 def fill(ex: Exemplar, words: dict[str, str], tile_id: str, texture: str) -> Frame:
-    """The exemplar with each data-field's text replaced by the deck's words,
-    and its pattern textures set to the look's motif."""
-
-    def swap(m: re.Match[str]) -> str:
-        text = words.get(m.group(3), "")
-        # No words for this field: drop the element, not just its text.
-        return f"{m.group(1)}{html.escape(text)}{m.group(4)}" if text else ""
-
-    out = re.sub(
-        r'(<(\w+)\b[^>]*\bdata-field="([\w-]+)"[^>]*>)(?:.*?)(</\2>)', swap, ex.html, flags=re.S
-    )
-    # The exemplar's decorations ("14", "03") are its own; a preview shows none.
-    out = re.sub(r"<(\w+)\b[^>]*\bdata-deco\b[^>]*>.*?</\1>", "", out, flags=re.S)
+    """The exemplar filled with the deck's words, without the exemplar's own
+    decorations ("14", "03"), its pattern textures set to the look's motif."""
+    out = exemplars.fill(ex, words, keep_deco=False)
     out = re.sub(r'kind="(?!solid)[\w-]+"', f'kind="{texture}"', out)
     return Frame(tile_id, out, ex.css)
 

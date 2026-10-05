@@ -1,0 +1,107 @@
+"""The repair ladder, offline (docs/v4/design-engine.md -> Repair ladder):
+at most two repair rounds, then exemplar-fill, then the code-built layout,
+and every slide that leaves the pipeline is measured clean or flagged."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+from dataclasses import dataclass, field
+from pathlib import Path
+
+import httpx
+
+from benchtools import files
+from engine import Seam, pipeline
+from engine.design.theme import THEMES
+
+
+@dataclass
+class AlwaysBroken:
+    """Answers every compose and repair with a slide that lints clean but
+    puts its text off the canvas, so QA fails it every time."""
+
+    calls: list[str] = field(default_factory=list)
+
+    async def post(self, url: str, *, json: object, headers: dict[str, str]) -> httpx.Response:
+        assert isinstance(json, dict)
+        user = str(json["messages"][-1]["content"])
+        names = [
+            line.split(":")[0].strip("- ").strip()
+            for line in user.splitlines()
+            if line.startswith("- ") and ':"' in line.replace(': "', ':"')
+        ]
+        self.calls.append("repair" if "measured" in user else "compose")
+        body = "".join(f'<p class="x" data-field="{n}">{_text(user, n)}</p>' for n in names)
+        answer = (
+            f'```html\n<section class="s">{body}</section>\n```\n'
+            "```css\n.x{position:absolute;left:1800px;top:500px;width:900px;"
+            "font-size:var(--t-body)}\n```"
+        )
+        return httpx.Response(
+            200,
+            json={
+                "choices": [{"message": {"content": answer}, "finish_reason": "stop"}],
+                "usage": {"prompt_tokens": 10, "completion_tokens": 10, "cost": 0.001},
+            },
+        )
+
+
+def _text(user: str, name: str) -> str:
+    for line in user.splitlines():
+        if line.startswith(f"- {name}: "):
+            return str(json.loads(line.split(": ", 1)[1]))
+    return ""
+
+
+async def _no_sleep(_: float) -> None:
+    return None
+
+
+def test_two_rounds_then_exemplar_fill_or_fallback(tmp_path: Path) -> None:
+    outline = files.load("pitch-devtools").outline
+    assert outline is not None
+    story = outline.model_copy(update={"slides": outline.slides[:4]})
+    transport = AlwaysBroken()
+    seam = Seam(api_key="k", transport=transport, sleep=_no_sleep)
+    built = asyncio.run(
+        pipeline.build(
+            seam,
+            story,
+            THEMES["ledger"],
+            model="m",
+            title="t",
+            work_file=str(tmp_path / "qa.html"),
+            shots_dir=str(tmp_path),
+            budget_usd=1.0,
+        )
+    )
+    assert transport.calls.count("compose") == 4
+    assert transport.calls.count("repair") == 4 * pipeline.REPAIR_ROUNDS
+    assert {s.origin for s in built.slides} <= {"exemplar", "fallback"}
+    assert all(s.qa.status == "passed" for s in built.slides), [
+        (s.id, s.origin, [d.code for d in s.qa.errors]) for s in built.slides
+    ]
+    assert all(s.attempts == 1 + pipeline.REPAIR_ROUNDS for s in built.slides)
+
+
+def test_the_budget_stops_the_ladder_before_any_repair(tmp_path: Path) -> None:
+    outline = files.load("pitch-devtools").outline
+    assert outline is not None
+    story = outline.model_copy(update={"slides": outline.slides[:3]})
+    transport = AlwaysBroken()
+    seam = Seam(api_key="k", transport=transport, sleep=_no_sleep)
+    built = asyncio.run(
+        pipeline.build(
+            seam,
+            story,
+            THEMES["ledger"],
+            model="m",
+            title="t",
+            work_file=str(tmp_path / "qa.html"),
+            shots_dir=str(tmp_path),
+            budget_usd=0.0025,
+        )
+    )
+    assert transport.calls.count("repair") == 0
+    assert all(s.qa.status == "passed" for s in built.slides)

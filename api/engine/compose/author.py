@@ -11,6 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from html import escape
 
+from engine.compose import planner
 from engine.compose.exemplars import load_all
 from engine.design.theme import Theme
 from engine.llm.openrouter import ModelError, Reply, Seam, parse_fenced
@@ -147,7 +148,8 @@ async def compose(
     user = (
         f"Slide {position} of {total}. The deck argues: {thought}\n"
         f"This slide's job: {plan.intent} ({plan.beat}).\n"
-        f"Build it as a '{plan.archetype}' composition"
+        f"Build it as a '{plan.archetype}' composition — "
+        f"{planner.ARCHETYPES.get(plan.archetype, '')}"
         + differ
         + f"\nFields:\n{_fields(plan)}"
         + (

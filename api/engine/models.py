@@ -162,7 +162,7 @@ class Slide(BaseModel):
     css: str
     fields: dict[str, str]
     assets: dict[str, str] = Field(default_factory=dict)
-    origin: Literal["authored", "repaired", "fallback", "edited"] = "authored"
+    origin: Literal["authored", "repaired", "exemplar", "fallback", "edited"] = "authored"
     attempts: int = 1
     qa: SlideQA = Field(default_factory=SlideQA)
     cost_usd: float = 0.0

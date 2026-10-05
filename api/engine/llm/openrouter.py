@@ -51,7 +51,9 @@ FailKind = Literal["transport", "truncated", "refused"]
 class ModelError:
     """An expected model-call failure."""
 
-    kind: Literal["transport", "truncated", "refused", "invalid", "repair_exhausted", "no_key"]
+    kind: Literal[
+        "transport", "truncated", "refused", "invalid", "repair_exhausted", "no_key", "budget"
+    ]
     detail: str
 
 
@@ -204,6 +206,9 @@ class Seam:
     deck_id: str = ""
     now: Callable[[], datetime] = _utcnow
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep
+    # Asked before every call, retries and repairs included. Anything that
+    # grants fails closed: a guard that raises refuses the call (rule 10).
+    allow: Callable[[], bool] | None = None
 
     @property
     def spent_usd(self) -> float:
@@ -332,6 +337,9 @@ class Seam:
 
         problem = ""
         for attempt in range(1, MAX_REPAIRS + 2):
+            refused = self._refused()
+            if refused is not None:
+                return err(refused)
             sent = await self._send(
                 body,
                 stage=stage,
@@ -362,6 +370,15 @@ class Seam:
                 }
             )
         return err(ModelError("repair_exhausted", f"still invalid after repair: {problem}"))
+
+    def _refused(self) -> ModelError | None:
+        if self.allow is None:
+            return None
+        try:
+            allowed = self.allow()
+        except Exception as exc:  # any failure of the check is a refusal
+            return ModelError("budget", f"the budget check failed: {type(exc).__name__}")
+        return None if allowed else ModelError("budget", "the deck's budget is spent")
 
     async def _send(
         self,

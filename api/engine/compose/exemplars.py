@@ -8,7 +8,9 @@ and the browser checks under every theme.
 
 from __future__ import annotations
 
+import html
 import json
+import re
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -70,3 +72,35 @@ def load_all() -> tuple[Exemplar, ...]:
 
 
 ARCHETYPES = ("poster", "split", "stack", "grid", "band", "corner")
+
+
+def fill(ex: Exemplar, words: dict[str, str], *, keep_deco: bool = True) -> str:
+    """The exemplar's html with each data-field's text replaced by ``words``.
+    A field with no words is removed, never left holding the exemplar's sample
+    text: a filled slide must not show a word or number the user did not give."""
+
+    def swap(m: re.Match[str]) -> str:
+        text = words.get(m.group(3), "")
+        return f"{m.group(1)}{html.escape(text)}{m.group(4)}" if text else ""
+
+    out = re.sub(
+        r'(<(\w+)\b[^>]*\bdata-field="([\w-]+)"[^>]*>)(?:.*?)(</\2>)', swap, ex.html, flags=re.S
+    )
+    if not keep_deco:
+        out = re.sub(r"<(\w+)\b[^>]*\bdata-deco\b[^>]*>.*?</\1>", "", out, flags=re.S)
+    return out
+
+
+def best_for(plan_fields: set[str], intent: str, archetype: str) -> list[Exemplar]:
+    """Exemplars that can hold every one of the slide's fields, best first:
+    the same archetype, then the same intent, then the fewest unused fields."""
+    fits = [e for e in load_all() if plan_fields <= set(e.fields)]
+    return sorted(
+        fits,
+        key=lambda e: (
+            e.archetype != archetype,
+            e.intent != intent,
+            len(set(e.fields) - plan_fields),
+            e.id,
+        ),
+    )

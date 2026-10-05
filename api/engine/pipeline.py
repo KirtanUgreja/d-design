@@ -13,6 +13,7 @@ from typing import Literal
 
 from engine.components import charts
 from engine.compose import author, planner
+from engine.compose import exemplars as library
 from engine.compose.author import Composed
 from engine.compose.document import Frame
 from engine.design.theme import Theme
@@ -23,6 +24,14 @@ from engine.qa import browser
 from lib.result import Err
 
 PARALLEL = 5
+REPAIR_ROUNDS = 2
+
+
+def _exemplar_fill(plan: SlidePlan, words: dict[str, str]) -> Composed | None:
+    """The best exemplar that can hold every field, filled with them."""
+    for ex in library.best_for(set(words), plan.intent, plan.archetype)[:1]:
+        return Composed(library.fill(ex, words), ex.css)
+    return None
 
 
 @dataclass(frozen=True)
@@ -64,6 +73,9 @@ async def build(
         # Fails closed: once the cap is reached no further call is made.
         return seam.spent_usd < budget_usd
 
+    # The seam asks too, before every call it makes, so no path skips the cap.
+    seam.allow = affordable
+
     async def first(index: int, plan: SlidePlan) -> Composed:
         attempts[plan.id] = 1
         if not affordable():
@@ -104,7 +116,6 @@ async def build(
     bad = [p for p in plans if measured[p.id].errors or not measured[p.id].measured]
     clean_first = len(plans) - len(bad)
 
-    # Rung 1: one targeted repair from the measured defects.
     async def fix(plan: SlidePlan) -> None:
         if origin[plan.id] == "fallback" or not affordable():
             return
@@ -123,18 +134,34 @@ async def build(
             composed[plan.id] = result.value
             origin[plan.id] = "repaired"
 
-    if bad:
+    def broken(plan: SlidePlan) -> bool:
+        return bool(measured[plan.id].errors) or not measured[plan.id].measured
+
+    # Rung 1: targeted repair from the measured defects, at most REPAIR_ROUNDS.
+    for _ in range(REPAIR_ROUNDS):
+        bad = [p for p in plans if broken(p)]
+        if not bad:
+            break
         await asyncio.gather(*(fix(p) for p in bad))
         measured = await measure()
-        # Rung 2: the code-built composition. Rung 3 is the flag below.
-        still = [p for p in plans if measured[p.id].errors or not measured[p.id].measured]
-        if still:
-            for plan in still:
-                codes = sorted({d.code for d in measured[plan.id].defects()})
-                refusals[plan.id] = f"still defective after repair: {codes}"
-                composed[plan.id] = author.fallback(plan)
-                origin[plan.id] = "fallback"
+
+    # Rung 2: exemplar-fill, no model call; then the code-built layout.
+    still = [p for p in plans if broken(p)]
+    for plan in still:
+        codes = sorted({d.code for d in measured[plan.id].defects()})
+        refusals[plan.id] = f"still defective after repair: {codes}"
+        filled = None if plan.chart else _exemplar_fill(plan, fields[plan.id])
+        composed[plan.id] = filled or author.fallback(plan)
+        origin[plan.id] = "exemplar" if filled else "fallback"
+    if still:
+        measured = await measure()
+        failed_fill = [p for p in still if origin[p.id] == "exemplar" and broken(p)]
+        for plan in failed_fill:
+            composed[plan.id] = author.fallback(plan)
+            origin[plan.id] = "fallback"
+        if failed_fill:
             measured = await measure()
+    # Rung 3 is the flag, set below from what is still measured as broken.
 
     slides: list[Slide] = []
     for plan in plans:
