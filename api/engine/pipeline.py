@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import Callable
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal
 
 from engine.components import charts
@@ -49,6 +51,11 @@ def _frame(plan: SlidePlan, c: Composed) -> Frame:
     return Frame(plan.id, charts.fill(c.html, plan.chart), c.css)
 
 
+Event = dict[str, object]
+OnEvent = Callable[[Event], None]
+MEASURE_PARALLEL = 3  # Chromium processes at once
+
+
 async def build(
     seam: Seam,
     storyline: Storyline,
@@ -60,14 +67,28 @@ async def build(
     shots_dir: str,
     budget_usd: float,
     exemplars: bool = True,
+    on_event: OnEvent | None = None,
 ) -> Built:
+    """Every slide climbs its own ladder, concurrently: compose, measure, up to
+    REPAIR_ROUNDS repairs, exemplar-fill, the code layout, then the flag. A
+    slide is announced the moment it is final, so a watch fills slot by slot
+    with what really happened (docs/v4/engine.md -> "Generation jobs and events")."""
     started = time.monotonic()
     plans = planner.assign(storyline.slides)
     fields = {p.id: {f.name: f.text for f in p.fields} for p in plans}
     gate = asyncio.Semaphore(PARALLEL)
+    browsers = asyncio.Semaphore(MEASURE_PARALLEL)
     origin: dict[str, str] = {}
-    attempts: dict[str, int] = {}
+    attempts: dict[str, int] = {p.id: 0 for p in plans}
     refusals: dict[str, str] = {}
+    composed: dict[str, Composed] = {}
+    measured: dict[str, browser.Measured] = {}
+    first_clean: set[str] = set()
+    work = Path(work_file)
+
+    def emit(kind: str, **data: object) -> None:
+        if on_event is not None:
+            on_event({"type": kind, "t": round(time.monotonic() - started, 2), **data})
 
     def affordable() -> bool:
         # Fails closed: once the cap is reached no further call is made.
@@ -76,92 +97,98 @@ async def build(
     # The seam asks too, before every call it makes, so no path skips the cap.
     seam.allow = affordable
 
-    async def first(index: int, plan: SlidePlan) -> Composed:
+    async def measure(plan: SlidePlan) -> browser.Measured:
+        async with browsers:
+            result = await browser.measure(
+                theme,
+                [_frame(plan, composed[plan.id])],
+                {plan.id: fields[plan.id]},
+                str(work.with_name(f"{work.stem}-{plan.id}.html")),
+                shots_dir,
+            )
+        return result[plan.id]
+
+    def broken(m: browser.Measured) -> bool:
+        return bool(m.errors) or not m.measured
+
+    async def ladder(index: int, plan: SlidePlan) -> None:
+        # The first rung: compose (or the code layout if the budget is spent).
         attempts[plan.id] = 1
-        if not affordable():
-            origin[plan.id] = "fallback"
-            return author.fallback(plan)
-        async with gate:
-            result = await author.compose(
-                seam,
-                theme,
-                plan,
-                model=model,
-                position=index + 1,
-                total=len(plans),
-                thought=storyline.governing_thought,
-                previous=plans[index - 1].archetype if index else "",
-                exemplars=exemplars,
-            )
-        if isinstance(result, Err):
-            origin[plan.id] = "fallback"
-            refusals[plan.id] = f"{result.error.kind}: {result.error.detail[:300]}"
-            return author.fallback(plan)
-        origin[plan.id] = "authored"
-        return result.value
+        result = None
+        if affordable():
+            async with gate:
+                result = await author.compose(
+                    seam,
+                    theme,
+                    plan,
+                    model=model,
+                    position=index + 1,
+                    total=len(plans),
+                    thought=storyline.governing_thought,
+                    previous=plans[index - 1].archetype if index else "",
+                    exemplars=exemplars,
+                )
+        if result is None or isinstance(result, Err):
+            if result is not None:
+                refusals[plan.id] = f"{result.error.kind}: {result.error.detail[:300]}"
+            composed[plan.id], origin[plan.id] = author.fallback(plan), "fallback"
+        else:
+            composed[plan.id], origin[plan.id] = result.value, "authored"
+        m = await measure(plan)
+        if not broken(m):
+            first_clean.add(plan.id)
 
-    composed = dict(
-        zip(
-            (p.id for p in plans),
-            await asyncio.gather(*(first(i, p) for i, p in enumerate(plans))),
-            strict=True,
+        # Rung 1: targeted repair from the measured defects.
+        for _ in range(REPAIR_ROUNDS):
+            if not broken(m) or origin[plan.id] == "fallback" or not affordable():
+                break
+            async with gate:
+                fixed = await author.repair(
+                    seam,
+                    theme,
+                    plan,
+                    composed[plan.id],
+                    m.defects(),
+                    model=model,
+                    exemplars=exemplars,
+                )
+            attempts[plan.id] += 1
+            if isinstance(fixed, Err):
+                break
+            composed[plan.id], origin[plan.id] = fixed.value, "repaired"
+            m = await measure(plan)
+
+        # Rung 2: exemplar-fill, no model call; then the code-built layout.
+        if broken(m):
+            refusals[plan.id] = (
+                f"still defective after repair: {sorted({d.code for d in m.defects()})}"
+            )
+            filled = None if plan.chart else _exemplar_fill(plan, fields[plan.id])
+            if filled is not None:
+                composed[plan.id], origin[plan.id] = filled, "exemplar"
+                m = await measure(plan)
+            if broken(m) and origin[plan.id] != "fallback":
+                composed[plan.id], origin[plan.id] = author.fallback(plan), "fallback"
+                m = await measure(plan)
+
+        # Rung 3, the flag: whatever is still broken is shown, never hidden.
+        measured[plan.id] = m
+        status = "unmeasured" if not m.measured else "flagged" if m.errors else "passed"
+        emit(
+            "slide_ready",
+            slide_id=plan.id,
+            position=index + 1,
+            status=status,
+            origin=origin[plan.id],
+            thumb=f"{plan.id}.png",
         )
-    )
+        if status != "passed":
+            emit("slide_flagged", slide_id=plan.id, defects=sorted({d.code for d in m.defects()}))
+        emit("cost", total_usd=round(seam.spent_usd, 4))
 
-    async def measure() -> dict[str, browser.Measured]:
-        frames = [_frame(p, composed[p.id]) for p in plans]
-        return await browser.measure(theme, frames, fields, work_file, shots_dir)
-
-    measured = await measure()
-    bad = [p for p in plans if measured[p.id].errors or not measured[p.id].measured]
-    clean_first = len(plans) - len(bad)
-
-    async def fix(plan: SlidePlan) -> None:
-        if origin[plan.id] == "fallback" or not affordable():
-            return
-        async with gate:
-            result = await author.repair(
-                seam,
-                theme,
-                plan,
-                composed[plan.id],
-                measured[plan.id].defects(),
-                model=model,
-                exemplars=exemplars,
-            )
-        attempts[plan.id] += 1
-        if not isinstance(result, Err):
-            composed[plan.id] = result.value
-            origin[plan.id] = "repaired"
-
-    def broken(plan: SlidePlan) -> bool:
-        return bool(measured[plan.id].errors) or not measured[plan.id].measured
-
-    # Rung 1: targeted repair from the measured defects, at most REPAIR_ROUNDS.
-    for _ in range(REPAIR_ROUNDS):
-        bad = [p for p in plans if broken(p)]
-        if not bad:
-            break
-        await asyncio.gather(*(fix(p) for p in bad))
-        measured = await measure()
-
-    # Rung 2: exemplar-fill, no model call; then the code-built layout.
-    still = [p for p in plans if broken(p)]
-    for plan in still:
-        codes = sorted({d.code for d in measured[plan.id].defects()})
-        refusals[plan.id] = f"still defective after repair: {codes}"
-        filled = None if plan.chart else _exemplar_fill(plan, fields[plan.id])
-        composed[plan.id] = filled or author.fallback(plan)
-        origin[plan.id] = "exemplar" if filled else "fallback"
-    if still:
-        measured = await measure()
-        failed_fill = [p for p in still if origin[p.id] == "exemplar" and broken(p)]
-        for plan in failed_fill:
-            composed[plan.id] = author.fallback(plan)
-            origin[plan.id] = "fallback"
-        if failed_fill:
-            measured = await measure()
-    # Rung 3 is the flag, set below from what is still measured as broken.
+    emit("stage", name="compose", state="started", slides=[p.id for p in plans])
+    await asyncio.gather(*(ladder(i, p) for i, p in enumerate(plans)))
+    emit("stage", name="compose", state="done")
 
     rhythm = metrics.deck_warnings(
         [measured[p.id].fingerprint for p in plans], [measured[p.id].centred for p in plans]
@@ -196,4 +223,5 @@ async def build(
     notes = {p.id: p.notes for p in plans if p.notes}
     html = assemble(theme, frames, title, flavour="present", notes=notes)
     send = assemble(theme, frames, title, flavour="send")
-    return Built(slides, html, send, time.monotonic() - started, clean_first, refusals)
+    emit("done", seconds=round(time.monotonic() - started, 1))
+    return Built(slides, html, send, time.monotonic() - started, len(first_clean), refusals)

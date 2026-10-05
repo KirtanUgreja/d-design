@@ -105,3 +105,30 @@ def test_the_budget_stops_the_ladder_before_any_repair(tmp_path: Path) -> None:
     )
     assert transport.calls.count("repair") == 0
     assert all(s.qa.status == "passed" for s in built.slides)
+
+
+def test_events_announce_each_slide_once_then_done(tmp_path: Path) -> None:
+    outline = files.load("pitch-devtools").outline
+    assert outline is not None
+    story = outline.model_copy(update={"slides": outline.slides[:3]})
+    events: list[dict[str, object]] = []
+    asyncio.run(
+        pipeline.build(
+            Seam(api_key="k", transport=AlwaysBroken(), sleep=_no_sleep),
+            story,
+            THEMES["ledger"],
+            model="m",
+            title="t",
+            work_file=str(tmp_path / "qa.html"),
+            shots_dir=str(tmp_path),
+            budget_usd=1.0,
+            on_event=events.append,
+        )
+    )
+    kinds = [e["type"] for e in events]
+    assert kinds[0] == "stage" and kinds[-1] == "done"
+    ready = [str(e["slide_id"]) for e in events if e["type"] == "slide_ready"]
+    assert sorted(ready) == sorted(s.id for s in story.slides)
+    times = [float(str(e["t"])) for e in events]
+    assert times == sorted(times)
+    assert all((tmp_path / f"{sid}.png").exists() for sid in ready)

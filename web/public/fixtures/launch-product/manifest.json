@@ -1,0 +1,899 @@
+{
+ "brief": {
+  "id": "launch-product",
+  "prompt": "Launch deck for Tessel 2, a note-taking app that now works fully offline and syncs peer to peer.",
+  "pasted": [],
+  "deck_type": "launch",
+  "answers": [],
+  "audience": "Existing customers and press at a launch event",
+  "ask": "Get existing users to upgrade and press to cover the offline story",
+  "minutes": null,
+  "slide_count": 8,
+  "delivery": "live",
+  "tone": "confident",
+  "research": true,
+  "brand": null,
+  "locale": "en"
+ },
+ "questions": [
+  {
+   "fills": "extra",
+   "question": "When is Tessel 2 available, and does everyone get it at once?",
+   "suggestions": [
+    "Available today for all users and press",
+    "Rolling out to existing users first, press next",
+    "Date not final; I'll type it in"
+   ]
+  },
+  {
+   "fills": "thought",
+   "question": "What is the one sentence the room must remember after the launch?",
+   "suggestions": [
+    "Tessel 2 keeps working with no internet, so your notes are always there.",
+    "Your devices sync directly with each other, no cloud in between.",
+    "Offline-first note-taking finally works, and upgrading takes one click."
+   ]
+  },
+  {
+   "fills": "proof",
+   "question": "What proof do you have that offline and peer-to-peer sync work?",
+   "suggestions": [
+    "None yet",
+    "Search the web",
+    "Beta tester quotes and sync reliability results to paste"
+   ]
+  },
+  {
+   "fills": "length",
+   "question": "How long is your slot, and are you presenting live or sending the deck?",
+   "suggestions": [
+    "Short live keynote with a demo",
+    "Longer live session with Q&A",
+    "Sent to press ahead of the event"
+   ]
+  }
+ ],
+ "outline": {
+  "governing_thought": "Tessel 2 works fully offline and syncs peer to peer, so connectivity problems stop getting in the way of your notes.",
+  "deck_type": "launch",
+  "audience": "Existing customers and press at a launch event",
+  "ask": "Get existing users to upgrade and press to cover the offline story",
+  "key_points": [
+   "Connectivity problems are common at work",
+   "Millions rely on note-taking apps",
+   "Tessel 2 works fully offline",
+   "Devices sync directly with each other",
+   "Existing users can upgrade now"
+  ],
+  "slides": [
+   {
+    "id": "s01",
+    "beat": "the change",
+    "intent": "cover",
+    "archetype": "",
+    "exemplar_ids": [],
+    "fields": [
+     {
+      "name": "headline",
+      "text": "Tessel 2 works fully offline and syncs peer to peer",
+      "budget_words": 12,
+      "fact_ids": []
+     },
+     {
+      "name": "kicker",
+      "text": "Launch",
+      "budget_words": 4,
+      "fact_ids": []
+     }
+    ],
+    "chart": null,
+    "image": null,
+    "notes": "Thanks for joining us. Today we're launching Tessel 2, and the idea behind it is simple. Your notes should be there when you need them, whether you have a signal or not. Tessel 2 works fully offline, and your devices sync directly with each other. We'll walk through why we built it, what's new, and then show you a live demo. By the end, we think you'll see why connectivity shouldn't decide whether you can get your thinking done.",
+    "provenance": {
+     "headline": "AI",
+     "kicker": "YOU"
+    }
+   },
+   {
+    "id": "s02",
+    "beat": "the change",
+    "intent": "number",
+    "archetype": "",
+    "exemplar_ids": [],
+    "fields": [
+     {
+      "name": "headline",
+      "text": "Connectivity problems hit most workers every year",
+      "budget_words": 12,
+      "fact_ids": []
+     },
+     {
+      "name": "kicker",
+      "text": "The change",
+      "budget_words": 4,
+      "fact_ids": []
+     },
+     {
+      "name": "stat",
+      "text": "88%",
+      "budget_words": 3,
+      "fact_ids": [
+       "w2"
+      ]
+     },
+     {
+      "name": "stat-label",
+      "text": "of respondents had connectivity problems in the last year",
+      "budget_words": 15,
+      "fact_ids": []
+     },
+     {
+      "name": "source",
+      "text": "TeamViewer, 2025",
+      "budget_words": 8,
+      "fact_ids": []
+     }
+    ],
+    "chart": null,
+    "image": null,
+    "notes": "Let's start with the problem, because nearly everyone has lived it. TeamViewer's 2025 research found that 88 percent of respondents had connectivity problems in the last year. That's almost everybody. Think about the train tunnel, the hotel wifi that never quite works, the conference room where the network drops mid-meeting. Each of those is a moment when your notes are stuck behind a connection you can't control. That's the gap we set out to close.",
+    "provenance": {
+     "headline": "AI",
+     "kicker": "AI",
+     "stat": "WEB",
+     "stat-label": "AI",
+     "source": "WEB"
+    }
+   },
+   {
+    "id": "s03",
+    "beat": "who it is for",
+    "intent": "number",
+    "archetype": "",
+    "exemplar_ids": [],
+    "fields": [
+     {
+      "name": "headline",
+      "text": "Note-taking is a daily tool for millions of Americans",
+      "budget_words": 12,
+      "fact_ids": []
+     },
+     {
+      "name": "kicker",
+      "text": "Who it is for",
+      "budget_words": 4,
+      "fact_ids": []
+     },
+     {
+      "name": "stat",
+      "text": "120 million+",
+      "budget_words": 3,
+      "fact_ids": [
+       "w4"
+      ]
+     },
+     {
+      "name": "stat-label",
+      "text": "Americans regularly use note-taking apps for work, study or personal productivity",
+      "budget_words": 15,
+      "fact_ids": []
+     },
+     {
+      "name": "source",
+      "text": "North America Market Reports, 2024",
+      "budget_words": 8,
+      "fact_ids": []
+     }
+    ],
+    "chart": null,
+    "image": null,
+    "notes": "And this isn't a niche concern. North America Market Reports estimated in 2024 that more than 120 million Americans regularly use note-taking apps, whether for work, study or personal productivity. For these people, notes aren't an occasional tool, they're something opened every single day. When a tool is that central, a dropped connection isn't a small annoyance. It interrupts the routine itself. So reliability matters most in exactly the place where we're focused.",
+    "provenance": {
+     "headline": "AI",
+     "kicker": "AI",
+     "stat": "WEB",
+     "stat-label": "AI",
+     "source": "WEB"
+    }
+   },
+   {
+    "id": "s04",
+    "beat": "what is new",
+    "intent": "statement",
+    "archetype": "",
+    "exemplar_ids": [],
+    "fields": [
+     {
+      "name": "headline",
+      "text": "Every note opens, edits and saves without a connection",
+      "budget_words": 12,
+      "fact_ids": []
+     },
+     {
+      "name": "kicker",
+      "text": "New: offline",
+      "budget_words": 4,
+      "fact_ids": []
+     },
+     {
+      "name": "point-1",
+      "text": "No signal needed",
+      "budget_words": 10,
+      "fact_ids": []
+     },
+     {
+      "name": "point-2",
+      "text": "No waiting on a server",
+      "budget_words": 10,
+      "fact_ids": []
+     },
+     {
+      "name": "point-3",
+      "text": "Same app, same speed",
+      "budget_words": 10,
+      "fact_ids": []
+     }
+    ],
+    "chart": null,
+    "image": null,
+    "notes": "So here's what's new. In Tessel 2, every note opens, edits and saves without a connection. No signal needed, and no waiting on a server to respond before you can type. What we care about most is the third point: it's the same app and the same speed. You don't switch into some stripped-down offline mode or learn anything new. You open Tessel, and it works, the same way it always does. The connection simply stops being a factor.",
+    "provenance": {
+     "headline": "AI",
+     "kicker": "AI",
+     "point-1": "AI",
+     "point-2": "AI",
+     "point-3": "AI"
+    }
+   },
+   {
+    "id": "s05",
+    "beat": "what is new",
+    "intent": "statement",
+    "archetype": "",
+    "exemplar_ids": [],
+    "fields": [
+     {
+      "name": "headline",
+      "text": "Your devices sync directly with each other",
+      "budget_words": 12,
+      "fact_ids": []
+     },
+     {
+      "name": "kicker",
+      "text": "New: sync",
+      "budget_words": 4,
+      "fact_ids": []
+     },
+     {
+      "name": "point-1",
+      "text": "Peer to peer, device to device",
+      "budget_words": 10,
+      "fact_ids": []
+     },
+     {
+      "name": "point-2",
+      "text": "Changes merge when devices meet",
+      "budget_words": 10,
+      "fact_ids": []
+     }
+    ],
+    "chart": null,
+    "image": null,
+    "notes": "The second piece is sync. Working offline only helps if your devices can still agree with each other afterwards. In Tessel 2 they sync directly, peer to peer, device to device, with no round trip through a distant server required. When devices meet, the changes merge. So you can edit on your laptop on a flight, edit on your phone in a taxi, and when the two find each other, everything comes together. That's the part we're most excited to show you next.",
+    "provenance": {
+     "headline": "AI",
+     "kicker": "AI",
+     "point-1": "AI",
+     "point-2": "AI"
+    }
+   },
+   {
+    "id": "s06",
+    "beat": "proof or demo",
+    "intent": "case",
+    "archetype": "",
+    "exemplar_ids": [],
+    "fields": [
+     {
+      "name": "headline",
+      "text": "Tessel 2 keeps working when the network drops",
+      "budget_words": 12,
+      "fact_ids": []
+     },
+     {
+      "name": "kicker",
+      "text": "Live demo",
+      "budget_words": 4,
+      "fact_ids": []
+     },
+     {
+      "name": "point-1",
+      "text": "Network off, notes still open",
+      "budget_words": 10,
+      "fact_ids": []
+     },
+     {
+      "name": "point-2",
+      "text": "Edit on two devices",
+      "budget_words": 10,
+      "fact_ids": []
+     },
+     {
+      "name": "point-3",
+      "text": "Watch them sync to each other",
+      "budget_words": 10,
+      "fact_ids": []
+     }
+    ],
+    "chart": null,
+    "image": null,
+    "notes": "Now let's see it for real. We'll switch the network off first, and you'll see that our notes still open as normal. Then we'll make an edit on one device, and a different edit on a second device. Finally, we'll bring the devices together and watch the changes sync to each other, with no network involved. Keep an eye on the screen as the two versions merge, because that's the whole promise of Tessel 2 happening live in front of you.",
+    "provenance": {
+     "headline": "AI",
+     "kicker": "AI",
+     "point-1": "AI",
+     "point-2": "AI",
+     "point-3": "AI"
+    }
+   },
+   {
+    "id": "s07",
+    "beat": "availability",
+    "intent": "statement",
+    "archetype": "",
+    "exemplar_ids": [],
+    "fields": [
+     {
+      "name": "headline",
+      "text": "Existing Tessel users can upgrade to Tessel 2 now",
+      "budget_words": 12,
+      "fact_ids": []
+     },
+     {
+      "name": "kicker",
+      "text": "Availability",
+      "budget_words": 4,
+      "fact_ids": []
+     }
+    ],
+    "chart": null,
+    "image": null,
+    "notes": "Here's the good news on availability. If you already use Tessel, you can upgrade to Tessel 2 right now. There's no waiting list and nothing to set up from scratch, and your existing notes come along with you. We wanted the move to be as easy as possible, because the whole point is removing friction from your day. If you've ever been cut off from your notes, this is the upgrade built for that moment.",
+    "provenance": {
+     "headline": "AI",
+     "kicker": "AI"
+    }
+   },
+   {
+    "id": "s08",
+    "beat": "call to action",
+    "intent": "ask",
+    "archetype": "",
+    "exemplar_ids": [],
+    "fields": [
+     {
+      "name": "headline",
+      "text": "Upgrade to Tessel 2 today and cover the offline story",
+      "budget_words": 12,
+      "fact_ids": []
+     },
+     {
+      "name": "kicker",
+      "text": "Your move",
+      "budget_words": 4,
+      "fact_ids": []
+     },
+     {
+      "name": "point-1",
+      "text": "Users: upgrade today",
+      "budget_words": 10,
+      "fact_ids": []
+     },
+     {
+      "name": "point-2",
+      "text": "Press: tell the offline story",
+      "budget_words": 10,
+      "fact_ids": []
+     }
+    ],
+    "chart": null,
+    "image": null,
+    "notes": "So here's what we'd ask of you. If you're a Tessel user, upgrade to Tessel 2 today and see what it feels like to stop thinking about your connection. If you're in the press, we'd love for you to tell the offline story, because it's one almost every reader has experienced firsthand. We're glad to set up demos and answer any questions. Thank you for your time, and let's take questions now.",
+    "provenance": {
+     "headline": "AI",
+     "kicker": "AI",
+     "point-1": "AI",
+     "point-2": "AI"
+    }
+   }
+  ]
+ },
+ "facts": [
+  {
+   "id": "w1",
+   "text": "85% of German office workers surveyed said they lose work time because of internet delays.",
+   "value": "85%",
+   "unit": null,
+   "source": "cited",
+   "citation": {
+    "url": "https://www.de-cix.net/en/about-de-cix/media/press-releases/new-de-cix-survey-german-office-workers-lose-one-week-of-working-time-per-year-due-to-internet-delays",
+    "title": "New DE-CIX survey: German office workers lose one week of working time per year due to Internet delays",
+    "publisher": "DE-CIX",
+    "date": "2022",
+    "snippet": "Of all office workers surveyed, 85 percent said they lose work time due to delays in using the Internet for professional purposes."
+   },
+   "status": "approved",
+   "as_of": "2022",
+   "flags": [
+    "older than 3 years"
+   ]
+  },
+  {
+   "id": "w2",
+   "text": "88% of respondents in the TeamViewer digital friction report experienced connectivity problems in the last year.",
+   "value": "88%",
+   "unit": null,
+   "source": "cited",
+   "citation": {
+    "url": "https://media.teamviewer.com/is/content/teamviewergmbh/teamviewer/central-image-hub/pdf/en/teamviewer-the-impact-of-digital-friction-report-en.pdf",
+    "title": "Report: The impact of digital friction",
+    "publisher": "TeamViewer",
+    "date": "2025",
+    "snippet": "88% experienced connectivity problems (e.g., server access, video calls, or file sharing) within the last year, with 45% identifying this as the top productivity killer among common technology issues."
+   },
+   "status": "approved",
+   "as_of": "2025",
+   "flags": []
+  },
+  {
+   "id": "w3",
+   "text": "68% of surveyed Americans said poor internet speed or instability had affected their productivity to some degree.",
+   "value": "68%",
+   "unit": null,
+   "source": "cited",
+   "citation": {
+    "url": "https://www.pr.com/press-release/828756",
+    "title": "68% of Americans Report Productivity Has Been Impacted by Poor Internet Speeds or Instability, New Research Finds - PR.com",
+    "publisher": "PR.com (Connectify)",
+    "date": "2021",
+    "snippet": "In fact, 68% of respondents believe their productivity has been impacted to some degree due to internet speed or stability issues."
+   },
+   "status": "approved",
+   "as_of": "2021",
+   "flags": [
+    "older than 3 years"
+   ]
+  },
+  {
+   "id": "w4",
+   "text": "More than 120 million Americans regularly use note-taking apps for work, study or personal productivity.",
+   "value": "120 million",
+   "unit": "people",
+   "source": "cited",
+   "citation": {
+    "url": "https://northamericamarketreports.com/north-america-note-taking-app-market/",
+    "title": "North America Note Taking App Market: Size, Share And Forecast - North America Market Reports",
+    "publisher": "North America Market Reports",
+    "date": "2024",
+    "snippet": "more than 120 million Americans regularly using note-taking apps for work, study, or personal productivity"
+   },
+   "status": "approved",
+   "as_of": "2024",
+   "flags": []
+  },
+  {
+   "id": "w5",
+   "text": "The global note-taking software market was USD 7.5 billion in 2024, with a forecast CAGR of 12.1%.",
+   "value": "USD 7.5 billion",
+   "unit": "USD",
+   "source": "cited",
+   "citation": {
+    "url": "https://growthmarketreports.com/report/note-taking-software-market",
+    "title": "Note-Taking Software Market Research Report 2033",
+    "publisher": "Growth Market Reports",
+    "date": "2024",
+    "snippet": "According to our latest research, the global note-taking software market size reached USD 7.5 billion in 2024, driven by the rapid digital transformation across industries and the growing need for efficient knowledge management solutions."
+   },
+   "status": "approved",
+   "as_of": "2024",
+   "flags": []
+  }
+ ],
+ "looks": [
+  {
+   "id": "launch-product-s0-1",
+   "look": {
+    "pairing": "bricolage-literata",
+    "palette": "signal",
+    "hue": "265",
+    "grid": "asymmetric",
+    "motif": "crosshatch",
+    "scale": "extreme",
+    "edge": "ruled",
+    "density": "balanced",
+    "motion": "confident",
+    "image": "flat illustration"
+   },
+   "tiles": [
+    "tiles/launch-product-s0-1-t1.png",
+    "tiles/launch-product-s0-1-t2.png"
+   ],
+   "fonts": [
+    "Bricolage Grotesque",
+    "Literata",
+    "DM Mono"
+   ]
+  },
+  {
+   "id": "launch-product-s0-2",
+   "look": {
+    "pairing": "league-franklin",
+    "palette": "night",
+    "hue": "60",
+    "grid": "modular",
+    "motif": "dither",
+    "scale": "dramatic",
+    "edge": "sharp",
+    "density": "airy",
+    "motion": "still",
+    "image": "duotone"
+   },
+   "tiles": [
+    "tiles/launch-product-s0-2-t1.png",
+    "tiles/launch-product-s0-2-t2.png"
+   ],
+   "fonts": [
+    "League Gothic",
+    "Libre Franklin",
+    "JetBrains Mono"
+   ]
+  },
+  {
+   "id": "launch-product-s0-3",
+   "look": {
+    "pairing": "newsreader-public",
+    "palette": "paper",
+    "hue": "60",
+    "grid": "swiss",
+    "motif": "rules",
+    "scale": "modest",
+    "edge": "soft",
+    "density": "dense",
+    "motion": "still",
+    "image": "duotone"
+   },
+   "tiles": [
+    "tiles/launch-product-s0-3-t1.png",
+    "tiles/launch-product-s0-3-t2.png"
+   ],
+   "fonts": [
+    "Newsreader",
+    "Public Sans",
+    "DM Mono"
+   ]
+  },
+  {
+   "id": "launch-product-s1-1",
+   "look": {
+    "pairing": "gloock-public",
+    "palette": "tonal",
+    "hue": "130",
+    "grid": "poster",
+    "motif": "grain",
+    "scale": "extreme",
+    "edge": "soft",
+    "density": "airy",
+    "motion": "subtle",
+    "image": "line drawing"
+   },
+   "tiles": [
+    "tiles/launch-product-s1-1-t1.png",
+    "tiles/launch-product-s1-1-t2.png"
+   ],
+   "fonts": [
+    "Gloock",
+    "Public Sans",
+    "IBM Plex Mono"
+   ]
+  },
+  {
+   "id": "launch-product-s1-2",
+   "look": {
+    "pairing": "familjen-karla",
+    "palette": "night",
+    "hue": "265",
+    "grid": "editorial",
+    "motif": "numerals",
+    "scale": "extreme",
+    "edge": "ruled",
+    "density": "dense",
+    "motion": "confident",
+    "image": "halftone photo"
+   },
+   "tiles": [
+    "tiles/launch-product-s1-2-t1.png",
+    "tiles/launch-product-s1-2-t2.png"
+   ],
+   "fonts": [
+    "Familjen Grotesk",
+    "Karla",
+    "Space Mono"
+   ]
+  },
+  {
+   "id": "launch-product-s1-3",
+   "look": {
+    "pairing": "syne-work",
+    "palette": "blocks",
+    "hue": "340",
+    "grid": "swiss",
+    "motif": "rules",
+    "scale": "dramatic",
+    "edge": "sharp",
+    "density": "dense",
+    "motion": "subtle",
+    "image": "line drawing"
+   },
+   "tiles": [
+    "tiles/launch-product-s1-3-t1.png",
+    "tiles/launch-product-s1-3-t2.png"
+   ],
+   "fonts": [
+    "Syne",
+    "Work Sans",
+    "JetBrains Mono"
+   ]
+  }
+ ],
+ "chosen": "launch-product-s0-1",
+ "events": [
+  {
+   "type": "stage",
+   "t": 0.0,
+   "name": "compose",
+   "state": "started",
+   "slides": [
+    "s01",
+    "s02",
+    "s03",
+    "s04",
+    "s05",
+    "s06",
+    "s07",
+    "s08"
+   ]
+  },
+  {
+   "type": "slide_ready",
+   "t": 13.84,
+   "slide_id": "s02",
+   "position": 2,
+   "status": "passed",
+   "origin": "authored",
+   "thumb": "s02.png"
+  },
+  {
+   "type": "cost",
+   "t": 13.84,
+   "total_usd": 0.0154
+  },
+  {
+   "type": "slide_ready",
+   "t": 14.99,
+   "slide_id": "s01",
+   "position": 1,
+   "status": "passed",
+   "origin": "authored",
+   "thumb": "s01.png"
+  },
+  {
+   "type": "cost",
+   "t": 14.99,
+   "total_usd": 0.0215
+  },
+  {
+   "type": "slide_ready",
+   "t": 16.44,
+   "slide_id": "s03",
+   "position": 3,
+   "status": "passed",
+   "origin": "authored",
+   "thumb": "s03.png"
+  },
+  {
+   "type": "cost",
+   "t": 16.44,
+   "total_usd": 0.0265
+  },
+  {
+   "type": "slide_ready",
+   "t": 19.81,
+   "slide_id": "s04",
+   "position": 4,
+   "status": "passed",
+   "origin": "authored",
+   "thumb": "s04.png"
+  },
+  {
+   "type": "cost",
+   "t": 19.81,
+   "total_usd": 0.0333
+  },
+  {
+   "type": "slide_ready",
+   "t": 21.28,
+   "slide_id": "s05",
+   "position": 5,
+   "status": "passed",
+   "origin": "exemplar",
+   "thumb": "s05.png"
+  },
+  {
+   "type": "cost",
+   "t": 21.28,
+   "total_usd": 0.0342
+  },
+  {
+   "type": "slide_ready",
+   "t": 29.27,
+   "slide_id": "s06",
+   "position": 6,
+   "status": "passed",
+   "origin": "authored",
+   "thumb": "s06.png"
+  },
+  {
+   "type": "cost",
+   "t": 29.27,
+   "total_usd": 0.0413
+  },
+  {
+   "type": "slide_ready",
+   "t": 37.69,
+   "slide_id": "s08",
+   "position": 8,
+   "status": "passed",
+   "origin": "authored",
+   "thumb": "s08.png"
+  },
+  {
+   "type": "cost",
+   "t": 37.69,
+   "total_usd": 0.0488
+  },
+  {
+   "type": "slide_ready",
+   "t": 60.16,
+   "slide_id": "s07",
+   "position": 7,
+   "status": "passed",
+   "origin": "exemplar",
+   "thumb": "s07.png"
+  },
+  {
+   "type": "cost",
+   "t": 60.16,
+   "total_usd": 0.064
+  },
+  {
+   "type": "stage",
+   "t": 60.16,
+   "name": "compose",
+   "state": "done"
+  },
+  {
+   "type": "done",
+   "t": 60.16,
+   "seconds": 60.2
+  }
+ ],
+ "slides": [
+  {
+   "id": "s01",
+   "thumb": "slides/s01.png",
+   "status": "passed",
+   "origin": "authored",
+   "fields": {
+    "headline": "Tessel 2 works fully offline and syncs peer to peer",
+    "kicker": "Launch"
+   }
+  },
+  {
+   "id": "s02",
+   "thumb": "slides/s02.png",
+   "status": "passed",
+   "origin": "authored",
+   "fields": {
+    "headline": "Connectivity problems hit most workers every year",
+    "kicker": "The change",
+    "stat": "88%",
+    "stat-label": "of respondents had connectivity problems in the last year",
+    "source": "TeamViewer, 2025"
+   }
+  },
+  {
+   "id": "s03",
+   "thumb": "slides/s03.png",
+   "status": "passed",
+   "origin": "authored",
+   "fields": {
+    "headline": "Note-taking is a daily tool for millions of Americans",
+    "kicker": "Who it is for",
+    "stat": "120 million+",
+    "stat-label": "Americans regularly use note-taking apps for work, study or personal productivity",
+    "source": "North America Market Reports, 2024"
+   }
+  },
+  {
+   "id": "s04",
+   "thumb": "slides/s04.png",
+   "status": "passed",
+   "origin": "authored",
+   "fields": {
+    "headline": "Every note opens, edits and saves without a connection",
+    "kicker": "New: offline",
+    "point-1": "No signal needed",
+    "point-2": "No waiting on a server",
+    "point-3": "Same app, same speed"
+   }
+  },
+  {
+   "id": "s05",
+   "thumb": "slides/s05.png",
+   "status": "passed",
+   "origin": "exemplar",
+   "fields": {
+    "headline": "Your devices sync directly with each other",
+    "kicker": "New: sync",
+    "point-1": "Peer to peer, device to device",
+    "point-2": "Changes merge when devices meet"
+   }
+  },
+  {
+   "id": "s06",
+   "thumb": "slides/s06.png",
+   "status": "passed",
+   "origin": "authored",
+   "fields": {
+    "headline": "Tessel 2 keeps working when the network drops",
+    "kicker": "Live demo",
+    "point-1": "Network off, notes still open",
+    "point-2": "Edit on two devices",
+    "point-3": "Watch them sync to each other"
+   }
+  },
+  {
+   "id": "s07",
+   "thumb": "slides/s07.png",
+   "status": "passed",
+   "origin": "exemplar",
+   "fields": {
+    "headline": "Existing Tessel users can upgrade to Tessel 2 now",
+    "kicker": "Availability"
+   }
+  },
+  {
+   "id": "s08",
+   "thumb": "slides/s08.png",
+   "status": "passed",
+   "origin": "authored",
+   "fields": {
+    "headline": "Upgrade to Tessel 2 today and cover the offline story",
+    "kicker": "Your move",
+    "point-1": "Users: upgrade today",
+    "point-2": "Press: tell the offline story"
+   }
+  }
+ ],
+ "proposal": {
+  "slide_id": "s02",
+  "instruction": "Try a different layout",
+  "after": "slides/s02-alt.png"
+ },
+ "exports": {
+  "present": "present.html",
+  "send": "send.html",
+  "pdf": "deck.pdf"
+ },
+ "cost_usd": 0.0679
+}

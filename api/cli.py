@@ -10,6 +10,7 @@ uv run python -m cli injection --run NAME       the injection corpus through the
 uv run python -m cli fonts                      measure the vendored faces into meta.json
 uv run python -m cli tiles --run NAME           3 sampled looks per brief, as style tiles
 uv run python -m cli export --run NAME [--pdf]  re-assemble built decks with the current player
+uv run python -m cli record --brief ID          a real run as a fixture bundle for web/ (phase 30)
 """
 
 from __future__ import annotations
@@ -25,7 +26,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 import settings
-from benchtools import baseline, content, files, fonts, outline, shots, wall
+from benchtools import baseline, content, files, fonts, outline, record, shots, wall
 from engine import Brief, Seam, Slide, pipeline
 from engine.compose.document import Frame
 from engine.design import tiles
@@ -203,6 +204,21 @@ def _sampled(brief: Brief) -> list[Theme]:
         build_theme(look)
         for look in sample(brief.id, deck_type=brief.deck_type, brand_hex=brand_hex)
     ]
+
+
+async def _record(cfg: settings.Settings, brief_id: str, outlines: str) -> int:
+    outline_file = files.BENCH / "runs" / outlines / "content" / f"{brief_id}.json"
+    seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"record-{brief_id}")
+    out = await record.record(
+        seam,
+        files.load(brief_id).brief,
+        outline_file,
+        writing=cfg.model_writing,
+        design=cfg.model_design,
+    )
+    files.append_ledger(files.BENCH / "runs" / "ledger.jsonl", seam.ledger)
+    print(f"{brief_id} -> {out}  ${seam.spent_usd:.3f}")
+    return 0
 
 
 def _theme_for(theme_id: str, brief: Brief) -> Theme:
@@ -396,6 +412,9 @@ def main(argv: list[str]) -> int:
     cmd = sub.add_parser("injection")
     cmd.add_argument("--run", required=True)
     sub.add_parser("fonts")
+    cmd = sub.add_parser("record")
+    cmd.add_argument("--brief", required=True)
+    cmd.add_argument("--outlines", default="2026-10-01-content")
     cmd = sub.add_parser("export")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--label", default="engine")
@@ -422,6 +441,8 @@ def main(argv: list[str]) -> int:
         return asyncio.run(_content(cfg, args.run, args.set))
     if args.command == "injection":
         return asyncio.run(_injection(cfg, args.run))
+    if args.command == "record":
+        return asyncio.run(_record(cfg, args.brief, args.outlines))
     if args.command == "export":
         return asyncio.run(_export(args.run, args.label, args.set, args.pdf))
     if args.command == "tiles":
