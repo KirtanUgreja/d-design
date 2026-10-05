@@ -27,14 +27,22 @@ export function Composer({ examples }: { examples: Example[] }) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [picked, setPicked] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const label = useId();
   const first = examples[0];
 
   const start = () => {
-    // ponytail: the prototype has two recorded runs; a typed brief replays the
-    // closest one. Phase 27 starts a real generation here.
-    const target = picked ?? first?.id;
-    if (target) router.push(`/deck/${target}/outline`);
+    // The prototype can only replay recorded runs. A typed brief that matches
+    // none of them is told so — never silently swapped for another deck.
+    // Phase 27 starts a real generation here.
+    const target = picked ?? matching(text, examples) ?? (text.trim() ? null : first?.id);
+    if (target) {
+      router.push(`/deck/${target}/outline`);
+      return;
+    }
+    setNotice(
+      "This prototype can only replay its recorded decks, so it can't build yours yet. Pick one of the real briefs below — a live build of your own brief arrives with the app's engine connection (phase 27).",
+    );
   };
 
   return (
@@ -57,6 +65,7 @@ export function Composer({ examples }: { examples: Example[] }) {
           onChange={(e) => {
             setText(e.target.value);
             setPicked(null);
+            setNotice(null);
           }}
           placeholder={first?.prompt ?? "Series A pitch for our CI tool, to seed-stage investors"}
           className="block w-full resize-none bg-transparent p-4 text-lg outline-none placeholder:text-ink-2"
@@ -68,6 +77,11 @@ export function Composer({ examples }: { examples: Example[] }) {
           </Button>
         </div>
       </div>
+      {notice && (
+        <p role="status" className="border-l-2 border-ink pl-3 text-sm">
+          {notice}
+        </p>
+      )}
       {examples.length > 0 && (
         <div className="grid gap-2">
           <p className="text-sm text-ink-2">Or start from a real brief:</p>
@@ -94,4 +108,14 @@ export function Composer({ examples }: { examples: Example[] }) {
       )}
     </form>
   );
+}
+
+const STOP = new Set(["a", "an", "the", "for", "to", "of", "and", "deck", "make", "pitch", "update", "sales", "launch", "our", "my", "with", "on", "in"]);
+
+/** The recording whose brief shares a distinctive word with what was typed. */
+function matching(text: string, examples: Example[]): string | null {
+  const words = new Set(text.toLowerCase().match(/[a-z0-9]{3,}/g)?.filter((w) => !STOP.has(w)) ?? []);
+  if (words.size === 0) return null;
+  const hit = examples.find((x) => (x.prompt.toLowerCase().match(/[a-z0-9]{3,}/g) ?? []).some((w) => words.has(w)));
+  return hit?.id ?? null;
 }

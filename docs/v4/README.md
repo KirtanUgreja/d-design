@@ -11,7 +11,7 @@ v4 rebuilds the product around the one thing that was missing:
 - **Automatic browser checks** stop broken slides.
 - **A content engine** writes storylines from cited facts.
 
-The app is rebuilt around that flow: composer → interview → outline → pick a look → watch slides stream → edit → present or export. Accounts come last.
+The app is rebuilt around that flow: composer → interview → outline → watch slides stream in a look generated for the deck → edit → present or export. Accounts come last.
 
 ## Files
 
@@ -27,7 +27,7 @@ The app is rebuilt around that flow: composer → interview → outline → pick
 | [plan/README.md](plan/README.md) | Phase status, dependency graph, build order |
 | [plan/21-reset.md](plan/21-reset.md) | Phase 21 — delete what v4 replaces, set the rules and the gate, build the bench |
 | [plan/22-engine-spike.md](plan/22-engine-spike.md) | Phase 22 — decks that look designed, from the CLI, on frozen outlines. **The make-or-break gate** |
-| [plan/23-design-system.md](plan/23-design-system.md) | Phase 23 — fonts, palettes, grids, motifs, the sampler, style tiles, brand colours |
+| [plan/23-design-system.md](plan/23-design-system.md) | Phase 23 — fonts, palettes, grids, motifs, the look generator, brand colours |
 | [plan/24-content-engine.md](plan/24-content-engine.md) | Phase 24 — interview, research, storyline, notes, content evals |
 | [plan/25-composition-qa.md](plan/25-composition-qa.md) | Phase 25 — planner, exemplar library, charts, images, the full QA loop. **The second human gate** |
 | [plan/26-player-export.md](plan/26-player-export.md) | Phase 26 — the offline player, presenter view, export, PDF |
@@ -35,7 +35,7 @@ The app is rebuilt around that flow: composer → interview → outline → pick
 | [plan/28-editor.md](plan/28-editor.md) | Phase 28 — the editor: inline edits, AI edits per slide, design tweaks, versions |
 | [plan/29-accounts-deploy.md](plan/29-accounts-deploy.md) | Phase 29 — accounts, Postgres, cost metering, budget caps, deploy |
 | [plan/30-ui-prototype.md](plan/30-ui-prototype.md) | Phase 30 — the five hot surfaces as a clickable prototype on real decks, tested with 5 users; the UI baseline. No credit |
-| [plan/31-first-run.md](plan/31-first-run.md) | Phase 31 — the first minute: a $0 recorded demo, a brief that survives sign-up, their words in three looks |
+| [plan/31-first-run.md](plan/31-first-run.md) | Phase 31 — the first minute: a $0 recorded demo, a brief that survives sign-up, their cover within a minute |
 | [plan/32-watch-reveal.md](plan/32-watch-reveal.md) | Phase 32 — the peak and the end: the cover first, real work visible, a reveal worth showing |
 | [plan/33-trust-control.md](plan/33-trust-control.md) | Phase 33 — provenance you can open, AI changes as proposals, labelled undo, resume |
 | [plan/34-presenter-confidence.md](plan/34-presenter-confidence.md) | Phase 34 — rehearse mode, pacing against their minutes, a ready check |

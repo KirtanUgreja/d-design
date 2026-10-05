@@ -85,7 +85,7 @@ Per 10-slide deck. **Estimates**, assuming Sonnet-class list prices of $3 in / $
 | Interview | under $0.01 | 3–5 s |
 | Research (≤30 results) | $0.12–0.20 | 10–20 s |
 | Outline | $0.05–0.10 | 25–45 s |
-| Theme and style tiles | $0 | ~3 s |
+| The generated look | $0 | under 1 s |
 | Notes | $0.03–0.05 | in parallel |
 | Slides (cache warmed by slide 1, then 5 in parallel) | $0.40–0.80 | 60–120 s |
 | Repairs (~3) | $0.10–0.25 | +30–60 s |

@@ -19,7 +19,7 @@ The v4 re-decide ([../v4/spec.md](../v4/spec.md)) settled or overtook the questi
 | Questions | What v4 decided | Where |
 |---|---|---|
 | §2 preamble, 21, 29 | The first users are founders and salespeople, not marketers. Five deck types | [../v4/spec.md](../v4/spec.md) → Locked decisions → First users |
-| 7, 71, 99, 195 | "Design family" is now a **look**: sampled per deck, shown as three style tiles, changed in the Design tab | [app.md](app.md) → "Pick a look"; [../v4/design-engine.md](../v4/design-engine.md) → "Sampler" |
+| 7, 71, 99, 195 | "Design family" is now a **look**: sampled per deck, generated per deck since 2026-10-05 (no picking), changed in the Design tab | [app.md](app.md) → "Pick a look"; [../v4/design-engine.md](../v4/design-engine.md) → "Sampler" |
 | 23 | Superseded. The model now composes each slide's HTML; colour and type come only from the look's tokens. The public line is *the AI designs every slide inside one design system* | [../v4/spec.md](../v4/spec.md) → Locked decisions → Token rule |
 | 20, 134, 135, 194 | Brand colours are asked for after the first deck exists, in the Design tab. Never in the interview | [app.md](app.md) → "First run" |
 | 78 | Reversed. An edit is saved and re-measured by the backend, so an anonymous editable demo is no longer free | [website.md](website.md) → "Watch it build" |

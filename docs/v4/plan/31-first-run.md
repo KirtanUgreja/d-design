@@ -32,7 +32,7 @@
 
 ## Verify
 
-- [ ] Time from finishing sign-up to the three looks, measured in the browser, median ≤ 60 s for a one-line brief (excluding the user's typing)
+- [ ] Time from approving the outline to the cover, measured in the browser, median ≤ 60 s
 - [ ] The replay and the example decks work with no account and make zero model calls
 - [ ] A brief typed before sign-up arrives intact after it
 - [ ] **Human:** 5 first-time users, unmoderated: what they understood in 5 seconds, and where they hesitated
@@ -44,6 +44,6 @@
 
 ## Exit gate
 
-- [ ] Median time to the three looks ≤ 60 s
-- [ ] At least 4 of 5 first-time users reach Pick a look without help
+- [ ] Median time from approval to the cover ≤ 60 s
+- [ ] At least 4 of 5 first-time users reach the watch without help
 - [ ] Beats phase 30's baseline on time-to-first-look and on the 5-second test

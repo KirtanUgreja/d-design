@@ -20,7 +20,7 @@ The wait between approving an outline and seeing slides, and what each deck cost
 - **Stream whole slides as they pass QA.** The user watches the deck fill in and can abort early. Perceived speed beats raw speed.
 - **Prompt caching is the biggest cost lever.** Stable prefix first (rules, theme, exemplars), so every compose call in a deck reuses one cached prefix ([patterns.md](patterns.md) rule 6).
 - **Model choice per stage is a bench result, not a guess** ([../techstack/ai-stack.md](../techstack/ai-stack.md)). A cheaper model for repair is taken only if the bench shows parity.
-- **The theme and the three looks cost no model call.** They are code.
+- **The theme and the deck's generated look cost no model call.** They are code.
 
 ### 2. The QA render pool
 

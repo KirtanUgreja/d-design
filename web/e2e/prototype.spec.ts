@@ -13,6 +13,7 @@ async function timed(page: Page, act: () => Promise<void>, shows: () => Promise<
 }
 
 test("composer to reveal, keyboard and mouse", async ({ page }) => {
+  test.setTimeout(180_000); // the recording replays at its real build time (about a minute)
   await page.goto("/");
   await expect(page.getByLabel("What are you presenting?")).toBeFocused();
 
@@ -27,23 +28,13 @@ test("composer to reveal, keyboard and mouse", async ({ page }) => {
   await expect(page.getByText("Interview done")).toBeVisible();
   await page.getByRole("button", { name: "Approve outline" }).click();
 
-  await expect(page).toHaveURL(/\/look$/);
-  const firstTile = page.locator("main img").first();
-  const before = await firstTile.getAttribute("src");
-  const shuffle = await timed(
-    page,
-    () => page.getByRole("button", { name: "Shuffle" }).click(),
-    async () => expect(firstTile).not.toHaveAttribute("src", before ?? ""),
-  );
-  expect(shuffle).toBeLessThan(DOHERTY_MS);
-  await page.getByRole("button", { name: /Use this look/ }).first().click();
-
-  await expect(page).toHaveURL(/\/watch/);
-  await expect(page.getByText(/Composing your deck/)).toBeVisible();
+  // No look to pick: the deck's look is generated for it.
+  await expect(page).toHaveURL(/\/watch$/);
+  await expect(page.getByRole("heading", { name: /Composing your deck/ })).toBeVisible();
   await page.getByRole("button", { name: "Stop" }).click();
   await expect(page.getByRole("heading", { name: "Stopped" })).toBeVisible();
   await page.getByRole("button", { name: "Continue" }).click();
-  await expect(page.getByRole("link", { name: "Open your deck" })).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("link", { name: "Open your deck" })).toBeVisible({ timeout: 120_000 });
   await page.getByRole("link", { name: "Open your deck" }).click();
 
   await expect(page).toHaveURL(/\/edit$/);
@@ -86,9 +77,23 @@ test("every state has copy, and an unknown deck is a 404 page", async ({ page })
 
 test("nothing scrolls sideways at 200% zoom", async ({ page }) => {
   await page.setViewportSize({ width: 720, height: 450 }); // a 1440 screen at 200%
-  for (const path of ["/", "/deck/update-q3/outline", "/deck/update-q3/look", "/deck/update-q3/edit", "/deck/update-q3/done"]) {
+  for (const path of ["/", "/deck/update-q3/outline", "/deck/update-q3/watch", "/deck/update-q3/edit", "/deck/update-q3/done"]) {
     await page.goto(path);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, path).toBeLessThanOrEqual(1);
   }
+});
+
+test("a typed brief reaches its own recording, or is told it can't be built yet", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("What are you presenting?").fill("make a pitch deck for tesla");
+  await page.getByRole("button", { name: "Start" }).click();
+  await expect(page).toHaveURL(/\/deck\/pitch-tesla\/outline$/);
+  await expect(page.getByRole("heading", { level: 2 })).toContainText("Tesla");
+
+  await page.goto("/");
+  await page.getByLabel("What are you presenting?").fill("Board deck for a coffee roaster");
+  await page.getByRole("button", { name: "Start" }).click();
+  await expect(page).toHaveURL(/\/$/);
+  await expect(page.getByRole("status")).toContainText("can only replay its recorded decks");
 });

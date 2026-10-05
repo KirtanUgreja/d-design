@@ -12,7 +12,6 @@ from __future__ import annotations
 import base64
 from dataclasses import dataclass
 from pathlib import Path
-from urllib.parse import quote
 
 from engine.design.theme import Theme
 
@@ -29,42 +28,11 @@ class Frame:
     css: str
 
 
-def _svg(body: str, size: int) -> str:
-    svg = (
-        f"<svg xmlns='http://www.w3.org/2000/svg' width='{size}' height='{size}' "
-        f"viewBox='0 0 {size} {size}'>{body}</svg>"
-    )
-    return f'url("data:image/svg+xml,{quote(svg)}")'
+# Texture without gradients: colourless SVG masks over a theme colour. The
+# geometry is the look's own (design/patterns.py) and reaches each slide as the
+# --tile-* and --mark tokens, so the slide's CSS never carries a url().
+KINDS = ("halftone", "hatch", "crosshatch", "grid", "dither", "weave", "lines", "grain")
 
-
-# Texture without gradients: colourless SVG tiles used as masks, the colour
-# underneath always a theme token (docs/v4/design-engine.md -> Registry).
-_TILES = {
-    "halftone": _svg("<circle cx='12' cy='12' r='6.5'/>", 24),
-    "hatch": _svg(
-        "<path d='M-4 4 L4 -4 M0 20 L20 0 M16 24 L24 16' stroke='#000' stroke-width='5'/>", 20
-    ),
-    "grid": _svg("<path d='M0 0H40V3H0ZM0 0V40H3V0Z'/>", 40),
-    # Ported from v3's texture/patterns.ts without its light-source bloom.
-    "dither": _svg(
-        "".join(
-            f"<rect x='{x * 4}' y='{y * 4}' width='4' height='4'/>"
-            for y, row in enumerate(((0, 8, 2, 10), (12, 4, 14, 6), (3, 11, 1, 9), (15, 7, 13, 5)))
-            for x, t in enumerate(row)
-            if t < 6
-        ),
-        16,
-    ),
-    "crosshatch": _svg("<rect width='16' height='2.5'/><rect width='2.5' height='16'/>", 16),
-    "weave": _svg("<rect width='5' height='8'/><rect x='8' y='8' width='5' height='8'/>", 16),
-    "lines": _svg("<rect width='24' height='3'/>", 24),
-    "grain": _svg(
-        "<filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' "
-        "stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
-        "-1.6 1.1'/></filter><rect width='64' height='64' filter='url(#g)'/>",
-        64,
-    ),
-}
 
 # Ours, not the model's: it may use :host, masks and url(). The model's CSS is
 # appended after it inside the same shadow root.
@@ -82,10 +50,13 @@ _BASE = (
     "dd-texture[tone=ink]{background-color:var(--c-ink)}"
     "dd-texture[tone=surface]{background-color:var(--c-surface)}"
     + "".join(
-        f"dd-texture[kind={kind}]{{-webkit-mask-image:{tile};mask-image:{tile};"
-        "-webkit-mask-repeat:repeat;mask-repeat:repeat}"
-        for kind, tile in _TILES.items()
+        f"dd-texture[kind={kind}]{{-webkit-mask-image:var(--tile-{kind});"
+        f"mask-image:var(--tile-{kind});-webkit-mask-repeat:repeat;mask-repeat:repeat}}"
+        for kind in KINDS
     )
+    + "dd-texture[kind=mark]{-webkit-mask-image:var(--mark);mask-image:var(--mark);"
+    "-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;-webkit-mask-position:center;"
+    "mask-position:center;-webkit-mask-size:contain;mask-size:contain}"
 )
 
 

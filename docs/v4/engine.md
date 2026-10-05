@@ -11,7 +11,7 @@ Brief ─► interview: one call, ≤5 questions with suggested answers, skippab
       ─► research: openrouter:web_search → Fact ledger ─────────────────────► content/research.py
       ─► storyline: arc by deck type, assertion headlines, provenance ──────► content/storyline.py
          ⏸ the user edits and approves the outline
-      ─► looks: sampler → 3 themes (pure code) → style tiles rendered
+      ─► look: one generated theme per deck (pure code; no picking)
          from exemplars with the deck's real title. No model call ──────────► design/*
          ⏸ the user picks a look, or shuffles (instant)
       ─► planner: an intent and an archetype per slide, rhythm rules ───────► compose/planner.py
@@ -81,7 +81,6 @@ web/                                  Next.js · React 19 · Tailwind 4 · shadc
     layout.tsx · globals.css          our brand tokens (../design/brand.md)
     page.tsx                          home: the composer + recent decks
     new/[id]/page.tsx                 interview + outline gate
-    new/[id]/look/page.tsx            pick a look
     deck/[id]/page.tsx                generation watch → editor (one screen)
     deck/[id]/present/page.tsx        present: the "present" export, full screen
   features/                           composer · interview · outline · looks · watch · editor · present · export
@@ -129,7 +128,7 @@ Pydantic, in `api/engine/models.py`. These are field lists, not code. The TypeSc
 | `POST /decks` · `GET /decks` · `GET /decks/{id}` | Create from a `Brief`, list (thumbnails only, never image payloads), read |
 | `POST /decks/{id}/interview` | Get the questions, accept answers or a skip |
 | `POST /decks/{id}/outline` · `PATCH …/outline` · `POST …/outline/approve` | Generate, edit (reorder, text, add/remove, confirm or remove flagged numbers), approve |
-| `POST /decks/{id}/looks` · `POST …/looks/{n}/choose` | Sample 3 looks and their tiles (or shuffle), choose one |
+| `POST /decks/{id}/look` | Generate another look for the deck (a new nonce), shown before/after in the editor |
 | `POST /decks/{id}/build` · `GET …/events` (SSE) · `POST …/build/abort` | Enqueue the build, stream it, stop it |
 | `GET …/slides/{sid}/document` · `GET …/thumb.webp` | One slide as a full HTML document for the editor iframe; its QA screenshot |
 | `PATCH …/slides/{sid}/fields` · `POST …/slides/{sid}/revise` | An inline text edit (an edit job re-renders and re-runs QA); an AI edit with an instruction (returns a candidate to accept or discard) |

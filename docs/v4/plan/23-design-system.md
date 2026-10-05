@@ -24,7 +24,7 @@
 - 5 grids, ≥8 motifs (the texture port), 6 image treatments, and the scale, edge, density and motion axes.
 - `design/sampler.py`: seeded, compatibility rules, deck-type priors, the three most distant looks.
 - `design/theme.py`: axes → `Theme`. **No model call.**
-- `design/tiles.py`: style tiles from exemplars and the deck's real title.
+- `design/tiles.py`: style tiles from exemplars and the deck's real title — **an internal wall tool since 2026-10-05**; users get one generated look and never pick.
 - `design/brand.py`: brand colours into roles, hue kept, lightness corrected.
 
 ### Design decisions

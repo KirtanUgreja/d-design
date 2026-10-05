@@ -124,6 +124,9 @@ class SlidePlan(BaseModel):
     fields: list[PlanField]
     chart: ChartSpec | None = None
     image: ImageSpec | None = None
+    # Set by the planner: the deck's mark on its ends, a texture on about one
+    # slide in three, and nothing on the rest (design-engine.md -> rhythm).
+    ornament: Literal["none", "texture", "mark"] = "none"
     notes: str = ""
     provenance: dict[str, Provenance] = Field(default_factory=dict)
 

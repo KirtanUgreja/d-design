@@ -14,11 +14,9 @@ import json
 import shutil
 from pathlib import Path
 
-from benchtools import content
-from engine import Brief, Seam, interview, pipeline
+from engine import Brief, Fact, Seam, Storyline, interview, pipeline
 from engine.compose import author
-from engine.design import tiles
-from engine.design.sampler import sample
+from engine.design.sampler import look_for
 from engine.design.theme import Theme
 from engine.design.theme import build as build_theme
 from engine.export import pdf as pdf_export
@@ -39,36 +37,34 @@ def _look(theme: Theme, tile_png: list[str]) -> dict[str, object]:
 
 
 async def record(
-    seam: Seam, brief: Brief, outline_file: Path, *, writing: str, design: str
+    seam: Seam,
+    brief: Brief,
+    story: Storyline,
+    facts: list[Fact],
+    *,
+    writing: str,
+    design: str,
 ) -> Path:
     out = WEB / brief.id
     if out.exists():
         shutil.rmtree(out)
     (out / "slides").mkdir(parents=True)
-    (out / "tiles").mkdir()
-    story, facts = content.load(outline_file)
 
     qs = await interview.questions(seam, brief, model=writing)
     questions = [] if isinstance(qs, Err) else [q.model_dump() for q in qs.value]
 
     brand = brief.brand.colors[0] if brief.brand and brief.brand.colors else None
-    looks: list[dict[str, object]] = []
-    themes: list[Theme] = []
-    for shuffle in (0, 1):
-        for variant, look in enumerate(
-            sample(brief.id, deck_type=brief.deck_type, brand_hex=brand, shuffle=shuffle)
-        ):
-            theme = build_theme(look)
-            frames, _ = await tiles.render(
-                theme, story, variant, str(out / "tiles" / "work.html"), str(out / "tiles")
-            )
-            looks.append(_look(theme, [f"tiles/{f.slide_id}.png" for f in frames]))
-            themes.append(theme)
-    (out / "tiles" / "work.html").unlink(missing_ok=True)
-    for stray in (out / "tiles").glob("work-*.html"):
-        stray.unlink()
-
-    chosen = themes[0]
+    # One look, generated from the deck's own words; never a menu of three.
+    chosen = build_theme(
+        look_for(
+            brief.id,
+            deck_type=brief.deck_type,
+            tone=brief.tone,
+            words=f"{brief.prompt} {story.governing_thought}",
+            brand_hex=brand,
+        )
+    )
+    looks = [_look(chosen, [])]
     events: list[dict[str, object]] = []
     built = await pipeline.build(
         seam,

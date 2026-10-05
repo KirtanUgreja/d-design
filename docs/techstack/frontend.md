@@ -15,7 +15,7 @@ Next.js 16 App Router, React 19, TypeScript strict. It arrives in phase 27.
 | A slide on the canvas | The slide's HTML document from the backend, placed in a `srcdoc` iframe |
 | A thumbnail | The QA screenshot the worker already took |
 | Present mode | **The export file itself**, in an iframe. What you present is byte-for-byte what you send |
-| The three looks | Backend-rendered cover and second slide per look |
+| The look | Generated per deck by the backend; no picker (2026-10-05) |
 
 ### The slide iframe
 

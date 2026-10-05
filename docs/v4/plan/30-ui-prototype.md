@@ -19,7 +19,7 @@
 ## Make
 
 - **`web/` returns** as the shell phase 27 will wire up: Next.js, Tailwind, shadcn restyled to our brand, our own tokens for the chrome.
-- **The five hot surfaces, on fixtures:** composer → interview + outline gate → pick a look → generation watch → editor + reveal. Data is a recorded event log from a real bench run, replayed on a timer at real speed. **No backend, no model, no credit.**
+- **The five hot surfaces, on fixtures:** composer → interview + outline gate → generation watch → editor + reveal (the look step was removed 2026-10-05). Data is a recorded event log from a real bench run, replayed on a timer at real speed. **No backend, no model, no credit.**
 - **The state table** from [../../design/app.md](../../design/app.md) → "The states nobody designs", each state reachable from a debug menu, in final copy.
 - **A test harness:** a script for a 30-minute moderated session, a 5-second test of the first screen, a post-task rating, and a notes template.
 - **The baseline:** five sessions, recorded with consent.

@@ -51,3 +51,15 @@ def test_no_archetype_twice_in_a_row_and_no_dense_after_dense() -> None:
 def test_every_archetype_has_a_description() -> None:
     used = {a for prefer in planner._PREFER.values() for a in prefer}
     assert used <= set(planner.ARCHETYPES)
+
+
+def test_ornaments_are_rationed() -> None:
+    for brief_id in files.brief_ids():
+        outline = files.load(brief_id).outline
+        assert outline is not None
+        plans = planner.assign(outline.slides)
+        kinds = [p.ornament for p in plans]
+        assert kinds[0] == "mark" and kinds[-1] == "mark", brief_id
+        textures = kinds.count("texture")
+        assert textures <= 0.4 * len(kinds) + 1, (brief_id, kinds)
+        assert not any(a == b == "texture" for a, b in pairwise(kinds)), (brief_id, kinds)

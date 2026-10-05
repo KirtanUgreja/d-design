@@ -27,7 +27,7 @@
 **Web** — Next.js, Tailwind, shadcn restyled to our brand at install (its `rounded-2xl` + shadow defaults are on the banned list).
 - **Home:** the composer and recent decks.
 - **Interview + outline gate:** questions with suggested answers and a skip; outline cards with drag, inline edit, regenerate, provenance chips, source popovers, and approve-or-reject on illustrative numbers.
-- **Pick a look:** 3 style tiles and an instant shuffle.
+- **No look picker** (owner, 2026-10-05): the deck's look is generated; the watch shows it from the cover on.
 - **Generation watch:** ghost slots, screenshots arriving in place, real phase labels only, abort, partial slides kept, "continue".
 - **Export reveal:** present (opens the present flavour), download send, PDF.
 - The states table from [../../design/app.md](../../design/app.md), in human words.

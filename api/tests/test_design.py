@@ -87,3 +87,28 @@ def test_the_hand_themes_meet_the_sampled_contrast_targets() -> None:
             ("accent", "ground", LARGE),
         ]
         assert [(a, b) for a, b, n in pairs if not passes(c[a], c[b], n)] == [], theme.id
+
+
+def test_every_deck_gets_its_own_look() -> None:
+    from engine.design.sampler import look_for
+
+    seen = set()
+    for n in range(300):
+        look = look_for(f"deck-{n}", words=f"a brief about thing {n}")
+        theme = build(look)
+        seen.add(
+            (
+                theme.look["pairing"],
+                tuple(theme.colors.values()),
+                tuple(theme.scale.values()),
+                theme.margin,
+                theme.tiles["halftone"],
+                theme.mark,
+            )
+        )
+    assert len(seen) == 300
+    first = build(look_for("deck-1", words="Tesla pitch"))
+    again = build(look_for("deck-1", words="Tesla pitch"))
+    other = build(look_for("deck-1", words="Tesla pitch", nonce=1))
+    assert first.colors == again.colors and first.mark == again.mark
+    assert (first.colors, first.mark) != (other.colors, other.mark)

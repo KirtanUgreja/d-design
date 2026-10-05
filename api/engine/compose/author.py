@@ -20,7 +20,7 @@ from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "compose.v4"
+PROMPT_VERSION = "compose.v5"
 
 RULES = """You are a senior editorial designer. You design ONE presentation slide as HTML and CSS.
 The slide is projected at exactly 1920x1080px. It must look designed by a person with a point of
@@ -152,6 +152,14 @@ async def compose(
         f"{planner.ARCHETYPES.get(plan.archetype, '')}"
         + differ
         + f"\nFields:\n{_fields(plan)}"
+        + {
+            "mark": '\nOrnament: this deck\'s mark (<dd-texture kind="mark">), once, 160-360px '
+            "square, as the deck's signature. No other texture.",
+            "texture": "\nOrnament: one texture field from this look's kinds, sized and placed "
+            "for this composition — not in a corner by habit.",
+            "none": "\nOrnament: none. No dd-texture on this slide; type, rules and space "
+            "carry it.",
+        }[plan.ornament]
         + (
             f"\nThis slide has a {plan.chart.type} chart of {len(plan.chart.series[0].points)} "
             "values. Place one empty <dd-chart> for it, at least 900x480px."

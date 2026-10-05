@@ -40,13 +40,13 @@ Practically that means the work shown is commercial work — investor decks, sal
 
 [../coderules/performance.md](../coderules/performance.md) has a cold-90% rule for code. It applies to **design attention** just as literally: settings, account, the brand kit form, the deck list, the editor's panel chrome — assemble them from shadcn/ui and move on ([../techstack/frontend.md](../techstack/frontend.md)).
 
-Five surfaces get the craft budget, because they are the only ones where a user forms an opinion. **Updated 2026-09-26:** v4 added the outline gate and Pick a look to the original three ([app.md](app.md)).
+Five surfaces get the craft budget, because they are the only ones where a user forms an opinion. **Updated 2026-09-26:** v4 added the outline gate and the cover arriving to the original three ([app.md](app.md)); a Pick a look step was removed on 2026-10-05.
 
 | Surface | Why it's hot |
 |---|---|
 | **The composer** — the first prompt | The first thing a new user touches. If it feels like a form, the product feels like a form |
 | **The interview + outline gate** | Hot for trust rather than delight: it is where the user sees which claims are theirs, which are cited, and which are flagged |
-| **Pick a look** | The first time the user sees design: their own title in three looks |
+| **The cover arriving** | The first time the user sees design: their own title in a look generated for this deck (no look is picked, 2026-10-05) |
 | **The generation watch** | Checked slides arrive one at a time, images included. This is the wow moment, and it is one to three minutes long — the single highest-leverage piece of motion design in the entire app |
 | **The export reveal** | The moment a downloadable `.html` file exists. This is what they screenshot and paste into Slack |
 

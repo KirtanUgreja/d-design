@@ -76,9 +76,9 @@ export function OutlineGate({ deck }: { deck: Recording }) {
           <p className="text-sm text-muted-foreground" aria-live="polite">
             {pending.length > 0
               ? `${pending.length} number${pending.length > 1 ? "s" : ""} without a source. Keep or cut ${pending.length > 1 ? "them" : "it"} first.`
-              : "Nothing is generated until you approve. This step costs almost nothing to redo."}
+              : "Nothing is generated until you approve. Your deck gets its own look, designed for these words."}
           </p>
-          <Button size="lg" disabled={pending.length > 0} onClick={() => router.push(`/deck/${deck.id}/look`)}>
+          <Button size="lg" disabled={pending.length > 0} onClick={() => router.push(`/deck/${deck.id}/watch`)}>
             Approve outline
           </Button>
         </div>

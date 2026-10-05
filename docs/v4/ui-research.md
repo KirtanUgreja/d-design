@@ -16,12 +16,12 @@
 |---|---|---|
 | First 10 seconds | "This understands what I'm doing" | "Another blank AI box" |
 | Outline gate | "That's my argument, sharper" | "It made things up" |
-| Pick a look | "Oh — that's *mine*, and it's beautiful" | "Which template do I want?" |
+| The cover arriving | "Oh — that's *mine*, and it's beautiful" | "Which template is this?" |
 | The watch | "It's actually working on it" | "Is it stuck?" |
 | The reveal | Pride. They want to show someone | Relief that it finished |
 | On stage | Calm. They know what comes next | Lost in their own slides |
 
-The peak of the product is **their own headline set in a designed look** (Pick a look, then the cover arriving). The end is **the reveal and the first time they present it**. Those two moments get the most craft, because people remember an experience by its peak and its end (below).
+The peak of the product is **their own headline set in a designed look** (the cover arriving first, in a look made for this deck). The end is **the reveal and the first time they present it**. Those two moments get the most craft, because people remember an experience by its peak and its end (below).
 
 ---
 
@@ -55,9 +55,9 @@ Evidence is graded: **strong** (replicated, field-tested), **moderate** (solid l
 | **Skeletons vs spinners** | Skeletons can feel faster for 0.4–3 s waits; studies disagree outside that window | Mixed | Ghost slots are not decoration: they are the real outline. For short waits, skeletons in the true layout; for long ones, real progress | Watch, editor thumbnails | Perceived-wait rating in tests |
 | **Goal-gradient** (Hull, 1932; Kivetz et al., 2006) | Effort rises as a goal gets closer | Moderate | The flow is visibly short and finite: four steps with their names, the current one marked. The watch fills known slots, so the end is in sight | Interview, watch | Drop-off per step |
 | **Endowed progress** (Nunes & Drèze, 2006) | People given a head start persist more | Moderate | Only with **real** progress: their waitlist answer or pasted notes already in the brief, interview answers pre-filled from the brief. Never a fake "2 of 10 done" | Composer, interview | Interview completion with vs without pre-fill |
-| **IKEA effect** (Norton, Mochon & Ariely, 2012) | People value what they helped make | Moderate | The user makes the decisions that matter — the argument (outline gate), the look (three tiles), the edits — and the machine does the labour. The deck feels authored, not received | Outline gate, Pick a look, editor | "Whose deck is this?" in interviews |
-| **Peak-end rule** (Kahneman et al., 1993) | An experience is remembered by its peak and its end | Strong | Peak: their headline in three looks, then the cover arriving first. End: a reveal worth screenshotting, and a calm first presentation. A failure is never the last thing they see | Pick a look, watch, reveal, present | Post-session rating; share rate |
-| **Choice overload** (Iyengar & Lepper, 2000) | More options can lower choosing and satisfaction | Mixed (meta-analyses find ~zero mean effect, but it appears when people must justify a choice) | Three looks, deliberately far apart, plus a free shuffle. Never a gallery of 40 templates. Three is defended by distinctness, not by this effect | Pick a look | Time to pick; re-shuffles per pick |
+| **IKEA effect** (Norton, Mochon & Ariely, 2012) | People value what they helped make | Moderate | The user makes the decisions that matter — the argument (outline gate) and the edits — and the machine does the labour, including a look made for this deck alone. The deck feels authored, not received | Outline gate, editor | "Whose deck is this?" in interviews |
+| **Peak-end rule** (Kahneman et al., 1993) | An experience is remembered by its peak and its end | Strong | Peak: their headline in a look generated for them, the cover arriving first. End: a reveal worth screenshotting, and a calm first presentation. A failure is never the last thing they see | Watch, reveal, present | Post-session rating; share rate |
+| **Choice overload** (Iyengar & Lepper, 2000) | More options can lower choosing and satisfaction | Mixed (meta-analyses find ~zero mean effect, but it appears when people must justify a choice) | **No style choice at all** (owner, 2026-10-05): the look is generated for the deck; a user who dislikes it asks for another, one at a time, never a gallery | Editor | *Try another look* rate |
 | **Zeigarnik effect** | Unfinished tasks are remembered better | **Failed** (2025 meta-analysis of 59 studies: recall ratio 0.99) | Not used. The related Ovsiankina effect — people tend to *resume* interrupted tasks — does hold, so an unfinished deck reopens exactly where it stopped | Recent decks | Resume rate |
 | **Control and reversibility** | AI output feels safe to try when it can be edited, compared and undone | Moderate (consistent across practitioner research; few controlled studies) | Every AI change arrives as a before/after to accept or discard; labelled undo; nothing replaces a slide silently ([../design/app.md](../design/app.md) → editor) | Editor | Accept rate; undo-after-accept rate |
 | **Provenance as trust** | People trust a claim more when they can see its source | Moderate | YOU / WEB / AI chips, the quoted line behind every WEB number, unsourced numbers flagged until approved ([content.md](content.md)) | Outline gate, editor | Source popovers opened; numbers rejected |
@@ -84,7 +84,7 @@ Practitioner statistics found in this research — "aha within 5 minutes means 4
 2. **Every action answers in under 400 ms.** Model work streams; nothing blocks.
 3. **Show the real work, never theatre.** Ghost slots that fill; real phase names; no invented steps; no added delay.
 4. **The user decides, the machine labours.** Argument, look and edits are theirs.
-5. **Three far-apart choices, and a free shuffle.** Never a gallery.
+5. **No style menu.** Every deck gets a look generated for it; *Try another look* gives one more, never a gallery.
 6. **Design the peak and the end.** Their headline in a look; the cover first; a reveal they want to show; a calm first presentation.
 7. **Every AI change is a proposal.** Before/after, accept or discard, labelled undo.
 8. **Every number shows where it came from.** Unsourced numbers wait for a human.

@@ -23,7 +23,7 @@ The first three protect the *product*: the deck's visual coherence, the edit/exp
 
 **The rule for when the lint fires:** the violation goes back to the model as the repair prompt. If the same legitimate need keeps firing it, add a token to the theme. Never add an exception to the lint.
 
-**The theme is the single source of visual truth, and it is pure code.** The sampler picks the axes and code computes the tokens and the three looks; no model call writes a theme. That is what keeps separately composed slides one deck, and what makes a theme swap possible.
+**The theme is the single source of visual truth, and it is pure code.** The generator makes the deck's one look and code computes the tokens; no model call writes a theme. That is what keeps separately composed slides one deck, and what makes a theme swap possible.
 
 A `style` attribute, a per-slide colour override, or a "just this once" raw hex is the single change that would unravel it.
 

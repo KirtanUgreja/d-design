@@ -7,13 +7,15 @@ Phase 22 shipped three hand-specified themes, kept as THEMES. Phase 23 adds
 from __future__ import annotations
 
 import functools
+import random
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from engine.design.axes import DENSITIES, EDGES, SCALES
+from engine.design import patterns
+from engine.design.axes import DENSITIES
 from engine.design.palettes import series
 
 if TYPE_CHECKING:
@@ -64,6 +66,12 @@ class Theme:
     textures: tuple[str, ...] = ("halftone", "hatch", "grid", "solid")
     guidance: str = ""  # the grid, motif and pairing notes, for the compose prompt
     look: dict[str, str] = field(default_factory=dict)  # the sampled axes, for the record
+    # Generated per look (design/patterns.py): texture geometry and the deck's mark.
+    tiles: dict[str, str] = field(default_factory=lambda: patterns.tiles(patterns.DEFAULT))
+    mark: str = field(
+        default_factory=lambda: patterns.mark("d-design", random.Random(0))  # noqa: S311 - a shape
+    )
+    track: float = 0.0  # display letter-spacing, em
 
     @property
     def faces(self) -> tuple[Face, ...]:
@@ -86,6 +94,7 @@ class Theme:
         ]
         lines += [f"--t-{step}:{px}px;" for step, px in self.scale.items()]
         lines += [f"--s-{n}:{px}px;" for n, px in enumerate(self.space, start=1)]
+        lines += [f"--tile-{kind}:{url};" for kind, url in self.tiles.items()]
         lines += [
             f"--margin:{self.margin}px;",
             f"--gutter:{self.gutter}px;",
@@ -93,6 +102,8 @@ class Theme:
             f"--rule:{self.rule}px;",
             f"--lh-display:{self.leading};",
             f"--cols:{self.cols};",
+            f"--track-display:{self.track:.3f}em;",
+            f"--mark:{self.mark};",
             "--shadow-hard:14px 14px 0 var(--c-ink);",
         ]
         return ":root{" + "".join(lines) + "}"
@@ -116,9 +127,10 @@ class Theme:
             f"--rule ({self.rule}px) is the line weight. --shadow-hard is a hard offset shadow.\n"
             f"--lh-display ({self.leading}) is the tightest display line-height; "
             "tighter collides.\n"
-            f"--cols ({self.cols}) columns. dd-texture kinds in this look: "
-            f"{', '.join(self.textures)}."
-            + (f"\nThis look: {self.guidance}" if self.guidance else "")
+            f"--cols ({self.cols}) columns. --track-display ({self.track:.3f}em) is the "
+            "display letter-spacing. dd-texture kinds in this look: "
+            f'{", ".join(self.textures)}, and "mark" — this deck\'s own emblem, for the '
+            "cover and the ask only." + (f"\nThis look: {self.guidance}" if self.guidance else "")
         )
 
 
@@ -257,14 +269,37 @@ def _fit_width(scale: dict[str, int], family: str, weight: int) -> dict[str, int
     return out
 
 
+def scale_from(heading_ratio: float, display_ratio: float) -> dict[str, int]:
+    """A type scale from two continuous ratios. Headline steps stay within what
+    QA allows (56-96px); the display steps carry the look's drama."""
+    h3 = max(40, min(52, round(34 * heading_ratio)))
+    h2 = max(56, round(h3 * heading_ratio))
+    h1 = max(64, min(96, round(h2 * heading_ratio * 1.15)))
+    d3 = min(112, round(h1 * display_ratio))  # some layouts set headlines at d3
+    d2 = round(d3 * display_ratio)
+    d1 = round(d2 * display_ratio)
+    mega = min(420, round(d1 * display_ratio))
+    return {
+        "mega": mega,
+        "d1": d1,
+        "d2": d2,
+        "d3": d3,
+        "h1": h1,
+        "h2": h2,
+        "h3": h3,
+        "body": 34,
+        "small": 28,
+        "label": 22,
+    }
+
+
 def build(look: Look) -> Theme:
-    """Sampled axes into a Theme. Pure and deterministic."""
+    """A generated look into a Theme. Pure and deterministic."""
     pairing = look.pairing
     display, text, label = face(pairing.display), face(pairing.text), face(pairing.label)
     roles = look.roles
     colors = {role: c.hex for role, c in roles.items()}
     colors |= {f"series-{n}": c.hex for n, c in enumerate(series(roles), start=1)}
-    radius, rule, _ = EDGES[look.edge]
     k = DENSITIES[look.density]
     grid = look.grid
     motif = look.motif
@@ -277,17 +312,24 @@ def build(look: Look) -> Theme:
         label=label,
         w_display=pairing.display_weight,
         w_bold=max(text.weights),
-        scale=_fit_width(SCALES[look.scale], pairing.display, pairing.display_weight),
+        scale=_fit_width(
+            scale_from(look.heading_ratio, look.display_ratio),
+            pairing.display,
+            pairing.display_weight,
+        ),
         space=tuple(round(px * k) for px in (8, 16, 24, 40, 64, 96, 128, 192)),
-        # Density moves the margin within 96-144px: wider starves the columns, and
+        # Continuous, and still kept within 96-144px: wider starves the columns,
         # narrower puts large figures into the 64px safe area.
-        margin=min(144, max(96, round(grid.margin * k))),
-        gutter=grid.gutter,
-        radius=radius,
-        rule=rule,
+        margin=min(144, max(96, look.margin)),
+        gutter=look.gutter,
+        radius=look.radius,
+        rule=look.rule,
         leading=_leading(pairing.display, pairing.display_weight),
         cols=grid.cols,
         textures=motif.textures,
         guidance=f"{grid.note}. Motif: {motif.note}. Type: {pairing.note}.",
         look=look.record(),
+        tiles=patterns.tiles(look.texture),
+        mark=look.mark or patterns.mark(look.id, random.Random(0)),  # noqa: S311 - a shape
+        track=look.track,
     )

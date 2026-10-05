@@ -275,7 +275,12 @@ MOTIFS: tuple[Motif, ...] = (
     Motif("numerals", ("grain", "solid"), "oversized numerals (data-deco) as the visual anchor"),
     Motif("grid-paper", ("grid", "solid"), "a drafting grid in fields; plans and measurement"),
 )
-TEXTURE_KINDS = frozenset(k for m in MOTIFS for k in m.textures) | {"halftone", "hatch", "grid"}
+TEXTURE_KINDS = frozenset(k for m in MOTIFS for k in m.textures) | {
+    "halftone",
+    "hatch",
+    "grid",
+    "mark",
+}
 
 # px for each step of the type scale on the 1920 canvas. The scale axis moves
 # the display steps; headline steps (h1-h3) barely move, so claims still fit.

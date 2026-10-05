@@ -52,6 +52,8 @@ export function Editor({ deck }: { deck: Recording }) {
       setReply(
         "Colour and type come from the look, so every slide stays one deck. Open Design to pick another palette or pairing — or ask this slide for more emphasis on what matters.",
       );
+    } else if (/new look/i.test(text)) {
+      setReply("Not in this prototype. In the app, this generates a new look for the whole deck and shows it before/after.");
     } else if (canPropose && /layout/i.test(text) && deck.proposal) {
       setReply(null);
       setProposal(deck.proposal.after);
@@ -188,9 +190,12 @@ export function Editor({ deck }: { deck: Recording }) {
                 </div>
                 <Separator className="my-1" />
                 <p className="text-muted-foreground">
-                  Colour and type belong to the look, so the deck stays one deck. Change the whole look, a palette
-                  variant or the pairing — never one slide by hand. (Not wired in this prototype.)
+                  This look was generated for this deck — no other deck has it. Colour and type belong to the look, so
+                  every slide stays one deck.
                 </p>
+                <Button variant="outline" className="self-start" onClick={() => ask("new look")}>
+                  Try another look
+                </Button>
               </dl>
             )}
           </TabsContent>

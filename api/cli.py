@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import re
 import statistics
 import sys
 from datetime import UTC, datetime
@@ -30,7 +31,7 @@ from benchtools import baseline, content, files, fonts, outline, record, shots, 
 from engine import Brief, Seam, Slide, pipeline
 from engine.compose.document import Frame
 from engine.design import tiles
-from engine.design.sampler import sample
+from engine.design.sampler import look_for, sample
 from engine.design.theme import THEMES, Theme
 from engine.design.theme import build as build_theme
 from engine.export import pdf as pdf_export
@@ -134,7 +135,7 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             print(f"{brief_id}: already built")
             continue
         out.mkdir(parents=True, exist_ok=True)
-        theme = themes[index % len(themes)] if args.themes == "fixed" else _sampled(item.brief)[0]
+        theme = themes[index % len(themes)] if args.themes == "fixed" else _generated(item.brief)
         seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{args.run}-{label}-{brief_id}")
         built = await pipeline.build(
             seam,
@@ -197,27 +198,57 @@ def _wall(run: str, seed: int, baselines: bool) -> int:
     return 0 if count else 1
 
 
+def _brand(brief: Brief) -> str | None:
+    return brief.brand.colors[0] if brief.brand and brief.brand.colors else None
+
+
+def _generated(brief: Brief, nonce: int = 0) -> Theme:
+    """The one look a deck gets, generated from its own words (no menu)."""
+    return build_theme(
+        look_for(
+            brief.id,
+            deck_type=brief.deck_type,
+            tone=brief.tone,
+            words=brief.prompt,
+            brand_hex=_brand(brief),
+            nonce=nonce,
+        )
+    )
+
+
 def _sampled(brief: Brief) -> list[Theme]:
-    """The brief's three looks; the bench builds with the first."""
-    brand_hex = brief.brand.colors[0] if brief.brand and brief.brand.colors else None
+    """Three far-apart looks, for the internal tile wall only."""
     return [
         build_theme(look)
-        for look in sample(brief.id, deck_type=brief.deck_type, brand_hex=brand_hex)
+        for look in sample(brief.id, deck_type=brief.deck_type, brand_hex=_brand(brief))
     ]
 
 
-async def _record(cfg: settings.Settings, brief_id: str, outlines: str) -> int:
-    outline_file = files.BENCH / "runs" / outlines / "content" / f"{brief_id}.json"
-    seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"record-{brief_id}")
+async def _record(cfg: settings.Settings, brief_id: str, outlines: str, prompt: str) -> int:
+    """A bench brief from its saved outline, or a new brief from ``--prompt``
+    through the whole content engine (interview, research, storyline, notes)."""
+    if prompt:
+        filler = {"make", "a", "an", "the", "for", "deck", "of", "to", "me", "please", "create"}
+        words = [w for w in re.findall(r"[a-z0-9]+", prompt.lower()) if w not in filler]
+        slug = "-".join(words[:4]) or "deck"
+        brief = Brief(id=slug, prompt=prompt)
+        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"record-{slug}")
+        made = await content.make(seam, brief, model=cfg.model_writing, year=_year(), ask=None)
+        if isinstance(made, str):
+            print(made)
+            return 1
+        story, facts = made.story, made.facts
+    else:
+        brief = files.load(brief_id).brief
+        story, facts = content.load(
+            files.BENCH / "runs" / outlines / "content" / f"{brief_id}.json"
+        )
+        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"record-{brief_id}")
     out = await record.record(
-        seam,
-        files.load(brief_id).brief,
-        outline_file,
-        writing=cfg.model_writing,
-        design=cfg.model_design,
+        seam, brief, story, facts, writing=cfg.model_writing, design=cfg.model_design
     )
     files.append_ledger(files.BENCH / "runs" / "ledger.jsonl", seam.ledger)
-    print(f"{brief_id} -> {out}  ${seam.spent_usd:.3f}")
+    print(f"{brief.id} -> {out}  ${seam.spent_usd:.3f}")
     return 0
 
 
@@ -225,6 +256,9 @@ def _theme_for(theme_id: str, brief: Brief) -> Theme:
     """The theme a run recorded: one of phase 22's three, or a sampled look."""
     if theme_id in THEMES:
         return THEMES[theme_id]
+    generated = _generated(brief)
+    if generated.id == theme_id:
+        return generated
     return next(t for t in _sampled(brief) if t.id == theme_id)
 
 
@@ -413,7 +447,8 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--run", required=True)
     sub.add_parser("fonts")
     cmd = sub.add_parser("record")
-    cmd.add_argument("--brief", required=True)
+    cmd.add_argument("--brief", default="")
+    cmd.add_argument("--prompt", default="", help="a new brief, run through the content engine")
     cmd.add_argument("--outlines", default="2026-10-01-content")
     cmd = sub.add_parser("export")
     cmd.add_argument("--run", required=True)
@@ -442,7 +477,7 @@ def main(argv: list[str]) -> int:
     if args.command == "injection":
         return asyncio.run(_injection(cfg, args.run))
     if args.command == "record":
-        return asyncio.run(_record(cfg, args.brief, args.outlines))
+        return asyncio.run(_record(cfg, args.brief, args.outlines, args.prompt))
     if args.command == "export":
         return asyncio.run(_export(args.run, args.label, args.set, args.pdf))
     if args.command == "tiles":

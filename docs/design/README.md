@@ -29,7 +29,7 @@ Both of those are argued in [principles.md](principles.md).
 | [questions.md](questions.md) | **The question bank.** 276 open questions across 24 areas, each with a recommended default. Answer by exception |
 | [brand.md](brand.md) | Identity: the gallery-wall decision, naming, type, colour, motion, voice |
 | [website.md](website.md) | The marketing site: the hero, the recorded build, homepage order, showcase, pricing |
-| [app.md](app.md) | The product UI for v4: composer, interview + outline gate, pick a look, generation watch, editor, present and export, the missing colour picker, first run, failure states |
+| [app.md](app.md) | The product UI for v4: composer, interview + outline gate, generation watch, editor, present and export, the missing colour picker, first run, failure states |
 
 **Four decisions are locked** and the rest of the bank is open: the name is a placeholder (`brand.md`), our surfaces are a light editorial gallery wall (`brand.md`), the hero is a live artifact plus a recorded build (`website.md`), and the paywall is on publishing rather than generating (`website.md`).
 
@@ -41,7 +41,7 @@ Both of those are argued in [principles.md](principles.md).
 |---|---|---|
 | Name, voice, vocabulary | Now | Phase 27 — it leaks into every UI string |
 | Our brand identity | Now | Phase 27, at whatever fidelity a solo builder can hold |
-| Composer, interview + outline gate, pick a look, generation watch | Now ([app.md](app.md)) | Phase 27 |
+| Composer, interview + outline gate, generation watch | Now ([app.md](app.md)) | Phase 27 |
 | Editor, present, export reveal | Now ([app.md](app.md)) | Phase 28 |
 | Empty, error, and refusal states | Now | Phases 27–28 — the AI refuses and something has to be on screen |
 | Signup, auth, account, budget-cap states | Now | Phase 29 |

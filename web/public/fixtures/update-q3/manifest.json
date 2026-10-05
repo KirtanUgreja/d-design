@@ -23,38 +23,38 @@
  "questions": [
   {
    "fills": "extra",
-   "question": "Which KPIs should anchor the Q3 2026 update for your investors and board?",
+   "question": "Q3 2026 is the period. Which KPIs should lead the update?",
    "suggestions": [
-    "Gross bookings, take rate, and repeat shipper rate",
-    "Revenue, burn, and runway",
-    "Carrier supply, shipper activation, and booking conversion"
+    "Gross booking volume, take rate, and repeat shippers",
+    "Revenue, burn, and runway against the last plan",
+    "Carrier supply, shipper demand, and marketplace liquidity"
    ]
   },
   {
    "fills": "thought",
-   "question": "What is the one sentence they must remember after this update?",
+   "question": "What is the one sentence the board must remember from this update?",
    "suggestions": [
-    "Harbor's Q3 momentum is real, and a bridge gets us to enterprise shippers.",
-    "Marketplace liquidity is improving; the bridge buys time to land anchor accounts.",
-    "We're capital-efficient, and two intros turn our pilots into enterprise revenue."
+    "Harbor is winning shippers; a bridge gets us to enterprise scale.",
+    "Marketplace liquidity is improving, and the bridge protects that momentum.",
+    "Enterprise shippers are the next growth unlock, and we need your intros."
    ]
   },
   {
    "fills": "proof",
-   "question": "What proof do you have for Q3 (traction, revenue, customers, pilots, quotes)?",
+   "question": "What proof do you have for Q3 progress?",
    "suggestions": [
     "None yet",
     "Search the web",
-    "Q3 KPI dashboard and shipper pilot results, which I'll paste"
+    "Paste Q3 KPIs, booking data, and shipper or carrier quotes"
    ]
   },
   {
    "fills": "length",
    "question": "How many minutes do you have, and are you presenting live or sending it?",
    "suggestions": [
-    "10 minutes, presented live at the board meeting",
-    "20 minutes live, leaving time for discussion",
-    "Sent ahead as a read-only deck before the meeting"
+    "10 minutes, live at the board meeting",
+    "20 minutes, live with time for discussion",
+    "Sent ahead as a pre-read, no live slot"
    ]
   }
  ],
@@ -98,6 +98,7 @@
     ],
     "chart": null,
     "image": null,
+    "ornament": "none",
     "notes": "Thanks everyone for making time. We'll give you the Q3 picture in one line: the marketplace grew, with freight volume up 18%, but we missed our revenue plan. We'll show you what drove each part of that, why we think the miss is about timing rather than demand, and what we need from this board to bridge it. We'll keep it short and leave most of the time for your questions on the ask at the end.",
     "provenance": {
      "headline": "YOU",
@@ -145,6 +146,7 @@
     ],
     "chart": null,
     "image": null,
+    "ornament": "none",
     "notes": "Start with the part that went right. Shippers booked $41 million of freight through Harbor this quarter, and that is up 18% on Q2. That number is gross merchandise value, the total freight moved on the platform, so it is the best read we have on whether shippers want to use us. Revenue is a share of that volume, and that is where the quarter got harder. Let's turn to how we did against the plan we set.",
     "provenance": {
      "headline": "YOU",
@@ -191,6 +193,7 @@
     ],
     "chart": null,
     "image": null,
+    "ornament": "none",
     "notes": "Here is the miss, plainly. Revenue came in at $3.9 million against a $4.4 million plan, so we are $500 thousand short. Gross margin was 34% against a 37% plan, three points light. We are not going to dress either number up. The next two slides separate what is working from what caused the gap, because the volume growth you just saw tells us the shortfall is not coming from the core marketplace.",
     "provenance": {
      "headline": "AI",
@@ -246,6 +249,7 @@
     ],
     "chart": null,
     "image": null,
+    "ornament": "none",
     "notes": "Before the cause of the miss, here is what held. Shipper retention reached 88%, so the shippers we win keep booking with us. Our take rate held at 9.5%, which means we are not buying volume by cutting price. And we hired a VP of Sales in August, which matters because the gap we are about to describe sits in enterprise sales. Those three facts are why we read this quarter as a timing problem and not a demand problem.",
     "provenance": {
      "headline": "YOU",
@@ -293,6 +297,7 @@
     ],
     "chart": null,
     "image": null,
+    "ornament": "none",
     "notes": "The cause is two enterprise deals that slipped out of Q3 and into Q4. That is what produced the revenue miss. The important point is that this is timing, not lost demand. Neither shipper walked away, and both deals now fall in Q4. We would rather be direct that the slip was ours to forecast better, and our new VP of Sales is now working both of these deals. Next, what this means for cash.",
     "provenance": {
      "headline": "YOU",
@@ -355,6 +360,7 @@
     ],
     "chart": null,
     "image": null,
+    "ornament": "none",
     "notes": "Here is the cash position. We have $5.1 million in the bank and we are burning $640 thousand a month. At that rate we have eight months of runway. That is workable but not comfortable, especially when the revenue we planned for Q3 has moved into Q4. A thin runway while two deals are still closing is exactly the situation a bridge is designed to cover, which brings us to the request.",
     "provenance": {
      "headline": "AI",
@@ -403,6 +409,7 @@
     ],
     "chart": null,
     "image": null,
+    "ornament": "none",
     "notes": "We are asking our existing investors for a $3 million bridge round. The purpose is narrow: it covers the gap while the two enterprise deals close, so we are not forced to make cuts or a rushed raise from a weak position. The marketplace is growing and shippers are staying, so this money is carrying a business that is already working through a timing delay. Let us be specific about what we need from you today.",
     "provenance": {
      "headline": "YOU",
@@ -449,6 +456,7 @@
     ],
     "chart": null,
     "image": null,
+    "ornament": "none",
     "notes": "Two things. First, we ask the board to approve the $3 million bridge round. Second, we ask for two introductions to enterprise shippers. Intros matter because enterprise deal timing is what hurt us this quarter, and a wider set of enterprise conversations reduces our dependence on any single deal closing on schedule. We are happy to take questions now, and we can go deeper on any number you have seen.",
     "provenance": {
      "headline": "YOU",
@@ -562,151 +570,31 @@
  ],
  "looks": [
   {
-   "id": "update-q3-s0-1",
+   "id": "update-q3-0",
    "look": {
-    "pairing": "fraunces-schibsted",
-    "palette": "night",
-    "hue": "265",
-    "grid": "modular",
-    "motif": "halftone",
+    "pairing": "unbounded-public",
+    "palette": "paper",
+    "hue": "236",
+    "grid": "asymmetric",
+    "motif": "numerals",
     "scale": "dramatic",
-    "edge": "sharp",
-    "density": "balanced",
-    "motion": "still",
-    "image": "editorial photo"
-   },
-   "tiles": [
-    "tiles/update-q3-s0-1-t1.png",
-    "tiles/update-q3-s0-1-t2.png"
-   ],
-   "fonts": [
-    "Fraunces",
-    "Schibsted Grotesk",
-    "Schibsted Grotesk"
-   ]
-  },
-  {
-   "id": "update-q3-s0-2",
-   "look": {
-    "pairing": "league-franklin",
-    "palette": "duotone",
-    "hue": "300",
-    "grid": "editorial",
-    "motif": "dither",
-    "scale": "modest",
     "edge": "soft",
     "density": "dense",
-    "motion": "confident",
-    "image": "flat illustration"
-   },
-   "tiles": [
-    "tiles/update-q3-s0-2-t1.png",
-    "tiles/update-q3-s0-2-t2.png"
-   ],
-   "fonts": [
-    "League Gothic",
-    "Libre Franklin",
-    "JetBrains Mono"
-   ]
-  },
-  {
-   "id": "update-q3-s0-3",
-   "look": {
-    "pairing": "archivo-plex",
-    "palette": "signal",
-    "hue": "300",
-    "grid": "swiss",
-    "motif": "rules",
-    "scale": "dramatic",
-    "edge": "ruled",
-    "density": "airy",
     "motion": "subtle",
-    "image": "cut-paper collage"
+    "image": "editorial photo",
+    "ratios": "1.24/1.41",
+    "margin": "109",
+    "texture": "dots 26.3px, hatch 48.1deg"
    },
-   "tiles": [
-    "tiles/update-q3-s0-3-t1.png",
-    "tiles/update-q3-s0-3-t2.png"
-   ],
+   "tiles": [],
    "fonts": [
-    "Archivo",
-    "IBM Plex Sans",
-    "IBM Plex Mono"
-   ]
-  },
-  {
-   "id": "update-q3-s1-1",
-   "look": {
-    "pairing": "bricolage-figtree",
-    "palette": "blocks",
-    "hue": "300",
-    "grid": "modular",
-    "motif": "weave",
-    "scale": "dramatic",
-    "edge": "sharp",
-    "density": "dense",
-    "motion": "confident",
-    "image": "editorial photo"
-   },
-   "tiles": [
-    "tiles/update-q3-s1-1-t1.png",
-    "tiles/update-q3-s1-1-t2.png"
-   ],
-   "fonts": [
-    "Bricolage Grotesque",
-    "Figtree",
+    "Unbounded",
+    "Public Sans",
     "DM Mono"
-   ]
-  },
-  {
-   "id": "update-q3-s1-2",
-   "look": {
-    "pairing": "anton-hanken",
-    "palette": "night",
-    "hue": "130",
-    "grid": "swiss",
-    "motif": "hatch",
-    "scale": "extreme",
-    "edge": "sharp",
-    "density": "dense",
-    "motion": "subtle",
-    "image": "cut-paper collage"
-   },
-   "tiles": [
-    "tiles/update-q3-s1-2-t1.png",
-    "tiles/update-q3-s1-2-t2.png"
-   ],
-   "fonts": [
-    "Anton",
-    "Hanken Grotesk",
-    "IBM Plex Mono"
-   ]
-  },
-  {
-   "id": "update-q3-s1-3",
-   "look": {
-    "pairing": "young-karla",
-    "palette": "duotone",
-    "hue": "230",
-    "grid": "asymmetric",
-    "motif": "halftone",
-    "scale": "extreme",
-    "edge": "ruled",
-    "density": "airy",
-    "motion": "confident",
-    "image": "flat illustration"
-   },
-   "tiles": [
-    "tiles/update-q3-s1-3-t1.png",
-    "tiles/update-q3-s1-3-t2.png"
-   ],
-   "fonts": [
-    "Young Serif",
-    "Karla",
-    "Space Mono"
    ]
   }
  ],
- "chosen": "update-q3-s0-1",
+ "chosen": "update-q3-0",
  "events": [
   {
    "type": "stage",
@@ -726,21 +614,7 @@
   },
   {
    "type": "slide_ready",
-   "t": 6.89,
-   "slide_id": "s05",
-   "position": 5,
-   "status": "passed",
-   "origin": "authored",
-   "thumb": "s05.png"
-  },
-  {
-   "type": "cost",
-   "t": 6.89,
-   "total_usd": 0.0136
-  },
-  {
-   "type": "slide_ready",
-   "t": 15.86,
+   "t": 18.53,
    "slide_id": "s04",
    "position": 4,
    "status": "passed",
@@ -749,26 +623,26 @@
   },
   {
    "type": "cost",
-   "t": 15.86,
-   "total_usd": 0.0211
+   "t": 18.53,
+   "total_usd": 0.0144
   },
   {
    "type": "slide_ready",
-   "t": 18.67,
-   "slide_id": "s02",
-   "position": 2,
+   "t": 26.77,
+   "slide_id": "s05",
+   "position": 5,
    "status": "passed",
    "origin": "authored",
-   "thumb": "s02.png"
+   "thumb": "s05.png"
   },
   {
    "type": "cost",
-   "t": 18.67,
-   "total_usd": 0.0225
+   "t": 26.77,
+   "total_usd": 0.0268
   },
   {
    "type": "slide_ready",
-   "t": 26.01,
+   "t": 27.7,
    "slide_id": "s06",
    "position": 6,
    "status": "passed",
@@ -777,54 +651,40 @@
   },
   {
    "type": "cost",
-   "t": 26.01,
-   "total_usd": 0.0274
+   "t": 27.7,
+   "total_usd": 0.0293
   },
   {
    "type": "slide_ready",
-   "t": 33.06,
+   "t": 32.37,
+   "slide_id": "s02",
+   "position": 2,
+   "status": "passed",
+   "origin": "repaired",
+   "thumb": "s02.png"
+  },
+  {
+   "type": "cost",
+   "t": 32.37,
+   "total_usd": 0.0407
+  },
+  {
+   "type": "slide_ready",
+   "t": 35.91,
    "slide_id": "s01",
    "position": 1,
    "status": "passed",
-   "origin": "authored",
+   "origin": "repaired",
    "thumb": "s01.png"
   },
   {
    "type": "cost",
-   "t": 33.06,
-   "total_usd": 0.0374
+   "t": 35.91,
+   "total_usd": 0.0421
   },
   {
    "type": "slide_ready",
-   "t": 33.87,
-   "slide_id": "s03",
-   "position": 3,
-   "status": "passed",
-   "origin": "authored",
-   "thumb": "s03.png"
-  },
-  {
-   "type": "cost",
-   "t": 33.87,
-   "total_usd": 0.0462
-  },
-  {
-   "type": "slide_ready",
-   "t": 39.06,
-   "slide_id": "s07",
-   "position": 7,
-   "status": "passed",
-   "origin": "authored",
-   "thumb": "s07.png"
-  },
-  {
-   "type": "cost",
-   "t": 39.06,
-   "total_usd": 0.0525
-  },
-  {
-   "type": "slide_ready",
-   "t": 40.87,
+   "t": 42.56,
    "slide_id": "s08",
    "position": 8,
    "status": "passed",
@@ -833,19 +693,47 @@
   },
   {
    "type": "cost",
-   "t": 40.87,
-   "total_usd": 0.0588
+   "t": 42.56,
+   "total_usd": 0.0586
+  },
+  {
+   "type": "slide_ready",
+   "t": 42.56,
+   "slide_id": "s03",
+   "position": 3,
+   "status": "passed",
+   "origin": "authored",
+   "thumb": "s03.png"
+  },
+  {
+   "type": "cost",
+   "t": 42.56,
+   "total_usd": 0.0586
+  },
+  {
+   "type": "slide_ready",
+   "t": 63.4,
+   "slide_id": "s07",
+   "position": 7,
+   "status": "passed",
+   "origin": "repaired",
+   "thumb": "s07.png"
+  },
+  {
+   "type": "cost",
+   "t": 63.4,
+   "total_usd": 0.072
   },
   {
    "type": "stage",
-   "t": 40.87,
+   "t": 63.4,
    "name": "compose",
    "state": "done"
   },
   {
    "type": "done",
-   "t": 40.87,
-   "seconds": 40.9
+   "t": 63.4,
+   "seconds": 63.4
   }
  ],
  "slides": [
@@ -853,7 +741,7 @@
    "id": "s01",
    "thumb": "slides/s01.png",
    "status": "passed",
-   "origin": "authored",
+   "origin": "repaired",
    "fields": {
     "headline": "Harbor grew freight volume 18% in Q3 but missed plan",
     "kicker": "Q3 2026"
@@ -863,7 +751,7 @@
    "id": "s02",
    "thumb": "slides/s02.png",
    "status": "passed",
-   "origin": "authored",
+   "origin": "repaired",
    "fields": {
     "headline": "Shippers booked $41M of freight on Harbor this quarter",
     "kicker": "Headline",
@@ -926,7 +814,7 @@
    "id": "s07",
    "thumb": "slides/s07.png",
    "status": "passed",
-   "origin": "authored",
+   "origin": "repaired",
    "fields": {
     "headline": "A $3M bridge covers the gap while enterprise deals close",
     "kicker": "Bridge",
@@ -957,5 +845,5 @@
   "send": "send.html",
   "pdf": "deck.pdf"
  },
- "cost_usd": 0.0628
+ "cost_usd": 0.0755
 }

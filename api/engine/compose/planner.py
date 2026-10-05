@@ -47,6 +47,7 @@ _PREFER: dict[str, tuple[str, ...]] = {
 }
 _DEFAULT = ("stack", "split", "corner", "margin")
 IMAGE_SHARE = 0.4
+TEXTURE_EVERY = 3  # a texture on about one slide in three, never two in a row
 SECTION_MIN_SLIDES = 13
 _DENSE_WORDS = 30
 
@@ -81,6 +82,7 @@ def assign(plans: list[SlidePlan]) -> list[SlidePlan]:
     previous = ""
     previous_dense = False
     images = 0
+    since_texture = TEXTURE_EVERY - 1  # the first middle slide may carry one
     out: list[SlidePlan] = []
     for index, plan in enumerate(plans):
         intent = _intent(plan, index, len(plans), images)
@@ -92,5 +94,14 @@ def assign(plans: list[SlidePlan]) -> list[SlidePlan]:
         choice = min(candidates, key=lambda a: (used.get(a, 0), candidates.index(a)))
         used[choice] = used.get(choice, 0) + 1
         previous, previous_dense = choice, dense and choice in DENSE
-        out.append(plan.model_copy(update={"intent": intent, "archetype": choice}))
+        if intent in ("cover", "ask"):
+            ornament = "mark"
+        elif since_texture >= TEXTURE_EVERY - 1 and not dense:
+            ornament, since_texture = "texture", -1
+        else:
+            ornament = "none"
+        since_texture += 1
+        out.append(
+            plan.model_copy(update={"intent": intent, "archetype": choice, "ornament": ornament})
+        )
     return out

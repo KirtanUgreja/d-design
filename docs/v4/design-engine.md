@@ -34,15 +34,22 @@
 
 ---
 
-## Sampler and theme
+## Generated, not picked
 
-**Pure code. No model call anywhere in this section.**
+**Pure code. No model call anywhere in this section.** *Decided 2026-10-05 by the owner:* the user is never asked to pick a style. A choice among three looks is a template gallery with fewer templates, and it is the move that makes a tool feel like Gamma.
 
-`design/sampler.py`:
-- **Seeded by the deck id**, so the same deck always gets the same looks.
-- **Constraints first.** Brand colours limit the palette strategies to the compatible ones. Compatibility rules remove bad combinations (a hairline didone on a dense grid). Deck type sets priors (an investor update leans dense and gridded) but never decides alone.
-- **Three looks, as far apart as possible.** The first is random; each next one maximises a weighted distance over the axes. No two looks share a pairing or a grid.
-- **Shuffle** uses a new seed, excludes the pairings already shown, and is instant.
+The model is the one generative identities follow (MIT Media Lab's 2011 identity, and the dynamic-identity work since): a designer writes the **rules**, the algorithm draws a unique instance each time, and the instance can respond to its content.
+
+`design/sampler.py` → `look_for(deck_id, deck_type, tone, words, brand_hex, nonce)`:
+- **One look per deck.** Seeded by the deck, its words and a `nonce`; *Try another look* in the editor is a new nonce.
+- **Discrete only where it must be:** a font pairing (fonts are files), a palette strategy, a grid arrangement, a motif.
+- **Continuous everywhere else:** hue anywhere on the wheel (steered by topic words 70% of the time — climate leans green, finance blue), two type-scale ratios, margin, gutter, rule weight, radius, display tracking, and the texture geometry (`design/patterns.py`: dot pitch and size, hatch angle and spacing, grid pitch, line weight).
+- **The deck's mark:** an emblem drawn from its own title (rings, bars or a dotted arc), used on the cover and the ask. No other deck has it.
+- **Tone sets the drama:** plain decks get modest scale ratios and quiet palettes; bold decks steeper ratios and darker grounds.
+- **Constraints first, as before:** brand colours limit the palette strategies; compatibility rules remove bad combinations; deck type sets priors.
+- **Measured:** 300 decks give 300 distinct looks; contrast holds over 1,000 seeds; every exemplar passes QA under 50 generated looks (`tests/test_design.py`).
+
+`sample()` still returns three far-apart looks, for the internal tile wall only.
 
 **Measured adjustments (2026-10-01).** Running every exemplar under 50 sampled themes broke 55 times before these rules; each fixes a cause, not a threshold:
 
@@ -61,7 +68,7 @@
 | Page frame | Margins, folio style, source-line style. Constant across the deck, and the main source of cohesion |
 | Contrast table | Every fg/bg pair with its WCAG and APCA values, stored on the theme |
 
-**Style tiles** (`design/tiles.py`). Each look is shown as two exemplar compositions filled with the deck's real title and first claims, rendered in Chromium. It costs $0 and takes about 3 seconds. The real slides are composed after the pick.
+**Style tiles** (`design/tiles.py`) are now an internal tool for the bench wall: three looks, two compositions each, $0. Users never see them.
 
 **Changing the look later has two tiers:**
 - **Recolour, or swap the pairing within the same metric class** (x-height and width from `meta.json`): deterministic, followed by a QA re-run.

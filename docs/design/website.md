@@ -37,7 +37,7 @@ Supporting decisions:
 | Click opens the real file | It must be provable. A hero you cannot open is a mockup with extra steps |
 | Nothing autoplays, no sound, no scroll-jacking | [principles.md](principles.md), principle 5 |
 | Same deck on mobile | The file scales its fixed 16:9 canvas to fit and takes swipe, and demonstrating that is free |
-| A control that switches the look | The same deck exported in two or three looks, swapped in place. They are separate real files, generated once. That is the variety claim demonstrated rather than asserted ([../v4/design-engine.md](../v4/design-engine.md) → "Sampler") |
+| A control that switches the look | The same deck exported in two or three generated looks, swapped in place. They are separate real files, generated once. That is the variety claim demonstrated rather than asserted ([../v4/design-engine.md](../v4/design-engine.md) → "Generated, not picked") |
 
 **Budget: first output pixel under 1.5s on 4G.** The proof cannot arrive late.
 

@@ -2,7 +2,7 @@
 
 > The product UI. Five surfaces get the craft budget; everything else is furniture ([principles.md](principles.md), principle 3). **Rewritten 2026-09-26 for v4** ([../v4/spec.md](../v4/spec.md)):
 > - The model now composes every slide in HTML.
-> - The user picks from three looks, shown as instant style tiles.
+> - **Every deck gets its own generated look; the user never picks a style** (owner, 2026-10-05).
 > - The app is a UI over a Python backend that owns the engine, the data and the export.
 >
 > The create flow is built in [../v4/plan/27-app-create-flow.md](../v4/plan/27-app-create-flow.md); the editor, present and export in [../v4/plan/28-editor.md](../v4/plan/28-editor.md).
@@ -12,11 +12,11 @@
 ## The flow
 
 ```
-composer ─► interview + outline gate ─► pick a look ─► generation watch ─► editor ─► present / export
- (brief)     (≤5 questions, approve)     (3 tiles, $0)  (slides stream)     (edit)    (the file itself)
+composer ─► interview + outline gate ─► generation watch ─► editor ─► present / export
+ (brief)     (≤5 questions, approve)     (slides stream)     (edit)    (the file itself)
 ```
 
-Every step before the watch is cheap and reversible; Pick a look costs nothing at all. The watch is where the money goes: roughly $1.5–3.5 per 10-slide deck ([../v4/spec.md](../v4/spec.md) → Bets). The gates sit where they do so that a bad direction dies before it costs anything.
+Every step before the watch is cheap and reversible. The watch is where the money goes: roughly $1.5–3.5 per 10-slide deck ([../v4/spec.md](../v4/spec.md) → Bets). The gates sit where they do so that a bad direction dies before it costs anything.
 
 ---
 
@@ -28,7 +28,7 @@ Every step before the watch is cheap and reversible; Pick a look costs nothing a
 |---|---|
 | The composer — the first prompt | Settings and account (phase 29) |
 | The interview + outline gate — hot for trust rather than delight | The brand kit form |
-| Pick a look — the first time the user sees design | The deck list beyond "Recent" |
+| The cover arriving — the first time the user sees design | The deck list beyond "Recent" |
 | The generation watch | The editor's panel *chrome* — its contents are the deck |
 | The export reveal and present | Version history as a list |
 
@@ -101,28 +101,9 @@ The interview answers and the approved outline are saved with the deck, so a fai
 
 ---
 
-## 3. Pick a look
+## 3. No look to pick
 
-This is the first time the user sees design, so it is hot. It shows their own words in each look, never names or swatches.
-
-```
-┌─────────────────────────────────────────┐
-│ ┌───────┐  ┌───────┐  ┌───────┐ [↻]     │
-│ │ title │  │ title │  │ title │ shuffle │
-│ │ claim │  │ claim │  │ claim │         │
-│ └───────┘  └───────┘  └───────┘         │
-│ Swiss grid  Editorial   Poster          │
-└─────────────────────────────────────────┘
-```
-
-| | |
-|---|---|
-| **Three style tiles, rendered by code** | Each tile is a pair of exemplar compositions filled with this deck's real title and first claims, under one sampled theme. No model call, $0, about 3 seconds. A swatch or a font name cannot show a look; their own headline set in it can |
-| **They differ on purpose** | The sampler picks three far-apart points in the registry ([../v4/design-engine.md](../v4/design-engine.md) → "Sampler"). Three variations of one idea would be the exact failure the product exists to fix |
-| **Shuffle is instant** | One click, three new tiles, no cost. It never opens a dialog and never shows a spinner worth naming |
-| **A tile is a preview, not the deck** | The real cover and every slide are composed by the model after the pick. Say so in one quiet line, so nobody expects slide 1 to be the tile |
-| **No brand kit here** | Brand colours are asked for after the first deck exists, framed as *make this yours* (First run). Wow first, brand second |
-| **The label is plain** | A short name for the look ("Swiss grid", "Editorial", "Poster") and its type pairing, in small type. No mood-board copy |
+**Removed 2026-10-05 by the owner.** Asking a user to choose among three looks is a smaller template gallery, the opposite of the product. The deck's look is generated for it — from its own words and tone, with a mark drawn from its title — and the first time the user sees design is **the cover arriving in the watch**. If they want something else, the editor's Design tab has *Try another look*: a new generated look, shown before/after. Never a menu of styles ([../v4/design-engine.md](../v4/design-engine.md) → "Generated, not picked").
 
 ---
 
@@ -252,7 +233,7 @@ Track every time a user hunts for a styling control ([questions.md](questions.md
 
 Research floor: median self-serve time-to-value is ~11 minutes, top performers under 5, and hitting first value inside 14 days is the strongest retention predictor there is.
 
-**Ours: their own words in three looks within seconds of approving the outline, and the whole deck in under three minutes** ([../v4/spec.md](../v4/spec.md) → Risks).
+**Ours: the cover, in its own look, within a minute of approving the outline, and the whole deck in under three minutes** ([../v4/spec.md](../v4/spec.md) → Risks).
 
 | | |
 |---|---|
@@ -260,7 +241,7 @@ Research floor: median self-serve time-to-value is ~11 minutes, top performers u
 | **No product tour** | A tour is what you build when the first screen failed |
 | **Brand kit comes second, not first** | Wow first. Brand colours are asked for only after the first deck exists, as a Design-tab action framed as *make this yours*. Never in the composer, never in the interview. Six brand fields before anything happens is how the session is lost |
 | **Assets are asked for in place** | Only when a slide visibly wants one, never as a setup step. Until upload arrives (phase 29, on its trigger), *Add image* generates one |
-| **The aha is their own words in a designed deck they did not lay out** | It starts on Pick a look, as their title in three looks, and lands when the cover arrives. It is not the file. The download comes later and is the *activation* metric, not the aha |
+| **The aha is their own words in a designed deck they did not lay out** | It lands when the cover arrives. It is not the file. The download comes later and is the *activation* metric, not the aha |
 | **Nothing about cost or limits in the first session** | Not until they have succeeded once |
 | **A bad first generation gets one obvious control** | *Try a different look*: re-roll from the Design tab, or regenerate the outline. One click |
 | **One sample deck in Recent** | Real, openable, breakable. It teaches the editor with nothing at stake |
@@ -316,7 +297,7 @@ Artefact accessibility is not this document's problem. The engine measures contr
 | [../v4/ui-research.md](../v4/ui-research.md) | The evidence behind the attention, motivation and trust choices, and the ethics line; phases 30–35 |
 | [brand.md](brand.md) | The palette the chrome is built from, and the check against the canvas |
 | [website.md](website.md) | What happened before "Start" |
-| [../v4/plan/27-app-create-flow.md](../v4/plan/27-app-create-flow.md) | Where the composer, the interview + outline gate, Pick a look and the watch are built |
+| [../v4/plan/27-app-create-flow.md](../v4/plan/27-app-create-flow.md) | Where the composer, the interview + outline gate and the watch are built |
 | [../v4/plan/28-editor.md](../v4/plan/28-editor.md) | Where the editor, present and the export dialog are built |
 | [../v4/plan/26-player-export.md](../v4/plan/26-player-export.md) | The two export flavours and the presenter view |
 | [../v4/engine.md](../v4/engine.md) | What the app receives: slide documents, QA screenshots, generation events |

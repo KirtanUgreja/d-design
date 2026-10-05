@@ -70,7 +70,7 @@ v4 gives the engine, the data and the export to the backend alone. The frontend 
 | **Facts** | `openrouter:web_search`, with `url_citation` annotations becoming `Fact`s | [ai-stack.md](ai-stack.md) → "Web search" |
 | **QA · thumbnails · PDF** | **Playwright (Python)** in the worker: one browser, a page pool, every request aborted except `data:` | [backend.md](backend.md) → "The worker" |
 | **AI-written HTML safety** | **`nh3`** (HTML allowlist, no `<a>`) · **`tinycss2`** (CSS lint only) · **Declarative Shadow DOM** for per-slide scoping · a script-less iframe · the export CSP | [../security/content-and-web.md](../security/content-and-web.md) → "AI-written HTML and CSS" |
-| **Design system** | **Pure code.** A seeded sampler picks the axes and code computes the theme and the 3 looks. No model call | [../v4/design-engine.md](../v4/design-engine.md) |
+| **Design system** | **Pure code.** A seeded generator makes one look per deck, mostly from continuous parameters. No model call | [../v4/design-engine.md](../v4/design-engine.md) |
 | **Fonts** | ~40 OFL families vendored as Latin-subset woff2, licence checked per family, **embedded as-is**. `fontTools` is deferred | [frontend.md](frontend.md) → "Fonts" |
 | **Images** | OpenRouter image models → **Pillow** (webp only) → data URIs carrying the IPTC `trainedAlgorithmicMedia` tag. Our code's call, not a model tool | [pipeline-tools.md](pipeline-tools.md) |
 | **Streaming** | The worker appends to `events.jsonl`; the API's SSE tails it and honours `Last-Event-ID`. Web reads it with a fetch-stream reader | [backend.md](backend.md) → "The worker" |

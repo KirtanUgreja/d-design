@@ -5,7 +5,6 @@ import Link from "next/link";
 const STEPS = [
   { key: "brief", label: "Brief", href: () => "/" },
   { key: "outline", label: "Outline", href: (id: string) => `/deck/${id}/outline` },
-  { key: "look", label: "Look", href: (id: string) => `/deck/${id}/look` },
   { key: "deck", label: "Deck", href: (id: string) => `/deck/${id}/edit` },
 ] as const;
 
