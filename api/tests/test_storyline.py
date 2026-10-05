@@ -69,3 +69,36 @@ def test_numbers_link_to_facts_or_become_proposed_illustrations() -> None:
     assert (illus.value, illus.status) == ("97%", "proposed")
     assert next(f.text for f in s3.fields if f.name == "source") == "Illustrative"
     assert len(story.key_points) == 3
+
+
+def test_a_chart_survives_only_if_every_value_is_an_approved_fact() -> None:
+    from engine.content.storyline import DraftChart
+
+    arr = [
+        Fact(id=f"a{n}", text=f"ARR reached ${v}M in {q}", source="user", status="approved")
+        for n, (v, q) in enumerate([(0.6, "Q1"), (1.6, "Q3"), (2.3, "Q4")], start=1)
+    ]
+    good = DraftChart(
+        type="column",
+        title="ARR",
+        unit="$M",
+        labels=["Q1", "Q3", "Q4"],
+        values=[0.6, 1.6, 2.3],
+        fact_ids=["a1"],
+    )
+    bad = good.model_copy(update={"values": [0.6, 1.6, 3.1]})
+    draft = Draft(
+        governing_thought="ARR nearly fourfold",
+        key_points=["a"],
+        slides=[
+            _slide(intent="chart", headline="ARR grew fourfold this year", chart=good),
+            _slide(
+                intent="chart", headline="ARR will keep compounding", points=["a", "b"], chart=bad
+            ),
+        ],
+    )
+    story, _ = assemble(draft, BRIEF, arr)
+    kept, dropped = story.slides
+    assert kept.intent == "chart" and kept.chart is not None
+    assert kept.chart.fact_ids == ["a1", "a2", "a3"]
+    assert dropped.chart is None and dropped.intent == "points"

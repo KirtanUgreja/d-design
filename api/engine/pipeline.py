@@ -11,6 +11,7 @@ import time
 from dataclasses import dataclass
 from typing import Literal
 
+from engine.components import charts
 from engine.compose import author, planner
 from engine.compose.author import Composed
 from engine.compose.document import Frame
@@ -35,7 +36,8 @@ class Built:
 
 
 def _frame(plan: SlidePlan, c: Composed) -> Frame:
-    return Frame(plan.id, c.html, c.css)
+    # Charts are drawn by our code after sanitizing, so QA measures them too.
+    return Frame(plan.id, charts.fill(c.html, plan.chart), c.css)
 
 
 async def build(
@@ -144,7 +146,7 @@ async def build(
             Slide(
                 id=plan.id,
                 plan_id=plan.id,
-                html=composed[plan.id].html,
+                html=_frame(plan, composed[plan.id]).html,  # with its chart drawn
                 css=composed[plan.id].css,
                 fields=fields[plan.id],
                 origin=origin[plan.id],  # type: ignore[arg-type]  # set only to the literals

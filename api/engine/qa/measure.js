@@ -45,6 +45,7 @@
       if (!norm(n.textContent) || n.parentElement.closest("style")) continue;
       const deco = n.parentElement.closest("[data-deco]");
       if (n.parentElement.closest("[data-field]")) continue;
+      if (n.parentElement.closest("dd-chart")) continue; // our component's labels
       if (!deco) add("E6", null, "stray text: " + norm(n.textContent).slice(0, 60), "text only in data-field or data-deco");
       else if (norm(deco.textContent).split(" ").length > 3) add("E6", null, "data-deco over 3 words", "3 words");
     }

@@ -41,6 +41,7 @@ TAGS = frozenset(
         "figure",
         "figcaption",
         "dd-texture",
+        "dd-chart",
     ]
 )
 _GLOBAL = frozenset(

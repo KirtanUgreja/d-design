@@ -19,7 +19,7 @@ from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "compose.v3"
+PROMPT_VERSION = "compose.v4"
 
 RULES = """You are a senior editorial designer. You design ONE presentation slide as HTML and CSS.
 The slide is projected at exactly 1920x1080px. It must look designed by a person with a point of
@@ -32,7 +32,7 @@ HTML CONTRACT
 - One root: <section class="s"> … </section>.
   No <html>, <body>, <style>, <script>, <img>, <a>, <svg>.
 - Allowed tags: div section header footer h1 h2 h3 p span strong em small sup sub br hr ul ol li
-  blockquote figure figcaption dd-texture.
+  blockquote figure figcaption dd-texture dd-chart.
 - Every field you are given appears EXACTLY ONCE, in an element with data-field="<name>", with its
   text UNCHANGED. You may wrap words in <em> or <span class="…"> for emphasis and use <br>. You may
   not add, drop or rewrite words.
@@ -42,6 +42,9 @@ HTML CONTRACT
   pattern; use only the kinds this look lists under THEME TOKENS. Size and place it with a
   class. Use at most two. A solid one is a rule or bar (under 48px thick); a large one is a
   pattern, or it sits behind text.
+- <dd-chart class="…"></dd-chart> is an empty box our code draws a chart into. Place it only
+  when the slide says it has a chart, give it at least 900x480px, and never write numbers,
+  labels or a legend for it: the chart draws its own.
 - Attributes allowed: class, data-field, data-deco, data-layer, data-bleed, and kind/tone on
   dd-texture. No style attribute, no id.
 
@@ -113,6 +116,10 @@ def _parser(plan: SlidePlan) -> Callable[[Reply], Result[Composed, str]]:
         problems = lint(blocks.value["css"])
         missing = [n for n in names if f'data-field="{n}"' not in clean.value]
         problems += [f'the field "{n}" has no data-field element' for n in missing]
+        if plan.chart is not None and "<dd-chart" not in clean.value:
+            problems.append("this slide has a chart: place one empty <dd-chart class=…>")
+        if plan.chart is None and "<dd-chart" in clean.value:
+            problems.append("this slide has no chart: remove the <dd-chart>")
         if problems:
             return err("fix these:\n- " + "\n- ".join(problems[:20]))
         return ok(Composed(clean.value, blocks.value["css"]))
@@ -140,7 +147,15 @@ async def compose(
     user = (
         f"Slide {position} of {total}. The deck argues: {thought}\n"
         f"This slide's job: {plan.intent} ({plan.beat}).\n"
-        f"Build it as a '{plan.archetype}' composition" + differ + f"\nFields:\n{_fields(plan)}"
+        f"Build it as a '{plan.archetype}' composition"
+        + differ
+        + f"\nFields:\n{_fields(plan)}"
+        + (
+            f"\nThis slide has a {plan.chart.type} chart of {len(plan.chart.series[0].points)} "
+            "values. Place one empty <dd-chart> for it, at least 900x480px."
+            if plan.chart
+            else ""
+        )
     )
     return await seam.complete_text(
         "compose",
@@ -210,11 +225,11 @@ def _step(text: str, steps: tuple[tuple[int, str], ...], last: str) -> str:
 
 def fallback(plan: SlidePlan) -> Composed:
     """A composition built by code from the slide's fields: the last rung
-    before a flag. Three layouts, chosen by what the slide has — a number, a
-    list, or only a sentence — so a fallback still reads as designed.
+    before a flag. Four layouts, chosen by what the slide has — a chart, a
+    number, a list, or only a sentence — so a fallback still reads as designed.
 
-    ponytail: three layouts. Ceiling: fallbacks of the same kind look alike.
-    Upgrade path: fill the matching exemplar per archetype (phase 25).
+    ponytail: four layouts. Ceiling: fallbacks of the same kind look alike.
+    Upgrade path: exemplar-fill comes first on the repair ladder (pipeline.py).
     """
     by = {f.name: escape(f.text) for f in plan.fields}
     head = by.get("headline", "")
@@ -224,6 +239,21 @@ def fallback(plan: SlidePlan) -> Composed:
     source = f'<p class="src" data-field="source">{by["source"]}</p>' if "source" in by else ""
     items = "".join(f'<li data-field="{f.name}">{escape(f.text)}</li>' for f in rest)
     base = f".k{{{_LABEL};color:var(--c-ink-2)}}{_SOURCE}"
+
+    if plan.chart is not None:  # the claim above, the chart filling the rest
+        hsize = _step(head, ((40, "h2"),), "h3")
+        html = (
+            f'<section class="s"><div class="t">{kicker}'
+            f'<h1 class="h" data-field="headline">{head}</h1></div>'
+            f'<dd-chart class="ch"></dd-chart>{source}</section>'
+        )
+        css = (
+            ".s{display:grid;grid-template-rows:auto 1fr auto;gap:var(--s-5);"
+            "padding:var(--margin)}.t{display:grid;gap:var(--s-3);max-width:1400px}"
+            f".h{{{_DISPLAY};font-size:var(--t-{hsize});line-height:var(--lh-display)}}"
+            ".ch{min-height:0}" + base
+        )
+        return Composed(html, css)
 
     if "stat" in by:  # a colour field carries the number; the claim sits beside it
         size = _step(by["stat"], ((3, "mega"), (5, "d1"), (8, "d2")), "d3")

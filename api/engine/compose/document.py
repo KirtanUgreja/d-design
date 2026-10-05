@@ -77,6 +77,7 @@ _BASE = (
     ".s{width:1920px;height:1080px;position:relative;overflow:hidden}"
     "ul,ol{list-style:none}em{font-style:normal}strong{font-weight:inherit}"
     "h1,h2,h3{text-wrap:balance}p,li{text-wrap:pretty}"
+    "dd-chart{display:block}"
     "dd-texture{display:block;background-color:var(--c-accent)}"
     "dd-texture[tone=ink]{background-color:var(--c-ink)}"
     "dd-texture[tone=surface]{background-color:var(--c-surface)}"

@@ -11,16 +11,28 @@ Rule failures get one targeted rewrite.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from engine.components import charts
 from engine.content import rules
 from engine.content.arcs import ARCS, arc_for
 from engine.llm.openrouter import ModelError, Seam
-from engine.models import Brief, Fact, PlanField, Provenance, SlidePlan, Storyline
+from engine.models import (
+    Brief,
+    ChartPoint,
+    ChartSeries,
+    ChartSpec,
+    Fact,
+    PlanField,
+    Provenance,
+    SlidePlan,
+    Storyline,
+)
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "storyline.v2"
+PROMPT_VERSION = "storyline.v3"
 SEND_FACTOR = 1.5  # a deck that is sent must explain itself
 
 FRAME = (
@@ -48,8 +60,12 @@ Rules:
   in fact_ids. Never invent a number, a customer, a quote or a name. If the material has no number
   for a claim, make the claim without one. Never write a source or year in brackets: the
   source line is added for you.
+- chart: only when the facts give at least three numbers for the same measure, over time or
+  across categories. type is bar (categories), column (periods), line (a trend, 4+ points) or
+  donut (parts of one whole). values are copied from the facts; unit is "%", "$M", "x" or a
+  word. Its slide's intent is "chart". Otherwise chart is null.
 - intent is one of: cover, statement, number, number-set, points, comparison, steps, timeline,
-  quote, team, case, section, ask.
+  chart, quote, team, case, section, ask.
 - Never promise material you were not given. A slide states its evidence or does not exist:
   no "Customer quotes, in their own words", no "Results from our testing" without the quotes or
   results themselves. If the user has no proof yet, the deck argues without it.
@@ -57,6 +73,15 @@ Rules:
   case, active voice, concrete nouns, numbers with units. Never use: unlock, leverage, seamless,
   robust, game-changer, revolutionize, empower, elevate, landscape, delve, harness, synergy,
   AI-powered, cutting-edge, "not just X, it's Y", "Meet <product>"."""
+
+
+class DraftChart(BaseModel):
+    type: Literal["bar", "column", "line", "donut"]
+    title: str
+    unit: str
+    labels: list[str]
+    values: list[float]
+    fact_ids: list[str]
 
 
 class DraftSlide(BaseModel):
@@ -68,6 +93,7 @@ class DraftSlide(BaseModel):
     stat: str
     stat_label: str
     fact_ids: list[str]
+    chart: DraftChart | None = None
 
 
 class Draft(BaseModel):
@@ -151,6 +177,30 @@ def _provenance(text: str, linked: list[Fact], brief: Brief) -> Provenance:
     return "AI"
 
 
+def chart_spec(d: DraftChart, live: dict[str, Fact]) -> ChartSpec | None:
+    """A chart only from approved facts: every value must be stated by an
+    approved fact, compared by value in the chart's own unit. Else no chart."""
+    approved = [f for f in live.values() if f.status == "approved"]
+    if len(d.labels) != len(d.values) or len(d.values) < 2:
+        return None
+    used: list[str] = []
+    for v in d.values:
+        token = charts.label(v, d.unit, 2 if v != int(v) else 0)
+        fact = next((f for f in approved if rules.sourced(token, [f])), None)
+        if fact is None:
+            return None
+        if fact.id not in used:
+            used.append(fact.id)
+    points = [ChartPoint(label=k, value=v) for k, v in zip(d.labels, d.values, strict=True)]
+    return ChartSpec(
+        type=d.type,
+        title=d.title,
+        unit=d.unit,
+        series=[ChartSeries(name=d.title, points=points)],
+        fact_ids=used,
+    )
+
+
 def names(brief: Brief) -> frozenset[str]:
     return rules.known_names(" ".join([brief.prompt, brief.ask] + [p.text for p in brief.pasted]))
 
@@ -205,12 +255,26 @@ def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, 
         if credit:
             fields.append(PlanField(name="source", text=credit, budget_words=8))
             provenance["source"] = "WEB" if "Illustrative" not in credit else "AI"
+        chart = chart_spec(d.chart, live) if d.chart else None
+        intent = d.intent
+        if intent == "chart" and chart is None:
+            # No approved fact for every value: no chart (design-engine.md -> rhythm).
+            intent = "points" if d.points else "statement"
+        if chart is not None:
+            intent = "chart"
+            cited = [live[i] for i in chart.fact_ids if live[i] not in used]
+            used += cited
+            credit = _source_line(used)
+            fields = [f for f in fields if f.name != "source"]
+            if credit:
+                fields.append(PlanField(name="source", text=credit, budget_words=8))
         plans.append(
             SlidePlan(
                 id=sid,
                 beat=d.beat,
-                intent=d.intent,
+                intent=intent,
                 fields=fields,
+                chart=chart,
                 provenance=provenance,
             )
         )
