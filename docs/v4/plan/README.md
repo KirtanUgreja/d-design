@@ -11,7 +11,7 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 | [23 — design system](23-design-system.md) | M | built 2026-10-01 — automated checks pass but one: 9 of 10 pairings across 12 decks. Open: the owner's tile wall and deck wall |
 | [24 — content engine](24-content-engine.md) | M | **closed 2026-10-01** — automated exit lines pass; the two human checks skipped by the owner |
 | [25 — composition and QA](25-composition-qa.md) | L | not started |
-| [26 — player and export](26-player-export.md) | M | not started |
+| [26 — player and export](26-player-export.md) | M | built 2026-10-05 — automated checks green on Chromium and WebKit; Firefox in CI. Open: the owner's stage test (external display + clicker) and the email-attachment test |
 | [27 — app: create flow](27-app-create-flow.md) | L | not started |
 | [28 — editor](28-editor.md) | L | not started |
 | [29 — accounts and deploy](29-accounts-deploy.md) | M/L | not started |

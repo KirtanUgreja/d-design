@@ -18,7 +18,11 @@ jobs:
           python-version: '3.13'
       - name: install
         run: uv sync --project api
+      - name: browsers
+        run: cd api && uv run playwright install --with-deps chromium firefox webkit
       - name: api — format, lint, types, tests
+        env:
+          DD_ENGINES: chromium,firefox,webkit
         run: |
           uv run --project api ruff format --check api
           uv run --project api ruff check api

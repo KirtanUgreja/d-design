@@ -14,9 +14,10 @@ from pathlib import Path
 
 from playwright.async_api import Route, async_playwright
 
-from engine.compose.document import Frame, export_document
+from engine.compose.document import Frame
 from engine.compose.exemplars import load_all
 from engine.design.theme import THEMES
+from engine.export.assemble import assemble
 
 
 def _keep_only(url: str, left: list[str]) -> Callable[[Route], Awaitable[None]]:
@@ -41,7 +42,7 @@ def test_export_makes_zero_requests(tmp_path: Path) -> None:
             browser = await pw.chromium.launch()
             for theme in THEMES.values():
                 path = tmp_path / f"{theme.id}.html"
-                path.write_text(export_document(theme, frames, theme.id))
+                path.write_text(assemble(theme, frames, theme.id))
                 url = "file://" + str(path)
                 page = await browser.new_page(viewport={"width": 1920, "height": 1080})
                 left: list[str] = []

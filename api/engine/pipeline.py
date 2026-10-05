@@ -13,8 +13,9 @@ from typing import Literal
 
 from engine.compose import author, planner
 from engine.compose.author import Composed
-from engine.compose.document import Frame, export_document
+from engine.compose.document import Frame
 from engine.design.theme import Theme
+from engine.export.assemble import assemble
 from engine.llm.openrouter import Seam
 from engine.models import Slide, SlidePlan, SlideQA, Storyline
 from engine.qa import browser
@@ -26,7 +27,8 @@ PARALLEL = 5
 @dataclass(frozen=True)
 class Built:
     slides: list[Slide]
-    html: str
+    html: str  # the "present" flavour, with speaker notes
+    send: str  # the "send" flavour: no notes; the PDF is printed from it
     seconds: float
     first_pass_clean: int  # slides with no defect before any repair
     refusals: dict[str, str]  # slide id -> why its composition was refused (lint text only)
@@ -157,5 +159,8 @@ async def build(
                 cost_usd=sum(e.cost_usd for e in seam.ledger if e.slide_id == plan.id),
             )
         )
-    html = export_document(theme, [_frame(p, composed[p.id]) for p in plans], title)
-    return Built(slides, html, time.monotonic() - started, clean_first, refusals)
+    frames = [_frame(p, composed[p.id]) for p in plans]
+    notes = {p.id: p.notes for p in plans if p.notes}
+    html = assemble(theme, frames, title, flavour="present", notes=notes)
+    send = assemble(theme, frames, title, flavour="send")
+    return Built(slides, html, send, time.monotonic() - started, clean_first, refusals)

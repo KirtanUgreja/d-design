@@ -15,8 +15,9 @@ from pathlib import Path
 from playwright.async_api import Browser, Page, Route, async_playwright
 from playwright.async_api import Error as PlaywrightError
 
-from engine.compose.document import Frame, export_document, qa_document
+from engine.compose.document import Frame, qa_document
 from engine.design.theme import THEMES
+from engine.export.assemble import assemble
 from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Ok
@@ -113,7 +114,7 @@ async def _ours(browser: Browser, tmp: Path, name: str, html: str, css: str) -> 
     problems: list[str] = []
     for kind, doc in (
         ("qa", qa_document(THEME, [frame])),
-        ("export", export_document(THEME, [frame], name)),
+        ("export", assemble(THEME, [frame], name)),
     ):
         path = tmp / f"{name}-{kind}.html"
         path.write_text(doc)

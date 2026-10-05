@@ -9,6 +9,7 @@ uv run python -m cli content --run NAME         phase 24 bench: every brief, met
 uv run python -m cli injection --run NAME       the injection corpus through the content stages
 uv run python -m cli fonts                      measure the vendored faces into meta.json
 uv run python -m cli tiles --run NAME           3 sampled looks per brief, as style tiles
+uv run python -m cli export --run NAME [--pdf]  re-assemble built decks with the current player
 """
 
 from __future__ import annotations
@@ -25,11 +26,14 @@ from pydantic import BaseModel
 
 import settings
 from benchtools import baseline, content, files, fonts, outline, shots, wall
-from engine import Brief, Seam, pipeline
+from engine import Brief, Seam, Slide, pipeline
+from engine.compose.document import Frame
 from engine.design import tiles
 from engine.design.sampler import sample
 from engine.design.theme import THEMES, Theme
 from engine.design.theme import build as build_theme
+from engine.export import pdf as pdf_export
+from engine.export.assemble import assemble, fingerprint
 from lib.result import Err
 
 
@@ -142,6 +146,7 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             budget_usd=args.budget,
         )
         (out / "deck.html").write_text(built.html)
+        (out / "deck-send.html").write_text(built.send)
         files.append_ledger(root / "ledger.jsonl", seam.ledger)
         origins = [s.origin for s in built.slides]
         row: dict[str, object] = {
@@ -159,6 +164,9 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             "cached_tokens": sum(e.cached_tokens for e in seam.ledger),
             "defects": sorted({d.code for s in built.slides for d in s.qa.errors}),
             "refusals": built.refusals,
+            "export_bytes": len(built.html.encode()),
+            "export_sha256": fingerprint(built.html),
+            "send_sha256": fingerprint(built.send),
         }
         rows.append(row)
         # Written per deck: a run that is cut short keeps what it finished.
@@ -195,6 +203,44 @@ def _sampled(brief: Brief) -> list[Theme]:
         build_theme(look)
         for look in sample(brief.id, deck_type=brief.deck_type, brand_hex=brand_hex)
     ]
+
+
+def _theme_for(theme_id: str, brief: Brief) -> Theme:
+    """The theme a run recorded: one of phase 22's three, or a sampled look."""
+    if theme_id in THEMES:
+        return THEMES[theme_id]
+    return next(t for t in _sampled(brief) if t.id == theme_id)
+
+
+async def _export(run: str, label: str, which: str, pdf: bool) -> int:
+    """Re-assemble built decks with the current player, both flavours, and the
+    PDF. No model call: the slides are read back from slides.json."""
+    root = files.BENCH / "runs" / run / label
+    themes = {
+        row["brief"]: row["theme"]
+        for row in map(json.loads, (root / "summary.jsonl").read_text().splitlines())
+    }
+    for brief_id in _ids(which):
+        out = root / brief_id
+        if not (out / "slides.json").exists() or brief_id not in themes:
+            continue
+        item = files.load(brief_id)
+        slides = [Slide.model_validate(s) for s in json.loads((out / "slides.json").read_text())]
+        frames = [Frame(s.id, s.html, s.css) for s in slides]
+        theme = _theme_for(str(themes[brief_id]), item.brief)
+        plans = {p.id: p.notes for p in (item.outline.slides if item.outline else [])}
+        title = item.brief.prompt.split(".")[0]
+        present = assemble(theme, frames, title, flavour="present", notes=plans)
+        send = assemble(theme, frames, title, flavour="send")
+        (out / "deck.html").write_text(present)
+        (out / "deck-send.html").write_text(send)
+        line = f"{brief_id}: {len(frames)} slides, {len(present.encode()) / 1e6:.2f} MB"
+        if pdf:
+            data = await pdf_export.render(send)
+            (out / "deck.pdf").write_bytes(data)
+            line += f", pdf {len(data) / 1e6:.2f} MB"
+        print(line, flush=True)
+    return 0
 
 
 async def _tiles(run: str, which: str) -> int:
@@ -350,6 +396,11 @@ def main(argv: list[str]) -> int:
     cmd = sub.add_parser("injection")
     cmd.add_argument("--run", required=True)
     sub.add_parser("fonts")
+    cmd = sub.add_parser("export")
+    cmd.add_argument("--run", required=True)
+    cmd.add_argument("--label", default="engine")
+    cmd.add_argument("--set", choices=("one", "smoke", "all"), default="all")
+    cmd.add_argument("--pdf", action="store_true")
     cmd = sub.add_parser("wall")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--seed", type=int, default=0)
@@ -371,6 +422,8 @@ def main(argv: list[str]) -> int:
         return asyncio.run(_content(cfg, args.run, args.set))
     if args.command == "injection":
         return asyncio.run(_injection(cfg, args.run))
+    if args.command == "export":
+        return asyncio.run(_export(args.run, args.label, args.set, args.pdf))
     if args.command == "tiles":
         return asyncio.run(_tiles(args.run, args.set))
     if args.command == "fonts":

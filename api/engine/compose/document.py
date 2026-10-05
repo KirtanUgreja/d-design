@@ -10,7 +10,6 @@ QA, the editor and the export — what is measured is what ships.
 from __future__ import annotations
 
 import base64
-import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote
@@ -104,7 +103,7 @@ def font_face_css(theme: Theme) -> str:
     return "".join(rules)
 
 
-def _host(frame: Frame) -> str:
+def host(frame: Frame) -> str:
     # The lint refuses "<"; this keeps a frame that skipped it inside its
     # <style> anyway. CSS reads "<\/" as "</", and no valid rule contains it.
     css = frame.css.replace("</", "<\\/")
@@ -123,50 +122,5 @@ def qa_document(theme: Theme, frames: list[Frame]) -> str:
         f'<meta http-equiv="Content-Security-Policy" content="{csp}">'
         f"<style>{font_face_css(theme)}{theme.css()}"
         "html,body{margin:0;background:#888}.dd-slide{width:1920px;height:1080px}</style>"
-        f"</head><body>{''.join(_host(f) for f in frames)}</body></html>"
-    )
-
-
-_PLAYER_CSS = (
-    "html,body{margin:0;height:100%;overflow:hidden;background:var(--c-ground)}"
-    ".dd-slide{width:1920px;height:1080px;position:absolute;left:50%;top:50%;"
-    "transform-origin:0 0;display:none}.dd-slide.on{display:block}"
-    "@media print{@page{size:1920px 1080px;margin:0}html,body{overflow:visible;height:auto}"
-    ".dd-slide{display:block;position:static;transform:none!important;break-after:page}}"
-)
-# ponytail: arrows, space, home/end, F. The full player — overview, presenter
-# view, builds, deep links — is phase 26.
-_PLAYER_JS = (
-    "(()=>{const s=[...document.querySelectorAll('.dd-slide')];"
-    "let i=Math.max(0,Math.min(s.length-1,(parseInt(location.hash.slice(1))||1)-1));"
-    "const fit=()=>{const k=Math.min(innerWidth/1920,innerHeight/1080);"
-    "for(const e of s)e.style.transform='scale('+k+') translate(-50%,-50%)'};"
-    "const go=n=>{i=Math.max(0,Math.min(s.length-1,n));"
-    "s.forEach((e,j)=>e.classList.toggle('on',j===i));history.replaceState(null,'','#'+(i+1))};"
-    "addEventListener('resize',fit);addEventListener('keydown',e=>{"
-    "if(['ArrowRight','PageDown',' '].includes(e.key))go(i+1);"
-    "else if(['ArrowLeft','PageUp'].includes(e.key))go(i-1);"
-    "else if(e.key==='Home')go(0);else if(e.key==='End')go(s.length-1);"
-    "else if(e.key==='f'||e.key==='F')document.documentElement.requestFullscreen()});"
-    "addEventListener('click',e=>go(i+(e.clientX<innerWidth/3?-1:1)));fit();go(i)})();"
-)
-
-
-def export_document(theme: Theme, frames: list[Frame], title: str) -> str:
-    """The artefact: one file, zero network requests. Only our player script
-    runs, allowed by its hash."""
-    digest = base64.b64encode(hashlib.sha256(_PLAYER_JS.encode()).digest()).decode()
-    csp = (
-        f"default-src 'none'; script-src 'sha256-{digest}'; style-src 'unsafe-inline'; "
-        "img-src data:; font-src data:; connect-src 'none'; base-uri 'none'; form-action 'none'"
-    )
-    safe_title = title.replace("&", "&amp;").replace("<", "&lt;")
-    return (
-        "<!doctype html><html lang='en'><head><meta charset='utf-8'>"
-        f'<meta http-equiv="Content-Security-Policy" content="{csp}">'
-        '<meta name="viewport" content="width=device-width,initial-scale=1">'
-        '<meta name="generator" content="d-design"><meta name="ai-generated" content="true">'
-        f"<title>{safe_title}</title>"
-        f"<style>{font_face_css(theme)}{theme.css()}{_PLAYER_CSS}</style></head><body>"
-        f"{''.join(_host(f) for f in frames)}<script>{_PLAYER_JS}</script></body></html>"
+        f"</head><body>{''.join(host(f) for f in frames)}</body></html>"
     )

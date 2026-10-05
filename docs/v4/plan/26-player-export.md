@@ -13,7 +13,12 @@
 - `render/src/pdf.ts` and `render/tests/offline.test.ts` at `v3-final`.
 - `git show cbfebfa^:web/src/features/present/fullscreen.tsx` — the fullscreen overflow lesson.
 
-**Verify externally**
+**Verified externally (2026-10-05)**
+- A blank popup from a `file://` page under the export's CSP can be scripted, and keys pressed in it reach the deck: Chromium and WebKit yes; Firefox untested locally (see Verify).
+- Declarative Shadow DOM prints to PDF in Chromium: page count equals slide count, fonts embedded, layout as on screen.
+- The final Code of Practice on AI-generated content (published 10 June 2026) asks for at least two machine-readable marks. The export carries metadata (meta tags, IPTC `digitalSourceType` in JSON-LD) and its SHA-256 is logged per build; signed metadata needs keys and is phase 29. An engineering reading, not legal advice.
+
+**Verify externally (as planned)**
 - A blank popup opened from a `file://` page: can the opener script it in Chrome, Safari and Firefox?
 - What the EU AI Act Code of Practice requires as a machine-readable marker.
 - Declarative Shadow DOM when printing to PDF.
@@ -37,12 +42,12 @@
 
 ## Verify
 
-On Chromium, Firefox and WebKit:
-- [ ] Zero network requests from `file://`, including with the presenter popup open
-- [ ] Renders with the network fully blocked
-- [ ] Keyboard navigation end to end
-- [ ] PDF page count equals slide count
-- [ ] Notes absent from the send flavour and the PDF
+On Chromium, Firefox and WebKit (`tests/test_player.py`; Chromium and WebKit verified locally on 2026-10-05; Firefox runs in CI — on the dev Mac its helper process cannot start under the command sandbox, and lifting the sandbox was refused):
+- [x] Zero network requests from `file://`, including with the presenter popup open
+- [x] Renders with the network fully blocked
+- [x] Keyboard navigation end to end — arrows, builds, Home/End, number + Enter, `#n`, O, B, P, and keys pressed in the popup
+- [x] PDF page count equals slide count (Chromium prints)
+- [x] Notes absent from the send flavour and the PDF
 - [ ] **Human:** present one deck on a laptop with an external display and a clicker
 - [ ] **Human:** open the file from an email attachment in 3 browsers
 

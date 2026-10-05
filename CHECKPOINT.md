@@ -40,3 +40,7 @@ Phase 22 (`docs/v4/plan/22-engine-spike.md`) — the make-or-break gate. It need
 ## Phase 23, built (branch `phase-24-content-engine`)
 
 33 OFL families measured, 7 OKLCH palettes (0 contrast failures in 1,000 seeds), 24 pairings, 5 grids, 10 motifs, a seeded sampler, brand mapping, style tiles. 12 decks on sampled themes: 0 flagged, $0.66. Gate: 9 of 10 pairings (chance; see `bench/results.md`). **Owner's tasks:** `bench/runs/2026-10-01-phase23/tiles.html` (36 looks: ≥30 usable, no sibling trios) and `wall.html` (no two decks mistakable).
+
+## Phase 26, built (branch `phase-26-player-export`)
+
+The real player (`api/engine/export/player.js`, `player.css`): arrows, Space, PgUp/PgDn, Home/End, number + Enter, swipe, click, F, O overview, B black, `#n`, P presenter popup (current, next, notes, timer, clock; keys work in either window), step reveals with reduced motion. `assemble.py`: "present" (notes as inert JSON) and "send" (none); AI metadata, export SHA-256 logged, disclosure in the chrome. `pdf.py` prints "send". `cli export --run NAME [--pdf]` re-assembles built decks for $0. CI now installs Chromium, Firefox and WebKit — before this, every browser test would have failed there. **Owner's tasks:** present `bench/runs/2026-10-01-phase23/engine/<brief>/deck.html` on a laptop with an external display and a clicker (press P for the presenter view); open a `deck-send.html` from an email attachment in 3 browsers.
