@@ -136,9 +136,26 @@
       const under = rects.some((f) => Math.min(f.r.r, r.r) - Math.max(f.r.l, r.l) > 4 && Math.min(f.r.b, r.b) - Math.max(f.r.t, r.t) > 4);
       if (!under) add("E11", null, `empty block ${Math.round(w)}x${Math.round(h)}px`, "a solid field carries text, or is under 48px thick");
     }
+    // Shapes for the composition descriptors (qa/descriptors.py): every
+    // colour field, texture, chart and image, as geometry only.
+    const shapes = [], ground = rgb(scs.backgroundColor).join();
+    for (const el of root.querySelectorAll("*")) {
+      if (el === s || el.tagName === "STYLE" || el.closest("[data-field]")) continue;
+      if (el.parentElement && el.parentElement.closest("dd-chart")) continue;
+      let kind = null;
+      if (el.tagName === "DD-CHART") kind = "chart";
+      else if (el.tagName === "DD-TEXTURE") kind = "texture";
+      else if (el.tagName === "IMG") kind = "image";
+      else { const bg = getComputedStyle(el).backgroundColor; if (opaque(bg) && rgb(bg).join() !== ground) kind = "field"; }
+      if (!kind) continue;
+      const r = rel(el.getBoundingClientRect());
+      const q = { kind, l: Math.max(0, r.l), t: Math.max(0, r.t), r: Math.min(1920, r.r), b: Math.min(1080, r.b) };
+      if (q.r - q.l >= 8 && q.b - q.t >= 8) shapes.push(q);
+      if (shapes.length >= 60) break;
+    }
     const centred = rects.length && rects.filter((x) => getComputedStyle(x.el).textAlign === "center").length > rects.length / 2;
     const fingerprint = [scs.display, scs.gridTemplateColumns.split(" ").length, scs.gridTemplateRows.split(" ").length, centred ? "c" : "l", fields.map((f) => f.dataset.field.replace(/-\d+$/, "")).join(">"), root.querySelectorAll("dd-texture").length].join("|");
-    out[id] = { measured: true, errors, warnings, fingerprint, centred, boxes };
+    out[id] = { measured: true, errors, warnings, fingerprint, centred, boxes, shapes };
   }
   return out;
 }

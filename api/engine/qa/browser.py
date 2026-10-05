@@ -42,6 +42,7 @@ class Measured(BaseModel):
     fingerprint: str = ""
     centred: bool = False
     boxes: list[metrics.Box] = Field(default_factory=list)
+    shapes: list[metrics.Shape] = Field(default_factory=list)
 
     def defects(self) -> list[Defect]:
         return [_defect(e) for e in self.errors]

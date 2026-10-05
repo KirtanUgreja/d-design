@@ -25,6 +25,16 @@ class Box(BaseModel):
     contrast: float
 
 
+class Shape(BaseModel):
+    """A colour field, texture, chart or image: geometry only, no content."""
+
+    kind: str
+    l: float  # noqa: E741 - left
+    t: float
+    r: float
+    b: float
+
+
 class Pixel(BaseModel):
     field: str
     wcag: float
@@ -58,26 +68,37 @@ def pixel_errors(pixels: list[Pixel], boxes: list[Box]) -> list[Found]:
     return out
 
 
-def _empty_share(boxes: list[Box]) -> float:
-    """The largest empty rectangle as a share of the slide (histogram method)."""
+Rect = tuple[float, float, float, float]  # left, top, right, bottom
+
+
+def empty_rect(rects: list[Rect]) -> tuple[float, float, float]:
+    """The largest empty rectangle: its share of the slide and its centre as
+    fractions of the width and height (histogram method, 40px cells)."""
     filled = [[False] * GRID_X for _ in range(GRID_Y)]
-    for b in boxes:
-        for y in range(max(0, int(b.t // 40)), min(GRID_Y, int(b.b // 40) + 1)):
-            for x in range(max(0, int(b.l // 40)), min(GRID_X, int(b.r // 40) + 1)):
+    for left, top, right, bottom in rects:
+        for y in range(max(0, int(top // 40)), min(GRID_Y, int(bottom // 40) + 1)):
+            for x in range(max(0, int(left // 40)), min(GRID_X, int(right // 40) + 1)):
                 filled[y][x] = True
     heights = [0] * GRID_X
-    best = 0
-    for row in filled:
+    best, centre = 0, (0.5, 0.5)
+    for row_index, row in enumerate(filled):
         heights = [0 if cell else h + 1 for h, cell in zip(heights, row, strict=True)]
         bars = [*heights, 0]
         stack: list[int] = []
         for i, h in enumerate(bars):
             while stack and bars[stack[-1]] >= h:
                 top = stack.pop()
-                width = i if not stack else i - stack[-1] - 1
-                best = max(best, bars[top] * width)
+                start = 0 if not stack else stack[-1] + 1
+                area = bars[top] * (i - start)
+                if area > best:
+                    best = area
+                    centre = ((start + i) / 2 / GRID_X, (row_index + 1 - bars[top] / 2) / GRID_Y)
             stack.append(i)
-    return best / (GRID_X * GRID_Y)
+    return best / (GRID_X * GRID_Y), centre[0], centre[1]
+
+
+def _empty_share(boxes: list[Box]) -> float:
+    return empty_rect([(b.l, b.t, b.r, b.b) for b in boxes])[0]
 
 
 def slide_warnings(boxes: list[Box]) -> list[Found]:
