@@ -1,11 +1,31 @@
-# Checkpoint — 2026-10-05 (PAUSED)
+# Checkpoint — 2026-10-05 (end of day, PAUSED)
 
-**Paused by the owner while topping up OpenRouter credit.** Resume point: branch `phase-25-composition-qa` at `07ec6ff`, clean, not pushed. Branches `phase-24-content-engine` (also holds phase 23) and `phase-26-player-export` are committed and unpushed too; `main` is still v3.
+**Resume here.** Branch `phase-30-ui-prototype` at the latest commit, clean, **nothing pushed** (also unpushed: `phase-24-content-engine`, `phase-25-composition-qa`, `phase-26-player-export`). `main` is still v3. OpenRouter credit left: **about $1.45**.
 
-**To resume phase 25:** top up, then build `dd-image` and run the image-model bake-off; then `cd api && uv run python -m cli build --run <date>-phase25 --model deepseek/deepseek-v4.1-flash --label engine --set all` on content-engine outlines (12 × 2 seeds, about $2–4); then the gate 2 wall. Credit left before the top-up: about $2.10.
+## Done
 
-**While paused:** the UI plan (`docs/v4/ui-research.md`, phases 30–35) and **phase 30, built** on branch `phase-30-ui-prototype`: `cd web && pnpm install && pnpm build && pnpm start`, then open http://localhost:3000. Owner's task: 5 moderated sessions with `bench/ui/session-script.md`, results into `bench/ui/baseline.md`. **2026-10-05, owner's direction:** no Pick-a-look step — every deck gets its own generated look (continuous parameters, a mark from its title, textures rationed); the prototype now carries three recordings including the owner's Tesla brief, and tells the truth when a typed brief has no recording.
+| Phase | State |
+|---|---|
+| 21 reset | Built. Gamma baselines dropped (owner) |
+| 22 engine spike | **Closed on design** (owner, after 2 gate attempts) |
+| 23 design system | Built. Then **reversed by the owner 2026-10-05: no Pick-a-look** — every deck gets its own generated look (`look_for()`, continuous parameters, a mark from its title, textures rationed) |
+| 24 content engine | **Closed** (owner skipped the two human checks) |
+| 25 composition + QA | **Free half built**: charts from approved facts, planner rhythm, repair ladder, budget guard, pixel E5, warnings W1–W6 |
+| 26 player + export | Built; Firefox only in CI |
+| 30 UI prototype | Built: `web/` (Next 16 + shadcn/ui restyled), 3 real recordings incl. the owner's Tesla brief, 12 e2e tests on Chromium + WebKit. Run: `cd web && pnpm install && pnpm build && pnpm start` |
+| UI plan | `docs/v4/ui-research.md` and phases 30–35 written |
 
+## Left — in order
+
+1. **Owner:** look at the three decks (`/deck/pitch-tesla/edit` etc.) and say what still feels templated.
+2. **Owner:** top up OpenRouter. Then phase 25's paid half: `dd-image` + the image-model bake-off, the 12 × 2 end-to-end run, and **gate 2** (owner's blind wall).
+3. **Owner:** 5 moderated user sessions (`bench/ui/session-script.md` → `bench/ui/baseline.md`) to close phase 30.
+4. Phase 32 fix already known: **the cover must arrive first** in the watch (today it can arrive at ~33 s).
+5. Phase 27: the real backend (worker, API, SSE) so any typed brief builds live — the prototype can only replay recordings.
+6. Then 28 editor → 31–35 UI phases → 29 accounts + deploy.
+7. Push the branches and let CI run (its web job and browser installs are unverified).
+
+**Known issues:** two of three recordings came out on dark grounds (chance); the Tesla storyline opens on transport emissions, not on Tesla; "Try another look" is not wired in the prototype.
 
 ## History (older entries, oldest first below)
 
