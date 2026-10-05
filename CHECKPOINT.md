@@ -18,7 +18,8 @@
 ## Left — in order
 
 1. **Owner:** look at the three decks (`/deck/pitch-tesla/edit` etc.) and say what still feels templated.
-2. **Owner:** top up OpenRouter. Then phase 25's paid half: `dd-image` + the image-model bake-off, the 12 × 2 end-to-end run, and **gate 2** (owner's blind wall).
+2. **Phase 36 — independent design** (planned 2026-10-05, `docs/v4/plan/36-independent-design.md`): the owner's core concern. Mostly code; its bench is about $2–3. Build it **before** gate 2. **Quality bar:** the owner loved the three 2026-10-05 recordings — new designs must be at least that good.
+3. **Owner:** top up OpenRouter. Then phase 25's paid half: `dd-image` + the image-model bake-off, the 12 × 2 end-to-end run, and **gate 2** (owner's blind wall).
 3. **Owner:** 5 moderated user sessions (`bench/ui/session-script.md` → `bench/ui/baseline.md`) to close phase 30.
 4. Phase 32 fix already known: **the cover must arrive first** in the watch (today it can arrive at ~33 s).
 5. Phase 27: the real backend (worker, API, SSE) so any typed brief builds live — the prototype can only replay recordings.

@@ -76,6 +76,8 @@ The target is given to the model as concrete geometry ("visual mass in the lower
 
 ### Design decisions
 
+- **The quality bar is today's decks.** The owner rated the three recordings of 2026-10-05 (`web/public/fixtures/pitch-tesla`, `launch-product`, `update-q3`) as absolutely great. Independence must never cost that: they are the **reference wall** every new deck is rated against — shown next to new decks, **never** put back into the prompt as examples (that is the anchoring this phase removes). What made them work is kept: the token system, the measured type scale and leading, one strong hero per slide, generous empty space, rationed texture, real data as the visual.
+
 - **Uniqueness comes from generation plus memory, never from shuffling stored parts.** A shuffle of finite parts is a template system with a delay.
 - **Within a deck, slides share one generated identity; between any two slides anywhere, compositions are never shared.** A deck whose slides share nothing reads as a collage, not a deck. Identity is per deck and generated; composition is per slide and novel.
 - **Quality first, then novelty.** A slide must pass QA before novelty is even measured; the novelty gate never accepts a broken slide to be different.
@@ -105,7 +107,7 @@ The target is given to the model as concrete geometry ("visual mass in the lower
 
 - [ ] Repeat rate ≤ 1% at 300 slides, and not rising with the archive's size
 - [ ] Archive coverage still rising at 300 slides
-- [ ] Owner's blind wall: zero same-design pairs; quality not lower than the phase-25 wall
+- [ ] Owner's blind wall: zero same-design pairs, **and every new deck rated at least as good as the 2026-10-05 reference decks** (Tesla, Tessel, Harbor)
 - [ ] Median deck cost rises by at most 30%; novelty retries on at most 20% of slides
 - [ ] No stored layout, archetype list or exemplar is reachable from the compose path
 

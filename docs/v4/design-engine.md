@@ -51,6 +51,8 @@ The model is the one generative identities follow (MIT Media Lab's 2011 identity
 
 `sample()` still returns three far-apart looks, for the internal tile wall only.
 
+**Next: [plan/36-independent-design.md](plan/36-independent-design.md)** removes the remaining finite parts — the exemplars in the prompt, the archetype names, the palette strategies and motif kinds — in favour of per-slide composition targets, a novelty archive and variable fonts.
+
 **Measured adjustments (2026-10-01).** Running every exemplar under 50 sampled themes broke 55 times before these rules; each fixes a cause, not a threshold:
 
 - **Display steps are scaled down by the face's measured width** (`meta.json`; reference 0.5 em, factor 0.6–1.0, h1/h2 never below 56px), so a headline holds about as many characters per line in Syne as in Archivo. Never up: a narrow face's figures are not narrow.
