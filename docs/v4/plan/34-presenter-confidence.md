@@ -42,3 +42,7 @@
 
 - [ ] At least 2 of 3 users report feeling more ready after rehearsing
 - [ ] Zero stage defects in the human run
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+The player's presenter view (notes, timer, next slide) is built (phase 26). **Rehearse mode, the summary and the ready check move after submission.** Trigger: the first user who presents a generated deck.

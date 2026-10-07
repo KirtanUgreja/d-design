@@ -46,3 +46,7 @@
 - [ ] 5 of 5 users can say where a chosen number came from
 - [ ] 5 of 5 recover from a bad AI edit in one action
 - [ ] Undo-after-accept below 25% on live instructions (an accept that is immediately undone is a wrong proposal)
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+Done: provenance chips with source popovers and flags; the number gate (Approve disabled while a number is unsourced); labelled undo and redo; resume after interruption (the worker). **Build day:** proposals before/after and the designed refusal arrive with 28's AI edits (B11). **After submission:** the 5-user session and the undo-after-accept measure.

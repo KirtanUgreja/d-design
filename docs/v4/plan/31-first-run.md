@@ -47,3 +47,7 @@
 - [ ] Median time from approval to the cover ≤ 60 s
 - [ ] At least 4 of 5 first-time users reach the watch without help
 - [ ] Beats phase 30's baseline on time-to-first-look and on the 5-second test
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+Partly in place from phase 30: the composer as the first screen, real example briefs, recorded replays that cost nothing, the step bar. **The rest needs accounts (29) and real users, so it moves after submission.** On build day the composer only gains the per-deck logo control (38, B10).

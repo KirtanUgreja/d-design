@@ -47,3 +47,9 @@
 - [ ] No participant reports the watch as "stuck" or "fake"
 - [ ] At least 3 of 5 want to show the deck to someone (asked, not prompted)
 - [ ] Beats phase 30's baseline on the post-session rating
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+Done: the cover composed first and shown first (2026-10-07); ghost slots from the outline; arrival motion; abort and continue keeping finished slides; the reveal with Present / Download / PDF.
+
+**Build day (B13, P1):** real states per slot from the event log (*composing*, *checking*, *done*, *needs attention*) and flagged slides named before any download. **After submission:** the 5-user session.

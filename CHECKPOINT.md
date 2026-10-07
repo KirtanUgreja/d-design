@@ -1,3 +1,14 @@
+# Checkpoint — 2026-10-08 (end of day): the plan for the sprint
+
+**Resume here: [docs/v4/plan/master-plan.md](docs/v4/plan/master-plan.md).** Tomorrow (2026-10-09) is the build day — start at B1 (visual languages), then B2 (references; ask the owner first whether to run parallel build agents for it), B3, B4, B7, B5, B6, B8, B14, then P1. Test day 2026-10-10; submit by 2026-10-10. Credit left: about $1.80; ≤ $0.10 may be used tomorrow for two format checks.
+
+What happened on 2026-10-08:
+- The 36-deck gate run ($5.49): reliable (3 code-built slides of 327, 0 flagged, charts in 33 decks) but **one house style** on the owner's wall (Designed 3.5, Varied 3.1).
+- The art-direction experiment (5 decks, $1.39): decks differed, but the owner called it **"very bad, messy"**.
+- Four research passes ([docs/v4/research-2026-10.md](docs/v4/research-2026-10.md)): Gamma 5 (released 2026-10-06) attacks "AI smell" with a plan step, ~3,000 human-made templates and one image style per deck; the papers say adapt references, plan first, measure, and rank.
+- The owner accepted a curated reference library ("absolutely fine") → phase 39.
+- Found: `anthropic/claude-haiku-5.5` at $0.10/$0.50 per M tokens — a bake-off candidate for compose and the cheap model (Haiku 4.5 costs $1/$5).
+
 # Checkpoint — 2026-10-07 (end of day)
 
 **Resume here.** Branch `phase-30-ui-prototype`, clean, **nothing pushed**. OpenRouter credit left: **about $0.52**. 99 tests green.

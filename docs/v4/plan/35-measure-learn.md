@@ -43,3 +43,7 @@
 
 - [ ] The scorecard exists with one month of data
 - [ ] Zero ethics-checklist failures in the audit
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+**After submission.** It needs accounts (29) and weekly users. The no-content rule already holds in the engine's ledger.

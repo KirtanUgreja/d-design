@@ -71,3 +71,9 @@ From the dataviz guidance this project adopts (the bundled `dataviz` skill): **p
 - [ ] Charts on every bench deck that has a series in its facts
 - [ ] Zero dual axes, zero cycled colours, zero validator failures
 - [ ] The owner's data wall passes
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+The 36-deck run put charts in 33 of 36 decks, but most were **two values drawn as two bars**.
+
+**Build day (B7, P0):** a **"pair" form** — two values become two large figures in the display face with the change between them ("70% → 58%", "−12 pts"), the form chosen automatically for two points. **Test day:** the data wall is part of the main wall (T5).

@@ -1,5 +1,7 @@
 # d-design
 
+> **Sprint to submission: `docs/v4/plan/master-plan.md`** — build day 2026-10-09 (no model credit), test day 2026-10-10, submit by 2026-10-10. Read it first.
+>
 > **The plan is `docs/v4/`, decided 2026-09-26.** Status is in `docs/v4/plan/README.md`. The v3 code is gone (tag `v3-final`); `api/` holds the v4 engine skeleton and `web/` returns in phase 27.
 
 ## What the product is

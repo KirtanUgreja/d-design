@@ -50,3 +50,7 @@
 - [ ] Hostile corpus 100% handled
 - [ ] Logo legible on 100% of the slides it is placed on
 - [ ] The owner's logo wall passes
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+**Build day (B10, P1), without accounts:** a per-deck logo — the composer or outline gate uploads it as JSON (base64, ≤ 2 MB, one parse at entry); the API stores it in a quarantine path; **the worker ingests it** (the API never decodes it) and either places it or posts the refusal in words. The brand-colour proposal shows as "Use this colour?". **After submission:** the saved kit (needs 29's accounts) and the logo wall.

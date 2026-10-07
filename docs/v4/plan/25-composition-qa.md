@@ -55,3 +55,10 @@
 - [ ] Median ≤ $2; p90 ≤ 5 minutes
 - [ ] Median export ≤ 6 MB
 - [ ] No two consecutive slides share a fingerprint in any deck
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+- **Images moved to [39-design-reset.md](39-design-reset.md)** (B5): built on 2026-10-09 with fake transports; the image-model bake-off runs on 2026-10-10.
+- **Exemplar-fill is replaced by reference-fill** (39, B3): curated references in 8 visual languages, each passing QA under 30 looks.
+- **Gate 2 is the test-day wall** (2026-10-10, T5): the 12 outlines of 2026-10-08, blind against the one-shot baselines. The exit lines above stand, except "≤10% exemplar-filled", which now reads "≤10% built by code (reference-fill or the code layout)".
+- The 12 × 2 end-to-end run is reduced to 12 × 1 plus the bake-offs, within the test-day budget.

@@ -82,6 +82,8 @@ A single generic "swap theme" would overflow slides composed for different font 
 
 ## Compositions
 
+> **Changing in phase 39 (2026-10-09):** each slide is adapted from a **reference** of the deck's **visual language**, retrieved by the slide's shape; the composition target below stays only as the code layout's input and the sameness bench's data. See [plan/39-design-reset.md](plan/39-design-reset.md) and "References" below.
+
 `compose/planner.py` checks each slide's **intent** (what the slide does) against its data and rations its ornament. **How a slide is built is not chosen from a list** (phase 36): `compose/targets.py` draws a **composition target** — a point in a continuous space of measured descriptors (`qa/descriptors.py`: where the visual mass sits, how much is empty and where, the scale relation, blocks, edge use, colour-field share) — from the region the archive (`compose/archive.py`) has used least, fitted to the intent and away from the previous slide. The model is given the target as plain geometry.
 
 | | Values |
@@ -99,9 +101,15 @@ A single generic "swap theme" would overflow slides composed for different font 
 
 ---
 
-## Exemplars
+## References (phase 39) — replaces "Exemplars" from 2026-10-09
 
-`api/library/exemplars/<id>.{html,json}` is **the product's taste asset.** Changes to it are reviewed like code.
+**The product's taste asset**, reviewed like code and gated by the owner: `api/library/references/<language>/<shape>-<n>.{html,css,json}` — 8 visual languages × 8 content shapes, each passing QA filled long and short under 30 looks of its language. Per slide, code retrieves one (and an alternate) by the deck's language and the slide's shape, never twice in a deck and least-used across decks; the model **adapts** it to the deck's words, tokens and imagery; filled as-is it is the no-model fallback. Languages live in `api/library/languages/<id>.json`, authored by hand. Why: the 2026-10-08 walls and the research ([research-2026-10.md](research-2026-10.md)).
+
+The section below records the exemplar library as it was through phase 38; its 12 files remain QA fixtures.
+
+## Exemplars (through phase 38)
+
+`api/library/exemplars/<id>.{html,json}` was **the product's taste asset.** Changes to it are reviewed like code.
 
 | | |
 |---|---|

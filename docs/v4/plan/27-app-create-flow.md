@@ -57,3 +57,10 @@
 - [ ] First slide within 60 seconds (median) of approval
 - [ ] No raw exception text anywhere in the UI
 - [ ] The gate, now with the web rows, is green
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+- Built offline: the backend and the live web flow (see the plan README).
+- **On 2026-10-10 (T7):** the owner builds 3 decks live in the app; this closes the human line above.
+- **After submission:** E2E on a replayed event log in CI (before the first deploy).
+- The outline step gains the style card and **Another style** from [39-design-reset.md](39-design-reset.md) (B6).

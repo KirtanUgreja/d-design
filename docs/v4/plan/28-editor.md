@@ -47,3 +47,14 @@
 
 - [ ] Every friction from the human check is fixed or recorded as Skipped with a trigger
 - [ ] Undo restores any of the last 20 operations exactly
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+Built 2026-10-07: text edits, reorder, delete, recolour, Fit to slide, labelled undo/redo (20 steps), the live editor screen.
+
+**Build day (2026-10-09, B11, P1):**
+- **AI edit by instruction:** the instruction goes to a revise job; the candidate is rendered and shown **beside** the current slide; accept makes it a labelled version, discard drops it. Instructions about colour or type get the designed refusal (no model call) and point to *Another style* or *New colours*.
+- **Notes editing** (an edit operation, no QA needed) and **duplicate slide**.
+- "Add slide" stays after submission (it needs a compose call and a content step).
+
+**Test day:** 5 live instructions on one deck (about $0.10); the owner's friction check moves after submission.

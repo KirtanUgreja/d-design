@@ -120,3 +120,12 @@ The target is given to the model as concrete geometry ("visual mass in the lower
 - Layout similarity measures (LTSim, DocSim): https://arxiv.org/html/2407.12356v1
 - Variable fonts with parametric axes (Roboto Flex): https://github.com/dberlow/roboto-flex
 - Generative identities — rules, not menus: https://cdv.dei.uc.pt/2018/dynamic-identities
+
+## Verdict and what stays (2026-10-08) → [39-design-reset.md](39-design-reset.md)
+
+The owner's wall of 2026-10-08 (36 decks) rated the result **one house style** (Designed 3.5, Varied 3.1). The geometric metric said 3.1% repeats; it measured placement, not design ([../../findings.md](../../findings.md)). The research ([../research-2026-10.md](../research-2026-10.md)) names the cause: **removing every reference** left the model designing from nothing.
+
+- **Reversed:** "no exemplars in the compose path". Curated references return in phase 39, **adapted, not filled**, with the owner gating the library.
+- **Kept:** the archive and descriptors (as a measured guard and the sameness bench), the within-deck novelty gate, continuous palettes, variable fonts, generated textures, the code layout (now the rung after reference-fill).
+- **Dropped from the prompt:** the geometric composition target and the ideas block.
+- **Exit:** judged by phase 39's test-day wall, not by the geometric repeat rate.

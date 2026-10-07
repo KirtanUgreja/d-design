@@ -52,3 +52,10 @@
 
 - [ ] All checks green on the deployed instance
 - [ ] Cost per deck and per user visible from the ledger
+
+## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
+
+**Re-scoped for the submission to "release", single tenant:**
+- **Build day (B12, P1):** Dockerfiles for the API and worker (with Chromium) and the web; `docker-compose.yml`; `.env.example`; an **access-token gate** — when `ACCESS_TOKEN` is set, every API route requires it and fails closed; the web keeps it in an httpOnly cookie after a one-field unlock page. A hosted instance only if the owner names a host.
+- **Build day (B14, P0):** the submission README — what it is, how to run it in three commands, the architecture in one page, the evidence (walls, findings), the showcase decks.
+- **After submission (unchanged scope above):** managed auth, Postgres, metering, signed links, the privacy policy, the saved brand kit. Trigger: the first outside user.
