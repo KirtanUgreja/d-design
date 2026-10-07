@@ -93,6 +93,21 @@ One deck (`update-q3`, Harbor), `deepseek-v4.1-flash`, against the 2026-10-05 re
 - **The model's sameness is still unmeasured.** The exit gate's 30 real decks (~$4) is the run that answers it.
 - `distance` takes the closer of the descriptor and occupancy measures, so one coarse agreement counts as a repeat. Whether that is too strict is for the owner's blind wall to say.
 
+## Measured 2026-10-08 — the phase 36/37 gate run
+
+12 outlines from the content engine (`storyline.v4`, `research.v2`; $1.10, inverse spec 0.77, 0 banned words) built 3 times each with generated looks (`build --repeat 3 --outlines 2026-10-08-content`): **36 decks, 327 slides, $5.49** (median $0.14 a deck, 152 s).
+
+| | |
+|---|---|
+| Slides built by code (fallback) | 3 of 327 |
+| Flagged | 0 |
+| Novelty retries / near-repeats (W8) | 24 / 13 |
+| Decks with a drawn chart | **33 of 36** (51 charts; none before phase 37) |
+| Sameness at 100 / 200 / 327 slides | repeats 0.0% / 1.5% / **3.1%**; coverage 6.4% / 9.3% / 10.6% |
+
+- **Phase 36's exit line fails as measured:** repeats 3.1% at 300+ slides and rising, against ≤1% and flat. Coverage is still rising (that line passes). Whether the "repeats" look alike is the owner's blind wall to say: ε (0.08) is unvalidated, and the same outline was built three times on purpose.
+- **Most charts are two values** (a before and an after, or two items). The data wall decides whether those beat two figures side by side.
+
 ## Research used by v4
 
 Read September 2026.

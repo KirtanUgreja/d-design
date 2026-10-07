@@ -13,7 +13,11 @@
 | 28 editor (free half) | **Built.** Text edits, reorder, delete, recolour, Fit to slide, undo/redo (20 steps), the live editor screen. AI edits by instruction still to build (needs credit to validate) |
 | 27 app: create flow | **Built, offline.** `api/store/files.py`, `api/worker.py`, `api/app.py`; the web's live route `/d/[id]` (questions → outline gate → live watch → exports). Proven end to end in a browser with a fake-model worker. Run: `cd api && uv run uvicorn app:app --port 8000` + `uv run python worker.py`, and `cd web && pnpm build && pnpm start` |
 
-## Tomorrow, with credit (top up $10; $15 with phase 25's images)
+## Run 2026-10-08 (owner topped up ~$10; ~$6.60 spent)
+
+36 decks: `bench/runs/2026-10-08-gate/wall.html` — **owner: rate it blind, and note any two slides that look like the same design.** Results in `docs/findings.md` → "Measured 2026-10-08". Sameness 3.1% at 327 slides (exit line ≤1%: fails as measured, pending the wall). Charts in 33 of 36 decks.
+
+## Tomorrow, with credit (as planned on 2026-10-07) (top up $10; $15 with phase 25's images)
 
 ```
 cd api
