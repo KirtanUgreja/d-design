@@ -109,6 +109,14 @@ One deck (`update-q3`, Harbor), `deepseek-v4.1-flash`, against the 2026-10-05 re
 - **The owner's wall (2026-10-08): not unique.** Designed 3.5, Says 3.8, Varied 3.1, Usable 3.3 of 5; "every 10 are 95% similar — unique only in font, colour palette and their combination". One house style everywhere: kicker and accent rule, headline top-left, hairline-separated points, a dot texture in a corner, an accent number, one colour block, and the title emblem (3 grammars) on every cover and ask. **The geometry descriptors cannot see a visual language** — the 3.1% figure measured placement, not design. Causes are ours: the compose prompt's design rules impose one editorial idiom, the element vocabulary is tiny, every slide has the same field skeleton. First fix: the emblem is gone.
 - **Most charts are two values** (a before and an after, or two items). The data wall decides whether those beat two figures side by side.
 
+## Measured 2026-10-08 — per-deck art direction (compose.v10), first look
+
+Same 12 outlines; stopped after 5 decks to keep credit (`bench/runs/2026-10-08-direction/wall.html`). $1.39 for 5 decks — **$0.12–0.51 a deck**, up from $0.14: 6 of 45 slides fell back to code, most on contrast (E5) where a shape ran under text.
+
+- **Decks now differ in graphic language**, not only font and palette: "Bleeding Edge" (orange triangles off the edges), "Lattice & Thrust" (slanted teal slivers), "Neighborhood Assembly" (tilted stickers and blobs), "Data as Form", "Grid Lattice".
+- **But not cleanly better:** shapes sometimes sit like confetti or run over a chart; the small label + short accent line habit is still on most slides; charts all look alike.
+- Next, if the owner's wall says the direction is right: shapes never under text or charts (a QA check), fewer shapes per slide, and a compose-model bake-off (the owner, 2026-10-08: try cheaper, more creative models).
+
 ## Research used by v4
 
 Read September 2026.
