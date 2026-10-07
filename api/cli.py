@@ -11,6 +11,8 @@ uv run python -m cli fonts                      measure the vendored faces into 
 uv run python -m cli tiles --run NAME           3 sampled looks per brief, as style tiles
 uv run python -m cli export --run NAME [--pdf]  re-assemble built decks with the current player
 uv run python -m cli record --brief ID          a real run as a fixture bundle for web/ (phase 30)
+uv run python -m cli sameness [--simulate N]    coverage and repeat rate: the archive, or N
+                                                code-built decks (no model call)
 """
 
 from __future__ import annotations
@@ -27,7 +29,7 @@ from pathlib import Path
 from pydantic import BaseModel
 
 import settings
-from benchtools import baseline, content, files, fonts, outline, record, shots, wall
+from benchtools import baseline, content, files, fonts, outline, record, sameness, shots, wall
 from engine import Brief, Seam, Slide, pipeline
 from engine.compose.document import Frame
 from engine.design import tiles
@@ -422,6 +424,22 @@ async def _injection(cfg: settings.Settings, run: str) -> int:
     return 1 if leaked else 0
 
 
+def _sameness(simulate: int) -> int:
+    """Phase 36's bench. The archive as it stands, or a free simulation."""
+    if not simulate:
+        entries = files.load_archive().entries
+        if not entries:
+            print("the archive is empty: build or record a deck first")
+            return 1
+        print(sameness.report(entries).line())
+        return 0
+    work = files.BENCH / "runs" / "sameness"
+    work.mkdir(parents=True, exist_ok=True)
+    for n, r in enumerate(sameness.run(simulate, work), start=1):
+        print(f"deck {n:>3}: {r.line()}")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="cli")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -459,6 +477,8 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--label", default="engine")
     cmd.add_argument("--set", choices=("one", "smoke", "all"), default="all")
     cmd.add_argument("--pdf", action="store_true")
+    cmd = sub.add_parser("sameness")
+    cmd.add_argument("--simulate", type=int, default=0, help="N code-built decks, no model")
     cmd = sub.add_parser("wall")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--seed", type=int, default=0)
@@ -486,6 +506,8 @@ def main(argv: list[str]) -> int:
         return asyncio.run(_export(args.run, args.label, args.set, args.pdf))
     if args.command == "tiles":
         return asyncio.run(_tiles(args.run, args.set))
+    if args.command == "sameness":
+        return _sameness(args.simulate)
     if args.command == "fonts":
         measured = asyncio.run(fonts.measure())
         for family, meta in measured.items():

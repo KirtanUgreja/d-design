@@ -79,6 +79,20 @@ One deck (`update-q3`, Harbor), `deepseek-v4.1-flash`, against the 2026-10-05 re
 - **Exact colour pairs in the rules and in E5 repairs fixed contrast** (v8: every slide the model finished passed).
 - **Code-built fallbacks in a row look alike** (three accent panels in a row in the last run): the fallback is a method, and repeated it reads as a template.
 
+### The sameness bench, first run (2026-10-07, no model)
+
+`cli sameness --simulate 30`: 30 code-built decks over the bench outlines, each with its own generated look and targets drawn from a growing archive.
+
+| After | Coverage (625 cells) | Repeats (ε 0.08) | Nearest, median |
+|---|---|---|---|
+| 3 decks, 23 slides | 2.4% | 13.6% | 0.134 |
+| 12 decks, 109 slides | 6.2% | 42.6% | 0.091 |
+| 30 decks, 275 slides | **8.0%, flattening** | **65.0%** | 0.059 |
+
+- **The code-built layout is one method, and the bench sees it.** It places one text block (sometimes on a bleeding field) where the target says; it lands within 0.2 on 62% of target descriptors and almost never reaches the canvas edge (median miss 0.34). Fine as a rare last rung; never a source of variety.
+- **The model's sameness is still unmeasured.** The exit gate's 30 real decks (~$4) is the run that answers it.
+- `distance` takes the closer of the descriptor and occupancy measures, so one coarse agreement counts as a repeat. Whether that is too strict is for the owner's blind wall to say.
+
 ## Research used by v4
 
 Read September 2026.
