@@ -94,7 +94,7 @@ async def _no_sleep(_: float) -> None:
     return None
 
 
-def test_two_rounds_then_the_code_built_layout(tmp_path: Path) -> None:
+def test_repairs_a_fresh_attempt_then_the_code_built_layout(tmp_path: Path) -> None:
     outline = files.load("pitch-devtools").outline
     assert outline is not None
     story = outline.model_copy(update={"slides": outline.slides[:4]})
@@ -112,13 +112,13 @@ def test_two_rounds_then_the_code_built_layout(tmp_path: Path) -> None:
             budget_usd=1.0,
         )
     )
-    assert transport.calls.count("compose") == 4
-    assert transport.calls.count("repair") == 4 * pipeline.REPAIR_ROUNDS
+    assert transport.calls.count("compose") == 4 * 2  # the first, then one fresh attempt
+    assert transport.calls.count("repair") == 4 * (pipeline.REPAIR_ROUNDS + 1)
     assert {s.origin for s in built.slides} == {"fallback"}
     assert all(s.qa.status == "passed" for s in built.slides), [
         (s.id, s.origin, [d.code for d in s.qa.errors]) for s in built.slides
     ]
-    assert all(s.attempts == 1 + pipeline.REPAIR_ROUNDS for s in built.slides)
+    assert all(s.attempts == 1 + pipeline.REPAIR_ROUNDS + 2 for s in built.slides)
 
 
 def test_the_budget_stops_the_ladder_before_any_repair(tmp_path: Path) -> None:

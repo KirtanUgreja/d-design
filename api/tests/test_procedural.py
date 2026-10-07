@@ -45,3 +45,11 @@ def test_procedural_slides_pass_qa(tmp_path: Path) -> None:
     assert broken == []
     # Chart slides still share one code layout (phase 37 makes them target-driven).
     assert len(layouts) >= 0.75 * LOOKS * len(plans)
+
+
+def test_neighbouring_fallbacks_never_share_a_method() -> None:
+    rng = random.Random(5)
+    for _ in range(200):
+        t = targets.draw(rng, Archive(), "statement", 2)
+        avoid = {procedural.method(t)}
+        assert procedural.method(procedural.vary(t, avoid)) not in avoid

@@ -19,12 +19,20 @@ from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "compose.v7"
-# The design model reasons before it writes; at 12k a third of compose.v7
-# calls were cut off mid-thought (2026-10-07), and a cut-off call is paid anyway.
-COMPOSE_MAX_TOKENS = 20000
+PROMPT_VERSION = "compose.v9"
+PAIRS = (
+    "  on --c-ground or --c-surface: --c-ink, or --c-ink-2 for quiet text\n"
+    "  on --c-accent: --c-on-accent only, at every size\n"
+    "  on --c-ink: --c-ground only"
+)
+# Without example slides the design model reasons 2-4x longer, and hidden
+# reasoning is billed out of max_tokens: at 12k and 20k a third of calls were
+# cut off (2026-10-07). "minimal" is ignored by this model and returned empty
+# answers. 32k keeps a deck inside the slide budget (bench.md -> Budgets).
+# ponytail: unvalidated; the next paid deck checks it.
+COMPOSE_MAX_TOKENS = 32000
 
-RULES = """You are a senior editorial designer. You design ONE presentation slide as HTML and CSS.
+RULES = f"""You are a senior editorial designer. You design ONE presentation slide as HTML and CSS.
 The slide is projected at exactly 1920x1080px. It must look designed by a person with a point of
 view: confident scale contrast, a clear grid, deliberate empty space. It must not look like an
 AI-made or template slide.
@@ -78,8 +86,12 @@ DESIGN RULES
   labels, kickers and sources at least 22px (--t-label).
 - Text must never overlap other text and never run outside its box. Long headlines need a smaller
   --t- step or a wider box: at most 4 lines, never one word per line.
-- Contrast: --c-ink or --c-ink-2 on --c-ground/--c-surface; --c-on-accent on --c-accent;
-  --c-ground on --c-ink. Use --c-accent as a TEXT colour only at 64px or larger.
+- Contrast — text colour is decided by the ground it sits on, never by taste:
+{PAIRS}
+  Use --c-accent as a TEXT colour only at 64px or larger, and only on --c-ground. Every text
+  inside an accent field — kicker, labels and sources included — must end up --c-on-accent:
+  set color on the field, and never override it with --c-ink-2 inside.
+  Never put text on a dd-texture pattern.
 - Make one thing on the slide much bigger than everything else. Align to a grid. Use rules
   (border with var(--rule)) instead of boxes.
 - A field of flat colour must carry something: the headline, the number, the list. An empty
@@ -195,7 +207,14 @@ async def repair(
     user = (
         "This slide was rendered at 1920x1080 and measured. Fix ONLY these defects with the "
         "smallest change, keep the composition, and return the full html and css again.\n\n"
-        f"Defects:\n{listed}\n\nFields (text must stay unchanged):\n{_fields(plan)}\n\n"
+        f"Defects:\n{listed}\n"
+        + (
+            "E5 is contrast: give each listed field the text colour paired with the ground "
+            f"actually behind it:\n{PAIRS}\n"
+            if any(d.code == "E5" for d in defects)
+            else ""
+        )
+        + f"\nFields (text must stay unchanged):\n{_fields(plan)}\n\n"
         f"```html\n{current.html}\n```\n```css\n{current.css}\n```"
     )
     return await seam.complete_text(

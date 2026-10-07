@@ -69,6 +69,30 @@ def _hero_step(theme: Theme, target: Target, text: str, width: float, max_lines:
     return fits[-1] if fits else "h2"
 
 
+def method(target: Target) -> str:
+    """The code-built layout's method, coarse: a field or the ground, its side
+    and its height. Two neighbours sharing one read as a template."""
+    p = target.point
+    kind = "field" if p["field"] > 0.25 else "ground"
+    side = "left" if p["mass_x"] < 0.5 else "right"
+    return f"{kind}-{side}-{min(2, int(p['mass_y'] * 3))}"
+
+
+def vary(target: Target, avoid: set[str]) -> Target:
+    """The target moved until its method differs from its neighbours': a
+    field gives way to the ground, the ground mirrors and moves down a third."""
+    p = dict(target.point)
+    for _ in range(6):
+        if method(Target(p)) not in avoid:
+            break
+        if p["field"] > 0.25:
+            p["field"] = 0.1
+        else:
+            p["mass_x"] = round(1 - p["mass_x"], 3)
+            p["mass_y"] = round((p["mass_y"] + 1 / 3) % 1, 3)
+    return Target(p)
+
+
 def build(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
     if plan.chart is not None:
         return author.fallback(plan)  # ponytail: the chart layout is not target-driven yet

@@ -68,9 +68,13 @@ One deck (`update-q3`, Harbor), `deepseek-v4.1-flash`, against the 2026-10-05 re
 | compose.v6 (exact geometric target, no exemplars) | 12,000 | 7 / 8 | 7 / 8 | 0.12 |
 | compose.v7 (loose target, 12k cap) | ~8,800 | 3 / 8 | 4 / 8 | 0.11 |
 | compose.v7 (20k cap) | ~12,400 | 0 / 8 | **3 / 8** (contrast E5 not fixed by 2 repairs) | 0.18 |
+| compose.v8 (exact colour pairs, a fresh attempt before the fallback, 20k cap) | ~15,000 | 3 / 8 | 3 / 8 — **every finished slide passed contrast** | 0.16 |
+| compose.v9 (`reasoning: minimal`, 12k cap) | still ~12,000 — **ignored** | 5 / 8, 3 empty answers | 5 / 8 | 0.17 |
 
 - **An exact numeric target makes the model reason until it runs out.** Stated as a direction, it reasons about 2.5× longer than v5, not without end.
 - **Without exemplars, the slides the model finishes hold the reference quality; it finishes fewer.** The new failures are contrast on colour fields that repair does not fix.
+- **The cause is the missing examples, not the new steps.** A one-slide A/B (2 slides each): without the three-ideas step, reasoning did not drop (12,000 / 10,200); without the target, it dropped some (9,300 / 4,400) but stayed above v5's 3,400.
+- **Exact colour pairs in the rules and in E5 repairs fixed contrast** (v8: every slide the model finished passed).
 - **Code-built fallbacks in a row look alike** (three accent panels in a row in the last run): the fallback is a method, and repeated it reads as a template.
 
 ## Research used by v4

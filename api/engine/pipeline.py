@@ -76,7 +76,8 @@ async def build(
     on_event: OnEvent | None = None,
 ) -> Built:
     """Every slide climbs its own ladder, concurrently: compose, measure, up to
-    REPAIR_ROUNDS repairs, exemplar-fill, the code layout, then the flag. A
+    REPAIR_ROUNDS repairs, one fresh composition toward another target (with
+    one repair), the code-built layout, then the flag. A
     slide is announced the moment it is final, so a watch fills slot by slot
     with what really happened (docs/v4/engine.md -> "Generation jobs and events")."""
     started = time.monotonic()
@@ -128,8 +129,14 @@ async def build(
     def broken(m: browser.Measured) -> bool:
         return bool(m.errors) or not m.measured
 
+    methods: dict[int, str] = {}  # deck position -> the code-built method used there
+
     def code_built(plan: SlidePlan) -> Composed:
-        return procedural.build(plan, aims[plan.id], theme)
+        index = next(i for i, p in enumerate(plans) if p.id == plan.id)
+        avoid = {m for i, m in methods.items() if abs(i - index) == 1}
+        aim = procedural.vary(aims[plan.id], avoid)
+        methods[index] = procedural.method(aim)
+        return procedural.build(plan, aim, theme)
 
     def nearest(d: Descriptors, slide_id: str) -> float:
         deck = [distance(d, e) for k, e in accepted.items() if k != slide_id]
@@ -221,7 +228,41 @@ async def build(
             composed[plan.id], origin[plan.id] = fixed.value, "repaired"
             m = await measure(plan)
 
-        # Rung 2: the code-built layout, from the same target. No stored layout.
+        # Rung 2: one fresh composition toward a different target, and one repair.
+        # A code-built slide is the last resort, so a failed first answer gets this too.
+        if (broken(m) or origin[plan.id] == "fallback") and result is not None and affordable():
+            aims[plan.id] = targets.draw(rng, archive, plan.intent, len(plan.fields), aims[plan.id])
+            async with gate:
+                fresh = await author.compose(
+                    seam,
+                    theme,
+                    plan,
+                    model=model,
+                    position=index + 1,
+                    total=len(plans),
+                    thought=storyline.governing_thought,
+                    target=aims[plan.id],
+                )
+            attempts[plan.id] += 1
+            if not isinstance(fresh, Err):
+                kept, composed[plan.id] = composed[plan.id], fresh.value
+                again = await measure(plan)
+                if broken(again) and affordable():
+                    async with gate:
+                        fixed = await author.repair(
+                            seam, theme, plan, composed[plan.id], again.defects(), model=model
+                        )
+                    attempts[plan.id] += 1
+                    if not isinstance(fixed, Err):
+                        composed[plan.id] = fixed.value
+                        again = await measure(plan)
+                if broken(again):
+                    composed[plan.id] = kept
+                    m = await measure(plan)  # the kept slide's screenshot back on disk
+                else:
+                    m, origin[plan.id] = again, "authored"
+
+        # Rung 3: the code-built layout, from the slide's target. No stored layout.
         if broken(m):
             refusals[plan.id] = (
                 f"still defective after repair: {sorted({d.code for d in m.defects()})}"
@@ -234,7 +275,7 @@ async def build(
         if not broken(m):
             m = await novelty(index, plan, m)
 
-        # Rung 3, the flag: whatever is still broken is shown, never hidden.
+        # Rung 4, the flag: whatever is still broken is shown, never hidden.
         measured[plan.id] = m
         status = "unmeasured" if not m.measured else "flagged" if m.errors else "passed"
         emit(
