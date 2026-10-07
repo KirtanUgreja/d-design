@@ -7,11 +7,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { LiveEditor } from "@/components/live-editor";
 import { OutlineGate, type Decisions } from "@/components/outline-gate";
 import { SlideThumb } from "@/components/slide-thumb";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { api, parseEvent, type LiveDeck as Deck, type LiveEvent } from "@/lib/api/client";
+import { api, parseEvent, type LiveDeck as Deck, type LiveEvent, type Notice } from "@/lib/api/client";
 
 const WAITING: Partial<Record<Deck["status"], string>> = {
   brief: "Reading your brief and writing a few questions…",
@@ -44,6 +45,7 @@ export function LiveDeck({ id }: { id: string }) {
   const [deck, setDeck] = useState<Deck | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [ready, setReady] = useState<Record<string, string>>({}); // slide id -> status
+  const [notice, setNotice] = useState<Notice | null>(null); // the editor's last outcome
   const seen = useRef(0);
 
   const refresh = useCallback(async () => {
@@ -68,7 +70,13 @@ export function LiveDeck({ id }: { id: string }) {
                 const sid = e.slideId;
                 setReady((m) => ({ ...m, [sid]: e.status ?? "passed" }));
               }
-              if (["questions_ready", "outline_ready", "done", "error", "stage"].includes(e.type)) void refresh();
+              if (e.type === "edit_done" || e.type === "edit_refused") {
+                const text = e.type === "edit_refused" ? (e.message ?? "That change was not made.") : "Saved and checked.";
+                setNotice({ text, seq: e.seq });
+              }
+              if (["questions_ready", "outline_ready", "done", "error", "stage", "edit_done", "edit_refused"].includes(e.type)) {
+                void refresh();
+              }
             },
             stop.signal,
           );
@@ -107,7 +115,7 @@ export function LiveDeck({ id }: { id: string }) {
       />
     );
   }
-  return <Building deck={deck} ready={ready} onChange={refresh} />;
+  return <Building deck={deck} ready={ready} notice={notice} onChange={refresh} />;
 }
 
 function Waiting({ text }: { text: string }) {
@@ -182,7 +190,18 @@ function Questions({ deck, onDone }: { deck: Deck; onDone: () => void }) {
   );
 }
 
-function Building({ deck, ready, onChange }: { deck: Deck; ready: Record<string, string>; onChange: () => void }) {
+function Building({
+  deck,
+  ready,
+  notice,
+  onChange,
+}: {
+  deck: Deck;
+  ready: Record<string, string>;
+  notice: Notice | null;
+  onChange: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
   // Finished slides come from the deck as well as the stream, so a reload or a
   // resumed build shows what is already done.
   const done = { ...Object.fromEntries(deck.slides.map((s) => [s.id, s.status])), ...ready };
@@ -208,6 +227,9 @@ function Building({ deck, ready, onChange }: { deck: Deck; ready: Record<string,
         <div className="flex items-center gap-3">
           {finished ? (
             <>
+              <Button variant={editing ? "default" : "outline"} size="lg" onClick={() => setEditing((v) => !v)}>
+                {editing ? "Done editing" : "Edit"}
+              </Button>
               <Button asChild size="lg">
                 <a href={api.exportUrl(deck.id, "present")} target="_blank" rel="noreferrer">
                   Present
@@ -235,6 +257,9 @@ function Building({ deck, ready, onChange }: { deck: Deck; ready: Record<string,
           )}
         </div>
       </div>
+      {editing && finished ? (
+        <LiveEditor deck={deck} notice={notice} onChange={onChange} />
+      ) : (
       <ol className="grid grid-cols-2 gap-5 md:grid-cols-4">
         {deck.outline.map((plan, i) => {
           const status = done[plan.id];
@@ -243,7 +268,7 @@ function Building({ deck, ready, onChange }: { deck: Deck; ready: Record<string,
             <li key={plan.id} className="grid gap-2">
               {status ? (
                 <div className="animate-[settle_420ms_ease-out]">
-                  <SlideThumb src={api.thumb(deck.id, plan.id)} alt={`Slide ${i + 1}: ${headline}`} />
+                  <SlideThumb src={api.thumb(deck.id, plan.id, deck.version)} alt={`Slide ${i + 1}: ${headline}`} />
                 </div>
               ) : (
                 <div className="grid aspect-video content-end border border-dashed border-rule bg-paper-2 p-3">
@@ -258,6 +283,7 @@ function Building({ deck, ready, onChange }: { deck: Deck; ready: Record<string,
           );
         })}
       </ol>
+      )}
     </main>
   );
 }

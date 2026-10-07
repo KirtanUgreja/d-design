@@ -10,6 +10,7 @@
 | 37 beautiful data | **Code built.** 9 chart forms chosen from the data, series colours validated by the ported dataviz checks, emphasis, computed callouts, data as text and in notes; `storyline.v4` / `research.v2` ask for charts and series (**unvalidated: needs a paid run**) |
 | 38 brand kit + logo | **Engine built.** Hostile-by-default ingest, code placement, legible variant, E12/W9. Upload UI and the saved kit wait for phase 29's accounts |
 | 32 (one fix) | The cover is composed first, alone: it arrives first in the watch and warms the cache |
+| 28 editor (free half) | **Built.** Text edits, reorder, delete, recolour, Fit to slide, undo/redo (20 steps), the live editor screen. AI edits by instruction still to build (needs credit to validate) |
 | 27 app: create flow | **Built, offline.** `api/store/files.py`, `api/worker.py`, `api/app.py`; the web's live route `/d/[id]` (questions → outline gate → live watch → exports). Proven end to end in a browser with a fake-model worker. Run: `cd api && uv run uvicorn app:app --port 8000` + `uv run python worker.py`, and `cd web && pnpm build && pnpm start` |
 
 ## Tomorrow, with credit (top up $10; $15 with phase 25's images)
@@ -35,7 +36,7 @@ Phase 36 exits on: repeat rate ≤ 1% at 300 slides and not rising, coverage sti
 6. Then 28 editor → 31–35 UI phases → 29 accounts + deploy (and 38's upload UI).
 7. Push the branches and let CI run.
 
-**Known:** the code-built fallback alone repeats 65% at 275 slides (fine while rare); the novelty ε (0.08) is a guess until the wall.
+**Known:** the code-built fallback alone repeats 65% at 275 slides (fine while rare); the novelty ε (0.08) is a guess until the wall. One api test failed once in four full runs and did not repeat (113 tests); not yet identified.
 
 # Checkpoint — 2026-10-05 (superseded above)
 

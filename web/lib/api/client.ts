@@ -106,6 +106,30 @@ async function call(path: string, init?: RequestInit): Promise<Result<LiveDeck>>
   return deck ? ok(deck) : err("The deck service sent something we couldn't read.");
 }
 
+// The outcome of the last edit, numbered by its event so a repeat still counts.
+export interface Notice {
+  text: string;
+  seq: number;
+}
+
+export interface History {
+  labels: string[];
+  at: number;
+}
+
+async function history(path: string, init?: RequestInit): Promise<Result<History>> {
+  let res: Response;
+  try {
+    res = await fetch(path, init);
+  } catch {
+    return err(UNREACHABLE);
+  }
+  const body: unknown = await res.json().catch(() => null);
+  if (!res.ok) return err(isObj(body) && typeof body.error === "string" ? body.error : UNREACHABLE);
+  if (!isObj(body) || typeof body.at !== "number") return err("The deck service sent something we couldn't read.");
+  return ok({ labels: list(body.labels).map(text), at: body.at });
+}
+
 export const api = {
   create: (prompt: string) => call("/api/decks", { method: "POST", body: JSON.stringify({ prompt }) }),
   read: (id: string) => call(`/api/decks/${id}`),
@@ -115,7 +139,17 @@ export const api = {
     call(`/api/decks/${id}/outline`, { method: "PATCH", body: JSON.stringify({ version, decisions, order }) }),
   build: (id: string) => call(`/api/decks/${id}/build`, { method: "POST" }),
   abort: (id: string) => call(`/api/decks/${id}/build/abort`, { method: "POST" }),
-  thumb: (id: string, slide: string) => `/api/decks/${id}/slides/${slide}/thumb.png`,
+  // The version busts the cache: an edit re-renders the screenshot in place.
+  thumb: (id: string, slide: string, version = 0) => `/api/decks/${id}/slides/${slide}/thumb.png?v=${version}`,
+  editText: (id: string, slide: string, field: string, text: string) =>
+    call(`/api/decks/${id}/slides/${slide}/fields`, { method: "PATCH", body: JSON.stringify({ field, text }) }),
+  reorder: (id: string, slides: string[]) => call(`/api/decks/${id}/reorder`, { method: "POST", body: JSON.stringify({ slides }) }),
+  remove: (id: string, slide: string) => call(`/api/decks/${id}/slides/${slide}`, { method: "DELETE" }),
+  recolour: (id: string) => call(`/api/decks/${id}/recolour`, { method: "POST" }),
+  fit: (id: string, slide: string) => call(`/api/decks/${id}/slides/${slide}/fit`, { method: "POST" }),
+  history: (id: string) => history(`/api/decks/${id}/history`),
+  undo: (id: string) => history(`/api/decks/${id}/undo`, { method: "POST" }),
+  redo: (id: string) => history(`/api/decks/${id}/redo`, { method: "POST" }),
   exportUrl: (id: string, kind: "present" | "send" | "pdf") =>
     kind === "pdf" ? `/api/decks/${id}/export.pdf` : `/api/decks/${id}/export.html?flavour=${kind}`,
 };

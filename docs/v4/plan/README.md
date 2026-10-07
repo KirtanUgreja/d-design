@@ -13,7 +13,7 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 | [25 — composition and QA](25-composition-qa.md) | L | in progress — the free half built 2026-10-05; images, the end-to-end run and gate 2 need a credit top-up |
 | [26 — player and export](26-player-export.md) | M | built 2026-10-05 — automated checks green on Chromium and WebKit; Firefox in CI. Open: the owner's stage test (external display + clicker) and the email-attachment test |
 | [27 — app: create flow](27-app-create-flow.md) | L | **backend built 2026-10-07**: `store/files.py` (atomic, versioned, per-deck lock, rename-claimed jobs), `worker.py` (heartbeat, resume without paying twice, abort), `app.py` (thin routes, SSE with `Last-Event-ID`); 7 offline tests. Web wired too: a typed brief goes questions → outline gate → live watch → exports, with OpenAPI types (the gate fails on drift); proven end to end with a fake-model worker. Left: E2E on a replayed log in CI, the owner's 3 live decks (needs credit) |
-| [28 — editor](28-editor.md) | L | not started |
+| [28 — editor](28-editor.md) | L | **free half built 2026-10-07**: text edits, reorder, delete, recolour (layouts kept), Fit to slide — each an edit job re-checked by QA and re-exported, each a labelled version; undo/redo restore exactly (20 steps); the live editor screen, proven in a browser. Left: AI edits by instruction (needs credit), notes editing, add/duplicate slide, the owner's 3×10-minute friction check |
 | [29 — accounts and deploy](29-accounts-deploy.md) | M/L | not started |
 | [30 — UI prototype](30-ui-prototype.md) | M | built 2026-10-05 — automated checks pass; open: the owner's 5 moderated sessions (`bench/ui/session-script.md`) |
 | [31 — first run](31-first-run.md) | M | not started |
