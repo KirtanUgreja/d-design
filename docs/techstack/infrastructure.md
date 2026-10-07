@@ -50,6 +50,12 @@ Workflow hygiene does not wait for a cloud: actions pinned to a commit SHA, `per
 
 ## What phase 29 decides
 
+> **Decided 2026-10-08 for the submission (the owner needs a live link):**
+> - **Railway** runs three services from this repo: `web` (public), `api` (private network only, no model key), `worker` (private, no inbound port, the OpenRouter key and Chromium).
+> - **Neon** holds two databases, `app` and `auth`, and the blobs, stored by content hash.
+> - **Secrets** are Railway's per-service variables; the model key is set on the worker alone.
+> - The answers below were the open questions; the property under the table still decides every one.
+
 Deliberately open until then, each with its constraint:
 
 | Question | Constraint |

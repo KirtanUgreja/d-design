@@ -58,17 +58,24 @@
 **In the submission, decided by the owner on 2026-10-08:** accounts, user management and the database are built on 2026-10-09.
 
 - **Auth: Better Auth** (owner's choice), self-hosted in the web app, **email and password only**, so there are no OAuth keys to set up.
-  - Its tables live in the **`auth` schema**, managed by its CLI. Python never reads them.
+  - Its tables live in the **`auth` database** (Neon), managed by its CLI. Python never reads them.
   - Its **JWT plugin** issues the token FastAPI verifies with `PyJWKClient` against its JWKS: signature, issuer, audience, expiry and an algorithm allowlist. **Any failure, including an unreachable JWKS, is a 401.**
   - The decision is recorded in [../../security/tenancy-and-data.md](../../security/tenancy-and-data.md) and [../../techstack/decisions.md](../../techstack/decisions.md).
-- **Data: free hosted Postgres** (Neon or Supabase). The owner gives the connection string.
-  - SQLAlchemy and Alembic manage the **`app` schema**: users keyed by the token's `sub`, decks as JSONB, events, jobs claimed with `SKIP LOCKED`, the ledger, versions, finished slides, questions.
+- **Data: Neon** (free tier; the owner confirmed Neon, not Supabase). One project, **two databases**: `app` for Python and `auth` for Better Auth. Pooled connections serve the running app; direct ones run migrations.
+  - SQLAlchemy and Alembic manage the **`app` database** (Neon): users keyed by the token's `sub`, decks as JSONB, events, jobs claimed with `SKIP LOCKED`, the ledger, versions, finished slides, questions.
   - This is the *same* Store interface as `store/files.py`, now behind **the one tenant wrapper**. Another user's deck is a 404.
-  - Blobs (screenshots, exports, uploads) stay on disk under `data/assets/` until object storage is needed.
+  - **Blobs** (screenshots, exports, PDFs, uploads) are stored **in Neon by content hash**, so a file shared by many versions is stored once. The API and worker run as separate services and cannot share a disk. Object storage replaces this when Neon storage nears its cap.
 - **User management:** sign up, sign in, sign out, an account page (name, email), account deletion (cascading to decks and files), and **Your decks**.
 - **A generated avatar** ([DiceBear](https://github.com/dicebear/dicebear), P1): made at sign-up from a random seed. The user can change the style, shuffle it, or pick a background from the brand colours; the choice is saved as `avatar` JSON on their row. It is drawn in the browser by the library, **never via api.dicebear.com**, and only from styles whose licences allow it (CC BY styles are credited).
 - **A per-user daily spend cap** that fails closed. This is a safety limit (rule 10), **not a credit system**.
 - **Ready for credits later, built now:** every ledger row (tokens, cost, model, stage) carries the user. Plans, balances and usage views come after submission (owner, 2026-10-08).
-- **Release (P1):** Dockerfiles, `docker-compose.yml` (web, api, worker; Postgres external), `.env.example`, run docs. A hosted instance only if the owner names a host. The submission README is P0.
+- **Deploy — the live link (P0; the owner needs a live link):** Railway, as three services from this repo.
+  - **web:** public, Next.js and Better Auth, connected to Neon `auth`.
+  - **api:** private, reached only by the web over Railway's private network; no model key, no Chromium.
+  - **worker:** private, no inbound port; the OpenRouter key and Playwright's Chromium image.
+  - This keeps [../../techstack/infrastructure.md](../../techstack/infrastructure.md)'s rule: the worker is unreachable and the API cannot read the model key.
+  - The first deploy is Thursday evening, with the fake model; Friday only re-deploys.
+- **Sign-up open only to `ALLOWED_EMAILS`:** the link is public; the owner expects one or two users.
+- **Declined for the submission (owner, 2026-10-08):** several workers and a queue position, a global abuse guard, privacy and terms pages, an admin page. Needed before the link is shared widely.
 - **Verify (P0):** every route with no session and with another user's session; a cap check that throws refuses; deletion removes data; the owner's two-account check on test day.
 - **After submission:** **the credit system** (plans, balances, per-user usage and token consumption, on the ledger); Google and GitHub sign-in, email verification, password reset, magic links, MFA, object storage, teams, admin, billing, metering dashboards, signed share links, the privacy policy.

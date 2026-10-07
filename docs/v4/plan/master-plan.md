@@ -11,7 +11,10 @@
 - The reference library is fine ("absolutely fine").
 - **Tomorrow's build includes accounts, user management and the database.**
 - **Auth is Better Auth with email and password only.** No OAuth keys to set up for a one-day build.
-- **The database is free hosted Postgres** (Neon or Supabase). The owner creates it and gives the connection string.
+- **The database is Neon** (free tier; confirmed — not Supabase). There are two databases in one Neon project: `app` for Python and `auth` for Better Auth, so the two share nothing. Pooled connections serve the running app; direct ones run migrations.
+- **A live link is needed for the submission.** Hosting: Railway (recommended, see "Deploy" below), with the worker and API private.
+- **No add-ons tomorrow:** no multi-worker queue, no global abuse guard, no privacy pages, no admin page. "Just make it so they can sign in and use it" — one or two users.
+- **Test-day extras:** our own pitch deck made with d-design, and a demo script.
 - **Parallel build agents: yes.** **Up to $0.10 for two format checks: yes.**
 - **Profiles get a generated avatar** ([DiceBear](https://github.com/dicebear/dicebear)), made automatically at sign-up and changeable by the user.
 - Better Auth was chosen because it is **open source and easy to use**.
@@ -54,7 +57,8 @@ Rules for the sprint:
 3. **Accounts and data:**
    - Sign up, sign in, sign out, an account page with a **generated avatar the user can change**, and account deletion all work.
    - Each user sees only their own decks; another user's deck is a 404.
-   - Data is in the hosted Postgres; a per-user spend cap is in place.
+   - Data is in Neon (decks, users, history, and the slide files themselves); a per-user spend cap is in place.
+   - **A live link** where the owner signs in and builds a deck.
    - Every route is tested with no session and with another user's session.
 4. **Product:** a typed brief builds live end to end in the app. The owner builds 3 decks there, and checks with two accounts that neither sees the other's decks.
 5. **Engineering:** the gate is green (ruff, mypy --strict, pytest, eslint, tsc, OpenAPI drift, docs), and the e2e suite is green.
@@ -70,7 +74,7 @@ If (1) misses, the submission still ships, with the best decks as the showcase a
 | Phase | Sprint scope | Day | Priority |
 |---|---|---|---|
 | [39 — design reset](39-design-reset.md) | Visual languages, the reference library, retrieval and reference-fill, `compose.v11`, imagery, the style preview, model plumbing, the scorer | build | **P0** (scorer P1) |
-| [29 — accounts and deploy](29-accounts-deploy.md) | **Better Auth** (email and password) in the web, hosted Postgres behind the one Python data module with the **tenant wrapper**, JWT verification in FastAPI, user management with a **DiceBear avatar**, a per-user cap, release packaging | build | **P0** (avatar and packaging P1) |
+| [29 — accounts and deploy](29-accounts-deploy.md) | **Better Auth** (email and password) in the web, Neon Postgres behind the one Python data module with the **tenant wrapper**, JWT verification in FastAPI, user management with a **DiceBear avatar**, a per-user cap, release packaging | build | **P0** (avatar and packaging P1) |
 | [37 — beautiful data](37-beautiful-data.md) | The "pair" form for two values; the data wall | build / test | **P0** / test |
 | [31 — first run](31-first-run.md) | The brief survives sign-up | build | P1 |
 | [38 — brand kit](38-brand-kit.md) | Per-deck logo upload | build | P1 |
@@ -87,8 +91,9 @@ If (1) misses, the submission still ships, with the best decks as the showcase a
 
 ### Before 09:00 — what the owner provides
 
-1. **The hosted Postgres connection string** (Neon or Supabase, free tier), put in the repo's `.env` as `DATABASE_URL`. Nothing else is needed.
+1. **A Neon project** (free tier) and its connection string, put in the repo's `.env` as `DATABASE_URL`. The `app` and `auth` databases are created from it. The project's owner role can create databases; if not, the owner adds them in Neon's console. The pooled host (`-pooler`) is used at runtime, the direct host for migrations.
 2. Nothing for auth. `BETTER_AUTH_SECRET` is generated locally; there are no OAuth keys.
+3. **By 14:00: a Railway account** (sign in with GitHub). Then run `! railway login` in the session, so the deploy can run in the evening. The trial credit should cover the submission (pricing re-checked on the day); after that, about $5 a month is the owner's call.
 
 ### The work
 
@@ -102,8 +107,8 @@ If (1) misses, the submission still ships, with the best decks as the showcase a
 | B6 | **Style preview**: 3 reference-filled slides with the deck's words at the outline ($0); the style card and **Another style** | 39 | P0 | main | API test; browser run with the fake worker |
 | B7 | **"Pair" chart form** | 37 | P0 | main | goldens |
 | B8 | **Model plumbing** and `cli bakeoff` | 39 | P0 | main | CLI test with fakes |
-| A1 | **SQL store**: SQLAlchemy models (users with name, email and an `avatar` JSON — style, seed, options; decks as JSONB; events; jobs; **a ledger whose rows carry `user_id`**; versions; kept slides; questions) and an Alembic baseline in the `app` schema. It implements the *same* Store interface with a **tenant scope** on every deck method. Jobs are claimed with `SKIP LOCKED`. Blobs (screenshots, exports, uploads) stay on disk under `data/assets/` | 29 | P0 | **agent A1** | the existing store, API and editor tests run against it (SQLite offline; the hosted Postgres when `DATABASE_URL` is set) |
-| A2 | **Better Auth in the web**: email and password, sessions, the **JWT plugin** (JWKS), its tables in the `auth` schema via its CLI. Pages: sign up, sign in, account (name, email, sign out, delete account), **Your decks**. Middleware protects the app routes. Recorded demo decks stay public | 29 | P0 | **agent A2** | e2e: sign up → sign in → protected route → sign out |
+| A1 | **SQL store**: SQLAlchemy models (users with name, email and an `avatar` JSON — style, seed, options; decks as JSONB; events; jobs; **a ledger whose rows carry `user_id`**; versions; kept slides; questions; **blobs stored by content hash** — screenshots, exports, PDFs, uploads — so a file shared by many versions is stored once) and an Alembic baseline in the `app` database. Blobs live in Neon because the API and worker run as separate services and cannot share a disk. It implements the *same* Store interface with a **tenant scope** on every deck method. Jobs are claimed with `SKIP LOCKED`. The file store stays for local runs without `DATABASE_URL` | 29 | P0 | **agent A1** | the existing store, API and editor tests run against it (SQLite offline; the hosted Postgres when `DATABASE_URL` is set) |
+| A2 | **Better Auth in the web**: email and password, sessions, the **JWT plugin** (JWKS), its tables in the `auth` database via its CLI. Pages: sign up, sign in, account (name, email, sign out, delete account), **Your decks**. Middleware protects the app routes. Recorded demo decks stay public. **Sign-up is open only to the emails in `ALLOWED_EMAILS`**: the live link is public, and this keeps it to the owner's one or two users | 29 | P0 | **agent A2** | e2e: sign up → sign in → protected route → sign out |
 | A3 | **API auth and tenancy**: a FastAPI dependency verifies the JWT with `PyJWKClient` (signature, issuer, audience, expiry, an algorithm allowlist; any failure, including an unreachable JWKS, is 401). A Python `users` row keyed by `sub` on first request. Every deck route goes through the tenant wrapper (another user's deck is 404). Jobs carry the owner. A **per-user daily spend cap** fails closed. Deleting an account cascades. The web client and the SSE reader send the token | 29 | P0 | main | security tests (A4) green |
 | A4 | **Security tests**: every route with no session and with another user's session; a cap check that throws refuses; JWKS unreachable → 401; deletion removes the user's decks and files | 29 | P0 | main | green |
 | A5 | **The brief survives sign-up**: typed before signing up, it starts the deck after | 31 | P1 | main | e2e |
@@ -111,7 +116,7 @@ If (1) misses, the submission still ships, with the best decks as the showcase a
 | B9 | **Scorer and `--candidates N`** | 39 | P1 | main | unit tests |
 | B10 | **Logo per deck** | 38 | P1 | main | API test; refusal path |
 | B11 | **AI edit by instruction** (proposal, accept or discard), the style refusal, notes editing, duplicate | 28 | P1 | main | offline tests; browser run |
-| B12 | **Release packaging**: Dockerfiles, `docker-compose.yml` (web, api, worker; Postgres external), `.env.example`, run docs | 29 | P1 | main | `docker compose up` locally |
+| B12 | **Deploy — the live link**, on Railway as three services, plus `.env.example` and run docs:<br>• **web**: public, Next.js and Better Auth; its database is Neon `auth`.<br>• **api**: private (only the web reaches it, over Railway's private network); no model key; no Chromium.<br>• **worker**: private, no inbound port; it holds the OpenRouter key and Chromium (Playwright's image).<br>This keeps infrastructure.md's rule: the worker is unreachable, and the API cannot read the model key | 29 | **P0** | main | the owner signs up on the live link and a fake-model build completes there |
 | B13 | **Watch polish**: real states; flagged slides named before download | 32 | P1 | main | e2e |
 | B14 | **Submission README**, docs, CHECKPOINT, findings | 29 | P0 | main | docs check green |
 
@@ -123,7 +128,7 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 |---|---|---|
 | R1–R4 (references) | `api/library/references/<its two languages>/` only | The reference format and authoring rules in [39-design-reset.md](39-design-reset.md) §2. The language manifests from B1. The QA harness; it runs its own test and looks at its contact sheets |
 | A1 (SQL store) | `api/store/sql.py`, `api/store/models.py`, `api/migrations/`, `api/tests/test_store_sql.py` | The Store interface as `store/files.py` defines it, plus a tenant scope. Parametrize the existing tests over both stores |
-| A2 (web auth) | `web/lib/auth*`, `web/app/(auth)/`, `web/app/account/`, `web/app/decks/`, `web/components/avatar*`, `web/middleware.ts`, auth e2e | Better Auth (current docs, checked first), email and password, the JWT plugin, the `auth` schema, the pages above; the DiceBear avatar and its picker (A6); the brand and shadcn rules of the web app |
+| A2 (web auth) | `web/lib/auth*`, `web/app/(auth)/`, `web/app/account/`, `web/app/decks/`, `web/components/avatar*`, `web/middleware.ts`, auth e2e | Better Auth (current docs, checked first), email and password, the JWT plugin, the `auth` database, the pages above; the DiceBear avatar and its picker (A6); the brand and shadcn rules of the web app |
 
 ### Order and times
 
@@ -133,8 +138,8 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 | ~09:00 | Spawn R1–R4, A1, A2 | Start |
 | 09:00–14:00 | B3 → B4 → B7 → B5 | Working |
 | 14:00–17:00 | B6, B8; merge the reference and store work; review every contact sheet; A3 | Merging |
-| 17:00–20:00 | Merge A2; A4; a browser run (sign up → brief → build with the fake worker → edit → export); B14 | Fixes on request |
-| 20:00–22:00 | P1 in order: A6 (merge A2's avatar), B11, A5, B10, B12, B9, B13 | — |
+| 17:00–20:00 | Merge A2; A4; a browser run (sign up → brief → build with the fake worker → edit → export); **B12, the first deploy**; B14 | Fixes on request |
+| 20:00–22:00 | P1 in order: A6 (merge A2's avatar), B11, A5, B10, B9, B13 | — |
 | **22:00** | **Cut line.** Anything open moves to "after submission" with its trigger | — |
 
 **The two format checks (≤ $0.10):** one image call to pin OpenRouter's image response, and one `compose.v11` call to confirm the new prompt parses.
@@ -161,7 +166,9 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 | T6 | Fix window (code only), then re-run the 4 weakest decks | me | ~$2 |
 | T7 | The owner signs up and builds 3 decks live in the app; **two-account isolation check** | owner | ~$2 |
 | T8 | If budget remains: `--candidates 2` on 4 decks | me | ~$2 |
-| T9 | **Code freeze**; showcase exports; the submission package | me + owner | $0 |
+| T9 | **Code freeze; the final deploy** to the live link; the submission package | me + owner | $0 |
+| T10 | **Our own pitch deck**, made with d-design on the live link | me → owner | ~$0.50 |
+| T11 | **The demo script**: a 3-minute click path, and showcase decks already in the owner's account, so a slow model on stage cannot sink the demo | me | $0 |
 
 ## Budget
 
@@ -171,7 +178,8 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 | Friday | $12–17 (T1–T8) |
 | **Recommended top-up** | **$20**, leaving a buffer for one more fix re-run |
 | Per deck after the sprint (estimate) | $0.30–0.45: compose ~$0.10–0.15 with references, ~5 images, notes |
-| Postgres | $0 on the free tier |
+| Postgres | $0 on Neon's free tier |
+| Hosting | Railway: the trial credit for the submission; then about $5 a month, the owner's call |
 
 ## Risks
 
@@ -180,8 +188,10 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 | The references are not good enough | The owner curates on Friday morning. Every reference passes QA under 30 looks, and the main session reviews every contact sheet. A language with fewer than 6 good references is switched off |
 | One day is not enough for design *and* accounts | Six parallel agents with strict file ownership, P0/P1 with a 22:00 cut line. If the day runs late, P1 goes first, never security |
 | Auth built in a day has holes | A mature library rather than our own code; every route tested with no session and with another user's session; fail closed; no password reset or email flows to get wrong |
-| Better Auth and Python on one database | Separate schemas (`auth` for Better Auth, `app` for Python). Python reads only the signed JWT, and each side runs its own migrations on its own schema |
-| The free Postgres sleeps (cold starts) or caps connections | A small pool; retry once on connect; keep the free tier's limits in mind for the demo |
+| Better Auth and Python on one database | Separate Neon databases (`auth` for Better Auth, `app` for Python) — the pooler may not pass a schema setting, and separate databases share nothing. Python reads only the signed JWT, and each side runs its own migrations on its own schema |
+| Neon's free tier sleeps (cold starts), caps connections and storage (about 0.5 GB) | The pooled host at runtime; retry once on connect. Blobs are stored by content hash so versions don't multiply them; one or two users fit easily |
+| The deploy fails late | The first deploy on Thursday evening with the fake model; test day only re-deploys. Three small services from the same repo, each with its own Dockerfile |
+| The public link is found by strangers | Sign-up only for `ALLOWED_EMAILS`; the per-user cap; the worker and API are not reachable from outside |
 | The image API's response shape or cost differs | Docs read Thursday, one format call; the bake-off measures real cost from the ledger |
 | A new compose model brings new failure modes | The bake-off runs before the main wall; the ladder still ends in reference-fill |
 | Decks of the same language look alike | 6–8 references per language, rotated; generated tokens; one image style per deck; no repeats within a deck. Stated honestly: variety across decks is bounded by the library's size until it grows |
@@ -191,9 +201,10 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 
 | Item | Phase | Trigger or note |
 |---|---|---|
+| Several users at once (multiple workers, queue position), a global abuse guard, privacy and terms pages, an admin page | 29 | declined for the submission (owner, 2026-10-08: one or two users); needed before the link is shared widely |
 | **A credit system**: plans, credit balances, usage and token consumption per user | 29 | the owner, 2026-10-08: "as we move forward" — built on the ledger, whose rows carry the user from 2026-10-09 |
 | Google and GitHub sign-in, email verification, password reset, magic links, MFA | 29 | the first outside users; a managed provider reconsidered then |
-| Object storage for blobs; a hosted deploy on more than one machine | 29 | the first deploy beyond one host |
+| Object storage for blobs (out of Neon) | 29 | Neon storage nears its cap, or decks carry images at scale |
 | Teams, an admin panel, billing | 29 | the first paying team |
 | Saved brand kit | 38 | now possible on accounts; after the submission's logo-per-deck |
 | Rehearse mode | 34 | the first user who presents a generated deck |

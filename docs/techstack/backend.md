@@ -104,7 +104,7 @@ FastAPI's OpenAPI document is the contract. `openapi-typescript` turns it into `
 
 Phases 21–28 have no accounts. At phase 29:
 
-- **Better Auth** (owner, 2026-10-08), self-hosted in the web app: email and password, sessions, and its **JWT plugin**, whose JWKS FastAPI trusts. Its tables are in the `auth` schema, never read by Python. (Planned before: a managed IdP, WorkOS AuthKit or Clerk — reconsidered for OAuth or MFA.)
+- **Better Auth** (owner, 2026-10-08), self-hosted in the web app: email and password, sessions, and its **JWT plugin**, whose JWKS FastAPI trusts. Its tables are in the `auth` database, never read by Python. (Planned before: a managed IdP, WorkOS AuthKit or Clerk — reconsidered for OAuth or MFA.)
 - **FastAPI verifies the JWT** with PyJWT's `PyJWKClient` against the provider's JWKS: signature, issuer, audience and expiry. **Any failure is `401`.** There is no permissive default.
 - **A Python-owned `users` row keyed by the provider's `sub`.** Decks reference `users.id`, so foreign keys and cascade deletes are real. This answers v3's objection that a hosted IdP breaks the foreign key.
 - **No table is shared across languages.** v3's `web` stripped a cookie signature and `api` read Better Auth's `session` table directly; both are gone.
