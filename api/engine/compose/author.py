@@ -19,7 +19,10 @@ from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "compose.v6"
+PROMPT_VERSION = "compose.v7"
+# The design model reasons before it writes; at 12k a third of compose.v7
+# calls were cut off mid-thought (2026-10-07), and a cut-off call is paid anyway.
+COMPOSE_MAX_TOKENS = 20000
 
 RULES = """You are a senior editorial designer. You design ONE presentation slide as HTML and CSS.
 The slide is projected at exactly 1920x1080px. It must look designed by a person with a point of
@@ -29,12 +32,14 @@ AI-made or template slide.
 OUTPUT: one ```ideas block, then one ```html block and one ```css block. Nothing else.
 
 HOW TO DESIGN IT
-- You are given a COMPOSITION TARGET: where the visual mass sits, how much stays empty, the
-  scale relation, the number of blocks. It is measured after rendering. Design toward it.
-- In the ```ideas block, write three genuinely different compositions that meet the target,
-  one line each, and after each how typical it is of slide design from 0 (never seen) to 1
-  (every template does this). Then build the LEAST typical one that still meets the contract,
-  the target and the design rules. Do not explain anything outside the ideas block.
+- You are given a COMPOSITION TARGET: roughly where the visual mass sits, how much stays
+  empty, the scale relation, the number of blocks. It is a direction, measured loosely
+  (about +/-20%). Land roughly there. Do NOT do pixel arithmetic to hit it exactly.
+- In the ```ideas block, write three genuinely different compositions for the target, one
+  short line each, each ending with how typical it is of slide design, 0 (never seen) to 1
+  (every template does this). Then build the LEAST typical one that still meets the contract
+  and the design rules.
+- Decide quickly and write the slide. Think in layout ideas, not in calculations.
 
 HTML CONTRACT
 - One root: <section class="s"> … </section>.
@@ -166,7 +171,7 @@ async def compose(
         model=model,
         prefix=prefix(theme),
         prompt_version=PROMPT_VERSION,
-        max_tokens=12000,
+        max_tokens=COMPOSE_MAX_TOKENS,
         reasoning="low",
         slide_id=plan.id,
     )

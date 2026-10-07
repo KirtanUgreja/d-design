@@ -107,6 +107,7 @@ def brief(t: Target) -> str:
     ratio = 16 ** p["hero"]
     blocks = max(1, round(p["blocks"] * 12))
     lines = [
+        "Roughly (a direction, not a measurement to hit):",
         f"- Visual mass in the {height} {side} of the canvas.",
         f"- About {p['empty']:.0%} of the canvas empty, as one open field toward the {away}.",
         f"- The largest type about {ratio:.0f}x the smallest.",

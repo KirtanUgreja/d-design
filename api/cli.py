@@ -437,7 +437,6 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--set", choices=("one", "smoke", "all"), default="smoke")
     cmd.add_argument("--budget", type=float, default=0.5, help="hard cap per deck, USD")
     cmd.add_argument("--force", action="store_true")
-    cmd.add_argument("--no-exemplars", action="store_true", help="the phase-22 A/B")
     cmd.add_argument("--themes", choices=("sampled", "fixed"), default="sampled")
     cmd = sub.add_parser("tiles")
     cmd.add_argument("--run", required=True)

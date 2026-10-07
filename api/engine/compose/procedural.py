@@ -72,7 +72,11 @@ def _hero_step(theme: Theme, target: Target, text: str, width: float, max_lines:
 def build(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
     if plan.chart is not None:
         return author.fallback(plan)  # ponytail: the chart layout is not target-driven yet
-    p = target.point
+    p = dict(target.point)
+    if any(f.name == "stat" for f in plan.fields):
+        # a number is the slide: it is set huge whatever the target's scale says
+        p["hero"] = max(p["hero"], 0.75)
+        target = Target(p)
     by = {f.name: escape(f.text) for f in plan.fields}
     rest = [f for f in plan.fields if f.name not in _SPECIAL]
     m = theme.margin
