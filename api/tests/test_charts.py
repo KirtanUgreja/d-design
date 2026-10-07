@@ -155,3 +155,41 @@ def test_the_chart_fallback_passes_qa(tmp_path: Path) -> None:
             browser.measure(build(look), [frame], fields, str(tmp_path / "q.html"))
         )
         assert [d.code for d in result["c1"].errors] == [], look.record()
+
+
+def test_the_code_built_chart_layout_passes_qa_for_every_form(tmp_path: Path) -> None:
+    import random
+
+    from engine.compose import procedural, targets
+    from engine.compose.archive import Archive
+    from engine.models import PlanField, SlidePlan
+
+    rng = random.Random(37)
+    bad = []
+    for look in sample("chart-procedural", count=3):
+        theme = build(look)
+        frames, fields = [], {}
+        for kind, spec in SPECS.items():
+            for n in range(3):
+                plan = SlidePlan(
+                    id=f"{kind}{n}",
+                    beat="data",
+                    intent="chart",
+                    chart=spec,
+                    fields=[
+                        PlanField(name="kicker", text="Traction", budget_words=3),
+                        PlanField(
+                            name="headline",
+                            text="Shippers stay longer every quarter we ship",
+                            budget_words=12,
+                        ),
+                        PlanField(name="source", text="Company financials", budget_words=4),
+                    ],
+                )
+                target = targets.draw(rng, Archive(), "chart", len(plan.fields))
+                composed = procedural.build(plan, target, theme)
+                frames.append(Frame(plan.id, charts.fill(composed.html, spec), composed.css))
+                fields[plan.id] = {f.name: f.text for f in plan.fields}
+        result = asyncio.run(browser.measure(theme, frames, fields, str(tmp_path / "q.html")))
+        bad += [(k, [d.code for d in m.errors]) for k, m in result.items() if m.errors]
+    assert bad == []

@@ -13,7 +13,6 @@ from __future__ import annotations
 import math
 from html import escape
 
-from engine.compose import author
 from engine.compose.author import Composed
 from engine.compose.targets import Target
 from engine.design.theme import Theme, display_width
@@ -93,9 +92,53 @@ def vary(target: Target, avoid: set[str]) -> Target:
     return Target(p)
 
 
+def _chart(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
+    """A chart slide from its target: the claim above the chart, or beside
+    it in a column on the side the mass leans to, with continuous splits."""
+    p = target.point
+    by = {f.name: escape(f.text) for f in plan.fields}
+    head = by.get("headline", "")
+    beside = p["axis"] < 0.45  # a tall composition: claim and chart side by side
+    words = [f'<p class="k" data-field="kicker">{by["kicker"]}</p>' if "kicker" in by else ""]
+    words.append(f'<h1 class="h" data-field="headline">{head}</h1>')
+    extra = [f for f in plan.fields if f.name not in ("kicker", "headline", "source")]
+    words += [f'<p class="x" data-field="{f.name}">{escape(f.text)}</p>' for f in extra]
+    source = f'<p class="src" data-field="source">{by["source"]}</p>' if "source" in by else ""
+    text = f'<div class="t">{"".join(words)}</div>'
+    chart = '<dd-chart class="ch"></dd-chart>'
+    if beside:
+        left = p["mass_x"] < 0.5
+        share = round(28 + p["empty"] * 20)  # the claim's column, 28-39% of the width
+        cols = f"{share}fr {100 - share}fr" if left else f"{100 - share}fr {share}fr"
+        body = text + chart if left else chart + text
+        size = "h2" if len(head) > 40 else "h1"
+        layout = (
+            f".s{{display:grid;grid-template-columns:{cols};grid-template-rows:1fr auto;"
+            "column-gap:var(--s-6);row-gap:var(--s-4);padding:var(--margin)}"
+            ".t{display:grid;gap:var(--s-4);align-content:end}.ch{min-height:0;min-width:0}"
+            ".src{grid-column:1 / 3}"
+        )
+    else:
+        body = text + chart
+        size = "h2" if len(head) > 30 else "h1"
+        layout = (
+            ".s{display:grid;grid-template-rows:auto 1fr auto;gap:var(--s-5);padding:var(--margin)}"
+            f".t{{display:grid;gap:var(--s-3);max-width:{round(900 + p['axis'] * 600)}px}}"
+            ".ch{min-height:0}"
+        )
+    css = layout + (
+        ".k,.src{font-family:var(--f-label);font-size:var(--t-label);color:var(--c-ink-2);"
+        "letter-spacing:0.08em;text-transform:uppercase}"
+        f".h{{font-family:var(--f-display);font-weight:var(--w-display);font-size:var(--t-{size});"
+        "line-height:var(--lh-display);letter-spacing:var(--track-display);color:var(--c-ink)}"
+        ".x{font-family:var(--f-text);font-size:var(--t-body);color:var(--c-ink-2)}"
+    )
+    return Composed(f'<section class="s">{body}{source}</section>', css)
+
+
 def build(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
     if plan.chart is not None:
-        return author.fallback(plan)  # ponytail: the chart layout is not target-driven yet
+        return _chart(plan, target, theme)
     p = dict(target.point)
     if any(f.name == "stat" for f in plan.fields):
         # a number is the slide: it is set huge whatever the target's scale says
