@@ -134,6 +134,12 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
     jobs = [(r, b) for r in range(args.repeat) for b in _ids(args.set)]
     for index, (repeat, brief_id) in enumerate(jobs):
         item = files.load(brief_id)
+        if args.outlines:  # the content engine's outlines (cli content), not the frozen ones
+            source = files.BENCH / "runs" / args.outlines / "content" / f"{brief_id}.json"
+            if not source.exists():
+                print(f"{brief_id}: no outline in {args.outlines} — run `content` first")
+                continue
+            item.outline = content.load(source)[0]
         if item.outline is None:
             print(f"{brief_id}: no frozen outline — run `freeze` first")
             continue
@@ -478,6 +484,7 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--force", action="store_true")
     cmd.add_argument("--themes", choices=("sampled", "fixed"), default="sampled")
     cmd.add_argument("--repeat", type=int, default=1, help="build each brief N times, N looks")
+    cmd.add_argument("--outlines", default="", help="a `cli content` run to take outlines from")
     cmd = sub.add_parser("tiles")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--set", choices=("one", "smoke", "all"), default="all")
