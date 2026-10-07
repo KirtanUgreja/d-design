@@ -24,6 +24,7 @@ The app is rebuilt around that flow: composer → interview → outline → watc
 | [design-engine.md](design-engine.md) | The design-system registry, the sampler and theme, compositions and exemplars, the slide contract, the lint, QA metrics and repair |
 | [bench.md](bench.md) | The 12 briefs, the baselines, the wall, the rubric, what each run records, and the budgets |
 | [ui-research.md](ui-research.md) | The user side: attention, motivation and trust, the evidence behind each technique, competitors, ten rules, and the ethics line |
+| [research-2026-10.md](research-2026-10.md) | 2026-10-08: Gamma 5, the competitors and the 2024–26 papers on slide design; why our decks looked alike or messy |
 | [plan/README.md](plan/README.md) | Phase status, dependency graph, build order |
 | [plan/21-reset.md](plan/21-reset.md) | Phase 21 — delete what v4 replaces, set the rules and the gate, build the bench |
 | [plan/22-engine-spike.md](plan/22-engine-spike.md) | Phase 22 — decks that look designed, from the CLI, on frozen outlines. **The make-or-break gate** |
