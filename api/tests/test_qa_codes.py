@@ -19,6 +19,7 @@ import pytest
 from engine.compose import document
 from engine.compose.document import Frame
 from engine.design.theme import THEMES
+from engine.design.theme import face as registry_face
 from engine.qa import browser
 
 THEME = next(iter(THEMES.values()))
@@ -74,7 +75,9 @@ def test_clean_slide_and_one_fixture_per_code(tmp_path: Path) -> None:
 def test_e8_a_face_that_failed_to_load(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     # A theme face whose file is broken. The model cannot cause this (at-rules
     # are linted out); a bad vendored font can, and it must not pass silently.
-    face = THEME.faces[0]
+    # A static face: a variable one covers every weight, so the browser
+    # would fall back to its good file and nothing would fail.
+    face = next(f for f in THEME.faces if not registry_face(f.family).axes)
     weight = next(w for w in (500, 300, 800, 200, 100) if w not in face.weights)
     broken = (
         f"<style>@font-face{{font-family:'{face.family}';font-weight:{weight};"

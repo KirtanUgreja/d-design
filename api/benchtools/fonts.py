@@ -33,12 +33,31 @@ _MEASURE = """async ([family, weight]) => {
 }"""
 
 
+def _sampled(lic: dict[str, object]) -> list[int]:
+    """Weights to measure: a variable face every 100 across its range (the
+    engine interpolates between them), a static face at each file it has."""
+    axes = lic.get("axes")
+    if isinstance(axes, dict) and "wght" in axes:
+        lo, hi = axes["wght"]
+        return list(range(math.ceil(lo / 100) * 100, int(hi) + 1, 100))
+    weights = lic.get("weights")
+    return [int(w) for w in weights] if isinstance(weights, list) else []
+
+
 async def measure() -> dict[str, dict[str, object]]:
     out: dict[str, dict[str, object]] = {}
     folders = sorted(p for p in FONTS.iterdir() if (p / "licence.json").exists())
     faces = []
     for folder in folders:
         lic = json.loads((folder / "licence.json").read_text())
+        if "axes" in lic:  # one variable file, declared over its weight range
+            lo, hi = lic["axes"].get("wght", [400, 400])
+            data = base64.b64encode((folder / "variable.woff2").read_bytes()).decode()
+            faces.append(
+                f"@font-face{{font-family:'{lic['family']}';font-weight:{lo:g} {hi:g};"
+                f"src:url(data:font/woff2;base64,{data}) format('woff2')}}"
+            )
+            continue
         for w in lic["weights"]:
             data = base64.b64encode((folder / f"{w}.woff2").read_bytes()).decode()
             faces.append(
@@ -52,7 +71,7 @@ async def measure() -> dict[str, dict[str, object]]:
         for folder in folders:
             lic = json.loads((folder / "licence.json").read_text())
             metrics: dict[str, object] = {}
-            for w in lic["weights"]:
+            for w in _sampled(lic):
                 m = await page.evaluate(_MEASURE, [lic["family"], w])
                 if m is None:
                     raise RuntimeError(f"{lic['family']} {w} did not load")

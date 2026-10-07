@@ -55,7 +55,7 @@ def _wanted(theme: Theme, target: Target) -> str:
 def _hero_step(theme: Theme, target: Target, text: str, width: float, max_lines: int) -> str:
     """The largest step at or under the target's scale that fits in max_lines."""
     want = theme.scale[_wanted(theme, target)]
-    advance = display_width(theme.display.family, theme.w_display)
+    advance = display_width(theme.display.family, theme.w_display, theme.stretch)
     if max_lines == 1:  # a number: figures are wider than the average lowercase letter
         advance = _figure_advance(text, advance)
     longest = max((len(w) for w in text.split()), default=0)
@@ -120,7 +120,7 @@ def build(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
         want = _wanted(theme, target)
         text = by.get("stat") or by.get("headline", "")
         lines = 1 if "stat" in by else 3
-        adv = display_width(theme.display.family, theme.w_display)
+        adv = display_width(theme.display.family, theme.w_display, theme.stretch)
         if lines == 1:
             adv = _figure_advance(text, adv)
         need = len(text) * theme.scale[want] * adv * SAFETY / lines
@@ -134,7 +134,7 @@ def build(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
         head = head if HERO_STEPS.index(head) < HERO_STEPS.index(hero) else "h2"
     else:
         head = hero
-    advance = display_width(theme.display.family, theme.w_display)
+    advance = display_width(theme.display.family, theme.w_display, theme.stretch)
     body = theme.scale["body"]
 
     gap = round(16 + p.get("spread", 0.5) * 32 + p["blocks"] * 16)  # px between parts
@@ -150,6 +150,12 @@ def build(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
         h += sum(
             _lines(f.text, body, _TEXT_ADVANCE, inner) * body * 1.3 + 2 * theme.space[2]
             for f in rest
+        )
+        label = theme.scale["label"]
+        h += sum(  # the small parts: kicker and source in the label size, the stat's label
+            _lines(by[k], px, _TEXT_ADVANCE, inner) * px * 1.3
+            for k, px in (("kicker", label), ("source", label), ("stat-label", body))
+            if k in by
         )
         return h + gap * (len(rest) + 3)
 

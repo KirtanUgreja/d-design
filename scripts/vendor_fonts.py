@@ -69,6 +69,24 @@ FAMILIES: dict[str, tuple[str, tuple[int, ...]]] = {
 }
 
 
+# Display families vendored as ONE variable file instead of static weights
+# (phase 36): each deck draws its own instance. Axis ranges as Google Fonts
+# serves them; opsz follows the size automatically (font-optical-sizing).
+VARIABLE: dict[str, dict[str, tuple[float, float]]] = {
+    "Big Shoulders Display": {"wght": (100, 900)},
+    "League Gothic": {"wdth": (75, 100)},
+    "Archivo": {"wdth": (62, 125), "wght": (100, 900)},
+    "Bricolage Grotesque": {"opsz": (12, 96), "wdth": (75, 100), "wght": (200, 800)},
+    "Familjen Grotesk": {"wght": (400, 700)},
+    "Syne": {"wght": (400, 800)},
+    "Unbounded": {"wght": (200, 900)},
+    "Fraunces": {"opsz": (9, 144), "wght": (100, 900), "SOFT": (0, 100), "WONK": (0, 1)},
+    "Bodoni Moda": {"opsz": (6, 96), "wght": (400, 900)},
+    "Newsreader": {"opsz": (6, 72), "wght": (200, 800)},
+    "EB Garamond": {"wght": (400, 800)},
+}
+
+
 def get(url: str) -> bytes:
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     with urllib.request.urlopen(req, timeout=30) as response:  # noqa: S310 - fixed https hosts
@@ -94,6 +112,22 @@ def latin_woff2(family: str, weight: int) -> str:
     raise RuntimeError(f"no latin woff2 for {family} {weight}")
 
 
+def latin_variable(family: str, axes: dict[str, tuple[float, float]]) -> str:
+    # Google wants the axis tags lowercase first, then alphabetical.
+    tags = sorted(axes, key=lambda t: (t.isupper(), t))
+    spec = ",".join(tags) + "@" + ",".join(f"{axes[t][0]:g}..{axes[t][1]:g}" for t in tags)
+    css = get(
+        f"https://fonts.googleapis.com/css2?family={family.replace(' ', '+')}:{spec}"
+        "&display=block"
+    ).decode()
+    for name, block in re.findall(r"/\* ([\w-]+) \*/\s*(@font-face\s*{[^}]*})", css):
+        if name == "latin":
+            m = re.search(r"url\((https://[^)]+\.woff2)\)", block)
+            if m:
+                return m.group(1)
+    raise RuntimeError(f"no latin variable woff2 for {family}")
+
+
 def licence(family: str) -> tuple[str, str | None]:
     slug = family.lower().replace(" ", "")
     text = get(f"https://raw.githubusercontent.com/google/fonts/main/ofl/{slug}/OFL.txt").decode()
@@ -108,22 +142,30 @@ def main(force: bool) -> int:
     report: dict[str, object] = {}
     for family, (role, weights) in FAMILIES.items():
         out = FONTS / folder(family)
-        missing = [w for w in weights if force or not (out / f"{w}.woff2").exists()]
+        axes = VARIABLE.get(family)
+        if axes:
+            missing = [] if not force and (out / "variable.woff2").exists() else [0]
+        else:
+            missing = [w for w in weights if force or not (out / f"{w}.woff2").exists()]
         if not missing and (out / "licence.json").exists():
             continue
         out.mkdir(parents=True, exist_ok=True)
         text, rfn = licence(family)
         (out / "OFL.txt").write_text(text)
-        for weight in missing:
-            (out / f"{weight}.woff2").write_bytes(get(latin_woff2(family, weight)))
-        (out / "licence.json").write_text(
-            json.dumps(
-                {"family": family, "role": role, "weights": list(weights), "licence": "OFL-1.1",
-                 "reserved_font_name": rfn, "source": "fonts.googleapis.com (latin subset)"},
-                indent=2,
-            )
-            + "\n"
-        )
+        if axes:
+            (out / "variable.woff2").write_bytes(get(latin_variable(family, axes)))
+            for static in out.glob("[0-9]*.woff2"):
+                static.unlink()  # one variable file replaces the static weights
+        else:
+            for weight in missing:
+                (out / f"{weight}.woff2").write_bytes(get(latin_woff2(family, weight)))
+        record: dict[str, object] = {
+            "family": family, "role": role, "weights": list(weights), "licence": "OFL-1.1",
+            "reserved_font_name": rfn, "source": "fonts.googleapis.com (latin subset)",
+        }
+        if axes:
+            record["axes"] = {t: list(r) for t, r in axes.items()}
+        (out / "licence.json").write_text(json.dumps(record, indent=2) + "\n")
         report[family] = {"weights": weights, "rfn": rfn}
         print(f"{family}: {list(weights)}  RFN={rfn}", flush=True)
     print(f"{len(report)} families fetched; {len(FAMILIES)} in the registry")

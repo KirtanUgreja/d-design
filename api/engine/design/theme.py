@@ -27,6 +27,11 @@ class Face:
     family: str  # the CSS family name
     folder: str  # under library/fonts
     weights: tuple[int, ...]
+    # A variable face: axis -> (min, max), one file (variable.woff2) for all of it.
+    axes: tuple[tuple[str, float, float], ...] = ()
+
+    def axis(self, tag: str) -> tuple[float, float] | None:
+        return next(((lo, hi) for t, lo, hi in self.axes if t == tag), None)
 
 
 @dataclass(frozen=True)
@@ -72,6 +77,9 @@ class Theme:
         default_factory=lambda: patterns.mark("d-design", random.Random(0))  # noqa: S311 - a shape
     )
     track: float = 0.0  # display letter-spacing, em
+    # A variable display face's drawn instance: wdth in percent, other axes.
+    stretch: float = 100.0
+    variation: str = "normal"
 
     @property
     def faces(self) -> tuple[Face, ...]:
@@ -103,6 +111,8 @@ class Theme:
             f"--lh-display:{self.leading};",
             f"--cols:{self.cols};",
             f"--track-display:{self.track:.3f}em;",
+            f"--stretch-display:{self.stretch:g}%;",
+            f"--fv-display:{self.variation};",
             f"--mark:{self.mark};",
             "--shadow-hard:14px 14px 0 var(--c-ink);",
         ]
@@ -225,6 +235,7 @@ class _FontMeta(BaseModel):
     family: str
     weights: list[int]
     metrics: dict[str, _Metrics]
+    axes: dict[str, tuple[float, float]] = {}
 
 
 @functools.cache
@@ -239,16 +250,35 @@ def _meta() -> dict[str, tuple[str, _FontMeta]]:
 
 def face(family: str) -> Face:
     folder, meta = _meta()[family]
-    return Face(family, folder, tuple(meta.weights))
+    axes = tuple((t, lo, hi) for t, (lo, hi) in sorted(meta.axes.items()))
+    return Face(family, folder, tuple(meta.weights), axes)
 
 
-def display_width(family: str, weight: int) -> float:
-    """Average advance in em, measured (benchtools/fonts.py)."""
-    return _meta()[family][1].metrics[str(weight)].width
+def _measured(family: str, weight: float) -> _Metrics:
+    """Metrics at any weight: measured ones exactly, a variable face's
+    in-between weights interpolated from the two measured either side."""
+    metrics = _meta()[family][1].metrics
+    if str(round(weight)) in metrics:
+        return metrics[str(round(weight))]
+    known = sorted(int(k) for k in metrics)
+    lo = max((k for k in known if k <= weight), default=known[0])
+    hi = min((k for k in known if k >= weight), default=known[-1])
+    if lo == hi:
+        return metrics[str(lo)]
+    t = (weight - lo) / (hi - lo)
+    a, b = metrics[str(lo)], metrics[str(hi)]
+    return _Metrics(leading=max(a.leading, b.leading), width=a.width + (b.width - a.width) * t)
 
 
-def _leading(family: str, weight: int) -> float:
-    return _meta()[family][1].metrics[str(weight)].leading
+def display_width(family: str, weight: float, stretch: float = 100.0) -> float:
+    """Average advance in em, measured (benchtools/fonts.py). ``stretch`` is a
+    wdth axis value in percent; ponytail: advance scales with it linearly —
+    measure at the axis ends if a condensed instance overflows."""
+    return _measured(family, weight).width * stretch / 100
+
+
+def _leading(family: str, weight: float) -> float:
+    return _measured(family, weight).leading
 
 
 # A display face's average advance, in em, that the base scale is drawn for
@@ -260,8 +290,10 @@ _DISPLAY_STEPS = ("mega", "d1", "d2", "d3", "h1", "h2", "h3")
 _FLOOR = {"h1": 56, "h2": 56, "h3": 40}  # QA's headline minimum (E4) stays reachable
 
 
-def _fit_width(scale: dict[str, int], family: str, weight: int) -> dict[str, int]:
-    width = display_width(family, weight)
+def _fit_width(
+    scale: dict[str, int], family: str, weight: int, stretch: float = 100.0
+) -> dict[str, int]:
+    width = display_width(family, weight, stretch)
     k = min(1.0, max(0.6, _REFERENCE_WIDTH / width))
     out = dict(scale)
     for step in _DISPLAY_STEPS:
@@ -303,6 +335,10 @@ def build(look: Look) -> Theme:
     k = DENSITIES[look.density]
     grid = look.grid
     motif = look.motif
+    weight = round(look.axis("wght", pairing.display_weight))
+    stretch = look.axis("wdth", 100.0)
+    named = [(t, v) for t, v in look.instance if t.isupper()]
+    variation = ",".join(f'"{t}" {v:g}' for t, v in named) or "normal"
     return Theme(
         id=look.id,
         summary=f"{pairing.note}; {look.palette}; {grid.id} grid; texture: {motif.note}.",
@@ -310,12 +346,13 @@ def build(look: Look) -> Theme:
         display=display,
         text=text,
         label=label,
-        w_display=pairing.display_weight,
+        w_display=weight,
         w_bold=max(text.weights),
         scale=_fit_width(
             scale_from(look.heading_ratio, look.display_ratio),
             pairing.display,
-            pairing.display_weight,
+            weight,
+            stretch,
         ),
         space=tuple(round(px * k) for px in (8, 16, 24, 40, 64, 96, 128, 192)),
         # Continuous, and still kept within 96-144px: wider starves the columns,
@@ -324,7 +361,7 @@ def build(look: Look) -> Theme:
         gutter=look.gutter,
         radius=look.radius,
         rule=look.rule,
-        leading=_leading(pairing.display, pairing.display_weight),
+        leading=_leading(pairing.display, weight),
         cols=grid.cols,
         textures=motif.textures,
         guidance=f"{grid.note}. Motif: {motif.note}. Type: {pairing.note}.",
@@ -333,4 +370,6 @@ def build(look: Look) -> Theme:
         | ({"motif": look.motif_tile} if look.motif_tile else {}),
         mark=look.mark or patterns.mark(look.id, random.Random(0)),  # noqa: S311 - a shape
         track=look.track,
+        stretch=stretch,
+        variation=variation,
     )

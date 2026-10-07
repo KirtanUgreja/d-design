@@ -28,10 +28,11 @@ from engine.design.axes import (
 )
 from engine.design.color import from_hex
 from engine.design.palettes import Roles, brand, resolve
-from engine.design.theme import display_width
+from engine.design.theme import display_width, face
 
 CANDIDATES = 160
 EXTREME_MAX_WIDTH = 0.52  # em; condensed faces and the tighter grotesks
+INSTANCE_WIDER = 1.05  # a variable instance's widest, against its pairing's weight
 
 # deck type -> axis -> {value: weight}. A prior tilts the draw, never fixes it.
 PRIORS: dict[str, dict[str, dict[str, float]]] = {
@@ -76,6 +77,11 @@ class Look:
     texture: patterns.Params = patterns.DEFAULT
     mark: str = ""
     motif_tile: str = ""  # the deck's generated texture mask (patterns.motif)
+    # The display face's own instance, when it is variable: axis -> value.
+    instance: tuple[tuple[str, float], ...] = ()
+
+    def axis(self, tag: str, default: float) -> float:
+        return next((v for t, v in self.instance if t == tag), default)
 
     @property
     def dark(self) -> bool:
@@ -107,6 +113,35 @@ def seed_of(deck_id: str) -> int:
 def _pick(rng: random.Random, values: list[str], prior: dict[str, float] | None) -> str:
     weights = [prior.get(v, 1.0) for v in values] if prior else None
     return rng.choices(values, weights=weights)[0]
+
+
+def _instance(rng: random.Random, pairing: Pairing) -> tuple[tuple[str, float], ...]:
+    """A variable display face's instance for this deck: weight near the
+    pairing's (display faces stay heavy), width, and Fraunces' softness and
+    wonk. Optical size follows the type size by itself."""
+    display = face(pairing.display)
+    out: list[tuple[str, float]] = []
+    if wght := display.axis("wght"):
+        w0 = pairing.display_weight
+        w = rng.uniform(max(wght[0], w0 - 100), min(wght[1], w0 + 100))
+        # Some faces widen fast with weight (Syne): never more than 5% wider
+        # than the weight the pairing was tested at.
+        limit = display_width(pairing.display, w0) * INSTANCE_WIDER
+        while w > w0 and display_width(pairing.display, w) > limit:
+            w -= 10
+        out.append(("wght", round(w)))
+    if wdth := display.axis("wdth"):
+        weight = next((v for t, v in out if t == "wght"), pairing.display_weight)
+        stretch = rng.uniform(max(wdth[0], 72), min(wdth[1], 112))
+        limit = display_width(pairing.display, pairing.display_weight) * INSTANCE_WIDER
+        while stretch > 100 and display_width(pairing.display, weight, stretch) > limit:
+            stretch -= 1
+        out.append(("wdth", round(stretch, 1)))
+    if display.axis("SOFT"):
+        out.append(("SOFT", round(rng.uniform(0, 100))))
+    if display.axis("WONK"):
+        out.append(("WONK", float(rng.random() < 0.5)))
+    return tuple(out)
 
 
 def _compatible(p: Pairing, scale: str, density: str, grid: Grid) -> bool:
@@ -205,6 +240,7 @@ def draw(
         texture=patterns.Params.draw(rng),
         mark=patterns.mark(words or deck_id, rng),
         motif_tile=motif_tile,
+        instance=_instance(rng, pairing),
     )
 
 

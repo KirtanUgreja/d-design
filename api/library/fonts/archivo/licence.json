@@ -7,5 +7,15 @@
   ],
   "licence": "OFL-1.1",
   "reserved_font_name": null,
-  "source": "fonts.googleapis.com (latin subset)"
+  "source": "fonts.googleapis.com (latin subset)",
+  "axes": {
+    "wdth": [
+      62,
+      125
+    ],
+    "wght": [
+      100,
+      900
+    ]
+  }
 }

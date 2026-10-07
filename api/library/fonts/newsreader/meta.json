@@ -8,20 +8,65 @@
   "licence": "OFL-1.1",
   "reserved_font_name": null,
   "source": "fonts.googleapis.com (latin subset)",
+  "axes": {
+    "opsz": [
+      6,
+      72
+    ],
+    "wght": [
+      200,
+      800
+    ]
+  },
   "metrics": {
+    "200": {
+      "x_height": 0.512,
+      "cap": 0.749,
+      "descender": 0.233,
+      "width": 0.437,
+      "leading": 0.99
+    },
+    "300": {
+      "x_height": 0.512,
+      "cap": 0.75,
+      "descender": 0.233,
+      "width": 0.445,
+      "leading": 0.99
+    },
     "400": {
-      "x_height": 0.44,
-      "cap": 0.712,
-      "descender": 0.26,
-      "width": 0.434,
-      "leading": 0.98
+      "x_height": 0.512,
+      "cap": 0.752,
+      "descender": 0.233,
+      "width": 0.458,
+      "leading": 0.99
+    },
+    "500": {
+      "x_height": 0.512,
+      "cap": 0.752,
+      "descender": 0.233,
+      "width": 0.47,
+      "leading": 0.99
     },
     "600": {
-      "x_height": 0.445,
-      "cap": 0.714,
-      "descender": 0.26,
-      "width": 0.454,
-      "leading": 0.98
+      "x_height": 0.512,
+      "cap": 0.753,
+      "descender": 0.233,
+      "width": 0.483,
+      "leading": 0.99
+    },
+    "700": {
+      "x_height": 0.512,
+      "cap": 0.754,
+      "descender": 0.233,
+      "width": 0.496,
+      "leading": 0.99
+    },
+    "800": {
+      "x_height": 0.512,
+      "cap": 0.756,
+      "descender": 0.233,
+      "width": 0.517,
+      "leading": 0.99
     }
   }
 }

@@ -8,20 +8,58 @@
   "licence": "OFL-1.1",
   "reserved_font_name": null,
   "source": "fonts.googleapis.com (latin subset)",
+  "axes": {
+    "opsz": [
+      6,
+      96
+    ],
+    "wght": [
+      400,
+      900
+    ]
+  },
   "metrics": {
+    "400": {
+      "x_height": 0.46,
+      "cap": 0.75,
+      "descender": 0.264,
+      "width": 0.47,
+      "leading": 1.02
+    },
     "500": {
       "x_height": 0.46,
       "cap": 0.75,
-      "descender": 0.263,
-      "width": 0.482,
+      "descender": 0.262,
+      "width": 0.476,
       "leading": 1.02
+    },
+    "600": {
+      "x_height": 0.46,
+      "cap": 0.75,
+      "descender": 0.261,
+      "width": 0.484,
+      "leading": 1.02
+    },
+    "700": {
+      "x_height": 0.46,
+      "cap": 0.75,
+      "descender": 0.26,
+      "width": 0.493,
+      "leading": 1.01
     },
     "800": {
       "x_height": 0.46,
       "cap": 0.75,
-      "descender": 0.261,
-      "width": 0.509,
-      "leading": 1.02
+      "descender": 0.26,
+      "width": 0.504,
+      "leading": 1.01
+    },
+    "900": {
+      "x_height": 0.46,
+      "cap": 0.75,
+      "descender": 0.26,
+      "width": 0.516,
+      "leading": 1.01
     }
   }
 }

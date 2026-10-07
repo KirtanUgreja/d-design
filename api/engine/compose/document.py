@@ -14,6 +14,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from engine.design.theme import Theme
+from engine.design.theme import face as registry_face
 
 FONTS = Path(__file__).resolve().parent.parent.parent / "library" / "fonts"
 W, H = 1920, 1080
@@ -40,7 +41,10 @@ _BASE = (
     ":host{display:block;width:1920px;height:1080px;overflow:hidden;position:relative;"
     "background:var(--c-ground);color:var(--c-ink);font-family:var(--f-text);"
     "font-size:var(--t-body);font-weight:var(--w-regular);line-height:1.25;"
-    "-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision}"
+    "-webkit-font-smoothing:antialiased;text-rendering:geometricPrecision;"
+    # The deck's variable instance. Only a face with a wdth range, or with the
+    # named axes, responds; every other face ignores them.
+    "font-stretch:var(--stretch-display,100%);font-variation-settings:var(--fv-display,normal)}"
     "*{box-sizing:border-box;margin:0;padding:0}"
     ".s{width:1920px;height:1080px;position:relative;overflow:hidden}"
     "ul,ol{list-style:none}em{font-style:normal}strong{font-weight:inherit}"
@@ -64,7 +68,20 @@ def font_face_css(theme: Theme) -> str:
     """Every face the theme uses, embedded as-is. No subsetting: that would be
     a modification under the OFL (docs/v4/spec.md -> Export)."""
     rules: list[str] = []
-    for face in theme.faces:
+    for named in theme.faces:
+        face = registry_face(named.family)  # the registry knows which files exist
+        if face.axes:  # one variable file, declared over its ranges
+            data = base64.b64encode((FONTS / face.folder / "variable.woff2").read_bytes())
+            wght = face.axis("wght")
+            wdth = face.axis("wdth")
+            rules.append(
+                f"@font-face{{font-family:'{face.family}';"
+                + (f"font-weight:{wght[0]:g} {wght[1]:g};" if wght else "")
+                + (f"font-stretch:{wdth[0]:g}% {wdth[1]:g}%;" if wdth else "")
+                + "font-style:normal;font-display:block;"
+                f"src:url(data:font/woff2;base64,{data.decode()}) format('woff2')}}"
+            )
+            continue
         for weight in face.weights:
             data = base64.b64encode((FONTS / face.folder / f"{weight}.woff2").read_bytes())
             rules.append(
