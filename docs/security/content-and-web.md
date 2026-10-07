@@ -122,7 +122,7 @@ Rejected outright: `url(`, `expression(`, `@import`, `</style`, `javascript:`, b
 
 ## Uploads
 
-**Not in v4.** The brand kit is typed text and nothing is uploaded, so v3's upload worker, its quarantine prefix and its SVG sanitizer are deleted.
+**Logo upload returns in phase 38** (`api/engine/components/logo.py`). The controls below are built: the size cap before reading, magic bytes, dimensions before decode with Pillow's pixel cap set, a fresh PNG re-encode (no metadata, no trailing bytes), and SVG drawn to pixels inside an `<img>` on a Chromium page with every request aborted — so no user SVG reaches a slide and no SVG sanitizer is needed. Still open: running ingest in the isolated upload worker (phase 29), and server-made storage keys once kits are saved.
 
 When logo or file upload returns, every uploaded file is hostile until proven otherwise, and these come back with it:
 

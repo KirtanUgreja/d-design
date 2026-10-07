@@ -7,6 +7,7 @@ Phase 22 scope: a frozen storyline in, a measured deck out.
 from __future__ import annotations
 
 import asyncio
+import dataclasses
 import random
 import time
 from collections.abc import Callable
@@ -15,6 +16,7 @@ from pathlib import Path
 from typing import Literal
 
 from engine.components import charts
+from engine.components import logo as logos
 from engine.compose import author, planner, procedural, targets
 from engine.compose.archive import Archive
 from engine.compose.author import Composed
@@ -73,6 +75,8 @@ async def build(
     shots_dir: str,
     budget_usd: float,
     archive: Archive | None = None,
+    logo: logos.Logo | None = None,
+    logo_on: Literal["cover", "ends", "all"] = "ends",
     on_event: OnEvent | None = None,
 ) -> Built:
     """Every slide climbs its own ladder, concurrently: compose, measure, up to
@@ -82,6 +86,12 @@ async def build(
     with what really happened (docs/v4/engine.md -> "Generation jobs and events")."""
     started = time.monotonic()
     plans = planner.assign(storyline.slides)
+    if logo is not None:
+        # The user's logo is the deck's signature now: the generated mark steps back.
+        plans = [
+            p.model_copy(update={"ornament": "none"}) if p.ornament == "mark" else p for p in plans
+        ]
+        theme = dataclasses.replace(theme, logo=logo.data_url())
     archive = archive if archive is not None else Archive()
     # Every slide's target, drawn in order so each moves away from the last.
     rng = random.Random(f"{title}/{storyline.governing_thought}")  # noqa: S311 - layout, not security
@@ -128,6 +138,33 @@ async def build(
 
     def broken(m: browser.Measured) -> bool:
         return bool(m.errors) or not m.measured
+
+    def wants_logo(index: int) -> bool:
+        ends = index in (0, len(plans) - 1)
+        return logo_on == "all" or (index == 0 if logo_on == "cover" else ends)
+
+    async def with_logo(
+        index: int, plan: SlidePlan, m: browser.Measured, mark: logos.Logo
+    ) -> browser.Measured:
+        """Placed by code in the emptiest safe corner, in the variant that
+        reads on the ground; measured again, and taken off if anything broke."""
+        occupied = [(b.l, b.t, b.r, b.b) for b in m.boxes]
+        occupied += [(s.l, s.t, s.r, s.b) for s in m.shapes]
+        ends = index in (0, len(plans) - 1)
+        at = logos.place(occupied, mark, height=96 if ends else 56, prefer_top=index == 0)
+        warn = "no empty safe-area corner for the logo"
+        if at is not None:
+            kept = composed[plan.id]
+            tone = logos.variant(mark, theme.colors["ground"])
+            composed[plan.id] = Composed(logos.insert(kept.html, at, tone), kept.css)
+            placed = await measure(plan)
+            if not broken(placed):
+                return placed
+            composed[plan.id] = kept
+            m = await measure(plan)  # the slide without it, screenshot included
+            warn = "the logo broke the slide, so it was left off"
+        m.warnings.append(browser._Found(code="W9", measured=warn, threshold="logo placed"))
+        return m
 
     methods: dict[int, str] = {}  # deck position -> the code-built method used there
 
@@ -274,6 +311,8 @@ async def build(
         # The novelty gate: quality first, then distance from everything made.
         if not broken(m):
             m = await novelty(index, plan, m)
+        if logo is not None and not broken(m) and wants_logo(index):
+            m = await with_logo(index, plan, m, logo)
 
         # Rung 4, the flag: whatever is still broken is shown, never hidden.
         measured[plan.id] = m

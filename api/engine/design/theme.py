@@ -80,6 +80,7 @@ class Theme:
     # A variable display face's drawn instance: wdth in percent, other axes.
     stretch: float = 100.0
     variation: str = "normal"
+    logo: str = ""  # the user's logo as a data: URL (components/logo.py), once per deck
 
     @property
     def faces(self) -> tuple[Face, ...]:
@@ -113,6 +114,7 @@ class Theme:
             f"--track-display:{self.track:.3f}em;",
             f"--stretch-display:{self.stretch:g}%;",
             f"--fv-display:{self.variation};",
+            *([f'--logo:url("{self.logo}");'] if self.logo else []),
             f"--mark:{self.mark};",
             "--shadow-hard:14px 14px 0 var(--c-ink);",
         ]

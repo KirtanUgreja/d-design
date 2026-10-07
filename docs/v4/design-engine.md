@@ -185,6 +185,7 @@ Sizes are calibrated to the canvas: 1920px is a 13.33-inch slide, so 1pt is 2px.
 | E9 | Wrapping | A headline over 4 lines; a field with one word per line (3 or more words) — v3's CTA |
 | E10 | Images | Stretched more than 2%, or upscaled more than 1.35× |
 | E11 | Empty block | A solid field with no text on or over it, at least 48px on its short side and 3% of the canvas. Added 2026-10-01 after gate 1: the empty accent rectangle was the most repeated tell on the low-rated decks, and the prompt and an exemplar had taught it. Rules, bars and pattern textures pass |
+| E12 | Logo | The user's logo (placed by code, phase 38) outside the safe area, under 32px tall, or with text over it. The pipeline then takes it off the slide and warns W9 |
 
 **Warnings are reported and tracked, not repaired:**
 
@@ -197,6 +198,8 @@ Sizes are calibrated to the canvas: 1920px is a 13.33-inch slide, so 1pt is 2px.
 | W5 | Rhythm | Adjacent slides' fingerprints overlap more than 0.75; more than 2 centred slides; more than 1 card grid (3 or more equal, filled siblings) |
 | W6 | Projector margin | Body contrast under 7:1 |
 | W7 | Widow | A headline whose last line is a single word. Moved from E9 on 2026-09-30: `text-wrap: balance` removes most, and repairing the rest cost more than it fixed |
+| W8 | Near-repeat | A composition within ε of an archived slide or another slide in the deck after its one steered retry (phase 36) |
+| W9 | Logo left off | No empty safe-area corner for the logo, or placing it broke the slide |
 
 Warnings become errors only when the bench shows they track the owner's scores.
 

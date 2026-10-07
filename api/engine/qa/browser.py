@@ -135,6 +135,7 @@ async def measure(
         await browser.close()
     for m in result.values():
         m.warnings += [_Found(**w.model_dump()) for w in metrics.slide_warnings(m.boxes)]
+        m.errors += [_Found(**e.model_dump()) for e in metrics.logo_errors(m.boxes, m.shapes)]
     for frame in frames:
         result.setdefault(frame.slide_id, Measured(measured=False))
     return result

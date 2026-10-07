@@ -50,6 +50,11 @@ _BASE = (
     "ul,ol{list-style:none}em{font-style:normal}strong{font-weight:inherit}"
     "h1,h2,h3{text-wrap:balance}p,li{text-wrap:pretty}"
     "dd-chart{display:block}"
+    # The user's logo, placed by our code (components/logo.py): never restyled,
+    # only shown as it is or, where it would not read, as its shape in ink.
+    "dd-logo{position:absolute;display:block;background:var(--logo) center/contain no-repeat}"
+    "dd-logo[tone=mono]{background:var(--c-ink);-webkit-mask:var(--logo) center/contain "
+    "no-repeat;mask:var(--logo) center/contain no-repeat}"
     "dd-texture{display:block;background-color:var(--c-accent)}"
     "dd-texture[tone=ink]{background-color:var(--c-ink)}"
     "dd-texture[tone=surface]{background-color:var(--c-surface)}"

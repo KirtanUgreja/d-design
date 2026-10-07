@@ -146,6 +146,7 @@
       if (el.tagName === "DD-CHART") kind = "chart";
       else if (el.tagName === "DD-TEXTURE") kind = "texture";
       else if (el.tagName === "IMG") kind = "image";
+      else if (el.tagName === "DD-LOGO") kind = "logo";
       else { const bg = getComputedStyle(el).backgroundColor; if (opaque(bg) && rgb(bg).join() !== ground) kind = "field"; }
       if (!kind) continue;
       const r = rel(el.getBoundingClientRect());

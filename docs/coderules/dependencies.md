@@ -16,7 +16,7 @@ Not a ban — a speed bump. The cost of a dependency is not install time; it is 
 
 | Package | Where | For | Phase |
 |---|---|---|---|
-| `Pillow` | api | Re-encoding generated images to webp. Webp only | 22–25 |
+| `Pillow` | api | Re-encoding generated images to webp, and uploaded logos to a trimmed PNG with the pixel cap set before decode (phase 38) | 22–25, 38 |
 | `openapi-typescript` | web (dev) | Generating `web/lib/api/schema.d.ts` | 21 or 27 |
 | Tailwind + shadcn/ui (copy-in source on Radix primitives) | web | Our chrome only, never a deck | **added in phase 30** (2026-10-05), rows below |
 | A managed-auth SDK, a JWT/JWKS verifier, SQLAlchemy + asyncpg + Alembic | web / api | Accounts and Postgres | 29 |

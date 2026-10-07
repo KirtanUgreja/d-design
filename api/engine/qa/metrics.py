@@ -97,6 +97,27 @@ def empty_rect(rects: list[Rect]) -> tuple[float, float, float]:
     return best / (GRID_X * GRID_Y), centre[0], centre[1]
 
 
+def logo_errors(boxes: list[Box], shapes: list[Shape]) -> list[Found]:
+    """E12: the user's logo inside the safe area, at least 32px tall, and
+    with no text on it. It is placed by code, so this checks the placement."""
+    out: list[Found] = []
+    for s in shapes:
+        if s.kind != "logo":
+            continue
+        if s.l < 40 or s.t < 24 or s.r > W - 40 or s.b > H - 24:
+            out.append(Found(code="E12", measured="logo outside the safe area", threshold="inside"))
+        if s.b - s.t < 32:
+            out.append(Found(code="E12", measured=f"logo {s.b - s.t:.0f}px tall", threshold="32px"))
+        for b in boxes:
+            if b.l < s.r and s.l < b.r and b.t < s.b and s.t < b.b:
+                out.append(
+                    Found(
+                        code="E12", field=b.field, measured="text over the logo", threshold="clear"
+                    )
+                )
+    return out
+
+
 def _empty_share(boxes: list[Box]) -> float:
     return empty_rect([(b.l, b.t, b.r, b.b) for b in boxes])[0]
 
