@@ -58,6 +58,21 @@ An audit of the code at `8169fd9` and of the three `samples/*.html` decks opened
 - **A check that never runs on real output is theater.** The variety gate, the vision critic and the acceptance run all lived outside the product path.
 - **Infrastructure built before the output is good is built for nobody.** Accounts, tenancy, quotas and publishing all worked, around decks no one would present.
 
+## Measured 2026-10-07 — removing the exemplars (phase 36)
+
+One deck (`update-q3`, Harbor), `deepseek-v4.1-flash`, against the 2026-10-05 recordings (26 slides, **0** code-built fallbacks).
+
+| Prompt | Reasoning tokens (median) | Cut off | Code-built fallbacks | $/deck |
+|---|---|---|---|---|
+| compose.v5 (12 exemplars, archetype names) | 3,448 | 0 / 32 | 0 / 8 | ~0.10 |
+| compose.v6 (exact geometric target, no exemplars) | 12,000 | 7 / 8 | 7 / 8 | 0.12 |
+| compose.v7 (loose target, 12k cap) | ~8,800 | 3 / 8 | 4 / 8 | 0.11 |
+| compose.v7 (20k cap) | ~12,400 | 0 / 8 | **3 / 8** (contrast E5 not fixed by 2 repairs) | 0.18 |
+
+- **An exact numeric target makes the model reason until it runs out.** Stated as a direction, it reasons about 2.5× longer than v5, not without end.
+- **Without exemplars, the slides the model finishes hold the reference quality; it finishes fewer.** The new failures are contrast on colour fields that repair does not fix.
+- **Code-built fallbacks in a row look alike** (three accent panels in a row in the last run): the fallback is a method, and repeated it reads as a template.
+
 ## Research used by v4
 
 Read September 2026.
