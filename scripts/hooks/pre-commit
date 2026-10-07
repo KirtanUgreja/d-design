@@ -2,8 +2,8 @@
 # The gate. A commit that fails any step does not land.
 #
 #   api  (Python)                      web  (TypeScript) — phase 30
-#   1. format    — Ruff format         lint (ESLint) and types (tsc); the
-#   2. lint      — Ruff                OpenAPI types join in phase 27
+#   1. format    — Ruff format         lint (ESLint) and types (tsc), and
+#   2. lint      — Ruff                the OpenAPI types match the API (27)
 #   3. typecheck — mypy --strict
 #   4. tests     — pytest
 #
@@ -45,6 +45,18 @@ if touches '^web/'; then
   echo 'web'
   step 'eslint' env -C web pnpm exec eslint .
   step 'tsc'    env -C web pnpm exec tsc --noEmit
+fi
+
+# The web's API types are generated: an API change that is not regenerated,
+# or a hand edit to them, fails here (docs/v4/plan/27-app-create-flow.md).
+api_types() {
+  env -C api uv run python -m cli openapi >/dev/null &&
+    env -C web pnpm -s api:types >/dev/null &&
+    git diff --quiet -- web/lib/api/openapi.json web/lib/api/schema.d.ts
+}
+if touches '^api/app\.py|^api/engine/models\.py|^web/lib/api/'; then
+  echo 'api types'
+  step 'openapi' api_types
 fi
 
 if touches '\.md$'; then

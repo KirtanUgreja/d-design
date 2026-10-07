@@ -10,6 +10,7 @@
 | 37 beautiful data | **Code built.** 9 chart forms chosen from the data, series colours validated by the ported dataviz checks, emphasis, computed callouts, data as text and in notes; `storyline.v4` / `research.v2` ask for charts and series (**unvalidated: needs a paid run**) |
 | 38 brand kit + logo | **Engine built.** Hostile-by-default ingest, code placement, legible variant, E12/W9. Upload UI and the saved kit wait for phase 29's accounts |
 | 32 (one fix) | The cover is composed first, alone: it arrives first in the watch and warms the cache |
+| 27 app: create flow | **Built, offline.** `api/store/files.py`, `api/worker.py`, `api/app.py`; the web's live route `/d/[id]` (questions → outline gate → live watch → exports). Proven end to end in a browser with a fake-model worker. Run: `cd api && uv run uvicorn app:app --port 8000` + `uv run python worker.py`, and `cd web && pnpm build && pnpm start` |
 
 ## Tomorrow, with credit (top up $10; $15 with phase 25's images)
 
@@ -27,10 +28,10 @@ Phase 36 exits on: repeat rate ≤ 1% at 300 slides and not rising, coverage sti
 ## Left — in order
 
 1. **Owner:** open the 32k Harbor build next to `web/public/fixtures/update-q3/present.html`.
+1. **Owner, with credit:** type a brief at `localhost:3000` with the API and worker running, and build 3 decks start to finish (phase 27's human check).
 2. **Owner:** top up; run the block above; rate the walls.
 3. Phase 25's paid half (images, the 12 × 2 run, gate 2).
 4. **Owner:** 5 moderated UI sessions (`bench/ui/session-script.md`).
-5. Phase 27: the real backend (worker, API, SSE) so a typed brief builds live.
 6. Then 28 editor → 31–35 UI phases → 29 accounts + deploy (and 38's upload UI).
 7. Push the branches and let CI run.
 
