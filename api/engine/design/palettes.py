@@ -1,17 +1,18 @@
-"""Palette strategies (docs/v4/design-engine.md -> Registry, "Palette strategy").
+"""A deck's colours, generated from one continuous palette space
+(docs/v4/plan/36-independent-design.md -> Make, 7). There are no named
+strategies to run out of: ground lightness and tint, ink tint, the accent's
+hue split, lightness and chroma are all drawn per deck.
 
-Each strategy turns a hue (and the seeded RNG) into colour roles in OKLCH.
 `resolve()` then forces every pair a slide may use to its contrast target by
-moving lightness only, so a sampled theme cannot fail contrast: the guarantee
-is in construction, and `tests/test_design.py` checks it over 1,000 seeds.
-
-Chroma is capped on grounds and large fields: no neon, no glow.
+moving lightness only, so a generated palette cannot fail contrast: the
+guarantee is in construction, and `tests/test_design.py` checks it over 1,000
+seeds. Chroma is capped on grounds and large fields: no neon, no glow.
 """
 
 from __future__ import annotations
 
 import random
-from collections.abc import Callable
+from dataclasses import dataclass
 
 from engine.design.color import Need, Oklch, clamp, fit, from_hex
 
@@ -22,119 +23,92 @@ BODY = Need(wcag=4.5, apca=60)
 LARGE = Need(wcag=3.0, apca=45)
 GRAPHIC = Need(wcag=3.0, apca=30)
 
-GROUND_CHROMA = 0.035
+GROUND_CHROMA = 0.035  # the most a ground is ever tinted: more reads as candy
 FIELD_CHROMA = 0.16
 
 Roles = dict[str, Oklch]
-Strategy = Callable[[float, random.Random], Roles]
 
 
-def _paper(h: float, rng: random.Random) -> Roles:
-    """Ink and one accent on paper."""
-    warm = rng.choice((70.0, 85.0, 95.0, 250.0))
-    ground = Oklch(rng.uniform(0.95, 0.98), rng.uniform(0.008, 0.02), warm)
-    return {
-        "ground": ground,
-        "surface": ground.with_l(ground.l - 0.05),
-        "ink": Oklch(0.2, 0.012, warm),
-        "ink-2": Oklch(0.45, 0.012, warm),
-        "accent": Oklch(rng.uniform(0.5, 0.58), rng.uniform(0.13, 0.17), h),
-    }
+@dataclass(frozen=True)
+class Tilt:
+    """What a tone does to the palette space: it leans the draw, never fixes it."""
+
+    dark: float  # chance of a dark ground
+    accent_c: tuple[float, float]  # accent chroma range
+    tint: float  # most ground chroma
+    split: float  # chance the accent moves off the deck's hue (two-colour print)
 
 
-def _night(h: float, rng: random.Random) -> Roles:
-    """A dark ground and one spot colour."""
-    cool = rng.choice((240.0, 260.0, 60.0))
-    ground = Oklch(rng.uniform(0.16, 0.21), rng.uniform(0.008, 0.02), cool)
-    return {
-        "ground": ground,
-        "surface": ground.with_l(ground.l + 0.06),
-        "ink": Oklch(0.95, 0.01, cool),
-        "ink-2": Oklch(0.75, 0.012, cool),
-        "accent": Oklch(rng.uniform(0.78, 0.86), rng.uniform(0.12, 0.16), h),
-    }
-
-
-def _duotone(h: float, rng: random.Random) -> Roles:
-    """Two inks, like a two-colour print: a tinted ground in one hue, ink in the same."""
-    ground = Oklch(rng.uniform(0.92, 0.95), GROUND_CHROMA, h)
-    return {
-        "ground": ground,
-        "surface": ground.with_l(ground.l - 0.06),
-        "ink": Oklch(0.25, 0.07, h),
-        "ink-2": Oklch(0.42, 0.06, h),
-        "accent": Oklch(0.55, 0.14, (h + rng.choice((150.0, 180.0, 210.0))) % 360),
-    }
-
-
-def _blocks(h: float, rng: random.Random) -> Roles:
-    """Colour-block fields: the accent is meant to fill large areas."""
-    ground = Oklch(rng.uniform(0.94, 0.97), 0.01, rng.choice((80.0, 100.0)))
-    return {
-        "ground": ground,
-        "surface": ground.with_l(ground.l - 0.06),
-        "ink": Oklch(0.18, 0.01, ground.h),
-        "ink-2": Oklch(0.42, 0.01, ground.h),
-        "accent": Oklch(rng.uniform(0.45, 0.6), FIELD_CHROMA, h),
-    }
-
-
-def _tonal(h: float, rng: random.Random) -> Roles:
-    """One hue throughout, in steps of lightness."""
-    ground = Oklch(rng.uniform(0.93, 0.96), 0.025, h)
-    return {
-        "ground": ground,
-        "surface": ground.with_l(ground.l - 0.07),
-        "ink": Oklch(0.22, 0.05, h),
-        "ink-2": Oklch(0.43, 0.05, h),
-        "accent": Oklch(0.48, 0.11, h),
-    }
-
-
-def _signal(h: float, rng: random.Random) -> Roles:
-    """Black and white, and one signal colour."""
-    ground = Oklch(rng.choice((0.985, 0.995)), 0.0, 0.0)
-    return {
-        "ground": ground,
-        "surface": Oklch(0.92, 0.0, 0.0),
-        "ink": Oklch(0.13, 0.0, 0.0),
-        "ink-2": Oklch(0.42, 0.0, 0.0),
-        "accent": Oklch(rng.uniform(0.55, 0.62), 0.18, h),
-    }
-
-
-def _deep(h: float, rng: random.Random) -> Roles:
-    """A dark tonal ground in the hue, light ink, a lighter accent."""
-    ground = Oklch(rng.uniform(0.2, 0.26), 0.04, h)
-    return {
-        "ground": ground,
-        "surface": ground.with_l(ground.l + 0.06),
-        "ink": Oklch(0.95, 0.015, h),
-        "ink-2": Oklch(0.78, 0.02, h),
-        "accent": Oklch(0.8, 0.12, (h + rng.choice((40.0, -40.0, 180.0))) % 360),
-    }
-
-
-STRATEGIES: dict[str, Strategy] = {
-    "paper": _paper,
-    "night": _night,
-    "duotone": _duotone,
-    "blocks": _blocks,
-    "tonal": _tonal,
-    "signal": _signal,
-    "deep": _deep,
+TILTS: dict[str, Tilt] = {
+    "plain": Tilt(dark=0.15, accent_c=(0.09, 0.15), tint=0.02, split=0.15),
+    "confident": Tilt(dark=0.3, accent_c=(0.12, 0.17), tint=0.03, split=0.25),
+    "warm": Tilt(dark=0.15, accent_c=(0.1, 0.16), tint=GROUND_CHROMA, split=0.3),
+    "bold": Tilt(dark=0.5, accent_c=(0.14, 0.19), tint=0.04, split=0.3),
 }
-DARK = frozenset({"night", "deep"})
-# Hues that read as a deliberate colour, not a default blue.
-HUES = (25.0, 40.0, 60.0, 90.0, 130.0, 160.0, 190.0, 230.0, 265.0, 300.0, 340.0)
+
+
+def _toward(a: float, b: float, t: float) -> float:
+    """The hue t of the way from a to b, the short way round."""
+    d = ((b - a + 540) % 360) - 180
+    return (a + d * t) % 360
+
+
+def generate(h: float, rng: random.Random, tone: str = "confident", *, split: bool = True) -> Roles:
+    """Colour roles for one deck around hue ``h``, every value continuous."""
+    tilt = TILTS.get(tone, TILTS["confident"])
+    dark = rng.random() < tilt.dark
+    two_colour = split and rng.random() < tilt.split
+    # The ground leans anywhere from neutral to the deck's hue.
+    ground_h = _toward(rng.uniform(0, 360), h, rng.random())
+    ground_c = rng.uniform(0.0, tilt.tint) * (1.6 if two_colour else 1.0)
+    ground_l = rng.uniform(0.14, 0.26) if dark else rng.uniform(0.91, 0.99)
+    ground = Oklch(ground_l, min(ground_c, GROUND_CHROMA), ground_h)
+    lift = rng.uniform(0.04, 0.08)
+    surface = ground.with_l(ground_l + lift if dark else ground_l - lift)
+    # Ink takes its tint from somewhere between the ground and the accent.
+    ink_h = _toward(ground_h, h, rng.random())
+    ink_c = rng.uniform(0.0, 0.07)
+    ink_l = rng.uniform(0.92, 0.97) if dark else rng.uniform(0.13, 0.26)
+    quiet = rng.uniform(0.17, 0.28)
+    accent_h = (h + rng.uniform(120, 240)) % 360 if two_colour else h
+    accent_l = rng.uniform(0.68, 0.8) if dark else rng.uniform(0.42, 0.62)
+    # A light accent at full chroma is pastel neon as a field: dark decks take less.
+    accent_c = rng.uniform(*tilt.accent_c) * (0.7 if dark else 1.0)
+    return {
+        "ground": ground,
+        "surface": surface,
+        "ink": Oklch(ink_l, ink_c, ink_h),
+        "ink-2": Oklch(ink_l - quiet if dark else ink_l + quiet, ink_c * 0.8, ink_h),
+        "accent": Oklch(accent_l, accent_c, accent_h),
+    }
+
+
+def describe(roles: Roles) -> str:
+    """The palette in a few words, for the look's summary and record."""
+    g, a = roles["ground"], roles["accent"]
+    ground = "dark" if g.l < 0.5 else "light"
+    tint = "neutral" if g.c < 0.012 else "tinted"
+    return f"{ground} {tint} ground, accent at {a.h:.0f}°"
+
+
+def gap(a: Roles, b: Roles) -> float:
+    """How different two palettes look, 0 .. about 3."""
+    ga, gb = a["ground"], b["ground"]
+    hue = abs(a["accent"].h - b["accent"].h) % 360
+    return (
+        abs(ga.l - gb.l)
+        + min(1.0, abs(ga.c - gb.c) * 25)
+        + min(hue, 360 - hue) / 180
+        + min(1.0, abs(a["ink"].c - b["ink"].c) * 15)
+    )
 
 
 class UnfitError(Exception):
-    """No lightness satisfies a pair: a bug in a strategy, never user input."""
+    """No lightness satisfies a pair: a bug in the palette space, never user input."""
 
 
 def resolve(roles: Roles) -> Roles:
-    """Force every pair to its target. Raises UnfitError only if a strategy is broken."""
+    """Force every pair to its target. Raises UnfitError only if the space is broken."""
     ground, surface = clamp(roles["ground"]), clamp(roles["surface"])
 
     def need(c: Oklch, grounds: list[Oklch], n: Need) -> Oklch:

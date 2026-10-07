@@ -23,7 +23,7 @@
 | Axis | Size | Examples | Rules |
 |---|---|---|---|
 | **Type pairing** | ~24 pairings over **30–40 OFL families** | condensed poster + neo-grotesk · didone + grotesk · slab + humanist · grotesk display + serif text · mono-led | Licence verified **per family** ("it is on Google Fonts" is not a licence check). Latin-subset woff2 and the OFL text are vendored; `meta.json` records x-height, width class and weights. **No AI-default display faces** (Inter, Poppins, Montserrat, Space Grotesk as display). Our chrome's display face is never a deck display face ([../design/brand.md](../design/brand.md)) |
-| **Palette strategy** | ≥6 | ink + one accent on paper · dark ground + spot colour · duotone print · colour-block fields · tonal monochrome · black/white + signal | Built in OKLCH. Chroma is capped on large fields (no neon). Every ink/ground pair the theme exposes is **guaranteed** to pass WCAG 2, plus APCA on dark grounds. Brand colours map into roles with hue kept and lightness corrected |
+| **Palette** | continuous | No named strategies (phase 36): ground lightness and tint, ink tint, the accent's hue split, lightness and chroma are all drawn per deck (`palettes.generate`); a tone only leans the draw (`TILTS`) | Built in OKLCH. Chroma is capped on grounds (0.035) and on light accents on dark grounds (no neon). Every ink/ground pair the theme exposes is **guaranteed** to pass WCAG 2, plus APCA on dark grounds. Brand colours map into roles with hue kept and lightness corrected |
 | **Grid** | 5 | Swiss 12-column · asymmetric 5/7 · modular 6×4 · editorial column + margin notes · poster (free, full-bleed) | Exposed to slides as `--cols`, `--gutter`, `--margin` |
 | **Motif** | ≥8 | halftone · hatch · grain · rules · frames · oversized numerals · crop marks · cut-paper blocks | Colourless SVG mask tiles behind the `dd-texture` component. Ported from `git show cbfebfa^:web/src/features/renderer/texture/patterns.ts`, without its "light-source bloom", which reads as glow |
 | **Image treatment** | 6 | editorial photo · duotone · halftone photo · flat illustration · cut-paper collage · line drawing | A prompt fragment plus a Pillow treatment. **Never text, logos, UI or charts inside an image** |
@@ -42,11 +42,11 @@ The model is the one generative identities follow (MIT Media Lab's 2011 identity
 
 `design/sampler.py` → `look_for(deck_id, deck_type, tone, words, brand_hex, nonce)`:
 - **One look per deck.** Seeded by the deck, its words and a `nonce`; *Try another look* in the editor is a new nonce.
-- **Discrete only where it must be:** a font pairing (fonts are files), a palette strategy, a grid arrangement, a motif.
+- **Discrete only where it must be:** a font pairing (fonts are files), a grid arrangement, a motif. Colour is continuous.
 - **Continuous everywhere else:** hue anywhere on the wheel (steered by topic words 70% of the time — climate leans green, finance blue), two type-scale ratios, margin, gutter, rule weight, radius, display tracking, and the texture geometry (`design/patterns.py`: dot pitch and size, hatch angle and spacing, grid pitch, line weight).
 - **The deck's mark:** an emblem drawn from its own title (rings, bars or a dotted arc), used on the cover and the ask. No other deck has it.
 - **Tone sets the drama:** plain decks get modest scale ratios and quiet palettes; bold decks steeper ratios and darker grounds.
-- **Constraints first, as before:** brand colours limit the palette strategies; compatibility rules remove bad combinations; deck type sets priors.
+- **Constraints first, as before:** a brand colour fixes the accent hue and turns off the two-colour split; compatibility rules remove bad combinations; deck type sets priors.
 - **Measured:** 300 decks give 300 distinct looks; contrast holds over 1,000 seeds; every exemplar passes QA under 50 generated looks (`tests/test_design.py`).
 
 `sample()` still returns three far-apart looks, for the internal tile wall only.

@@ -305,7 +305,7 @@ def build(look: Look) -> Theme:
     motif = look.motif
     return Theme(
         id=look.id,
-        summary=f"{pairing.note}; {look.palette} palette; {grid.id} grid; {motif.id} motif.",
+        summary=f"{pairing.note}; {look.palette}; {grid.id} grid; {motif.id} motif.",
         colors=colors,
         display=display,
         text=text,

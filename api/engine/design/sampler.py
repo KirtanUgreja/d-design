@@ -14,7 +14,7 @@ import hashlib
 import random
 from dataclasses import dataclass
 
-from engine.design import patterns
+from engine.design import palettes, patterns
 from engine.design.axes import (
     DENSITIES,
     EDGES,
@@ -27,13 +27,12 @@ from engine.design.axes import (
     Motif,
     Pairing,
 )
-from engine.design.color import Oklch, from_hex
-from engine.design.palettes import DARK, STRATEGIES, Roles, brand, resolve
+from engine.design.color import from_hex
+from engine.design.palettes import Roles, brand, resolve
 from engine.design.theme import display_width
 
 CANDIDATES = 160
 EXTREME_MAX_WIDTH = 0.52  # em; condensed faces and the tighter grotesks
-BRAND_PALETTES = ("paper", "night", "blocks", "signal", "tonal")
 
 # deck type -> axis -> {value: weight}. A prior tilts the draw, never fixes it.
 PRIORS: dict[str, dict[str, dict[str, float]]] = {
@@ -80,7 +79,7 @@ class Look:
 
     @property
     def dark(self) -> bool:
-        return self.palette in DARK
+        return self.roles["ground"].l < 0.5
 
     def record(self) -> dict[str, str]:
         return {
@@ -130,12 +129,12 @@ TOPIC_HUES: tuple[tuple[tuple[str, ...], tuple[float, float]], ...] = (
     (("car", "vehicle", "auto", "mobility", "battery", "tesla"), (0, 30)),
 )
 TOPIC_FOLLOWED = 0.7
-TONE: dict[str, tuple[tuple[float, float], tuple[str, ...]]] = {
-    # tone -> (display ratio range, palettes it leans to)
-    "plain": ((1.25, 1.36), ("paper", "signal", "tonal")),
-    "confident": ((1.3, 1.45), ("paper", "night", "blocks", "signal", "duotone")),
-    "warm": ((1.28, 1.42), ("paper", "duotone", "tonal", "blocks")),
-    "bold": ((1.38, 1.5), ("night", "blocks", "deep", "signal")),
+# tone -> display ratio range; the tone's lean on colour is palettes.TILTS.
+TONE: dict[str, tuple[float, float]] = {
+    "plain": (1.25, 1.36),
+    "confident": (1.3, 1.45),
+    "warm": (1.28, 1.42),
+    "bold": (1.38, 1.5),
 }
 
 
@@ -162,9 +161,9 @@ def draw(
     words: str = "",
 ) -> Look:
     """One look, generated: the choices that must be discrete (a font family, a
-    palette strategy) are drawn, and everything that can be continuous is."""
+    grid) are drawn, and everything that can be continuous is, colour included."""
     prior = PRIORS.get(deck_type, {})
-    ratio_range, leaning = TONE.get(tone, TONE["confident"])
+    ratio_range = TONE.get(tone, TONE["confident"])
     while True:
         pairing = rng.choice(PAIRINGS)
         grid_id = _pick(rng, [g.id for g in GRIDS], prior.get("grid"))
@@ -174,21 +173,20 @@ def draw(
         density = _pick(rng, list(DENSITIES), prior.get("density"))
         if _compatible(pairing, scale, density, grid):
             break
-    palettes = list(BRAND_PALETTES) if brand_hex else list(STRATEGIES)
-    weights = [3.0 if p in leaning else 1.0 for p in palettes]
-    palette = rng.choices(palettes, weights=weights)[0]
     hue = from_hex(brand_hex).h if brand_hex else _hue(rng, words)
-    roles = STRATEGIES[palette](hue, rng)
+    # A brand keeps its own hue as the accent, so the two-colour split is off.
+    roles = palettes.generate(hue, rng, tone, split=not brand_hex)
     if brand_hex:
         roles = brand(brand_hex, roles)
+    roles = resolve(roles)
     edge = rng.choice(list(EDGES))
     wide = pairing.kind in ("wide", "mono")
     return Look(
         id=f"{deck_id}-{n}",
         pairing=pairing,
-        palette=palette,
+        palette=palettes.describe(roles),
         hue=hue,
-        roles=resolve(roles),
+        roles=roles,
         grid=grid,
         motif=rng.choice(MOTIFS),
         scale=scale,
@@ -208,18 +206,12 @@ def draw(
     )
 
 
-def _hue_gap(a: Oklch, b: Oklch) -> float:
-    d = abs(a.h - b.h) % 360
-    return min(d, 360 - d) / 180
-
-
 def distance(a: Look, b: Look) -> float:
     return (
         3.0 * (a.pairing.kind != b.pairing.kind)
         + 1.0 * (a.pairing.id != b.pairing.id)
-        + 2.0 * (a.palette != b.palette)
+        + 2.0 * palettes.gap(a.roles, b.roles)
         + 2.0 * (a.dark != b.dark)
-        + 2.0 * _hue_gap(a.roles["accent"], b.roles["accent"])
         + 2.0 * (a.grid.id != b.grid.id)
         + 1.5 * (a.motif.id != b.motif.id)
         + 1.0 * (a.scale != b.scale)
