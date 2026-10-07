@@ -11,8 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from html import escape
 
-from engine.compose import planner
-from engine.compose.exemplars import load_all
+from engine.compose.targets import Target, brief
 from engine.design.theme import Theme
 from engine.llm.openrouter import ModelError, Reply, Seam, parse_fenced
 from engine.models import Defect, SlidePlan
@@ -20,14 +19,22 @@ from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "compose.v5"
+PROMPT_VERSION = "compose.v6"
 
 RULES = """You are a senior editorial designer. You design ONE presentation slide as HTML and CSS.
 The slide is projected at exactly 1920x1080px. It must look designed by a person with a point of
 view: confident scale contrast, a clear grid, deliberate empty space. It must not look like an
 AI-made or template slide.
 
-OUTPUT: exactly one ```html block and one ```css block. Nothing else.
+OUTPUT: one ```ideas block, then one ```html block and one ```css block. Nothing else.
+
+HOW TO DESIGN IT
+- You are given a COMPOSITION TARGET: where the visual mass sits, how much stays empty, the
+  scale relation, the number of blocks. It is measured after rendering. Design toward it.
+- In the ```ideas block, write three genuinely different compositions that meet the target,
+  one line each, and after each how typical it is of slide design from 0 (never seen) to 1
+  (every template does this). Then build the LEAST typical one that still meets the contract,
+  the target and the design rules. Do not explain anything outside the ideas block.
 
 HTML CONTRACT
 - One root: <section class="s"> … </section>.
@@ -84,20 +91,10 @@ class Composed:
     css: str
 
 
-def prefix(theme: Theme, exemplars: bool = True) -> str:
-    """The stable, cacheable part of every compose call for one deck.
-
-    ``exemplars=False`` exists for the phase-22 A/B: does the library help?
-    """
-    if not exemplars:
-        return f"{RULES}\nTHEME TOKENS\n{theme.describe()}\n"
-    pack = "\n\n".join(e.prompt() for e in load_all())
-    return (
-        f"{RULES}\nTHEME TOKENS\n{theme.describe()}\n\n"
-        "EXEMPLARS — compositions that pass every check. They show the contract and the level of "
-        "craft. Learn from them; do not copy one. Compose for THIS slide's content.\n\n"
-        f"{pack}"
-    )
+def prefix(theme: Theme) -> str:
+    """The stable, cacheable part of every compose call for one deck. No
+    example slides: examples anchor the model to them (phase 36)."""
+    return f"{RULES}\nTHEME TOKENS\n{theme.describe()}\n"
 
 
 def _fields(plan: SlidePlan) -> str:
@@ -137,20 +134,14 @@ async def compose(
     position: int,
     total: int,
     thought: str,
-    previous: str,
-    exemplars: bool = True,
+    target: Target,
+    steer: str = "",
 ) -> Result[Composed, ModelError]:
-    differ = (
-        f"; the previous slide was '{previous}', so this one must look different.\n"
-        if previous
-        else ".\n"
-    )
     user = (
         f"Slide {position} of {total}. The deck argues: {thought}\n"
         f"This slide's job: {plan.intent} ({plan.beat}).\n"
-        f"Build it as a '{plan.archetype}' composition — "
-        f"{planner.ARCHETYPES.get(plan.archetype, '')}"
-        + differ
+        f"COMPOSITION TARGET\n{brief(target)}\n"
+        + (f"{steer}\n" if steer else "")
         + f"\nFields:\n{_fields(plan)}"
         + {
             "mark": '\nOrnament: this deck\'s mark (<dd-texture kind="mark">), once, 160-360px '
@@ -173,7 +164,7 @@ async def compose(
         system="Follow the contract exactly.",
         user=user,
         model=model,
-        prefix=prefix(theme, exemplars),
+        prefix=prefix(theme),
         prompt_version=PROMPT_VERSION,
         max_tokens=12000,
         reasoning="low",
@@ -189,7 +180,6 @@ async def repair(
     defects: list[Defect],
     *,
     model: str,
-    exemplars: bool = True,
 ) -> Result[Composed, ModelError]:
     """One targeted repair from measured defects: the smallest change that
     fixes them. The model is told what was measured, never asked to judge."""
@@ -209,7 +199,7 @@ async def repair(
         system="Follow the contract exactly.",
         user=user,
         model=model,
-        prefix=prefix(theme, exemplars),
+        prefix=prefix(theme),
         prompt_version=PROMPT_VERSION,
         max_tokens=12000,
         reasoning="low",
@@ -239,7 +229,7 @@ def fallback(plan: SlidePlan) -> Composed:
     number, a list, or only a sentence — so a fallback still reads as designed.
 
     ponytail: four layouts. Ceiling: fallbacks of the same kind look alike.
-    Upgrade path: exemplar-fill comes first on the repair ladder (pipeline.py).
+    Now used only for chart slides; every other fallback is procedural.py.
     """
     by = {f.name: escape(f.text) for f in plan.fields}
     head = by.get("headline", "")

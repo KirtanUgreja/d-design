@@ -82,16 +82,15 @@ A single generic "swap theme" would overflow slides composed for different font 
 
 ## Compositions
 
-`compose/planner.py` gives each slide two things. The **intent** is what the slide does; the **archetype** is how it is built. The same intent in a different archetype looks nothing alike, which is where within-deck variety comes from.
+`compose/planner.py` checks each slide's **intent** (what the slide does) against its data and rations its ornament. **How a slide is built is not chosen from a list** (phase 36): `compose/targets.py` draws a **composition target** — a point in a continuous space of measured descriptors (`qa/descriptors.py`: where the visual mass sits, how much is empty and where, the scale relation, blocks, edge use, colour-field share) — from the region the archive (`compose/archive.py`) has used least, fitted to the intent and away from the previous slide. The model is given the target as plain geometry.
 
 | | Values |
 |---|---|
 | **Intents** (15) | cover · statement · number · number-set · points · comparison · steps · timeline · chart · quote · image-led · team · case · section · ask |
-| **Archetypes** (10) | poster (type-dominant, full bleed) · split (two unequal fields) · stack (editorial vertical rhythm) · grid (modular cells) · margin (column + margin notes) · frame (inset, bordered) · band (horizontal bands) · overlap (type layered over an image or field) · corner (content anchored to one corner, large empty field) · columns |
+| **Descriptors** (12, each 0–1) | mass x/y · spread · empty share and its x/y · hero scale · hero area · blocks · axis (column ↔ band) · edge · field — plus a 32×18 occupancy hash. Geometry only: never text or colour |
 
 **Rhythm rules:**
-- No archetype twice in a row.
-- A dense slide follows an airy one.
+- Each slide's target moves away from the previous one; the novelty gate refuses a composition within ε of any archived slide or any slide in the deck (one steered retry, then a W8 warning).
 - At most 2 centred compositions and at most 1 card grid per deck.
 - Image-led slides are ≤40% of the deck, and every image has a stated "why".
 - Section slides only in decks over 12 slides.
@@ -107,7 +106,7 @@ A single generic "swap theme" would overflow slides composed for different font 
 | | |
 |---|---|
 | What an exemplar is | A composition written in the slide contract, using only theme tokens, tagged by intent and archetype |
-| Four jobs | Prompt inspiration · the deterministic fallback when repair fails ("exemplar-fill") · style-tile content · QA fixtures (every exemplar must itself pass lint and QA under every theme) |
+| Jobs since phase 36 | **QA fixtures and style-tile content only.** They are never in a compose prompt (examples anchor the model to them) and never a fallback (a test asserts the first) |
 | Size | 12 at phase 22 (6 archetypes × 2). About 40 at phase 25, **only if phase 22's with/without A/B shows exemplars help** |
 | Where the taste comes from | Studied references: Swiss/International-style posters, editorial magazine spreads, brand-agency and product-launch decks. **Never template marketplaces**: their output is the look this product exists to avoid. Each exemplar records the idea it borrows |
 | How it grows | The design model drafts candidates; the owner curates them on a wall; only kept ones enter the library |
@@ -207,10 +206,10 @@ Warnings become errors only when the bench shows they track the owner's scores.
 
 ## Repair ladder
 
-`compose/repair.py` has three steps, and never loops:
+The ladder (`pipeline.py`) has three steps, and never loops:
 
 1. **Targeted repair**, at most 2 rounds. The model gets the slide, the defect list (code, selector, measured value, threshold) and the rule it broke, and is asked for the smallest change.
-2. **Exemplar-fill.** Code fills the safest exemplar for the intent with the slide's fields. No model call, and it always passes.
+2. **The code-built layout** (`compose/procedural.py`). Code builds the slide from its own composition target, fitting type before placing it. No model call, no stored layout; it passed QA on 3,270 bench slides under 30 generated looks.
 3. **Flag.** If even that fails, keep the best version and mark it **needs attention**. The editor shows the flag, and export lists flagged slides before download.
 
 It never silently ships a failing slide and never asks a vision model for a verdict.

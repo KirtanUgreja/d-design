@@ -11,11 +11,14 @@ real outputs.
 from __future__ import annotations
 
 import json
+import random
 import shutil
 from pathlib import Path
 
+from benchtools import files
 from engine import Brief, Fact, Seam, Storyline, interview, pipeline
-from engine.compose import author
+from engine.compose import author, targets
+from engine.compose.archive import Archive
 from engine.design.sampler import look_for
 from engine.design.theme import Theme
 from engine.design.theme import build as build_theme
@@ -66,6 +69,7 @@ async def record(
     )
     looks = [_look(chosen, [])]
     events: list[dict[str, object]] = []
+    archive = files.load_archive()
     built = await pipeline.build(
         seam,
         story,
@@ -75,27 +79,38 @@ async def record(
         work_file=str(out / "slides" / "qa.html"),
         shots_dir=str(out / "slides"),
         budget_usd=0.5,
+        archive=archive,
         on_event=events.append,
     )
+    files.save_archive(archive)
     for stray in (out / "slides").glob("qa*.html"):
         stray.unlink()
     (out / "present.html").write_text(built.html)
     (out / "send.html").write_text(built.send)
     (out / "deck.pdf").write_bytes(await pdf_export.render(built.send))
 
-    # One real before/after for the editor: slide 2 recomposed in another archetype.
+    # One real before/after for the editor: slide 2 recomposed toward a new target.
     before = built.slides[1]
     plan: SlidePlan = next(p for p in story.slides if p.id == before.id)
-    other = "corner" if before.qa.fingerprint.startswith("grid") else "split"
+    elsewhere = (
+        Archive([built.descriptors[before.id]] * 50)
+        if before.id in built.descriptors
+        else Archive()
+    )
     alt = await author.compose(
         seam,
         chosen,
-        plan.model_copy(update={"archetype": other}),
+        plan,
         model=design,
         position=2,
         total=len(story.slides),
         thought=story.governing_thought,
-        previous="",
+        target=targets.draw(
+            random.Random(before.id),  # noqa: S311 - layout, not security
+            elsewhere,
+            plan.intent,
+            len(plan.fields),
+        ),
     )
     proposal: dict[str, object] | None = None
     if not isinstance(alt, Err):

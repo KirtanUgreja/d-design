@@ -125,6 +125,7 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
     root = files.BENCH / "runs" / args.run / label
     themes = list(THEMES.values())
     rows: list[dict[str, object]] = []
+    archive = files.load_archive()
     for index, brief_id in enumerate(_ids(args.set)):
         item = files.load(brief_id)
         if item.outline is None:
@@ -146,7 +147,9 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             work_file=str(out / "qa.html"),
             shots_dir=str(out),
             budget_usd=args.budget,
+            archive=archive,
         )
+        files.save_archive(archive)
         (out / "deck.html").write_text(built.html)
         (out / "deck-send.html").write_text(built.send)
         files.append_ledger(root / "ledger.jsonl", seam.ledger)
@@ -159,6 +162,8 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             "clean_first_pass": built.first_pass_clean,
             "repaired": origins.count("repaired"),
             "fallback": origins.count("fallback"),
+            "novelty_retries": built.novelty_retries,
+            "near_repeats": built.near_repeats,
             "flagged": sum(s.qa.status != "passed" for s in built.slides),
             "cost_usd": round(seam.spent_usd, 4),
             "seconds": round(built.seconds),

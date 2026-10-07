@@ -14,12 +14,12 @@ Brief ─► interview: one call, ≤5 questions with suggested answers, skippab
       ─► look: one generated theme per deck (pure code; no picking)
          from exemplars with the deck's real title. No model call ──────────► design/*
          ⏸ the user picks a look, or shuffles (instant)
-      ─► planner: an intent and an archetype per slide, rhythm rules ───────► compose/planner.py
+      ─► planner: intents checked, ornament rationed; targets drawn ──────────► compose/planner.py
       ─► in parallel: speaker notes (one call) and, per slide, 5 at a time:
            compose (model → html + css) → sanitize → lint
            → fill components (dd-chart · dd-image · dd-texture)
            → render at 1920×1080 in Chromium → measure
-           → targeted repair (≤2) → exemplar-fill fallback → flag ──────────► compose/*, components/*, qa/*
+           → targeted repair (≤2) → code-built layout → novelty gate → flag ──► compose/*, components/*, qa/*
       ─► deck check: structural variety across slides ──────────────────────► qa/fingerprint.py
       ─► editor: inline edits · AI edits · recolour / restyle · versions
       ─► assemble: player + one shadow root per slide + fonts + webp images

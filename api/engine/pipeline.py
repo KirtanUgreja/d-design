@@ -7,6 +7,7 @@ Phase 22 scope: a frozen storyline in, a measured deck out.
 from __future__ import annotations
 
 import asyncio
+import random
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -14,8 +15,8 @@ from pathlib import Path
 from typing import Literal
 
 from engine.components import charts
-from engine.compose import author, planner
-from engine.compose import exemplars as library
+from engine.compose import author, planner, procedural, targets
+from engine.compose.archive import Archive
 from engine.compose.author import Composed
 from engine.compose.document import Frame
 from engine.design.theme import Theme
@@ -23,17 +24,19 @@ from engine.export.assemble import assemble
 from engine.llm.openrouter import Seam
 from engine.models import Slide, SlidePlan, SlideQA, Storyline
 from engine.qa import browser, metrics
+from engine.qa.descriptors import Descriptors, describe, distance
 from lib.result import Err
 
 PARALLEL = 5
 REPAIR_ROUNDS = 2
-
-
-def _exemplar_fill(plan: SlidePlan, words: dict[str, str]) -> Composed | None:
-    """The best exemplar that can hold every field, filled with them."""
-    for ex in library.best_for(set(words), plan.intent, plan.archetype)[:1]:
-        return Composed(library.fill(ex, words), ex.css)
-    return None
+# Closer than this to any archived slide, or any slide in the deck, is a
+# near-repeat. ponytail: provisional; tuned on the sameness bench (phase 36).
+NOVELTY_EPSILON = 0.08
+STEER = (
+    "This composition came out too close to one already made (distance {d:.2f} of 1). Keep "
+    "the content and the target; move the visual mass and the open field somewhere else, "
+    "change the split, and change the scale relation."
+)
 
 
 @dataclass(frozen=True)
@@ -44,6 +47,9 @@ class Built:
     seconds: float
     first_pass_clean: int  # slides with no defect before any repair
     refusals: dict[str, str]  # slide id -> why its composition was refused (lint text only)
+    descriptors: dict[str, Descriptors]  # slide id -> its composition, for the archive
+    novelty_retries: int
+    near_repeats: int
 
 
 def _frame(plan: SlidePlan, c: Composed) -> Frame:
@@ -66,7 +72,7 @@ async def build(
     work_file: str,
     shots_dir: str,
     budget_usd: float,
-    exemplars: bool = True,
+    archive: Archive | None = None,
     on_event: OnEvent | None = None,
 ) -> Built:
     """Every slide climbs its own ladder, concurrently: compose, measure, up to
@@ -75,6 +81,17 @@ async def build(
     with what really happened (docs/v4/engine.md -> "Generation jobs and events")."""
     started = time.monotonic()
     plans = planner.assign(storyline.slides)
+    archive = archive if archive is not None else Archive()
+    # Every slide's target, drawn in order so each moves away from the last.
+    rng = random.Random(f"{title}/{storyline.governing_thought}")  # noqa: S311 - layout, not security
+    aims: dict[str, targets.Target] = {}
+    previous: targets.Target | None = None
+    for plan in plans:
+        previous = aims[plan.id] = targets.draw(
+            rng, archive, plan.intent, len(plan.fields), previous
+        )
+    accepted: dict[str, Descriptors] = {}
+    steered: set[str] = set()
     fields = {p.id: {f.name: f.text for f in p.fields} for p in plans}
     gate = asyncio.Semaphore(PARALLEL)
     browsers = asyncio.Semaphore(MEASURE_PARALLEL)
@@ -111,6 +128,54 @@ async def build(
     def broken(m: browser.Measured) -> bool:
         return bool(m.errors) or not m.measured
 
+    def code_built(plan: SlidePlan) -> Composed:
+        return procedural.build(plan, aims[plan.id], theme)
+
+    def nearest(d: Descriptors, slide_id: str) -> float:
+        deck = [distance(d, e) for k, e in accepted.items() if k != slide_id]
+        return min([archive.nearest(d), *deck])
+
+    async def novelty(index: int, plan: SlidePlan, m: browser.Measured) -> browser.Measured:
+        """One steered retry for a near-repeat; then accept it, warned and
+        counted. Cost stays bounded: never a loop."""
+        d = describe(m.boxes, m.shapes)
+        near = nearest(d, plan.id)
+        if near < NOVELTY_EPSILON and origin[plan.id] != "fallback" and affordable():
+            steered.add(plan.id)
+            async with gate:
+                retry = await author.compose(
+                    seam,
+                    theme,
+                    plan,
+                    model=model,
+                    position=index + 1,
+                    total=len(plans),
+                    thought=storyline.governing_thought,
+                    target=aims[plan.id],
+                    steer=STEER.format(d=near),
+                )
+            attempts[plan.id] += 1
+            if not isinstance(retry, Err):
+                kept, composed[plan.id] = composed[plan.id], retry.value
+                again = await measure(plan)
+                d2 = describe(again.boxes, again.shapes)
+                if not broken(again) and nearest(d2, plan.id) > near:
+                    m, d, near = again, d2, nearest(d2, plan.id)
+                    origin[plan.id] = "authored"
+                else:
+                    composed[plan.id] = kept
+                    m = await measure(plan)  # the kept slide's screenshot back on disk
+        if near < NOVELTY_EPSILON:
+            m.warnings.append(
+                browser._Found(
+                    code="W8",
+                    measured=f"distance {near:.2f} to an earlier composition",
+                    threshold=f"{NOVELTY_EPSILON}",
+                )
+            )
+        accepted[plan.id] = d
+        return m
+
     async def ladder(index: int, plan: SlidePlan) -> None:
         # The first rung: compose (or the code layout if the budget is spent).
         attempts[plan.id] = 1
@@ -125,13 +190,12 @@ async def build(
                     position=index + 1,
                     total=len(plans),
                     thought=storyline.governing_thought,
-                    previous=plans[index - 1].archetype if index else "",
-                    exemplars=exemplars,
+                    target=aims[plan.id],
                 )
         if result is None or isinstance(result, Err):
             if result is not None:
                 refusals[plan.id] = f"{result.error.kind}: {result.error.detail[:300]}"
-            composed[plan.id], origin[plan.id] = author.fallback(plan), "fallback"
+            composed[plan.id], origin[plan.id] = code_built(plan), "fallback"
         else:
             composed[plan.id], origin[plan.id] = result.value, "authored"
         m = await measure(plan)
@@ -150,7 +214,6 @@ async def build(
                     composed[plan.id],
                     m.defects(),
                     model=model,
-                    exemplars=exemplars,
                 )
             attempts[plan.id] += 1
             if isinstance(fixed, Err):
@@ -158,18 +221,18 @@ async def build(
             composed[plan.id], origin[plan.id] = fixed.value, "repaired"
             m = await measure(plan)
 
-        # Rung 2: exemplar-fill, no model call; then the code-built layout.
+        # Rung 2: the code-built layout, from the same target. No stored layout.
         if broken(m):
             refusals[plan.id] = (
                 f"still defective after repair: {sorted({d.code for d in m.defects()})}"
             )
-            filled = None if plan.chart else _exemplar_fill(plan, fields[plan.id])
-            if filled is not None:
-                composed[plan.id], origin[plan.id] = filled, "exemplar"
+            if origin[plan.id] != "fallback":
+                composed[plan.id], origin[plan.id] = code_built(plan), "fallback"
                 m = await measure(plan)
-            if broken(m) and origin[plan.id] != "fallback":
-                composed[plan.id], origin[plan.id] = author.fallback(plan), "fallback"
-                m = await measure(plan)
+
+        # The novelty gate: quality first, then distance from everything made.
+        if not broken(m):
+            m = await novelty(index, plan, m)
 
         # Rung 3, the flag: whatever is still broken is shown, never hidden.
         measured[plan.id] = m
@@ -189,6 +252,8 @@ async def build(
     emit("stage", name="compose", state="started", slides=[p.id for p in plans])
     await asyncio.gather(*(ladder(i, p) for i, p in enumerate(plans)))
     emit("stage", name="compose", state="done")
+    for d in accepted.values():
+        archive.add(d)
 
     rhythm = metrics.deck_warnings(
         [measured[p.id].fingerprint for p in plans], [measured[p.id].centred for p in plans]
@@ -224,4 +289,14 @@ async def build(
     html = assemble(theme, frames, title, flavour="present", notes=notes)
     send = assemble(theme, frames, title, flavour="send")
     emit("done", seconds=round(time.monotonic() - started, 1))
-    return Built(slides, html, send, time.monotonic() - started, len(first_clean), refusals)
+    return Built(
+        slides,
+        html,
+        send,
+        time.monotonic() - started,
+        len(first_clean),
+        refusals,
+        accepted,
+        len(steered),
+        sum(any(w.code == "W8" for w in s.qa.warnings) for s in slides),
+    )

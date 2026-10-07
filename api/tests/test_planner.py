@@ -36,21 +36,13 @@ def test_image_led_is_capped_at_forty_percent() -> None:
     assert got.count("image-led") <= 4
 
 
-def test_no_archetype_twice_in_a_row_and_no_dense_after_dense() -> None:
+def test_no_stored_layout_is_chosen() -> None:
+    """Phase 36: the planner names no layout; the target decides geometry."""
+    assert not hasattr(planner, "ARCHETYPES")
     for brief_id in files.brief_ids():
         outline = files.load(brief_id).outline
         assert outline is not None
-        plans = planner.assign(outline.slides)
-        arcs = [p.archetype for p in plans]
-        assert all(a != b for a, b in pairwise(arcs)), brief_id
-    dense = [_plan(n, "points", "point-1", "point-2", words=12) for n in range(6)]
-    arcs = [p.archetype for p in planner.assign(dense)]
-    assert not any(a in planner.DENSE and b in planner.DENSE for a, b in pairwise(arcs)), arcs
-
-
-def test_every_archetype_has_a_description() -> None:
-    used = {a for prefer in planner._PREFER.values() for a in prefer}
-    assert used <= set(planner.ARCHETYPES)
+        assert all(p.archetype == "" for p in planner.assign(outline.slides)), brief_id
 
 
 def test_ornaments_are_rationed() -> None:
