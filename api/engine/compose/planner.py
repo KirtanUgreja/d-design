@@ -51,8 +51,11 @@ def assign(plans: list[SlidePlan]) -> list[SlidePlan]:
     for index, plan in enumerate(plans):
         intent = _intent(plan, index, len(plans), images)
         images += intent == "image-led"
+        # No generated emblem any more: drawn from 3 grammars and put on every
+        # cover and ask, it was the most repeated tell on the owner's wall
+        # (2026-10-08). A deck's signature comes from the user's logo, or nothing.
         if intent in ("cover", "ask"):
-            ornament = "mark"
+            ornament = "none"
         elif since_texture >= TEXTURE_EVERY - 1 and not _dense(plan):
             ornament, since_texture = "texture", -1
         else:

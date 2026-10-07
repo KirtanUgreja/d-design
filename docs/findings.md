@@ -106,6 +106,7 @@ One deck (`update-q3`, Harbor), `deepseek-v4.1-flash`, against the 2026-10-05 re
 | Sameness at 100 / 200 / 327 slides | repeats 0.0% / 1.5% / **3.1%**; coverage 6.4% / 9.3% / 10.6% |
 
 - **Phase 36's exit line fails as measured:** repeats 3.1% at 300+ slides and rising, against ≤1% and flat. Coverage is still rising (that line passes). Whether the "repeats" look alike is the owner's blind wall to say: ε (0.08) is unvalidated, and the same outline was built three times on purpose.
+- **The owner's wall (2026-10-08): not unique.** Designed 3.5, Says 3.8, Varied 3.1, Usable 3.3 of 5; "every 10 are 95% similar — unique only in font, colour palette and their combination". One house style everywhere: kicker and accent rule, headline top-left, hairline-separated points, a dot texture in a corner, an accent number, one colour block, and the title emblem (3 grammars) on every cover and ask. **The geometry descriptors cannot see a visual language** — the 3.1% figure measured placement, not design. Causes are ours: the compose prompt's design rules impose one editorial idiom, the element vocabulary is tiny, every slide has the same field skeleton. First fix: the emblem is gone.
 - **Most charts are two values** (a before and an after, or two items). The data wall decides whether those beat two figures side by side.
 
 ## Research used by v4

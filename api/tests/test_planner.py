@@ -51,7 +51,7 @@ def test_ornaments_are_rationed() -> None:
         assert outline is not None
         plans = planner.assign(outline.slides)
         kinds = [p.ornament for p in plans]
-        assert kinds[0] == "mark" and kinds[-1] == "mark", brief_id
+        assert "mark" not in kinds, brief_id  # the emblem is gone (owner, 2026-10-08)
         textures = kinds.count("texture")
         assert textures <= 0.4 * len(kinds) + 1, (brief_id, kinds)
         assert not any(a == b == "texture" for a, b in pairwise(kinds)), (brief_id, kinds)
