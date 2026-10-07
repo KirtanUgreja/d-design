@@ -32,7 +32,7 @@ from engine.models import (
 )
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "storyline.v3"
+PROMPT_VERSION = "storyline.v4"
 SEND_FACTOR = 1.5  # a deck that is sent must explain itself
 
 FRAME = (
@@ -60,10 +60,14 @@ Rules:
   in fact_ids. Never invent a number, a customer, a quote or a name. If the material has no number
   for a claim, make the claim without one. Never write a source or year in brackets: the
   source line is added for you.
-- chart: only when the facts give at least three numbers for the same measure, over time or
-  across categories. type is bar (categories), column (periods), line (a trend, 4+ points) or
-  donut (parts of one whole). values are copied from the facts; unit is "%", "$M", "x" or a
-  word. Its slide's intent is "chart". Otherwise chart is null.
+- chart: whenever the facts give at least TWO numbers for the same measure that belong
+  together — over time, across items, before and after, or as parts of one whole. A chart is
+  often the strongest slide in a deck: look for one. values are copied from the facts; unit is
+  "%", "$M", "x" or a word. For before-and-after per item, put the earlier values in before,
+  in the same label order, and name the two moments in before_name and after_name. highlight
+  is the one label the slide is about, or null. type is only a hint (bar, column, line,
+  stacked): the drawing is chosen from the data. A single number that is the whole point is a
+  stat, not a chart. Its slide's intent is "chart". Otherwise chart is null.
 - intent is one of: cover, statement, number, number-set, points, comparison, steps, timeline,
   chart, quote, team, case, section, ask.
 - Never promise material you were not given. A slide states its evidence or does not exist:
@@ -76,7 +80,22 @@ Rules:
 
 
 class DraftChart(BaseModel):
-    type: Literal["bar", "column", "line", "donut"]
+    before: list[float] | None = None  # earlier values, same labels: before and after
+    before_name: str = ""
+    after_name: str = ""
+    highlight: str | None = None
+    type: Literal[
+        "bar",
+        "column",
+        "line",
+        "area",
+        "stacked",
+        "dumbbell",
+        "slope",
+        "diverging",
+        "waffle",
+        "donut",
+    ]
     title: str
     unit: str
     labels: list[str]
@@ -181,22 +200,35 @@ def chart_spec(d: DraftChart, live: dict[str, Fact]) -> ChartSpec | None:
     """A chart only from approved facts: every value must be stated by an
     approved fact, compared by value in the chart's own unit. Else no chart."""
     approved = [f for f in live.values() if f.status == "approved"]
-    if len(d.labels) != len(d.values) or len(d.values) < 2:
+    if len(d.labels) != len(d.values) or (len(d.values) < 2 and not d.before):
+        return None
+    if d.before is not None and len(d.before) != len(d.values):
         return None
     used: list[str] = []
-    for v in d.values:
+    for v in [*d.values, *(d.before or [])]:
         token = charts.label(v, d.unit, 2 if v != int(v) else 0)
         fact = next((f for f in approved if rules.sourced(token, [f])), None)
         if fact is None:
             return None
         if fact.id not in used:
             used.append(fact.id)
-    points = [ChartPoint(label=k, value=v) for k, v in zip(d.labels, d.values, strict=True)]
+
+    def series(name: str, values: list[float]) -> ChartSeries:
+        points = [ChartPoint(label=k, value=v) for k, v in zip(d.labels, values, strict=True)]
+        return ChartSeries(name=name, points=points)
+
+    lines = [series(d.title, d.values)]
+    if d.before:  # earlier first, so the later values are the ones the eye lands on
+        lines = [
+            series(d.before_name or "Before", d.before),
+            series(d.after_name or "After", d.values),
+        ]
     return ChartSpec(
         type=d.type,
         title=d.title,
         unit=d.unit,
-        series=[ChartSeries(name=d.title, points=points)],
+        series=lines,
+        highlight=d.highlight if d.highlight in d.labels else None,
         fact_ids=used,
     )
 

@@ -28,7 +28,7 @@ from engine.llm.openrouter import ModelError, Reply, Seam, parse_fenced
 from engine.models import Brief, Citation, Fact
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "research.v1"
+PROMPT_VERSION = "research.v2"  # v2: every arc asks for a series (phase 37)
 MAX_RESULTS = 30
 OLD_AFTER_YEARS = 3
 # Statistics farms: pages that aggregate numbers from elsewhere, often

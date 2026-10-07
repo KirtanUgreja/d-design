@@ -14,6 +14,7 @@ from __future__ import annotations
 import random
 from dataclasses import dataclass
 
+from engine.design import dataviz
 from engine.design.color import Need, Oklch, clamp, fit, from_hex
 
 # What each pair must reach. "Text" pairs carry body copy; "large" is the
@@ -150,15 +151,10 @@ def _accent_pair(accent: Oklch, ground: Oklch) -> tuple[Oklch, Oklch]:
 
 
 def series(roles: Roles, n: int = 5) -> list[Oklch]:
-    """Chart colours: the accent first, then hues spaced around it, each
-    readable as a filled shape on the ground."""
-    a = roles["accent"]
-    out = [a]
-    for i in range(1, n):
-        cand = Oklch(a.l, max(a.c, 0.09), (a.h + i * 360 / n) % 360)
-        got = fit(cand, [roles["ground"]], GRAPHIC)
-        out.append(got if got is not None else roles["ink-2"])
-    return out
+    """Chart colours: generated from the deck's accent and validated by the
+    dataviz checks (design/dataviz.py), in a fixed order, never cycled."""
+    ground = roles["ground"]
+    return dataviz.series(roles["accent"], ground, ground.l < 0.5, n)
 
 
 def brand(hex_value: str, roles: Roles) -> Roles:

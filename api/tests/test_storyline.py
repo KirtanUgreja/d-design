@@ -102,3 +102,37 @@ def test_a_chart_survives_only_if_every_value_is_an_approved_fact() -> None:
     assert kept.intent == "chart" and kept.chart is not None
     assert kept.chart.fact_ids == ["a1", "a2", "a3"]
     assert dropped.chart is None and dropped.intent == "points"
+
+
+def test_a_before_and_after_chart_needs_every_value_sourced() -> None:
+    from engine.content.storyline import DraftChart, chart_spec
+
+    facts = {
+        f"r{n}": Fact(id=f"r{n}", text=t, source="user", status="approved")
+        for n, t in enumerate(
+            [
+                "Retention was 81% in Q2",
+                "Retention reached 88% in Q3",
+                "Activation was 44% in Q2",
+                "Activation reached 61% in Q3",
+            ],
+            start=1,
+        )
+    }
+    draft = DraftChart(
+        type="bar",
+        title="Q2 to Q3",
+        unit="%",
+        labels=["Retention", "Activation"],
+        values=[88, 61],
+        before=[81, 44],
+        before_name="Q2",
+        after_name="Q3",
+        highlight="Activation",
+        fact_ids=["r1"],
+    )
+    spec = chart_spec(draft, facts)
+    assert spec is not None
+    assert [s.name for s in spec.series] == ["Q2", "Q3"] and spec.highlight == "Activation"
+    assert sorted(spec.fact_ids) == ["r1", "r2", "r3", "r4"]
+    assert chart_spec(draft.model_copy(update={"before": [81, 40]}), facts) is None

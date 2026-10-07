@@ -1,28 +1,43 @@
-"""Charts: a ChartSpec drawn as hand-written SVG (docs/v4/design-engine.md ->
-Components). No chart library.
+"""Charts: a ChartSpec drawn as hand-written SVG (docs/v4/plan/37-beautiful-
+data.md). No chart library.
 
 The model only places an empty <dd-chart>; this code draws into it after the
-slide is sanitized, so the data on a chart is exactly the approved facts.
-Colours are the theme's chart tokens (--c-series-1..5), each distinct and
-contrast-checked against the ground; a highlighted mark takes the first and
-the rest step back. Values and labels sit on or beside the marks.
+slide is sanitized, so the data on a chart is exactly the approved facts. The
+form follows the data's job (``form``); colour comes last and only from the
+deck's validated series tokens (--c-series-N, design/dataviz.py), in a fixed
+order, never cycled. One series wears slot 1; a highlight takes slot 1 and
+everything else steps back to a quiet ink. Text wears text tokens, never a
+series colour. Values sit on the data; a legend appears only for two or more
+series. Marks take the deck's own rule weight and radius, and small choices
+(bar thickness, label side) are drawn per chart from its own data, so two
+decks' charts of the same numbers do not look alike.
 """
 
 from __future__ import annotations
 
+import hashlib
 import html
-import math
+import random
 import re
 
 from engine.models import ChartSpec
 
 W, H = 1200, 640
 FONT = 26  # user units; a chart drawn about 1000px wide shows it near 22px
+QUIET = "var(--c-ink-2)"  # quiet text
+# Context marks step back further than quiet text: labelled, so they need no 3:1.
+CONTEXT = "var(--c-ink-2);fill-opacity:0.32"
+RULE = "var(--c-rule)"
 # A theme without chart tokens (phase 22's three) falls back to its roles.
 _FALLBACK = ("var(--c-accent)", "var(--c-ink)", "var(--c-ink-2)", "var(--c-rule)", "var(--c-ink)")
+_TIME = re.compile(
+    r"^(?:(?:19|20)\d\d|Q[1-4]|H[12]|FY|Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec"
+    r"|Week|Month|Year)",
+    re.IGNORECASE,
+)
 
 
-def _series(n: int) -> str:
+def series_colour(n: int) -> str:
     i = n % 5
     return f"var(--c-series-{i + 1}, {_FALLBACK[i]})"
 
@@ -54,151 +69,363 @@ def _t(
     anchor: str = "start",
     weight: str = "regular",
     fill: str = "var(--c-ink)",
-    size: int = FONT,
+    size: float = FONT,
+    face: str = "text",
 ) -> str:
     return (
-        f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{anchor}" style="font-family:var(--f-text);'
-        f'font-size:{size}px;font-weight:var(--w-{weight});fill:{fill}">{html.escape(text)}</text>'
+        f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{anchor}" style="font-family:var(--f-{face});'
+        f'font-size:{size:.0f}px;font-weight:var(--w-{weight});fill:{fill}">{html.escape(text)}</text>'
     )
 
 
-def _color(label: str, highlight: str | None) -> str:
-    """One series is one colour; a highlight takes it and the rest step back."""
-    if highlight is None or label == highlight:
-        return _series(0)
-    return "var(--c-ink-2)"
+def _rect(x: float, y: float, w: float, h: float, fill: str, round_end: str = "") -> str:
+    """A bar. Its data end takes the deck's radius; the baseline end stays square."""
+    if w <= 0 or h <= 0:
+        return ""
+    if ";fill-opacity:" in fill:  # a tint over two shapes: tint the group once
+        colour, alpha = fill.split(";fill-opacity:")
+        return f'<g style="opacity:{alpha}">{_rect(x, y, w, h, colour, round_end)}</g>'
+    box = f'x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}"'
+    if not round_end:
+        return f'<rect {box} style="fill:{fill}"/>'
+    # Both corners rounded, then the baseline half covered square: no path maths.
+    rx = f"rx:min(var(--radius), {min(w, h) / 2:.1f}px)"
+    if round_end == "right":
+        cover = _rect(x, y, w / 2, h, fill)
+    else:
+        cover = _rect(x, y + h / 2, w, h / 2, fill)
+    return f'<rect {box} style="fill:{fill};{rx}"/>' + cover
+
+
+def _dot(x: float, y: float, r: float, fill: str) -> str:
+    return f'<circle cx="{x:.1f}" cy="{y:.1f}" r="{r}" style="fill:{fill}"/>'
+
+
+def _baseline(y: float) -> str:
+    return f'<rect x="0" y="{y:.1f}" width="{W}" height="3" style="fill:{RULE}"/>'
+
+
+def _rng(spec: ChartSpec) -> random.Random:
+    """Small per-chart choices, from the chart's own data: stable, never shared."""
+    key = spec.title + "|" + "|".join(f"{p.label}={p.value}" for s in spec.series for p in s.points)
+    return random.Random(hashlib.sha256(key.encode()).digest())  # noqa: S311 - a shape
+
+
+def _fill(label_: str, spec: ChartSpec) -> str:
+    """Emphasis: the highlighted item wears slot 1 and the rest step back."""
+    if spec.highlight is None or label_ == spec.highlight:
+        return series_colour(0)
+    return CONTEXT
+
+
+def annotation(spec: ChartSpec) -> str:
+    """The one callout a trend earns, computed from its own values — never
+    written by a model. "3.8x since 2022", "+42% since Q1"."""
+    points = spec.series[0].points
+    if len(points) < 3 or not _TIME.match(points[0].label):
+        return ""
+    first, last = points[0].value, points[-1].value
+    if first <= 0 or last <= first:
+        return ""
+    ratio = last / first
+    if ratio >= 1.5:
+        return f"{ratio:.1f}x since {points[0].label}"
+    return f"+{(ratio - 1) * 100:.0f}% since {points[0].label}"
+
+
+def _legend(spec: ChartSpec, slots: tuple[int, ...] = (0, 1, 2, 3, 4)) -> str:
+    """Only for two or more series: a swatch and a name each, in one row.
+    ``slots`` maps each series to the colour slot the form drew it in."""
+    if len(spec.series) < 2:
+        return ""
+    out, x = [], 0.0
+    for n, s in enumerate(spec.series):
+        out.append(_rect(x, -FONT * 1.9, FONT * 0.8, FONT * 0.8, series_colour(slots[n])))
+        out.append(_t(x + FONT * 1.2, -FONT * 1.15, s.name))
+        x += FONT * 1.6 + len(s.name) * FONT * 0.55 + FONT * 1.5
+    return "".join(out)
 
 
 def _bar(spec: ChartSpec) -> str:
-    points = spec.series[0].points
+    """Compare magnitudes, long names: horizontal, sorted, labelled on the bar."""
+    rng = _rng(spec)
+    points = sorted(spec.series[0].points, key=lambda p: -p.value)
     places = _decimals([p.value for p in points])
     top = max((p.value for p in points), default=1) or 1
-    label_w, gap = 300, 18
-    row = (H - gap * (len(points) - 1)) / max(len(points), 1)
-    out = []
+    label_w = min(420, max(len(p.label) for p in points) * FONT * 0.55 + 24)
+    pitch = H / max(len(points), 1)
+    thick = pitch * rng.uniform(0.5, 0.78)
+    out = [f'<rect x="{label_w - 3:.1f}" y="0" width="3" height="{H}" style="fill:{RULE}"/>']
     for i, p in enumerate(points):
-        y = i * (row + gap)
-        w = (W - label_w - 160) * max(p.value, 0) / top
-        out.append(_t(0, y + row / 2 + FONT * 0.35, p.label))
-        out.append(
-            f'<rect x="{label_w}" y="{y:.1f}" width="{w:.1f}" height="{row:.1f}" '
-            f'style="fill:{_color(p.label, spec.highlight)}"/>'
-        )
-        out.append(
-            _t(
-                label_w + w + 14,
-                y + row / 2 + FONT * 0.35,
-                _num(p.value, spec.unit, places),
-                weight="bold",
-            )
-        )
+        y = i * pitch + (pitch - thick) / 2
+        w = (W - label_w - 170) * max(p.value, 0) / top
+        mid = y + thick / 2 + FONT * 0.35
+        out.append(_t(label_w - 20, mid, p.label, anchor="end"))
+        out.append(_rect(label_w, y, w, thick, _fill(p.label, spec), "right"))
+        out.append(_t(label_w + w + 14, mid, _num(p.value, spec.unit, places), weight="bold"))
     return "".join(out)
 
 
 def _column(spec: ChartSpec) -> str:
+    """Compare a few short-named items, or a handful of periods: vertical."""
+    rng = _rng(spec)
     points = spec.series[0].points
     places = _decimals([p.value for p in points])
     top = max((p.value for p in points), default=1) or 1
-    base, head, gap = H - FONT * 2, FONT * 2, 28
-    col = (W - gap * (len(points) - 1)) / max(len(points), 1)
+    base, head = H - FONT * 2, FONT * 2.4
+    pitch = W / max(len(points), 1)
+    thick = pitch * rng.uniform(0.48, 0.72)
     out = []
     for i, p in enumerate(points):
-        x = i * (col + gap)
+        x = i * pitch + (pitch - thick) / 2
         h = (base - head) * max(p.value, 0) / top
-        out.append(
-            f'<rect x="{x:.1f}" y="{base - h:.1f}" width="{col:.1f}" height="{h:.1f}" '
-            f'style="fill:{_color(p.label, spec.highlight)}"/>'
-        )
-        out.append(
-            _t(
-                x + col / 2,
-                base - h - 14,
-                _num(p.value, spec.unit, places),
-                anchor="middle",
-                weight="bold",
-            )
-        )
-        out.append(_t(x + col / 2, base + FONT * 1.3, p.label, anchor="middle"))
-    out.append(f'<rect x="0" y="{base:.1f}" width="{W}" height="3" style="fill:var(--c-rule)"/>')
+        out.append(_rect(x, base - h, thick, h, _fill(p.label, spec), "top"))
+        value = _num(p.value, spec.unit, places)
+        out.append(_t(x + thick / 2, base - h - 14, value, anchor="middle", weight="bold"))
+        out.append(_t(x + thick / 2, base + FONT * 1.3, p.label, anchor="middle"))
+    out.append(_baseline(base))
     return "".join(out)
 
 
-def _line(spec: ChartSpec) -> str:
+def _xy(spec: ChartSpec, area: bool) -> tuple[list[str], float, float, float, float]:
     labels = [p.label for p in spec.series[0].points]
     values = [p.value for s in spec.series for p in s.points]
-    places = _decimals(values)
-    lo, hi = min([*values, 0]), max(values) if values else 1
-    span = (hi - lo) or 1
-    left, base, head = 40, H - FONT * 2, FONT * 2
-    step = (W - left * 2) / max(len(labels) - 1, 1)
+    lo = 0.0 if area else min([*values, 0])
+    hi = max(values) if values else 1
+    return labels, lo, (hi - lo) or 1, H - FONT * 2, FONT * 2.4
+
+
+def _line(spec: ChartSpec, area: bool = False) -> str:
+    """Change over time. The latest value is labelled at the end, and the one
+    callout the data earns sits above it."""
+    labels, lo, span, base, head = _xy(spec, area)
+    places = _decimals([p.value for s in spec.series for p in s.points])
+    left, right = 24, 200  # room on the right for end labels
+    step = (W - left - right) / max(len(labels) - 1, 1)
 
     def xy(i: int, v: float) -> tuple[float, float]:
         return left + i * step, base - (base - head) * (v - lo) / span
 
-    out = [f'<rect x="0" y="{base:.1f}" width="{W}" height="3" style="fill:var(--c-rule)"/>']
-    for i, label in enumerate(labels):
-        out.append(_t(xy(i, lo)[0], base + FONT * 1.3, label, anchor="middle"))
+    out = [_baseline(base), _legend(spec)]
+    for i, name in enumerate(labels):
+        out.append(_t(xy(i, lo)[0], base + FONT * 1.3, name, anchor="middle"))
     for n, s in enumerate(spec.series):
-        color = _series(n)
+        colour = series_colour(n)
         pts = [xy(i, p.value) for i, p in enumerate(s.points)]
         path = " ".join(f"{x:.1f},{y:.1f}" for x, y in pts)
-        out.append(f'<polyline points="{path}" style="fill:none;stroke:{color};stroke-width:6"/>')
-        for x, y in pts:
-            out.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="9" style="fill:{color}"/>')
+        if area and len(spec.series) == 1:
+            poly = f"{pts[0][0]:.1f},{base:.1f} {path} {pts[-1][0]:.1f},{base:.1f}"
+            out.append(f'<polygon points="{poly}" style="fill:{colour};fill-opacity:0.18"/>')
+        out.append(
+            f'<polyline points="{path}" style="fill:none;stroke:{colour};'
+            'stroke-width:calc(var(--rule) * 1.6);stroke-linejoin:round;stroke-linecap:round"/>'
+        )
         last_x, last_y = pts[-1]
         out.append(
-            _t(
-                last_x,
-                last_y - 22,
-                _num(s.points[-1].value, spec.unit, places),
-                anchor="end",
-                weight="bold",
-            )
+            f'<circle cx="{last_x:.1f}" cy="{last_y:.1f}" r="10" '
+            f'style="fill:{colour};stroke:var(--c-ground);stroke-width:3"/>'
         )
+        value = _num(s.points[-1].value, spec.unit, places)
+        out.append(_t(last_x + 22, last_y + FONT * 0.35, value, weight="bold"))
+    note = annotation(spec)
+    if note:
+        x, y = xy(len(labels) - 1, spec.series[0].points[-1].value)
+        out.append(_t(x, max(FONT, y - 40), note, anchor="end", fill=QUIET))
     return "".join(out)
 
 
-def _donut(spec: ChartSpec) -> str:
+def _area(spec: ChartSpec) -> str:
+    return _line(spec, area=True)
+
+
+def _stacked(spec: ChartSpec) -> str:
+    """Part of a whole: one horizontal bar, segments in the series order with
+    a ground-coloured gap between, each labelled above. Replaces the donut."""
+    points = [p for p in spec.series[0].points if p.value > 0][:5]
+    total = sum(p.value for p in points) or 1
+    places = _decimals([p.value for p in points])
+    y, thick, gap = H * 0.42, H * 0.22, 4
+    out, x = [], 0.0
+    for i, p in enumerate(points):
+        w = W * p.value / total
+        out.append(_rect(x + (gap / 2 if i else 0), y, max(w - gap, 1), thick, series_colour(i)))
+        # Labels alternate above and below, so narrow parts never collide.
+        above = i % 2 == 0
+        ty = y - 24 if above else y + thick + FONT * 1.3
+        out.append(_t(x, ty - (FONT * 1.1 if above else 0), p.label))
+        value = _num(p.value, spec.unit, places)
+        out.append(_t(x, ty + (0 if above else FONT * 1.1), value, weight="bold"))
+        x += w
+    return "".join(out)
+
+
+def _pair(spec: ChartSpec) -> tuple[list[tuple[str, float, float]], int]:
+    a, b = spec.series[0], spec.series[1]
+    later = {p.label: p.value for p in b.points}
+    rows = [(p.label, p.value, later[p.label]) for p in a.points if p.label in later]
+    return rows, _decimals([v for _, x, y in rows for v in (x, y)])
+
+
+def _dumbbell(spec: ChartSpec) -> str:
+    """Before and after, per item: two dots joined, the change readable at a glance."""
+    if len(spec.series) < 2:
+        return _bar(spec)
+    rows, places = _pair(spec)
+    top = max(max(x, y) for _, x, y in rows) or 1
+    label_w = min(420, max(len(r[0]) for r in rows) * FONT * 0.55 + 24)
+    pitch = H / max(len(rows), 1)
+    out = [_legend(spec, (1, 0))]  # the later value wears slot 1
+
+    def at(v: float) -> float:
+        return label_w + (W - label_w - 170) * max(v, 0) / top
+
+    for i, (name, before, after) in enumerate(rows):
+        y = i * pitch + pitch / 2
+        out.append(_t(label_w - 20, y + FONT * 0.35, name, anchor="end"))
+        x0, x1 = sorted((at(before), at(after)))
+        out.append(_rect(x0, y - 2, x1 - x0, 4, QUIET))
+        out.append(_dot(at(before), y, 11, series_colour(1)))
+        out.append(_dot(at(after), y, 13, series_colour(0)))
+        value = _num(after, spec.unit, places)
+        out.append(_t(max(at(before), at(after)) + 26, y + FONT * 0.35, value, weight="bold"))
+    return "".join(out)
+
+
+def _slope(spec: ChartSpec) -> str:
+    """Two moments, many items: who rose, who fell. Left and right are the two series."""
+    if len(spec.series) < 2:
+        return _column(spec)
+    rows, places = _pair(spec)
+    values = [v for _, x, y in rows for v in (x, y)]
+    lo, hi = min(values), max(values)
+    span = (hi - lo) or 1
+    x0, x1, top, bottom = 360, W - 360, FONT * 2, H - FONT
+
+    def y(v: float) -> float:
+        return bottom - (bottom - top) * (v - lo) / span
+
+    out = [
+        _t(x0, FONT, spec.series[0].name, anchor="middle", fill=QUIET),
+        _t(x1, FONT, spec.series[1].name, anchor="middle", fill=QUIET),
+    ]
+    for name, before, after in rows:
+        colour = _fill(name, spec).replace("fill-opacity", "stroke-opacity")
+        out.append(
+            f'<line x1="{x0}" y1="{y(before):.1f}" x2="{x1}" y2="{y(after):.1f}" '
+            f'style="stroke:{colour};stroke-width:calc(var(--rule) * 1.4)"/>'
+        )
+        left = f"{name}  {_num(before, spec.unit, places)}"
+        out.append(_t(x0 - 18, y(before) + FONT * 0.35, left, anchor="end"))
+        right = _num(after, spec.unit, places)
+        out.append(_t(x1 + 18, y(after) + FONT * 0.35, right, weight="bold"))
+    return "".join(out)
+
+
+def _diverging(spec: ChartSpec) -> str:
+    """Above or below a baseline: bars both ways from a zero rule, positives in
+    slot 1, negatives in slot 2, every value labelled at its end."""
     points = spec.series[0].points
     places = _decimals([p.value for p in points])
-    total = sum(max(p.value, 0) for p in points) or 1
-    cx, cy, r, inner = H / 2, H / 2, H / 2 - 8, H / 2 - 120
-    angle = -math.pi / 2
-    out = []
+    reach = max((abs(p.value) for p in points), default=1) or 1
+    label_w = min(420, max(len(p.label) for p in points) * FONT * 0.55 + 24)
+    zero = label_w + (W - label_w) / 2
+    half = (W - label_w) / 2 - 140
+    pitch = H / max(len(points), 1)
+    thick = pitch * 0.6
+    out = [f'<rect x="{zero - 1.5:.1f}" y="0" width="3" height="{H}" style="fill:{RULE}"/>']
     for i, p in enumerate(points):
-        sweep = 2 * math.pi * max(p.value, 0) / total
-        a0, a1 = angle, angle + sweep
-        large = 1 if sweep > math.pi else 0
-        x0, y0 = cx + r * math.cos(a0), cy + r * math.sin(a0)
-        x1, y1 = cx + r * math.cos(a1 - 1e-6), cy + r * math.sin(a1 - 1e-6)
-        x2, y2 = cx + inner * math.cos(a1 - 1e-6), cy + inner * math.sin(a1 - 1e-6)
-        x3, y3 = cx + inner * math.cos(a0), cy + inner * math.sin(a0)
-        out.append(
-            f'<path d="M{x0:.1f},{y0:.1f} A{r:.1f},{r:.1f} 0 {large} 1 {x1:.1f},{y1:.1f} '
-            f'L{x2:.1f},{y2:.1f} A{inner:.1f},{inner:.1f} 0 {large} 0 {x3:.1f},{y3:.1f}Z" '
-            f'style="fill:{_series(i)}"/>'
-        )
-        angle = a1
-        # The legend: a swatch, the label and the value, never text on a segment.
-        ly = 60 + i * (FONT * 2.2)
-        out.append(
-            f'<rect x="{H + 40}" y="{ly - FONT * 0.8:.1f}" width="{FONT}" height="{FONT}" '
-            f'style="fill:{_series(i)}"/>'
-        )
-        out.append(_t(H + 40 + FONT * 1.6, ly, f"{p.label}  {_num(p.value, spec.unit, places)}"))
+        y = i * pitch + (pitch - thick) / 2
+        w = half * abs(p.value) / reach
+        mid = y + thick / 2 + FONT * 0.35
+        out.append(_t(label_w - 20, mid, p.label, anchor="end"))
+        value = _num(p.value, spec.unit, places)
+        if p.value >= 0:
+            out.append(_rect(zero, y, w, thick, series_colour(0)))
+            out.append(_t(zero + w + 12, mid, value, weight="bold"))
+        else:
+            out.append(_rect(zero - w, y, w, thick, series_colour(1)))
+            out.append(_t(zero - w - 12, mid, value, anchor="end", weight="bold"))
     return "".join(out)
 
 
-_DRAW = {"bar": _bar, "column": _column, "line": _line, "donut": _donut}
+def _waffle(spec: ChartSpec) -> str:
+    """A share out of 100: a 10x10 grid with the share filled, and the figure
+    set large beside it in the display face."""
+    p = spec.series[0].points[0]
+    share = max(0, min(100, round(p.value)))
+    cell, gap = 52.0, 8.0
+    out = []
+    for i in range(100):
+        row, col = divmod(i, 10)
+        fill = series_colour(0) if i < share else QUIET
+        x, y = col * (cell + gap), (9 - row) * (cell + gap) + 20
+        tint = 1 if i < share else 0.25
+        out.append(
+            f'<rect x="{x:.1f}" y="{y:.1f}" width="{cell}" height="{cell}" '
+            f'style="fill:{fill};fill-opacity:{tint}"/>'
+        )
+    side = 10 * (cell + gap) + 60
+    figure = _num(p.value, spec.unit or "%", 0)
+    out.append(_t(side, H * 0.55, figure, size=FONT * 5, weight="display", face="display"))
+    out.append(_t(side, H * 0.55 + FONT * 1.8, p.label, fill=QUIET))
+    return "".join(out)
+
+
+_DRAW = {
+    "bar": _bar,
+    "column": _column,
+    "line": _line,
+    "area": _area,
+    "stacked": _stacked,
+    "donut": _stacked,  # legacy specs: a part-of-a-whole reads better as a stack
+    "dumbbell": _dumbbell,
+    "slope": _slope,
+    "diverging": _diverging,
+    "waffle": _waffle,
+}
+
+
+def form(spec: ChartSpec) -> str:
+    """The form for the data's job (the dataviz method: form first, colour
+    last). A spec's own type is a hint; the data decides when it is clear."""
+    points = spec.series[0].points
+    values = [p.value for p in points]
+    timed = len(points) >= 3 and all(_TIME.match(p.label) for p in points)
+    if any(v < 0 for v in values):
+        return "diverging"
+    if len(spec.series) >= 2 and len(points) >= 2 and not timed:
+        return "slope" if len(points) >= 5 else "dumbbell"
+    if len(points) == 1 and spec.unit == "%" and 0 < values[0] <= 100:
+        return "waffle"
+    if spec.type in ("donut", "stacked") or (
+        spec.unit == "%" and len(points) >= 2 and 97 <= sum(values) <= 103
+    ):
+        return "stacked"
+    if timed:
+        return "area" if len(spec.series) == 1 and len(points) >= 5 else "line"
+    if max((len(p.label) for p in points), default=0) > 10 or len(points) > 6:
+        return "bar"
+    return spec.type if spec.type in ("bar", "column") else "column"
+
+
+def describe(spec: ChartSpec) -> str:
+    """The data as text, for screen readers and the speaker notes."""
+    places = _decimals([p.value for s in spec.series for p in s.points])
+    parts = []
+    for s in spec.series:
+        values = ", ".join(f"{p.label} {_num(p.value, spec.unit, places)}" for p in s.points)
+        parts.append(f"{s.name}: {values}" if len(spec.series) > 1 else values)
+    return f"{spec.title}. " + "; ".join(parts)
 
 
 def svg(spec: ChartSpec) -> str:
     """The chart, sized to its box by viewBox. Its title is the slide's job."""
-    body = _DRAW[spec.type](spec)
+    body = _DRAW[form(spec)](spec)
     return (
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="100%" '
-        f'height="100%" preserveAspectRatio="xMidYMid meet" role="img" '
-        f'aria-label="{html.escape(spec.title)}" style="overflow:visible">{body}</svg>'
+        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 {-FONT * 2} {W} {H + FONT * 2}" '
+        f'width="100%" height="100%" preserveAspectRatio="xMidYMid meet" role="img" '
+        f'aria-label="{html.escape(spec.title)}" style="overflow:visible">'
+        f"<desc>{html.escape(describe(spec))}</desc>{body}</svg>"
     )
 
 

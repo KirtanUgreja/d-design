@@ -9,8 +9,9 @@ from pathlib import Path
 
 from engine.compose.document import Frame
 from engine.compose.exemplars import load_all
+from engine.design import dataviz
 from engine.design.color import from_hex, passes
-from engine.design.palettes import BODY, GRAPHIC, LARGE, TEXT
+from engine.design.palettes import BODY, LARGE, TEXT
 from engine.design.sampler import draw, sample
 from engine.design.theme import build
 from engine.qa import browser
@@ -32,8 +33,13 @@ def test_a_thousand_seeds_never_fail_contrast() -> None:
             ("on-accent", "accent", BODY),
             ("accent", "ground", LARGE),
             ("ground", "ink", BODY),
-        ] + [(f"series-{n}", "ground", GRAPHIC) for n in range(1, 6)]
+        ]
         failures += [(seed, a, b) for a, b, need in pairs if not passes(c[a], c[b], need)]
+        # Chart colours meet the dataviz method's checks instead (phase 37).
+        marks = [c[k] for k in sorted(c) if k.startswith("series-")]
+        check = dataviz.validate(marks, c["ground"], c["ground"].l < 0.5)
+        if len(marks) < 4 or not check.ok:
+            failures.append((seed, "series", "; ".join(check.problems) or f"{len(marks)} slots"))
     assert failures == []
 
 

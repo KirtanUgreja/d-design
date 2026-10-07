@@ -44,23 +44,54 @@ def _spec(
     )
 
 
+# One spec per form, keyed by the form the data should get (charts.form).
 SPECS = {
     "bar": _spec(
-        "bar", [("Manual checks", 41), ("Legacy ETL", 23), ("Strata", 6)], highlight="Strata"
+        "bar",
+        [("Manual checks", 41), ("Legacy ETL", 23), ("Strata", 6), ("Spreadsheets", 30)],
+        highlight="Strata",
     ),
-    "column": _spec("column", [("Q1", 0.6), ("Q2", 1.0), ("Q3", 1.6), ("Q4", 2.3)], unit="$M"),
+    "column": _spec("column", [("Seed", 2), ("A", 9), ("B", 21)], unit="$M"),
     "line": _spec(
         "line",
         [("2022", 12), ("2023", 19), ("2024", 31), ("2025", 48)],
         unit="%",
         second=[("2022", 8), ("2023", 11), ("2024", 14), ("2025", 17)],
     ),
-    "donut": _spec(
+    "area": _spec("line", [("Jan", 3), ("Feb", 4), ("Mar", 6), ("Apr", 7), ("May", 11)], unit="k"),
+    "stacked": _spec(
         "donut",
         [("Engineering", 52), ("Go-to-market", 33), ("Infra", 10), ("Reserve", 5)],
         unit="%",
     ),
+    "dumbbell": _spec(
+        "bar",
+        [("Retention", 81), ("Activation", 44), ("NPS", 38)],
+        unit="%",
+        second=[("Retention", 88), ("Activation", 61), ("NPS", 52)],
+    ),
+    "slope": _spec(
+        "bar",
+        [("A", 10), ("B", 14), ("C", 9), ("D", 20), ("E", 12)],
+        second=[("A", 15), ("B", 11), ("C", 16), ("D", 22), ("E", 8)],
+    ),
+    "diverging": _spec("bar", [("North", 12), ("South", -8), ("East", 5)], unit="%"),
+    "waffle": _spec("bar", [("of shippers stay", 88)], unit="%"),
 }
+
+
+def test_the_form_follows_the_data() -> None:
+    assert {k: charts.form(s) for k, s in SPECS.items()} == {k: k for k in SPECS}
+
+
+def test_annotations_come_from_the_values() -> None:
+    assert charts.annotation(SPECS["line"]) == "4.0x since 2022"
+    assert charts.annotation(SPECS["bar"]) == ""  # not a trend: no callout
+
+
+def test_every_chart_carries_its_data_as_text() -> None:
+    out = charts.svg(SPECS["dumbbell"])
+    assert "<desc>" in out and "Retention 88%" in out
 
 
 @pytest.mark.parametrize("kind", sorted(SPECS))

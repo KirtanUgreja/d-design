@@ -57,17 +57,25 @@ ARCS: dict[str, tuple[str, ...]] = {
 
 # What an outside source can prove for each deck type. The user's own numbers
 # (traction, pipeline, KPIs) come from the brief, never the web.
+# Every arc also asks for one series — the same measure across years or items —
+# because a chart needs one (phase 37), and research seldom returned one.
+SERIES = "one measure over several years or across several items, with every value sourced"
 EVIDENCE: dict[str, tuple[str, ...]] = {
     "pitch": (
         "the cost of the problem today",
         "the market size",
         "why-now signals",
         "the competitive landscape",
+        SERIES,
     ),
-    "sales": ("the cost of the status quo in the buyer's industry", "industry benchmarks"),
-    "launch": ("how often the problem occurs for this audience", "adoption of the category"),
-    "investor_update": ("market conditions relevant to the period",),
-    "partnership": ("the size of the shared opportunity", "the partner's market position"),
+    "sales": ("the cost of the status quo in the buyer's industry", "industry benchmarks", SERIES),
+    "launch": (
+        "how often the problem occurs for this audience",
+        "adoption of the category",
+        SERIES,
+    ),
+    "investor_update": ("market conditions relevant to the period", SERIES),
+    "partnership": ("the size of the shared opportunity", "the partner's market position", SERIES),
 }
 
 

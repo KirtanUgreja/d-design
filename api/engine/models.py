@@ -100,7 +100,18 @@ class ChartSeries(BaseModel):
 
 
 class ChartSpec(BaseModel):
-    type: Literal["bar", "column", "line", "donut"]
+    type: Literal[
+        "bar",
+        "column",
+        "line",
+        "area",
+        "stacked",
+        "dumbbell",
+        "slope",
+        "diverging",
+        "waffle",
+        "donut",
+    ]
     title: str
     unit: str = ""
     series: list[ChartSeries]

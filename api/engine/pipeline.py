@@ -326,7 +326,13 @@ async def build(
             )
         )
     frames = [_frame(p, composed[p.id]) for p in plans]
-    notes = {p.id: p.notes for p in plans if p.notes}
+    # A chart's values ride in the notes too: the presenter can read them out,
+    # and the send flavour's readers get them as text (phase 37).
+    notes = {
+        p.id: "\n\n".join(x for x in (p.notes, charts.describe(p.chart) if p.chart else "") if x)
+        for p in plans
+        if p.notes or p.chart
+    }
     html = assemble(theme, frames, title, flavour="present", notes=notes)
     send = assemble(theme, frames, title, flavour="send")
     emit("done", seconds=round(time.monotonic() - started, 1))
