@@ -32,3 +32,6 @@ bench/runs/
 # One-shot baseline screenshots: regenerated from the committed .html files
 # by `cli baseline`.
 bench/baselines/oneshot/*/
+
+# The file store (store/files.py): decks, events, jobs. Never committed.
+data/

@@ -5,7 +5,13 @@ Pure by rule 6: nothing under ``engine`` imports a web framework or reads the
 environment. The model client and the clock are injected.
 """
 
+from engine import pipeline
+from engine.compose.author import Composed
 from engine.content import arcs, interview, notes, research, rules, storyline
+from engine.content.interview import Question
+from engine.design.sampler import look_for
+from engine.design.theme import build as build_theme
+from engine.export import pdf
 from engine.llm.openrouter import (
     ModelError,
     Reply,
@@ -23,14 +29,19 @@ from engine.models import (
     SlidePlan,
     Storyline,
 )
+from engine.pipeline import Built, Kept
 
 __all__ = [
     "Brief",
+    "Built",
+    "Composed",
     "Deck",
     "Fact",
+    "Kept",
     "LedgerEntry",
     "ModelError",
     "PlanField",
+    "Question",
     "Reply",
     "Seam",
     "Slide",
@@ -38,9 +49,13 @@ __all__ = [
     "Storyline",
     "Transport",
     "arcs",
+    "build_theme",
     "interview",
+    "look_for",
     "notes",
     "parse_fenced",
+    "pdf",
+    "pipeline",
     "research",
     "rules",
     "storyline",

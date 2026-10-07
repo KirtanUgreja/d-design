@@ -42,6 +42,14 @@ STEER = (
 
 
 @dataclass(frozen=True)
+class Kept:
+    """A finished slide as the worker persists it: enough to resume for free."""
+
+    composed: Composed
+    origin: str
+
+
+@dataclass(frozen=True)
 class Built:
     slides: list[Slide]
     html: str  # the "present" flavour, with speaker notes
@@ -78,12 +86,20 @@ async def build(
     logo: logos.Logo | None = None,
     logo_on: Literal["cover", "ends", "all"] = "ends",
     on_event: OnEvent | None = None,
+    prebuilt: dict[str, Kept] | None = None,
+    on_final: Callable[[str, Kept], None] | None = None,
+    stop: Callable[[], bool] | None = None,
 ) -> Built:
     """Every slide climbs its own ladder, concurrently: compose, measure, up to
     REPAIR_ROUNDS repairs, one fresh composition toward another target (with
     one repair), the code-built layout, then the flag. A
     slide is announced the moment it is final, so a watch fills slot by slot
-    with what really happened (docs/v4/engine.md -> "Generation jobs and events")."""
+    with what really happened (docs/v4/engine.md -> "Generation jobs and events").
+
+    For the worker: ``prebuilt`` slides (finished before a crash) are only
+    measured again, never paid for twice; ``on_final`` hears each slide the
+    moment it is final, so it can be persisted; ``stop`` (an abort) starts no
+    new slide and no new model call, and the deck keeps what is done."""
     started = time.monotonic()
     plans = planner.assign(storyline.slides)
     if logo is not None:
@@ -118,9 +134,14 @@ async def build(
         if on_event is not None:
             on_event({"type": kind, "t": round(time.monotonic() - started, 2), **data})
 
+    resumed = prebuilt or {}
+
+    def stopped() -> bool:
+        return stop is not None and stop()
+
     def affordable() -> bool:
-        # Fails closed: once the cap is reached no further call is made.
-        return seam.spent_usd < budget_usd
+        # Fails closed: once the cap is reached, or the user aborts, no further call is made.
+        return seam.spent_usd < budget_usd and not stopped()
 
     # The seam asks too, before every call it makes, so no path skips the cap.
     seam.allow = affordable
@@ -221,6 +242,13 @@ async def build(
         return m
 
     async def ladder(index: int, plan: SlidePlan) -> None:
+        if plan.id in resumed:  # finished before a restart: measured again, never paid twice
+            composed[plan.id], origin[plan.id] = resumed[plan.id].composed, resumed[plan.id].origin
+            attempts[plan.id] = 0
+            finish(index, plan, await measure(plan), persist=False)
+            return
+        if stopped():  # aborted before this slide began: nothing made, nothing kept
+            return
         # The first rung: compose (or the code layout if the budget is spent).
         attempts[plan.id] = 1
         result = None
@@ -315,7 +343,12 @@ async def build(
             m = await with_logo(index, plan, m, logo)
 
         # Rung 4, the flag: whatever is still broken is shown, never hidden.
+        finish(index, plan, m)
+
+    def finish(index: int, plan: SlidePlan, m: browser.Measured, *, persist: bool = True) -> None:
         measured[plan.id] = m
+        if persist and on_final is not None:
+            on_final(plan.id, Kept(composed[plan.id], origin[plan.id]))
         status = "unmeasured" if not m.measured else "flagged" if m.errors else "passed"
         emit(
             "slide_ready",
@@ -339,6 +372,7 @@ async def build(
     for d in accepted.values():
         archive.add(d)
 
+    plans = [p for p in plans if p.id in measured]  # an abort keeps only what is done
     rhythm = metrics.deck_warnings(
         [measured[p.id].fingerprint for p in plans], [measured[p.id].centred for p in plans]
     )

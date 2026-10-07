@@ -21,6 +21,13 @@ Not a ban — a speed bump. The cost of a dependency is not install time; it is 
 | Tailwind + shadcn/ui (copy-in source on Radix primitives) | web | Our chrome only, never a deck | **added in phase 30** (2026-10-05), rows below |
 | A managed-auth SDK, a JWT/JWKS verifier, SQLAlchemy + asyncpg + Alembic | web / api | Accounts and Postgres | 29 |
 
+**Added in phase 27 (2026-10-07), for the API process** — `api/app.py` and nothing else imports them; the engine stays framework-free (rule 6):
+
+| Package | Where | For | Why not something smaller |
+|---|---|---|---|
+| `fastapi` (+ `starlette`, its own base) | api | Thin routes, one Pydantic parse per input, OpenAPI for the web's generated types | The spec's chosen backend framework (`../v4/spec.md` → Stack); its OpenAPI is what keeps the web's types honest |
+| `uvicorn` | api | The ASGI server that runs `app.py` | The reference ASGI server; nothing to configure |
+
 **Added in phase 30 (2026-10-05), for the UI prototype** — `web/`, which pnpm 11 installs with its release-age gate and install scripts blocked:
 
 | Package | Where | For |

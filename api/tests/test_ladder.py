@@ -227,3 +227,56 @@ def test_the_cover_is_announced_first(tmp_path: Path) -> None:
     )
     ready = [e["slide_id"] for e in events if e["type"] == "slide_ready"]
     assert ready[0] == story.slides[0].id
+
+
+def test_a_restart_pays_for_no_slide_twice(tmp_path: Path) -> None:
+    outline = files.load("pitch-devtools").outline
+    assert outline is not None
+    story = outline.model_copy(update={"slides": outline.slides[:3]})
+    kept: dict[str, pipeline.Kept] = {}
+
+    def run(transport: AlwaysTheSame, **extra: object) -> pipeline.Built:
+        return asyncio.run(
+            pipeline.build(
+                Seam(api_key="k", transport=transport, sleep=_no_sleep),
+                story,
+                THEMES["ledger"],
+                model="m",
+                title="t",
+                work_file=str(tmp_path / "qa.html"),
+                shots_dir=str(tmp_path),
+                budget_usd=1.0,
+                **extra,  # type: ignore[arg-type]
+            )
+        )
+
+    first = run(AlwaysTheSame(), on_final=lambda sid, k: kept.__setitem__(sid, k))
+    assert sorted(kept) == sorted(s.id for s in story.slides)
+    again = AlwaysTheSame()
+    second = run(again, prebuilt=kept)
+    assert again.calls == []
+    assert [s.html for s in second.slides] == [s.html for s in first.slides]
+
+
+def test_an_abort_keeps_what_is_done_and_starts_nothing_new(tmp_path: Path) -> None:
+    outline = files.load("pitch-devtools").outline
+    assert outline is not None
+    story = outline.model_copy(update={"slides": outline.slides[:4]})
+    done: list[str] = []
+    transport = AlwaysTheSame()
+    built = asyncio.run(
+        pipeline.build(
+            Seam(api_key="k", transport=transport, sleep=_no_sleep),
+            story,
+            THEMES["ledger"],
+            model="m",
+            title="t",
+            work_file=str(tmp_path / "qa.html"),
+            shots_dir=str(tmp_path),
+            budget_usd=1.0,
+            on_final=lambda sid, k: done.append(sid),
+            stop=lambda: len(done) >= 1,  # the user aborts once the cover is in
+        )
+    )
+    assert [s.id for s in built.slides] == [story.slides[0].id]
+    assert transport.calls.count("compose") == 1

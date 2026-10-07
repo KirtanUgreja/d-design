@@ -1,0 +1,163 @@
+"""Phase 27: the API, the store and the worker, offline. The model is faked;
+no credit is spent (docs/v4/plan/27-app-create-flow.md -> Verify)."""
+
+from __future__ import annotations
+
+import asyncio
+import json
+from pathlib import Path
+
+from fastapi.testclient import TestClient
+
+import worker
+from app import create_app
+from benchtools import files
+from engine import Fact, Kept, Seam
+from store.files import Store
+from tests.test_ladder import AlwaysTheSame, _no_sleep
+
+
+def _client(tmp_path: Path) -> tuple[TestClient, Store]:
+    store = Store(tmp_path / "data")
+    return TestClient(create_app(store)), store
+
+
+def _approved_deck(store: Store, slides: int = 3) -> str:
+    """A deck as the outline job leaves it: an outline, waiting for approval."""
+    item = files.load("pitch-devtools")
+    assert item.outline is not None
+    deck = store.create(item.brief)
+    story = item.outline.model_copy(update={"slides": item.outline.slides[:slides]})
+    store.update(deck.id, storyline=story, status="approve")
+    return deck.id
+
+
+def test_create_reads_and_a_missing_deck_is_human(tmp_path: Path) -> None:
+    client, store = _client(tmp_path)
+    made = client.post("/api/decks", json={"prompt": "A seed pitch for Flakeguard"})
+    assert made.status_code == 201
+    deck_id = made.json()["deck"]["id"]
+    assert client.get(f"/api/decks/{deck_id}").json()["deck"]["status"] == "brief"
+    assert [j.kind for j in store._jobs("queued")] == ["interview"]
+    missing = client.get("/api/decks/nope")
+    assert missing.status_code == 404 and "deck" in missing.json()["error"]
+    assert client.post("/api/decks", json={"prompt": ""}).status_code == 422
+
+
+def test_a_double_click_on_build_enqueues_one_job(tmp_path: Path) -> None:
+    client, store = _client(tmp_path)
+    deck_id = _approved_deck(store)
+    assert client.post(f"/api/decks/{deck_id}/build").status_code == 200
+    assert client.post(f"/api/decks/{deck_id}/build").status_code == 200
+    assert [j.kind for j in store._jobs("queued")] == ["build"]
+
+
+def test_unsourced_numbers_block_the_build_until_decided(tmp_path: Path) -> None:
+    client, store = _client(tmp_path)
+    deck_id = _approved_deck(store)
+    deck = store.read(deck_id)
+    assert deck.storyline is not None
+    used = deck.storyline.slides[1].fields[0]
+    fact = Fact(id="i1", text="40% faster", value="40%", source="illustrative")
+    slides = list(deck.storyline.slides)
+    slides[1] = slides[1].model_copy(
+        update={"fields": [used.model_copy(update={"fact_ids": ["i1"]}), *slides[1].fields[1:]]}
+    )
+    store.update(
+        deck_id, facts=[fact], storyline=deck.storyline.model_copy(update={"slides": slides})
+    )
+    blocked = client.post(f"/api/decks/{deck_id}/build")
+    assert blocked.status_code == 409 and "source" in blocked.json()["error"]
+    version = store.read(deck_id).version
+    stale = client.patch(
+        f"/api/decks/{deck_id}/outline", json={"version": version - 1, "decisions": {}}
+    )
+    assert stale.status_code == 409
+    ok = client.patch(
+        f"/api/decks/{deck_id}/outline",
+        json={"version": version, "decisions": {"i1": "approved"}},
+    )
+    assert ok.status_code == 200 and ok.json()["pending"] == []
+    assert client.post(f"/api/decks/{deck_id}/build").status_code == 200
+
+
+def test_sse_resumes_from_last_event_id_without_a_gap(tmp_path: Path) -> None:
+    client, store = _client(tmp_path)
+    deck_id = _approved_deck(store)
+    for n in range(1, 4):
+        store.append_event(deck_id, {"type": "stage", "n": n})
+    store.update(deck_id, status="ready")
+    body = client.get(f"/api/decks/{deck_id}/events", headers={"Last-Event-ID": "1"}).text
+    ids = [int(line[4:]) for line in body.splitlines() if line.startswith("id: ")]
+    assert ids == [2, 3]
+    data = [json.loads(line[6:]) for line in body.splitlines() if line.startswith("data: ")]
+    assert [d["n"] for d in data] == [2, 3]
+
+
+def test_a_job_is_claimed_once_and_a_dead_worker_is_replaced(tmp_path: Path) -> None:
+    store = Store(tmp_path / "data")
+    deck_id = _approved_deck(store)
+    store.enqueue("build", deck_id)
+    first = store.claim()
+    assert first is not None and store.claim() is None
+    assert store.requeue_stale() == []  # it is still beating
+    assert [j.id for j in store.requeue_stale(now=10**12)] == [first.id]
+    again = store.claim()
+    assert again is not None and again.id == first.id and again.attempts == 2
+
+
+def _run_worker(store: Store, transport: AlwaysTheSame) -> bool:
+    return asyncio.run(
+        worker.once(
+            store,
+            make_seam=lambda deck_id: Seam(
+                api_key="k", transport=transport, sleep=_no_sleep, deck_id=deck_id
+            ),
+            writing="w",
+            design="d",
+            budget_usd=1.0,
+        )
+    )
+
+
+def test_the_worker_builds_a_deck_end_to_end(tmp_path: Path) -> None:
+    client, store = _client(tmp_path)
+    deck_id = _approved_deck(store)
+    client.post(f"/api/decks/{deck_id}/build")
+    assert _run_worker(store, AlwaysTheSame())
+    deck = client.get(f"/api/decks/{deck_id}").json()["deck"]
+    assert deck["status"] == "ready" and len(deck["slides"]) == 3
+    kinds = [e["type"] for e in store.events(deck_id)]
+    assert kinds.count("slide_ready") == 3 and kinds[-1] == "done"
+    first = deck["slides"][0]["id"]
+    assert client.get(f"/api/decks/{deck_id}/slides/{first}/thumb.png").status_code == 200
+    page = client.get(f"/api/decks/{deck_id}/export.html?flavour=send")
+    assert page.status_code == 200 and "Content-Security-Policy" in page.text
+    assert client.get(f"/api/decks/{deck_id}/export.pdf").content.startswith(b"%PDF")
+    assert not _run_worker(store, AlwaysTheSame())  # the queue is empty
+
+
+def test_an_aborted_build_resumes_without_paying_twice(tmp_path: Path) -> None:
+    client, store = _client(tmp_path)
+    deck_id = _approved_deck(store, slides=4)
+    client.post(f"/api/decks/{deck_id}/build")
+
+    class AbortAfterCover(Store):
+        def save_kept(self, deck_id: str, slide_id: str, kept: Kept) -> None:
+            super().save_kept(deck_id, slide_id, kept)
+            self.abort(deck_id)  # the user stops it once the cover is in
+
+    _run_worker(AbortAfterCover(store.root), AlwaysTheSame())
+    assert store.read(deck_id).status == "aborted" and len(store.kept(deck_id)) == 1
+    cover = next(iter(store.kept(deck_id)))
+
+    client.post(f"/api/decks/{deck_id}/build")
+    _run_worker(store, AlwaysTheSame())
+    deck = store.read(deck_id)
+    assert deck.status == "ready" and len(deck.slides) == 4
+    # The ledger over both runs: the cover was composed once, never again.
+    ledger = (store.dir(deck_id) / "ledger.jsonl").read_text().splitlines()
+    covers = [
+        r for r in map(json.loads, ledger) if r["stage"] == "compose" and r["slide_id"] == cover
+    ]
+    assert len(covers) == 1

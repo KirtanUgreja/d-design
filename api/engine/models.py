@@ -209,7 +209,13 @@ class Deck(BaseModel):
     schema_version: int = 1
     owner_id: str | None = None
     title: str
-    status: Literal["brief", "outline", "looks", "building", "ready", "error"] = "brief"
+    # brief -> interview (questions out) -> outline (being written) -> approve
+    # (outline ready, waiting for the user) -> building -> ready; or error/aborted.
+    status: Literal[
+        "brief", "interview", "outline", "approve", "building", "ready", "error", "aborted"
+    ] = "brief"
+    error: str = ""  # human copy for the UI, never an exception string
+    look_nonce: int = 0  # "another look" bumps it
     brief: Brief
     facts: list[Fact] = Field(default_factory=list)
     storyline: Storyline | None = None
