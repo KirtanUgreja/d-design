@@ -27,6 +27,7 @@ from engine import (
     ModelError,
     Seam,
     build_theme,
+    direction,
     interview,
     look_for,
     notes,
@@ -124,6 +125,17 @@ async def _build(
             story = with_notes.value
             store.update(deck.id, storyline=story)
     slides_dir = store.slides_dir(deck.id)
+    theme = theme_of(deck)
+    # The deck's art direction, made once and kept: a resumed build or an edit
+    # follows the same visual language.
+    art: direction.Direction | None = None
+    if deck.direction:
+        art = direction.Direction.model_validate_json(deck.direction)
+    else:
+        made = await direction.direct(seam, story, theme, title=deck.title, model=writing)
+        if not isinstance(made, Err):
+            art = made.value
+            store.update(deck.id, direction=art.model_dump_json())
 
     def keep(slide_id: str, kept: Kept) -> None:
         store.save_kept(deck.id, slide_id, kept)
@@ -134,7 +146,7 @@ async def _build(
     built = await pipeline.build(
         seam,
         story,
-        theme_of(deck),
+        theme,
         model=design,
         title=deck.title,
         work_file=str(slides_dir / "qa.html"),
@@ -144,6 +156,7 @@ async def _build(
         prebuilt=store.kept(deck.id),
         on_final=keep,
         stop=lambda: store.aborted(deck.id),
+        direction=art,
     )
     for stray in slides_dir.glob("qa*.html"):
         stray.unlink()

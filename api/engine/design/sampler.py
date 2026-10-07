@@ -78,6 +78,7 @@ class Look:
     texture: patterns.Params = patterns.DEFAULT
     mark: str = ""
     motif_tile: str = ""  # the deck's generated texture mask (patterns.motif)
+    shapes: tuple[tuple[str, str], ...] = ()  # kind -> mask url, drawn per deck
     # The display face's own instance, when it is variable: axis -> value.
     instance: tuple[tuple[str, float], ...] = ()
 
@@ -242,6 +243,7 @@ def draw(
         mark=patterns.mark(words or deck_id, rng),
         motif_tile=motif_tile,
         instance=_instance(rng, pairing),
+        shapes=tuple(patterns.shapes(rng).items()),
     )
 
 

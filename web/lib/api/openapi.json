@@ -380,6 +380,11 @@
             "title": "Budget Usd",
             "type": "number"
           },
+          "direction": {
+            "default": "",
+            "title": "Direction",
+            "type": "string"
+          },
           "error": {
             "default": "",
             "title": "Error",

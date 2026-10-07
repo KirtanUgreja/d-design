@@ -43,10 +43,10 @@ def _dense(plan: SlidePlan) -> bool:
     return sum(len(f.text.split()) for f in plan.fields) > _DENSE_WORDS
 
 
-def assign(plans: list[SlidePlan]) -> list[SlidePlan]:
+def assign(plans: list[SlidePlan], texture_every: int = TEXTURE_EVERY) -> list[SlidePlan]:
     """Return the plans with ``intent`` checked and ``ornament`` set."""
     images = 0
-    since_texture = TEXTURE_EVERY - 1  # the first middle slide may carry one
+    since_texture = texture_every - 1  # the first middle slide may carry one
     out: list[SlidePlan] = []
     for index, plan in enumerate(plans):
         intent = _intent(plan, index, len(plans), images)
@@ -56,7 +56,7 @@ def assign(plans: list[SlidePlan]) -> list[SlidePlan]:
         # (2026-10-08). A deck's signature comes from the user's logo, or nothing.
         if intent in ("cover", "ask"):
             ornament = "none"
-        elif since_texture >= TEXTURE_EVERY - 1 and not _dense(plan):
+        elif texture_every and since_texture >= texture_every - 1 and not _dense(plan):
             ornament, since_texture = "texture", -1
         else:
             ornament = "none"

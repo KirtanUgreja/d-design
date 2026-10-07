@@ -127,6 +127,7 @@
     const groundOf = (el) => (el.parentElement ? bgOf(el.parentElement).join() : "");
     for (const el of root.querySelectorAll("*")) {
       if (el === s || el.tagName === "STYLE" || el.querySelector("[data-field]") || el.closest("[data-field]")) continue;
+      if (el.tagName === "DD-SHAPE") continue; // a shape is graphic, not an empty block
       const texture = el.tagName === "DD-TEXTURE";
       if (texture && el.getAttribute("kind") !== "solid") continue;
       const bg = getComputedStyle(el).backgroundColor;
@@ -145,6 +146,7 @@
       let kind = null;
       if (el.tagName === "DD-CHART") kind = "chart";
       else if (el.tagName === "DD-TEXTURE") kind = "texture";
+      else if (el.tagName === "DD-SHAPE") kind = "shape";
       else if (el.tagName === "IMG") kind = "image";
       else if (el.tagName === "DD-LOGO") kind = "logo";
       else { const bg = getComputedStyle(el).backgroundColor; if (opaque(bg) && rgb(bg).join() !== ground) kind = "field"; }

@@ -20,11 +20,12 @@ from dataclasses import dataclass
 from urllib.parse import quote
 
 
-def _svg(body: str, w: float, h: float | None = None) -> str:
+def _svg(body: str, w: float, h: float | None = None, aspect: str = "") -> str:
     hh = w if h is None else h
+    fit = f" preserveAspectRatio='{aspect}'" if aspect else ""
     svg = (
         f"<svg xmlns='http://www.w3.org/2000/svg' width='{w:g}' height='{hh:g}' "
-        f"viewBox='0 0 {w:g} {hh:g}'>{body}</svg>"
+        f"viewBox='0 0 {w:g} {hh:g}'{fit}>{body}</svg>"
     )
     return f'url("data:image/svg+xml,{quote(svg)}")'
 
@@ -226,3 +227,75 @@ def motif(rng: random.Random) -> tuple[str, str]:
     extra = f" with small {names[second]} between" if second else ""
     note = f"{names[first]}{extra} on {layout} {w:.0f}px lattice{turned}"
     return _svg(tile, 1920, 1080), note
+
+
+# --- shapes: the deck's graphic vocabulary beyond type and rules (2026-10-08) ---
+# Placed by the model as <dd-shape kind=… tone=…>, sized by its CSS, drawn here
+# as colourless masks over a theme colour. Every kind's geometry is drawn per
+# deck, so two decks using "arc" do not share an arc.
+SHAPES = ("disc", "ring", "arc", "half", "quarter", "diagonal", "band", "blob", "steps", "plus")
+STRETCH = frozenset({"diagonal", "band"})  # fill their box; the rest keep their proportions
+
+
+def _blob(rng: random.Random) -> str:
+    n = rng.randint(6, 9)
+    pts = []
+    for i in range(n):
+        a = 2 * math.pi * i / n + rng.uniform(-0.2, 0.2)
+        r = 500 * rng.uniform(0.62, 1.0)
+        pts.append((500 + r * math.cos(a), 500 + r * math.sin(a)))
+    # Catmull-Rom through the points, as cubic Béziers: a smooth closed outline.
+    d = [f"M{pts[0][0]:.0f} {pts[0][1]:.0f}"]
+    for i in range(n):
+        p0, p1, p2, p3 = (pts[(i + k) % n] for k in (-1, 0, 1, 2))
+        c1 = (p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6)
+        c2 = (p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6)
+        d.append(f"C{c1[0]:.0f} {c1[1]:.0f} {c2[0]:.0f} {c2[1]:.0f} {p2[0]:.0f} {p2[1]:.0f}")
+    return f"<path d='{' '.join(d)}Z'/>"
+
+
+def _ring_arc(t: float, start: float, sweep: float) -> str:
+    r = 500 - t / 2
+    a0, a1 = math.radians(start), math.radians(start + sweep)
+    x0, y0 = 500 + r * math.cos(a0), 500 + r * math.sin(a0)
+    x1, y1 = 500 + r * math.cos(a1), 500 + r * math.sin(a1)
+    large = 1 if sweep > 180 else 0
+    return (
+        f"<path d='M{x0:.0f} {y0:.0f}A{r:.0f} {r:.0f} 0 {large} 1 {x1:.0f} {y1:.0f}' "
+        f"fill='none' stroke='#000' stroke-width='{t:.0f}'/>"
+    )
+
+
+def shapes(rng: random.Random) -> dict[str, str]:
+    """kind -> CSS url() of a 1000-unit mask, every kind's geometry drawn now."""
+    t = rng.uniform(70, 240)  # one stroke weight for the deck's rings and arcs
+    turn = rng.choice((0, 90, 180, 270))
+    angle = rng.uniform(14, 76)
+    w = rng.uniform(0.12, 0.34) * 1000
+    steps = rng.randint(3, 6)
+    arm = rng.uniform(0.18, 0.4) * 1000
+    reach = rng.uniform(0.45, 1.0)
+    spin = f"transform='rotate({turn} 500 500)'"
+    body = {
+        "disc": "<circle cx='500' cy='500' r='500'/>",
+        "ring": f"<circle cx='500' cy='500' r='{500 - t / 2:.0f}' fill='none' stroke='#000' "
+        f"stroke-width='{t:.0f}'/>",
+        "arc": _ring_arc(t, rng.uniform(0, 360), rng.uniform(100, 260)),
+        "half": f"<path d='M0 500A500 500 0 0 1 1000 500Z' {spin}/>",
+        "quarter": f"<path d='M0 0H1000A1000 1000 0 0 1 0 1000Z' {spin}/>",
+        "diagonal": f"<path d='M0 0H{1000 * reach:.0f}L0 1000Z' {spin}/>",
+        "band": f"<rect x='-500' y='{500 - w / 2:.0f}' width='2000' height='{w:.0f}' "
+        f"transform='rotate({angle:.0f} 500 500)'/>",
+        "blob": _blob(rng),
+        "steps": "".join(
+            f"<rect x='{i * 1000 / steps:.0f}' y='{1000 - (i + 1) * 1000 / steps:.0f}' "
+            f"width='{1000 / steps + 1:.0f}' height='{(i + 1) * 1000 / steps:.0f}'/>"
+            for i in range(steps)
+        ),
+        "plus": f"<rect x='{500 - arm / 2:.0f}' y='0' width='{arm:.0f}' height='1000'/>"
+        f"<rect x='0' y='{500 - arm / 2:.0f}' width='1000' height='{arm:.0f}'/>",
+    }
+    return {
+        kind: _svg(svg, 1000, aspect="none" if kind in STRETCH else "xMidYMid meet")
+        for kind, svg in body.items()
+    }

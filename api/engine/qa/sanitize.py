@@ -14,6 +14,7 @@ from html.parser import HTMLParser
 import nh3
 
 from engine.design.axes import TEXTURE_KINDS as _AXES_TEXTURES
+from engine.design.patterns import SHAPES
 from lib.result import Result, err, ok
 
 TAGS = frozenset(
@@ -41,13 +42,18 @@ TAGS = frozenset(
         "figure",
         "figcaption",
         "dd-texture",
+        "dd-shape",
         "dd-chart",
     ]
 )
 _GLOBAL = frozenset(
     {"class", "data-field", "data-deco", "data-layer", "data-bleed", "data-build", "aria-hidden"}
 )
-ATTRIBUTES: dict[str, set[str]] = {"*": set(_GLOBAL), "dd-texture": {"kind", "tone"}}
+ATTRIBUTES: dict[str, set[str]] = {
+    "*": set(_GLOBAL),
+    "dd-texture": {"kind", "tone"},
+    "dd-shape": {"kind", "tone"},
+}
 TEXTURE_KINDS = _AXES_TEXTURES
 TEXTURE_TONES = frozenset({"accent", "ink", "surface"})
 
@@ -88,6 +94,10 @@ def sanitize(html: str, field_names: frozenset[str]) -> Result[str, str]:
             return " ".join(names) or None
         if attr == "data-field":
             return value if value in field_names else None
+        if tag == "dd-shape" and attr == "kind":
+            return value if value in SHAPES else "disc"
+        if tag == "dd-shape" and attr == "tone":
+            return value if value in ("accent", "ink", "surface", "rule") else "accent"
         if tag == "dd-texture" and attr == "kind":
             return value if value in TEXTURE_KINDS else "solid"
         if tag == "dd-texture" and attr == "tone":

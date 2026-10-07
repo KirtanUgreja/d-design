@@ -81,6 +81,7 @@ class Theme:
     stretch: float = 100.0
     variation: str = "normal"
     logo: str = ""  # the user's logo as a data: URL (components/logo.py), once per deck
+    shapes: dict[str, str] = field(default_factory=dict)  # dd-shape kind -> mask url
 
     @property
     def faces(self) -> tuple[Face, ...]:
@@ -104,6 +105,7 @@ class Theme:
         lines += [f"--t-{step}:{px}px;" for step, px in self.scale.items()]
         lines += [f"--s-{n}:{px}px;" for n, px in enumerate(self.space, start=1)]
         lines += [f"--tile-{kind}:{url};" for kind, url in self.tiles.items()]
+        lines += [f"--shape-{kind}:{url};" for kind, url in self.shapes.items()]
         lines += [
             f"--margin:{self.margin}px;",
             f"--gutter:{self.gutter}px;",
@@ -374,4 +376,5 @@ def build(look: Look) -> Theme:
         track=look.track,
         stretch=stretch,
         variation=variation,
+        shapes=dict(look.shapes) or patterns.shapes(random.Random(look.id)),  # noqa: S311 - a shape
     )

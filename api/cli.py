@@ -31,7 +31,7 @@ from pydantic import BaseModel
 
 import settings
 from benchtools import baseline, content, files, fonts, outline, record, sameness, shots, wall
-from engine import Brief, Seam, Slide, pipeline
+from engine import Brief, Seam, Slide, direction, pipeline
 from engine.compose.document import Frame
 from engine.design import tiles
 from engine.design.sampler import look_for, sample
@@ -154,10 +154,16 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
         else:
             theme = _generated(item.brief, nonce=repeat)
         seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{args.run}-{label}-{name}")
+        title = item.brief.prompt[:80]
+        art = await direction.direct(seam, item.outline, theme, title=title, model=cfg.model_cheap)
+        chosen = None if isinstance(art, Err) else art.value
+        if chosen is not None:
+            (out / "direction.json").write_text(chosen.model_dump_json(indent=2))
         built = await pipeline.build(
             seam,
             item.outline,
             theme,
+            direction=chosen,
             model=args.model,
             title=item.brief.prompt[:80],
             work_file=str(out / "qa.html"),
@@ -175,6 +181,7 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             "repeat": repeat,
             "model": args.model,
             "theme": theme.id,
+            "direction": chosen.name if chosen else "",
             "slides": len(built.slides),
             "clean_first_pass": built.first_pass_clean,
             "repaired": origins.count("repaired"),

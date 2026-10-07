@@ -19,7 +19,7 @@ from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "compose.v9"
+PROMPT_VERSION = "compose.v10"  # v10: the deck's art direction replaces the house style
 PAIRS = (
     "  on --c-ground or --c-surface: --c-ink, or --c-ink-2 for quiet text\n"
     "  on --c-accent: --c-on-accent only, at every size\n"
@@ -31,9 +31,9 @@ PAIRS = (
 # answers. 32k: 0 of 8 cut off, $0.13 a deck (findings.md, 2026-10-07).
 COMPOSE_MAX_TOKENS = 32000
 
-RULES = f"""You are a senior editorial designer. You design ONE presentation slide as HTML and CSS.
+RULES = f"""You are a senior designer. You design ONE presentation slide as HTML and CSS.
 The slide is projected at exactly 1920x1080px. It must look designed by a person with a point of
-view: confident scale contrast, a clear grid, deliberate empty space. It must not look like an
+view — this deck's point of view, given below as its ART DIRECTION. It must not look like an
 AI-made or template slide.
 
 OUTPUT: one ```ideas block, then one ```html block and one ```css block. Nothing else.
@@ -52,7 +52,7 @@ HTML CONTRACT
 - One root: <section class="s"> … </section>.
   No <html>, <body>, <style>, <script>, <img>, <a>, <svg>.
 - Allowed tags: div section header footer h1 h2 h3 p span strong em small sup sub br hr ul ol li
-  blockquote figure figcaption dd-texture dd-chart.
+  blockquote figure figcaption dd-texture dd-shape dd-chart.
 - Every field you are given appears EXACTLY ONCE, in an element with data-field="<name>", with its
   text UNCHANGED. You may wrap words in <em> or <span class="…"> for emphasis and use <br>. You may
   not add, drop or rewrite words.
@@ -62,11 +62,15 @@ HTML CONTRACT
   pattern; use only the kinds this look lists under THEME TOKENS. Size and place it with a
   class. Use at most two. A solid one is a rule or bar (under 48px thick); a large one is a
   pattern, or it sits behind text.
+- <dd-shape kind="…" tone="accent|ink|surface|rule"></dd-shape> is a flat shape our code draws
+  into its box: kinds disc, ring, arc, half, quarter, diagonal, band, blob, steps, plus. Size and
+  place it with a class (any size; it may overlap, sit behind text, or bleed off the slide). Use
+  the kinds the art direction names. Never put small text on a shape.
 - <dd-chart class="…"></dd-chart> is an empty box our code draws a chart into. Place it only
   when the slide says it has a chart, give it at least 900x480px, and never write numbers,
   labels or a legend for it: the chart draws its own.
 - Attributes allowed: class, data-field, data-deco, data-layer, data-bleed, and kind/tone on
-  dd-texture. No style attribute, no id.
+  dd-texture and dd-shape. No style attribute, no id.
 
 CSS CONTRACT
 - Plain class selectors. No @-rules, no :root/html/body/:host, no nesting, no !important.
@@ -91,13 +95,11 @@ DESIGN RULES
   inside an accent field — kicker, labels and sources included — must end up --c-on-accent:
   set color on the field, and never override it with --c-ink-2 inside.
   Never put text on a dd-texture pattern.
-- Make one thing on the slide much bigger than everything else. Align to a grid. Use rules
-  (border with var(--rule)) instead of boxes.
-- A field of flat colour must carry something: the headline, the number, the list. An empty
-  coloured rectangle is decoration with nothing to say, and it is refused (E11). Let the ground
-  be the empty space.
-- NEVER: cards or boxes around each point, rounded panels, icon rows, pills or badges, drop
-  shadows, centred-everything layouts, emoji, numbered circles.
+- A rectangle of flat colour must carry something: the headline, the number, the list. An empty
+  coloured rectangle is refused (E11). Shapes (dd-shape) are graphics and may stand alone.
+- NEVER: cards or boxes around each point, icon rows, pills or badges, drop shadows, emoji.
+- How the slide looks — scale, alignment, rules or none, shapes, fields, density — comes from
+  the ART DIRECTION, not from habit.
 """
 
 
@@ -107,10 +109,12 @@ class Composed:
     css: str
 
 
-def prefix(theme: Theme) -> str:
+def prefix(theme: Theme, direction: str = "") -> str:
     """The stable, cacheable part of every compose call for one deck. No
-    example slides: examples anchor the model to them (phase 36)."""
-    return f"{RULES}\nTHEME TOKENS\n{theme.describe()}\n"
+    example slides: examples anchor the model to them (phase 36). The deck's
+    art direction (design/direction.py) is part of it: one per deck."""
+    tail = f"\n{direction}\n" if direction else ""
+    return f"{RULES}\nTHEME TOKENS\n{theme.describe()}\n{tail}"
 
 
 def _fields(plan: SlidePlan) -> str:
@@ -152,6 +156,7 @@ async def compose(
     thought: str,
     target: Target,
     steer: str = "",
+    direction: str = "",
 ) -> Result[Composed, ModelError]:
     user = (
         f"Slide {position} of {total}. The deck argues: {thought}\n"
@@ -180,7 +185,7 @@ async def compose(
         system="Follow the contract exactly.",
         user=user,
         model=model,
-        prefix=prefix(theme),
+        prefix=prefix(theme, direction),
         prompt_version=PROMPT_VERSION,
         max_tokens=COMPOSE_MAX_TOKENS,
         reasoning="low",
@@ -196,6 +201,7 @@ async def repair(
     defects: list[Defect],
     *,
     model: str,
+    direction: str = "",
 ) -> Result[Composed, ModelError]:
     """One targeted repair from measured defects: the smallest change that
     fixes them. The model is told what was measured, never asked to judge."""
@@ -222,7 +228,7 @@ async def repair(
         system="Follow the contract exactly.",
         user=user,
         model=model,
-        prefix=prefix(theme),
+        prefix=prefix(theme, direction),
         prompt_version=PROMPT_VERSION,
         max_tokens=12000,
         reasoning="low",

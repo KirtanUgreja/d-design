@@ -497,6 +497,11 @@ export interface components {
              */
             budget_usd: number;
             /**
+             * Direction
+             * @default
+             */
+            direction: string;
+            /**
              * Error
              * @default
              */

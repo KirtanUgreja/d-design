@@ -13,6 +13,7 @@ import base64
 from dataclasses import dataclass
 from pathlib import Path
 
+from engine.design.patterns import SHAPES
 from engine.design.theme import Theme
 from engine.design.theme import face as registry_face
 
@@ -50,9 +51,22 @@ _BASE = (
     "ul,ol{list-style:none}em{font-style:normal}strong{font-weight:inherit}"
     "h1,h2,h3{text-wrap:balance}p,li{text-wrap:pretty}"
     "dd-chart{display:block}"
+    # Shapes (design/patterns.py): colourless masks over a theme colour; the
+    # slide's CSS sizes and places them. Diagonals and bands fill their box.
+    "dd-shape{display:block;background-color:var(--c-accent);-webkit-mask-repeat:no-repeat;"
+    "mask-repeat:no-repeat;-webkit-mask-position:center;mask-position:center;"
+    "-webkit-mask-size:contain;mask-size:contain}"
+    "dd-shape[tone=ink]{background-color:var(--c-ink)}"
+    "dd-shape[tone=surface]{background-color:var(--c-surface)}"
+    "dd-shape[tone=rule]{background-color:var(--c-rule)}"
+    "dd-shape[kind=diagonal],dd-shape[kind=band]{-webkit-mask-size:100% 100%;mask-size:100% 100%}"
+    + "".join(
+        f"dd-shape[kind={k}]{{-webkit-mask-image:var(--shape-{k});mask-image:var(--shape-{k})}}"
+        for k in SHAPES
+    )
     # The user's logo, placed by our code (components/logo.py): never restyled,
     # only shown as it is or, where it would not read, as its shape in ink.
-    "dd-logo{position:absolute;display:block;background:var(--logo) center/contain no-repeat}"
+    + "dd-logo{position:absolute;display:block;background:var(--logo) center/contain no-repeat}"
     "dd-logo[tone=mono]{background:var(--c-ink);-webkit-mask:var(--logo) center/contain "
     "no-repeat;mask:var(--logo) center/contain no-repeat}"
     "dd-texture{display:block;background-color:var(--c-accent)}"

@@ -21,6 +21,8 @@ from engine.compose import author, planner, procedural, targets
 from engine.compose.archive import Archive
 from engine.compose.author import Composed
 from engine.compose.document import Frame
+from engine.compose.planner import TEXTURE_EVERY
+from engine.design.direction import Direction, render
 from engine.design.theme import Theme
 from engine.export.assemble import assemble
 from engine.llm.openrouter import Seam
@@ -89,6 +91,7 @@ async def build(
     prebuilt: dict[str, Kept] | None = None,
     on_final: Callable[[str, Kept], None] | None = None,
     stop: Callable[[], bool] | None = None,
+    direction: Direction | None = None,
 ) -> Built:
     """Every slide climbs its own ladder, concurrently: compose, measure, up to
     REPAIR_ROUNDS repairs, one fresh composition toward another target (with
@@ -101,7 +104,11 @@ async def build(
     moment it is final, so it can be persisted; ``stop`` (an abort) starts no
     new slide and no new model call, and the deck keeps what is done."""
     started = time.monotonic()
-    plans = planner.assign(storyline.slides)
+    # The deck's art direction (design/direction.py) sets its visual language;
+    # without one, the compose prompt carries no style of ours either.
+    art = render(direction) if direction else ""
+    every = {"never": 0, "rare": 4, "often": 2}[direction.texture] if direction else TEXTURE_EVERY
+    plans = planner.assign(storyline.slides, every)
     if logo is not None:
         # The user's logo is the deck's signature now: the generated mark steps back.
         plans = [
@@ -213,6 +220,7 @@ async def build(
                     theme,
                     plan,
                     model=model,
+                    direction=art,
                     position=index + 1,
                     total=len(plans),
                     thought=storyline.governing_thought,
@@ -259,6 +267,7 @@ async def build(
                     theme,
                     plan,
                     model=model,
+                    direction=art,
                     position=index + 1,
                     total=len(plans),
                     thought=storyline.governing_thought,
@@ -286,6 +295,7 @@ async def build(
                     composed[plan.id],
                     m.defects(),
                     model=model,
+                    direction=art,
                 )
             attempts[plan.id] += 1
             if isinstance(fixed, Err):
@@ -303,6 +313,7 @@ async def build(
                     theme,
                     plan,
                     model=model,
+                    direction=art,
                     position=index + 1,
                     total=len(plans),
                     thought=storyline.governing_thought,
@@ -315,7 +326,13 @@ async def build(
                 if broken(again) and affordable():
                     async with gate:
                         fixed = await author.repair(
-                            seam, theme, plan, composed[plan.id], again.defects(), model=model
+                            seam,
+                            theme,
+                            plan,
+                            composed[plan.id],
+                            again.defects(),
+                            model=model,
+                            direction=art,
                         )
                     attempts[plan.id] += 1
                     if not isinstance(fixed, Err):

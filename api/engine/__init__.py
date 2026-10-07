@@ -10,6 +10,7 @@ from engine.compose.author import Composed
 from engine.compose.edit import set_field
 from engine.content import arcs, interview, notes, research, rules, storyline
 from engine.content.interview import Question
+from engine.design import direction
 from engine.design.sampler import look_for, recolour
 from engine.design.theme import build as build_theme
 from engine.export import pdf
@@ -51,6 +52,7 @@ __all__ = [
     "Transport",
     "arcs",
     "build_theme",
+    "direction",
     "interview",
     "look_for",
     "notes",

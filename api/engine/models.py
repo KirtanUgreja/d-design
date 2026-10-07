@@ -20,6 +20,7 @@ Stage = Literal[
     "research",
     "storyline",
     "notes",
+    "direction",
     "compose",
     "repair",
     "revise",
@@ -217,6 +218,7 @@ class Deck(BaseModel):
     error: str = ""  # human copy for the UI, never an exception string
     look_nonce: int = 0  # "another look" bumps it
     palette_nonce: int = 0  # "recolour" bumps it: same look, another palette
+    direction: str = ""  # its art direction as JSON (design/direction.py), made once
     brief: Brief
     facts: list[Fact] = Field(default_factory=list)
     storyline: Storyline | None = None
