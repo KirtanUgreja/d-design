@@ -121,7 +121,7 @@ def test_repairs_a_fresh_attempt_then_the_code_built_layout(tmp_path: Path) -> N
     assert all(s.attempts == 1 + pipeline.REPAIR_ROUNDS + 2 for s in built.slides)
 
 
-def test_the_budget_stops_the_ladder_before_any_repair(tmp_path: Path) -> None:
+def test_the_budget_stops_every_call_once_it_is_spent(tmp_path: Path) -> None:
     outline = files.load("pitch-devtools").outline
     assert outline is not None
     story = outline.model_copy(update={"slides": outline.slides[:3]})
@@ -139,7 +139,9 @@ def test_the_budget_stops_the_ladder_before_any_repair(tmp_path: Path) -> None:
             budget_usd=0.0025,
         )
     )
-    assert transport.calls.count("repair") == 0
+    # Fails closed: no call starts once the cap is reached (each costs 0.001),
+    # and every slide is still delivered, by code where the model was cut off.
+    assert len(transport.calls) == 3
     assert all(s.qa.status == "passed" for s in built.slides)
 
 
@@ -203,3 +205,25 @@ def test_no_compose_prompt_carries_an_exemplar() -> None:
     assert "EXEMPLAR" not in text.upper()
     for e in load_all():
         assert e.html[:80] not in text
+
+
+def test_the_cover_is_announced_first(tmp_path: Path) -> None:
+    outline = files.load("pitch-devtools").outline
+    assert outline is not None
+    story = outline.model_copy(update={"slides": outline.slides[:4]})
+    events: list[dict[str, object]] = []
+    asyncio.run(
+        pipeline.build(
+            Seam(api_key="k", transport=AlwaysTheSame(), sleep=_no_sleep),
+            story,
+            THEMES["ledger"],
+            model="m",
+            title="t",
+            work_file=str(tmp_path / "qa.html"),
+            shots_dir=str(tmp_path),
+            budget_usd=1.0,
+            on_event=events.append,
+        )
+    )
+    ready = [e["slide_id"] for e in events if e["type"] == "slide_ready"]
+    assert ready[0] == story.slides[0].id

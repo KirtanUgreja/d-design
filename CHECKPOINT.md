@@ -1,4 +1,43 @@
-# Checkpoint — 2026-10-05 (end of day, PAUSED)
+# Checkpoint — 2026-10-07 (end of day)
+
+**Resume here.** Branch `phase-30-ui-prototype`, clean, **nothing pushed**. OpenRouter credit left: **about $0.52**. 99 tests green.
+
+## Done on 2026-10-07 (all no-credit unless noted)
+
+| Phase | State |
+|---|---|
+| 36 independent design | **Code built.** Descriptors + archive + targets, `compose.v9` (no exemplars, 32k cap), novelty gate (W8), procedural fallback, continuous palettes, texture grammar, variable display fonts (11 families), `cli sameness`. One paid Harbor build: 0 of 8 fallbacks, $0.13 (`bench/runs/phase36-v9-32k/…/update-q3/deck.html`) |
+| 37 beautiful data | **Code built.** 9 chart forms chosen from the data, series colours validated by the ported dataviz checks, emphasis, computed callouts, data as text and in notes; `storyline.v4` / `research.v2` ask for charts and series (**unvalidated: needs a paid run**) |
+| 38 brand kit + logo | **Engine built.** Hostile-by-default ingest, code placement, legible variant, E12/W9. Upload UI and the saved kit wait for phase 29's accounts |
+| 32 (one fix) | The cover is composed first, alone: it arrives first in the watch and warms the cache |
+
+## Tomorrow, with credit (top up $10; $15 with phase 25's images)
+
+```
+cd api
+uv run python -m cli freeze --set all --force       # ~$2: outlines on storyline.v4 (charts)
+uv run pytest -q                                    # frozen outlines are test fixtures: must stay green
+uv run python -m cli build --run phase36-gate --model deepseek/deepseek-v4.1-flash --set all --repeat 3 --budget 0.6   # ~$5.50, 36 decks
+uv run python -m cli sameness                       # coverage and repeat rate over the archive
+uv run python -m cli wall --run phase36-gate        # the owner's blind wall
+```
+
+Phase 36 exits on: repeat rate ≤ 1% at 300 slides and not rising, coverage still rising, the owner finds no same-design pair, and every deck at least as good as the 2026-10-05 recordings. Phase 37 on: charts on every deck whose facts carry a series, and the owner's data wall.
+
+## Left — in order
+
+1. **Owner:** open the 32k Harbor build next to `web/public/fixtures/update-q3/present.html`.
+2. **Owner:** top up; run the block above; rate the walls.
+3. Phase 25's paid half (images, the 12 × 2 run, gate 2).
+4. **Owner:** 5 moderated UI sessions (`bench/ui/session-script.md`).
+5. Phase 27: the real backend (worker, API, SSE) so a typed brief builds live.
+6. Then 28 editor → 31–35 UI phases → 29 accounts + deploy (and 38's upload UI).
+7. Push the branches and let CI run.
+
+**Known:** the code-built fallback alone repeats 65% at 275 slides (fine while rare); the novelty ε (0.08) is a guess until the wall.
+
+# Checkpoint — 2026-10-05 (superseded above)
+
 
 **Resume here.** Branch `phase-30-ui-prototype` at the latest commit, clean, **nothing pushed** (also unpushed: `phase-24-content-engine`, `phase-25-composition-qa`, `phase-26-player-export`). `main` is still v3. OpenRouter credit left: **about $1.45**.
 

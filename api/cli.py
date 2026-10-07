@@ -128,18 +128,25 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
     themes = list(THEMES.values())
     rows: list[dict[str, object]] = []
     archive = files.load_archive()
-    for index, brief_id in enumerate(_ids(args.set)):
+    # --repeat N builds every brief N times, each with its own generated look:
+    # the sameness bench needs many decks from few frozen outlines (phase 36).
+    jobs = [(r, b) for r in range(args.repeat) for b in _ids(args.set)]
+    for index, (repeat, brief_id) in enumerate(jobs):
         item = files.load(brief_id)
         if item.outline is None:
             print(f"{brief_id}: no frozen outline — run `freeze` first")
             continue
-        out = root / brief_id
+        name = brief_id if repeat == 0 else f"{brief_id}-r{repeat}"
+        out = root / name
         if (out / "deck.html").exists() and not args.force:
-            print(f"{brief_id}: already built")
+            print(f"{name}: already built")
             continue
         out.mkdir(parents=True, exist_ok=True)
-        theme = themes[index % len(themes)] if args.themes == "fixed" else _generated(item.brief)
-        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{args.run}-{label}-{brief_id}")
+        if args.themes == "fixed":
+            theme = themes[index % len(themes)]
+        else:
+            theme = _generated(item.brief, nonce=repeat)
+        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{args.run}-{label}-{name}")
         built = await pipeline.build(
             seam,
             item.outline,
@@ -158,6 +165,7 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
         origins = [s.origin for s in built.slides]
         row: dict[str, object] = {
             "brief": brief_id,
+            "repeat": repeat,
             "model": args.model,
             "theme": theme.id,
             "slides": len(built.slides),
@@ -456,6 +464,7 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--budget", type=float, default=0.5, help="hard cap per deck, USD")
     cmd.add_argument("--force", action="store_true")
     cmd.add_argument("--themes", choices=("sampled", "fixed"), default="sampled")
+    cmd.add_argument("--repeat", type=int, default=1, help="build each brief N times, N looks")
     cmd = sub.add_parser("tiles")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--set", choices=("one", "smoke", "all"), default="all")

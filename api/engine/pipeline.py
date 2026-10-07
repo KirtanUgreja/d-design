@@ -330,7 +330,11 @@ async def build(
         emit("cost", total_usd=round(seam.spent_usd, 4))
 
     emit("stage", name="compose", state="started", slides=[p.id for p in plans])
-    await asyncio.gather(*(ladder(i, p) for i, p in enumerate(plans)))
+    # The cover first, alone: it is the first thing a watching user sees, and
+    # its call warms the prompt cache every other slide then reads (phase 32).
+    if plans:
+        await ladder(0, plans[0])
+    await asyncio.gather(*(ladder(i, p) for i, p in enumerate(plans) if i > 0))
     emit("stage", name="compose", state="done")
     for d in accepted.values():
         archive.add(d)
