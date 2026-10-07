@@ -19,7 +19,7 @@ Not a ban — a speed bump. The cost of a dependency is not install time; it is 
 | `Pillow` | api | Re-encoding generated images to webp, and uploaded logos to a trimmed PNG with the pixel cap set before decode (phase 38) | 22–25, 38 |
 | `openapi-typescript` | web (dev) | Generating `web/lib/api/schema.d.ts` from `cli openapi` | **added in phase 27** (2026-10-07): types only, so the client still parses every response once at entry |
 | Tailwind + shadcn/ui (copy-in source on Radix primitives) | web | Our chrome only, never a deck | **added in phase 30** (2026-10-05), rows below |
-| A managed-auth SDK, a JWT/JWKS verifier, SQLAlchemy + asyncpg + Alembic | web / api | Accounts and Postgres | 29 |
+| `better-auth` + `pg` (owner's choice 2026-10-08, replacing a managed-auth SDK); `pyjwt[crypto]`; `sqlalchemy` + `alembic` + `psycopg[binary]` | web / api | Accounts (Better Auth, email and password, its JWT verified in FastAPI) and the hosted Postgres | 29, on 2026-10-09 |
 
 **Added in phase 27 (2026-10-07), for the API process** — `api/app.py` and nothing else imports them; the engine stays framework-free (rule 6):
 

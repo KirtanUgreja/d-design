@@ -1,6 +1,6 @@
 # Checkpoint — 2026-10-08 (end of day): the plan for the sprint
 
-**Resume here: [docs/v4/plan/master-plan.md](docs/v4/plan/master-plan.md).** Tomorrow (2026-10-09) is the build day — start at B1 (visual languages), then B2 (references; ask the owner first whether to run parallel build agents for it), B3, B4, B7, B5, B6, B8, B14, then P1. Test day 2026-10-10; submit by 2026-10-10. Credit left: about $1.80; ≤ $0.10 may be used tomorrow for two format checks.
+**Resume here: [docs/v4/plan/master-plan.md](docs/v4/plan/master-plan.md).** Tomorrow (2026-10-09) is the build day: **design (phase 39) and accounts + database (phase 29) both**, with parallel agents (approved) — B1 first, then spawn R1–R4 (references), A1 (SQL store), A2 (Better Auth in the web) in worktrees; the main session does B3, B4, B7, B5, B6, B8, A3, A4, B14, then P1. **Needed from the owner before 09:00: the hosted Postgres `DATABASE_URL` in `.env`.** Auth is Better Auth, email and password only (owner's choice). Test day 2026-10-10; submit by 2026-10-10. Credit left: about $1.80; ≤ $0.10 may be used tomorrow for two format checks.
 
 What happened on 2026-10-08:
 - The 36-deck gate run ($5.49): reliable (3 code-built slides of 327, 0 flagged, charts in 33 decks) but **one house style** on the owner's wall (Designed 3.5, Varied 3.1).

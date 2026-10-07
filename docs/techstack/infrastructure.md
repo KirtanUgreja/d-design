@@ -58,7 +58,7 @@ Deliberately open until then, each with its constraint:
 | **Where `web` runs** | Anywhere Next.js runs. It holds no secret beyond the auth provider's public config |
 | **Postgres** | Any managed Postgres. One region, chosen as a compliance input |
 | **Object storage** | For generated assets, behind the same data module |
-| **The auth provider** | WorkOS AuthKit or Clerk ([backend.md](backend.md) → "Auth (phase 29)") |
+| **The auth provider** | Better Auth, self-hosted in the web app (owner, 2026-10-08; [backend.md](backend.md) → "Auth (phase 29)") |
 | **Secrets** | The host's secret store. The OpenRouter key goes to the worker only |
 | **IaC** | Only if the target has network rules worth reviewing as a diff |
 | **Hosted share links** | Not built. Trigger: "send a link" requests outnumber "send the file" |

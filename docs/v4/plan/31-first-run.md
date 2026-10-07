@@ -50,4 +50,6 @@
 
 ## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
 
-Partly in place from phase 30: the composer as the first screen, real example briefs, recorded replays that cost nothing, the step bar. **The rest needs accounts (29) and real users, so it moves after submission.** On build day the composer only gains the per-deck logo control (38, B10).
+Partly in place from phase 30: the composer as the first screen, real example briefs, recorded replays that cost nothing, the step bar.
+
+**Build day (A5, P1):** sign-up arrives with phase 29 (Better Auth, email and password). **A brief typed before signing up starts the deck after** — nothing is retyped. The recorded demo decks stay public. **After submission:** the 5-second test with first-time users.

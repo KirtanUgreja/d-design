@@ -65,7 +65,7 @@ Full text and reasons: `docs/coderules/README.md`.
 5. No new dependency without a ledger line. An agent framework needs one too.
 6. The engine is pure: `api/engine/` imports no web framework and reads no environment.
 7. **Model output may reference only theme tokens for colour and type.** No gradients, blur, glow, links, icons or animation in slides.
-8. Data access lives in one Python data module. The web app has no database.
+8. Data access lives in one Python data module. The web app has no database — except Better Auth's own tables in the `auth` schema (owner, 2026-10-08), which Python never reads.
 9. One tenant wrapper, in Python, from phase 29.
 10. Anything that grants, fails closed — including the budget cap and QA ("a failure to measure is an error").
 11. The gate is green, or the commit does not land.

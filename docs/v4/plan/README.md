@@ -18,9 +18,9 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 | [26 — player and export](26-player-export.md) | M | built 2026-10-05; the stage and email tests move after submission |
 | [27 — app: create flow](27-app-create-flow.md) | L | built offline 2026-10-07 (API, worker, live web flow); **test day:** the owner's 3 live decks |
 | [28 — editor](28-editor.md) | L | free half built 2026-10-07; **build day (P1):** AI edits as proposals, notes, duplicate |
-| [29 — accounts and deploy](29-accounts-deploy.md) | M/L | **re-scoped to release for the submission:** packaging, an access-token gate, the README; accounts after submission |
+| [29 — accounts and deploy](29-accounts-deploy.md) | M/L | **build day (P0, owner 2026-10-08):** Better Auth (email and password), hosted Postgres behind the one tenant wrapper, JWT verified in FastAPI, user management, a per-user cap; packaging P1 |
 | [30 — UI prototype](30-ui-prototype.md) | M | built 2026-10-05; the 5 sessions move after submission |
-| [31 — first run](31-first-run.md) | M | partly in place from 30; the rest after submission (needs accounts) |
+| [31 — first run](31-first-run.md) | M | partly in place from 30; **build day (P1):** the brief survives sign-up |
 | [32 — watch and reveal](32-watch-reveal.md) | M | mostly built; **build day (P1):** real states, flagged slides named before download |
 | [33 — trust and control](33-trust-control.md) | M | mostly built; proposals arrive with 28 |
 | [34 — presenter confidence](34-presenter-confidence.md) | S/M | presenter view built (26); rehearse mode after submission |
@@ -63,6 +63,6 @@ Phases 27–29 build what the app *does*; phases 30–35 make it *feel* right, e
 
 ## Build order
 
-The original order (21 → 29) is done through 28. **From 2026-10-08 the order is [master-plan.md](master-plan.md)'s:** 39 (languages, references, retrieval, `compose.v11`, images, preview) → 37's pair form → model plumbing → 38, 28, 29's release, 32 → test day.
+The original order (21 → 29) is done through 28. **From 2026-10-08 the order is [master-plan.md](master-plan.md)'s:** 39 (languages, references, retrieval, `compose.v11`, images, preview) with parallel agents on the references, **29's accounts and database in parallel** (agents on the SQL store and the web auth), then 37's pair form, model plumbing, the security tests, and P1 (28, 31, 38, 29's packaging, 32) → test day.
 
 **Every phase exit includes a wall** the owner scores ([../bench.md](../bench.md)). Status lives here and in each phase's exit gate, nowhere else.

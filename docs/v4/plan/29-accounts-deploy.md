@@ -55,7 +55,17 @@
 
 ## Sprint status (2026-10-08) → [master-plan.md](master-plan.md)
 
-**Re-scoped for the submission to "release", single tenant:**
-- **Build day (B12, P1):** Dockerfiles for the API and worker (with Chromium) and the web; `docker-compose.yml`; `.env.example`; an **access-token gate** — when `ACCESS_TOKEN` is set, every API route requires it and fails closed; the web keeps it in an httpOnly cookie after a one-field unlock page. A hosted instance only if the owner names a host.
-- **Build day (B14, P0):** the submission README — what it is, how to run it in three commands, the architecture in one page, the evidence (walls, findings), the showcase decks.
-- **After submission (unchanged scope above):** managed auth, Postgres, metering, signed links, the privacy policy, the saved brand kit. Trigger: the first outside user.
+**In the submission, decided by the owner on 2026-10-08:** accounts, user management and the database are built on 2026-10-09.
+
+- **Auth: Better Auth** (owner's choice), self-hosted in the web app, **email and password only**, so there are no OAuth keys to set up.
+  - Its tables live in the **`auth` schema**, managed by its CLI. Python never reads them.
+  - Its **JWT plugin** issues the token FastAPI verifies with `PyJWKClient` against its JWKS: signature, issuer, audience, expiry and an algorithm allowlist. **Any failure, including an unreachable JWKS, is a 401.**
+  - The decision is recorded in [../../security/tenancy-and-data.md](../../security/tenancy-and-data.md) and [../../techstack/decisions.md](../../techstack/decisions.md).
+- **Data: free hosted Postgres** (Neon or Supabase). The owner gives the connection string.
+  - SQLAlchemy and Alembic manage the **`app` schema**: users keyed by the token's `sub`, decks as JSONB, events, jobs claimed with `SKIP LOCKED`, the ledger, versions, finished slides, questions.
+  - This is the *same* Store interface as `store/files.py`, now behind **the one tenant wrapper**. Another user's deck is a 404.
+  - Blobs (screenshots, exports, uploads) stay on disk under `data/assets/` until object storage is needed.
+- **User management:** sign up, sign in, sign out, an account page (name, email), account deletion (cascading to decks and files), and **Your decks**. There is a **per-user daily spend cap** that fails closed.
+- **Release (P1):** Dockerfiles, `docker-compose.yml` (web, api, worker; Postgres external), `.env.example`, run docs. A hosted instance only if the owner names a host. The submission README is P0.
+- **Verify (P0):** every route with no session and with another user's session; a cap check that throws refuses; deletion removes data; the owner's two-account check on test day.
+- **After submission:** Google and GitHub sign-in, email verification, password reset, magic links, MFA, object storage, teams, admin, billing, metering dashboards, signed share links, the privacy policy.

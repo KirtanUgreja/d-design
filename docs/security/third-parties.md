@@ -60,8 +60,8 @@ Not bureaucracy — a legal obligation the moment there are EU publishers, and a
 |---|---|---|
 | **OpenRouter + routed model providers** | Brief, interview answers, pasted material, slide content, image prompts | **Highest.** From phase 22 |
 | **Exa / Parallel**, through OpenRouter | Research queries | High — a query can reveal the topic. From phase 24 |
-| **The identity provider** — WorkOS or Clerk | Email, login events, profile | Medium. From phase 29. v3's Better Auth was self-hosted and not a subprocessor; this is a cost of the move |
-| **The hosting provider(s) and Postgres** | Everything at rest | Highest. Chosen at phase 29 |
+| **The identity provider** — none: Better Auth is self-hosted (owner, 2026-10-08) | Email, password hash, sessions — in our own Postgres | None beyond the Postgres host. A managed provider (WorkOS, Clerk) would add one; reconsidered for OAuth or MFA |
+| **The hosting provider(s) and Postgres** | Everything at rest | Highest. Postgres: a free hosted instance (Neon or Supabase), chosen by the owner 2026-10-08 |
 | **An error tracker**, if adopted | Whatever is not scrubbed | **Medium, and entirely dependent on configuration** |
 
 Before phase 29 the product runs on a developer machine, and the only third parties are the first two rows.

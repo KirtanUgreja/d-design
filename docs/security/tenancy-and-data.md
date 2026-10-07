@@ -20,6 +20,8 @@ These are integrity controls today and the base of isolation tomorrow: one modul
 
 ## Authentication (phase 29)
 
+> **Decided 2026-10-08 by the owner, for the submission:** **Better Auth**, self-hosted inside the web app, **email and password only** (no OAuth keys to set up). Its tables live in their **own Postgres schema (`auth`)**, managed by its own CLI; Python never reads them. Its **JWT plugin** issues the token FastAPI verifies through the JWKS, exactly as written below for a managed provider — so "no table shared across languages" still holds. Email verification, password reset, OAuth and MFA are not in the submission. A managed provider is reconsidered when OAuth, MFA or email flows are needed.
+
 **Use a managed identity provider. Do not build it.** WorkOS AuthKit or Clerk, chosen at phase start. It handles passwords, email verification, OAuth, MFA and reset flows. v3 kept Better Auth in Node and had Python read its session table across a language boundary; that arrangement is gone ([../techstack/decisions.md](../techstack/decisions.md)).
 
 **How FastAPI learns who you are:** it verifies the provider's JWT with PyJWT's `PyJWKClient` — signature against the JWKS, issuer, audience, expiry, and an explicit algorithm allowlist. **Every failure, including an unreachable JWKS, is a 401.** There is no permissive default.

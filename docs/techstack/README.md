@@ -76,7 +76,7 @@ v4 gives the engine, the data and the export to the backend alone. The frontend 
 | **Streaming** | The worker appends to `events.jsonl`; the API's SSE tails it and honours `Last-Event-ID`. Web reads it with a fetch-stream reader | [backend.md](backend.md) → "The worker" |
 | **Storage** | A file store, `api/store/files.py`, the only data module: atomic writes, a per-deck lock, a version check → Postgres + SQLAlchemy + Alembic at phase 29, owned by Python alone |
 | **Spend** | A per-deck `budget_usd` hard cap that fails closed, read from the cost ledger | [backend.md](backend.md) → "Budget" | [backend.md](backend.md) → "Data" |
-| **Auth** | None until phase 29. Then a managed IdP (WorkOS AuthKit or Clerk), with the JWT verified in FastAPI by PyJWT's `PyJWKClient` | [backend.md](backend.md) → "Auth (phase 29)" |
+| **Auth** | Phase 29: **Better Auth** in the web app (owner, 2026-10-08; email and password), its JWT verified in FastAPI by PyJWT's `PyJWKClient` | [backend.md](backend.md) → "Auth (phase 29)" |
 | **App framework** | Next.js 16 App Router + React 19 | [frontend.md](frontend.md) |
 | **App chrome UI** | shadcn/ui + Tailwind 4 on our brand tokens | [frontend.md](frontend.md) |
 | **API types in web** | `openapi-typescript`: generated, never hand-edited, no-diff gate. SSE event models are registered in OpenAPI explicitly | [frontend.md](frontend.md) → "The app: UI only" |
