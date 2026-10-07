@@ -26,10 +26,12 @@ def test_procedural_slides_pass_qa(tmp_path: Path) -> None:
         plans += [(brief_id, p) for p in planner.assign(outline.slides)]
     rng = random.Random(36)
     broken: list[tuple[str, list[str]]] = []
-    layouts: set[str] = set()
     for n in range(LOOKS):
         theme = build(draw(rng, f"proc{n}", 0, "auto", None))
         frames, fields = [], {}
+        # per deck: one identity, so a CSS difference is a layout difference
+        layouts: dict[str, set[str]] = {}
+        drawn: dict[str, int] = {}
         previous = None
         for brief_id, plan in plans:
             previous = targets.draw(rng, Archive(), plan.intent, len(plan.fields), previous)
@@ -37,14 +39,16 @@ def test_procedural_slides_pass_qa(tmp_path: Path) -> None:
             slide_id = f"{brief_id}-{plan.id}"
             frames.append(Frame(slide_id, composed.html, composed.css))
             fields[slide_id] = {f.name: f.text for f in plan.fields}
-            layouts.add(composed.css)
+            if plan.chart is None:  # chart slides share one code layout until phase 37
+                layouts.setdefault(brief_id, set()).add(composed.css)
+                drawn[brief_id] = drawn.get(brief_id, 0) + 1
         result = asyncio.run(
             browser.measure(theme, frames, fields, str(tmp_path / "qa.html"), pixels=False)
         )
         broken += [(k, [e.code for e in m.errors]) for k, m in result.items() if m.errors]
+        repeats = {b: drawn[b] - len(css) for b, css in layouts.items() if len(css) < drawn[b]}
+        assert repeats == {}, (n, repeats)
     assert broken == []
-    # Chart slides still share one code layout (phase 37 makes them target-driven).
-    assert len(layouts) >= 0.75 * LOOKS * len(plans)
 
 
 def test_neighbouring_fallbacks_never_share_a_method() -> None:

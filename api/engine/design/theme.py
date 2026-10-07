@@ -305,7 +305,7 @@ def build(look: Look) -> Theme:
     motif = look.motif
     return Theme(
         id=look.id,
-        summary=f"{pairing.note}; {look.palette}; {grid.id} grid; {motif.id} motif.",
+        summary=f"{pairing.note}; {look.palette}; {grid.id} grid; texture: {motif.note}.",
         colors=colors,
         display=display,
         text=text,
@@ -329,7 +329,8 @@ def build(look: Look) -> Theme:
         textures=motif.textures,
         guidance=f"{grid.note}. Motif: {motif.note}. Type: {pairing.note}.",
         look=look.record(),
-        tiles=patterns.tiles(look.texture),
+        tiles=patterns.tiles(look.texture)
+        | ({"motif": look.motif_tile} if look.motif_tile else {}),
         mark=look.mark or patterns.mark(look.id, random.Random(0)),  # noqa: S311 - a shape
         track=look.track,
     )

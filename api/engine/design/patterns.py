@@ -155,3 +155,74 @@ def mark(words: str, rng: random.Random) -> str:
             cx, cy = 120 + radius * math.cos(a), 120 + radius * math.sin(a)
             body.append(f"<circle cx='{cx:.1f}' cy='{cy:.1f}' r='{8 + v * 14:.1f}'/>")
     return _svg("".join(body), size)
+
+
+_ELEMENTS = ("dot", "dash", "ring", "cross", "square", "bar")
+
+
+def _rect(x: float, y: float, w: float, h: float) -> str:
+    return f"<rect x='{x:.1f}' y='{y:.1f}' width='{w:.1f}' height='{h:.1f}'/>"
+
+
+def _element(kind: str, x: float, y: float, size: float, stroke: float) -> str:
+    r = size / 2
+    if kind == "dot":
+        return f"<circle cx='{x:.1f}' cy='{y:.1f}' r='{r:.1f}'/>"
+    if kind == "ring":
+        return (
+            f"<circle cx='{x:.1f}' cy='{y:.1f}' r='{max(r - stroke / 2, 1):.1f}' fill='none' "
+            f"stroke='#000' stroke-width='{stroke:.1f}'/>"
+        )
+    if kind == "square":
+        return _rect(x - r, y - r, size, size)
+    dash = _rect(x - r, y - stroke / 2, size, stroke)
+    bar = _rect(x - stroke / 2, y - r, stroke, size)
+    return {"dash": dash, "bar": bar}.get(kind, dash + bar)  # else a cross
+
+
+def motif(rng: random.Random) -> tuple[str, str]:
+    """The deck's own texture, from a grammar rather than a list: an element
+    (or two, layered), set on a lattice whose pitch, stagger, rotation, size
+    and stroke are continuous. Returns the mask url() and a note for the
+    compose prompt. Like the hatch, one slide-sized mask: it never repeats
+    visibly and rotates seamlessly."""
+    first = rng.choice(_ELEMENTS)
+    second = rng.choice([e for e in _ELEMENTS if e != first]) if rng.random() < 0.35 else ""
+    w = round(rng.uniform(14, 48), 1)
+    h = round(w * rng.uniform(0.6, 1.4), 1)
+    stagger = rng.choice((0.0, 0.5, rng.uniform(0.15, 0.85)))
+    angle = round(rng.choice((0.0, rng.uniform(-60, 60))), 1)
+    size = min(w, h) * rng.uniform(0.26, 0.6)
+    stroke = max(1.2, size * rng.uniform(0.12, 0.3))
+    places = [
+        (first, w / 2, h / 2, size, stroke),
+        (first, w / 2 + stagger * w, h * 1.5, size, stroke),
+    ]
+    if second:
+        small, thin = size * rng.uniform(0.35, 0.6), stroke * 0.8
+        places += [(second, 0.0, 0.0, small, thin), (second, stagger * w, h, small, thin)]
+    # Every element at all nine wrap offsets, so nothing is cut at a tile edge.
+    body = [
+        _element(kind, x % w + dx, y % (2 * h) + dy, sz, st)
+        for kind, x, y, sz, st in places
+        for dx in (-w, 0.0, w)
+        for dy in (-2 * h, 0.0, 2 * h)
+    ]
+    tile = (
+        f"<defs><pattern id='m' width='{w:g}' height='{h * 2:g}' patternUnits='userSpaceOnUse' "
+        f"patternTransform='rotate({angle:g})'>{''.join(body)}</pattern></defs>"
+        "<rect width='1920' height='1080' fill='url(#m)'/>"
+    )
+    names = {
+        "dot": "dots",
+        "dash": "dashes",
+        "ring": "rings",
+        "cross": "crosses",
+        "square": "squares",
+        "bar": "bars",
+    }
+    layout = "a staggered" if stagger else "a square"
+    turned = f", turned {abs(angle):.0f}°" if abs(angle) >= 1 else ""
+    extra = f" with small {names[second]} between" if second else ""
+    note = f"{names[first]}{extra} on {layout} {w:.0f}px lattice{turned}"
+    return _svg(tile, 1920, 1080), note

@@ -31,7 +31,7 @@ class Frame:
 # Texture without gradients: colourless SVG masks over a theme colour. The
 # geometry is the look's own (design/patterns.py) and reaches each slide as the
 # --tile-* and --mark tokens, so the slide's CSS never carries a url().
-KINDS = ("halftone", "hatch", "crosshatch", "grid", "dither", "weave", "lines", "grain")
+KINDS = ("halftone", "hatch", "crosshatch", "grid", "dither", "weave", "lines", "grain", "motif")
 
 
 # Ours, not the model's: it may use :host, masks and url(). The model's CSS is

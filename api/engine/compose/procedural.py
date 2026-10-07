@@ -137,6 +137,8 @@ def build(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
     advance = display_width(theme.display.family, theme.w_display)
     body = theme.scale["body"]
 
+    gap = round(16 + p.get("spread", 0.5) * 32 + p["blocks"] * 16)  # px between parts
+
     def height() -> float:
         h = sum(
             _lines(by[k], theme.scale[s], advance, inner)
@@ -149,7 +151,7 @@ def build(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
             _lines(f.text, body, _TEXT_ADVANCE, inner) * body * 1.3 + 2 * theme.space[2]
             for f in rest
         )
-        return h + theme.space[4] * (len(rest) + 3)
+        return h + gap * (len(rest) + 3)
 
     # A headline that cannot fit three lines even at the floor step widens its measure.
     while _lines(by.get("headline", ""), theme.scale[head], advance, inner) > 3 and width < avail:
@@ -183,13 +185,15 @@ def build(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
         parts.append(f'<p class="src" data-field="source">{by["source"]}</p>')
     block = f'<div class="b">{"".join(parts)}</div>'
 
-    align = ("start", "center", "end")[min(2, int(p["mass_y"] * 3))]
+    # Continuous placement: the block drops by a share of the free height
+    # that follows the target's mass; its spacing (gap) follows the target too.
+    drop = max(0.0, room - height()) * _clamp((p["mass_y"] - 0.25) / 0.5, 0, 1)
     display = (
         "font-family:var(--f-display);font-weight:var(--w-display);"
         "line-height:var(--lh-display);letter-spacing:var(--track-display)"
     )
     css = [
-        f".b{{display:grid;gap:var(--s-4);width:{inner:.0f}px;color:{on}}}",
+        f".b{{display:grid;gap:{gap}px;width:{inner:.0f}px;color:{on};margin-top:{drop:.0f}px}}",
         ".k,.src{font-family:var(--f-label);font-size:var(--t-label);"
         f"color:{quiet};letter-spacing:0.08em;text-transform:uppercase}}",
         f".st{{{display};font-size:var(--t-{hero})}}",
@@ -206,13 +210,13 @@ def build(plan: SlidePlan, target: Target, theme: Theme) -> Composed:
         css += [
             f".s{{display:grid;grid-template-columns:{cols}}}",
             f".p{{grid-column:{side};background-color:var(--c-accent);padding:var(--margin);"
-            f"display:grid;align-content:{align}}}",
+            "display:grid;align-content:start}",
         ]
     else:
         offset = (avail - width) * _clamp((p["mass_x"] - 0.2) / 0.6, 0, 1)
         html = f'<section class="s">{block}</section>'
         css += [
-            f".s{{display:grid;padding:var(--margin);align-content:{align}}}",
+            ".s{display:grid;padding:var(--margin);align-content:start}",
             f".b{{margin-left:{offset:.0f}px}}",
         ]
     return Composed(html, "".join(css))

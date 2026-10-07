@@ -280,6 +280,7 @@ TEXTURE_KINDS = frozenset(k for m in MOTIFS for k in m.textures) | {
     "hatch",
     "grid",
     "mark",
+    "motif",  # the deck's own generated texture (patterns.motif)
 }
 
 # px for each step of the type scale on the 1920 canvas. The scale axis moves

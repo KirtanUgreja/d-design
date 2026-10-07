@@ -20,7 +20,6 @@ from engine.design.axes import (
     EDGES,
     GRIDS,
     IMAGE_TREATMENTS,
-    MOTIFS,
     MOTIONS,
     PAIRINGS,
     Grid,
@@ -76,6 +75,7 @@ class Look:
     track: float = 0.0
     texture: patterns.Params = patterns.DEFAULT
     mark: str = ""
+    motif_tile: str = ""  # the deck's generated texture mask (patterns.motif)
 
     @property
     def dark(self) -> bool:
@@ -180,6 +180,7 @@ def draw(
         roles = brand(brand_hex, roles)
     roles = resolve(roles)
     edge = rng.choice(list(EDGES))
+    motif_tile, motif_note = patterns.motif(rng)
     wide = pairing.kind in ("wide", "mono")
     return Look(
         id=f"{deck_id}-{n}",
@@ -188,7 +189,7 @@ def draw(
         hue=hue,
         roles=roles,
         grid=grid,
-        motif=rng.choice(MOTIFS),
+        motif=Motif("generated", ("motif", "solid"), motif_note),
         scale=scale,
         edge=edge,
         density=density,
@@ -203,6 +204,7 @@ def draw(
         track=round(rng.uniform(-0.01, 0.01) if wide else rng.uniform(-0.035, 0.01), 3),
         texture=patterns.Params.draw(rng),
         mark=patterns.mark(words or deck_id, rng),
+        motif_tile=motif_tile,
     )
 
 
@@ -213,7 +215,7 @@ def distance(a: Look, b: Look) -> float:
         + 2.0 * palettes.gap(a.roles, b.roles)
         + 2.0 * (a.dark != b.dark)
         + 2.0 * (a.grid.id != b.grid.id)
-        + 1.5 * (a.motif.id != b.motif.id)
+        + 1.5 * (a.motif.note.split()[0] != b.motif.note.split()[0])
         + 1.0 * (a.scale != b.scale)
         + 0.5 * (a.edge != b.edge)
         + 0.5 * (a.density != b.density)
