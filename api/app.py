@@ -19,10 +19,11 @@ from fastapi import FastAPI, Header, Query
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
+import ops
 import settings
 from engine import Brief, Deck, Question, interview
 from lib.result import Ok
-from store.files import Store
+from store.files import History, Store
 
 FINAL = {"ready", "error", "aborted"}
 POLL_S = 0.4
@@ -48,6 +49,15 @@ class OutlineEdit(BaseModel):
     version: int
     order: list[str] | None = None  # slide ids, the cover and the ask stay at the ends
     decisions: dict[str, Literal["approved", "rejected"]] = Field(default_factory=dict)
+
+
+class FieldText(BaseModel):
+    field: str = Field(pattern=r"^[\w-]+$")
+    text: str = Field(min_length=1, max_length=600)
+
+
+class Order(BaseModel):
+    slides: list[str] = Field(min_length=3, max_length=40)
 
 
 class DeckOut(BaseModel):
@@ -231,6 +241,67 @@ def create_app(store: Store) -> FastAPI:
         if not path.exists():
             return _problem(404, "The deck isn't built yet.")
         return Response(path.read_bytes(), media_type="application/pdf")
+
+    # --- the editor (phase 28): each change is an edit job; undo is file-only ---
+
+    def editable(deck_id: str) -> JSONResponse | None:
+        if not store.exists(deck_id):
+            return _problem(404, missing)
+        if store.read(deck_id).status != "ready":
+            return _problem(409, "This deck can't be edited until it is built.")
+        return None
+
+    def queue(deck_id: str, op: ops.Op) -> DeckOut:
+        store.enqueue("edit", deck_id, op.model_dump_json())
+        return out(store.read(deck_id))
+
+    @api.patch("/api/decks/{deck_id}/slides/{slide_id}/fields", response_model=None)
+    def edit_text(deck_id: str, slide_id: str, body: FieldText) -> DeckOut | JSONResponse:
+        if (no := editable(deck_id)) or not slide_id.isalnum():
+            return no or _problem(404, missing)
+        return queue(deck_id, ops.TextEdit(slide=slide_id, field=body.field, text=body.text))
+
+    @api.post("/api/decks/{deck_id}/reorder", response_model=None)
+    def reorder(deck_id: str, body: Order) -> DeckOut | JSONResponse:
+        return editable(deck_id) or queue(deck_id, ops.Reorder(slides=body.slides))
+
+    @api.delete("/api/decks/{deck_id}/slides/{slide_id}", response_model=None)
+    def delete(deck_id: str, slide_id: str) -> DeckOut | JSONResponse:
+        if (no := editable(deck_id)) or not slide_id.isalnum():
+            return no or _problem(404, missing)
+        return queue(deck_id, ops.Delete(slide=slide_id))
+
+    @api.post("/api/decks/{deck_id}/recolour", response_model=None)
+    def recolour(deck_id: str) -> DeckOut | JSONResponse:
+        return editable(deck_id) or queue(deck_id, ops.Recolour())
+
+    @api.post("/api/decks/{deck_id}/slides/{slide_id}/fit", response_model=None)
+    def fit(deck_id: str, slide_id: str) -> DeckOut | JSONResponse:
+        if (no := editable(deck_id)) or not slide_id.isalnum():
+            return no or _problem(404, missing)
+        return queue(deck_id, ops.Fit(slide=slide_id))
+
+    @api.get("/api/decks/{deck_id}/history", response_model=None)
+    def history(deck_id: str) -> History | JSONResponse:
+        if not store.exists(deck_id):
+            return _problem(404, missing)
+        return store.history(deck_id)
+
+    def step(deck_id: str, by: int) -> History | JSONResponse:
+        if not store.exists(deck_id):
+            return _problem(404, missing)
+        if store.busy(deck_id):
+            return _problem(409, "A change is still being made. Undo once it lands.")
+        moved = store.restore(deck_id, store.history(deck_id).at + by)
+        return moved.value if isinstance(moved, Ok) else _problem(409, moved.error)
+
+    @api.post("/api/decks/{deck_id}/undo", response_model=None)
+    def undo(deck_id: str) -> History | JSONResponse:
+        return step(deck_id, -1)
+
+    @api.post("/api/decks/{deck_id}/redo", response_model=None)
+    def redo(deck_id: str) -> History | JSONResponse:
+        return step(deck_id, +1)
 
     return api
 

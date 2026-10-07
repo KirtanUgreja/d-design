@@ -24,6 +24,7 @@ import fcntl
 import json
 import os
 import secrets
+import shutil
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -35,7 +36,8 @@ from pydantic import BaseModel
 from engine import Brief, Composed, Deck, Kept, LedgerEntry, Question
 from lib.result import Ok, Result, err, ok
 
-JobKind = Literal["interview", "outline", "build"]
+JobKind = Literal["interview", "outline", "build", "edit"]
+UNDO_STEPS = 20  # "Undo restores any of the last 20 operations exactly" (phase 28)
 STALE_S = 60.0  # a running job whose heartbeat is older is claimed again
 
 
@@ -45,6 +47,7 @@ class Job(BaseModel):
     deck_id: str
     created: float
     attempts: int = 0
+    payload: str = ""  # an edit job's operation, as JSON (worker.py parses it)
 
 
 class _Kept(BaseModel):
@@ -55,6 +58,11 @@ class _Kept(BaseModel):
 
 class _Questions(BaseModel):
     questions: list[Question]
+
+
+class History(BaseModel):
+    labels: list[str] = []  # one per snapshot, oldest first
+    at: int = -1  # the snapshot the deck is at now
 
 
 def _write(path: Path, text: str) -> None:
@@ -196,6 +204,67 @@ class Store:
     def clear_abort(self, deck_id: str) -> None:
         (self.dir(deck_id) / "abort").unlink(missing_ok=True)
 
+    # versions: labelled snapshots per operation (phase 28) -----------------
+
+    def _files(self, deck_id: str) -> list[Path]:
+        """What a snapshot holds: the deck, its finished slides and their
+        screenshots, and the exports, so a restore is exact without a rebuild."""
+        d = self.dir(deck_id)
+        out = [d / "deck.json"]
+        out += sorted((d / "slides").glob("*.json")) + sorted((d / "slides").glob("*.png"))
+        out += [d / "export-present.html", d / "export-send.html", d / "export.pdf"]
+        return [p for p in out if p.exists()]
+
+    def history(self, deck_id: str) -> History:
+        path = self.dir(deck_id) / "versions" / "index.json"
+        return History.model_validate_json(path.read_text()) if path.exists() else History()
+
+    def snapshot(self, deck_id: str, label: str) -> History:
+        """Record the deck as it is now, as the newest version. A snapshot after
+        an undo drops the versions that were ahead of it, like any editor."""
+        with self._lock(deck_id):
+            h = self.history(deck_id)
+            labels = [*h.labels[: h.at + 1], label]
+            root = self.dir(deck_id) / "versions"
+            n = len(labels) - 1
+            for stale in range(n, len(h.labels)):
+                shutil.rmtree(root / str(stale), ignore_errors=True)
+            for src in self._files(deck_id):
+                dst = root / str(n) / src.relative_to(self.dir(deck_id))
+                dst.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(src, dst)
+            if len(labels) > UNDO_STEPS + 1:  # the last 20 operations and their base
+                shutil.rmtree(root / "0", ignore_errors=True)
+                for k in range(1, len(labels)):
+                    os.replace(root / str(k), root / str(k - 1))
+                labels = labels[1:]
+            out = History(labels=labels, at=len(labels) - 1)
+            _write(root / "index.json", out.model_dump_json())
+            return out
+
+    def restore(self, deck_id: str, to: int) -> Result[History, str]:
+        """Put the deck back exactly as snapshot ``to`` left it."""
+        with self._lock(deck_id):
+            h = self.history(deck_id)
+            if not 0 <= to < len(h.labels):
+                return err("Nothing more to undo." if to < 0 else "Nothing more to redo.")
+            source = self.dir(deck_id) / "versions" / str(to)
+            current = self.read(deck_id).version
+            for stale in self._files(deck_id):
+                if stale.name != "deck.json":
+                    stale.unlink()
+            for src in source.rglob("*"):
+                if src.is_file():
+                    dst = self.dir(deck_id) / src.relative_to(source)
+                    dst.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(src, dst)
+            # The restored deck moves forward in version, so a stale write still fails.
+            deck = self.read(deck_id).model_copy(update={"version": current + 1})
+            _write(self.dir(deck_id) / "deck.json", deck.model_dump_json())
+            out = h.model_copy(update={"at": to})
+            _write(self.dir(deck_id) / "versions" / "index.json", out.model_dump_json())
+            return ok(out)
+
     # jobs ------------------------------------------------------------------
 
     def _jobs(self, state: str) -> list[Job]:
@@ -207,19 +276,23 @@ class Store:
                 continue  # claimed between the listing and the read
         return sorted(out, key=lambda j: j.created)
 
-    def enqueue(self, kind: JobKind, deck_id: str) -> Job:
+    def busy(self, deck_id: str) -> bool:
+        return any(j.deck_id == deck_id for s in ("queued", "running") for j in self._jobs(s))
+
+    def enqueue(self, kind: JobKind, deck_id: str, payload: str = "") -> Job:
         """At most one waiting or running job per deck and kind: a double click
-        on Start enqueues one job."""
+        on Start enqueues one job. Edits are each their own job, done in order."""
         with self._lock(deck_id):
             for state in ("queued", "running"):
                 for job in self._jobs(state):
-                    if job.deck_id == deck_id and job.kind == kind:
+                    if job.deck_id == deck_id and job.kind == kind and kind != "edit":
                         return job
             job = Job(
                 id=f"{time.time_ns()}{secrets.token_hex(3)}",
                 kind=kind,
                 deck_id=deck_id,
                 created=time.time(),
+                payload=payload,
             )
             _write(self.root / "jobs" / "queued" / f"{job.id}.json", job.model_dump_json())
             return job

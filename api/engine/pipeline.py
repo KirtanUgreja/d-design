@@ -402,16 +402,9 @@ async def build(
                 cost_usd=sum(e.cost_usd for e in seam.ledger if e.slide_id == plan.id),
             )
         )
-    frames = [_frame(p, composed[p.id]) for p in plans]
-    # A chart's values ride in the notes too: the presenter can read them out,
-    # and the send flavour's readers get them as text (phase 37).
-    notes = {
-        p.id: "\n\n".join(x for x in (p.notes, charts.describe(p.chart) if p.chart else "") if x)
-        for p in plans
-        if p.notes or p.chart
-    }
-    html = assemble(theme, frames, title, flavour="present", notes=notes)
-    send = assemble(theme, frames, title, flavour="send")
+    html, send = export(
+        theme, plans, {p.id: Kept(composed[p.id], origin[p.id]) for p in plans}, title
+    )
     emit("done", seconds=round(time.monotonic() - started, 1))
     return Built(
         slides,
@@ -424,3 +417,69 @@ async def build(
         len(steered),
         sum(any(w.code == "W8" for w in s.qa.warnings) for s in slides),
     )
+
+
+# --- edits without a model (phase 28): the worker's edit job uses these -------
+
+
+def export(
+    theme: Theme, plans: list[SlidePlan], kept: dict[str, Kept], title: str
+) -> tuple[str, str]:
+    """Both flavours from finished slides. A chart's values ride in the notes
+    too: the presenter can read them out, and the send flavour's readers get
+    them as text (phase 37)."""
+    plans = [p for p in plans if p.id in kept]
+    frames = [_frame(p, kept[p.id].composed) for p in plans]
+    notes = {
+        p.id: "\n\n".join(x for x in (p.notes, charts.describe(p.chart) if p.chart else "") if x)
+        for p in plans
+        if p.notes or p.chart
+    }
+    present = assemble(theme, frames, title, flavour="present", notes=notes)
+    return present, assemble(theme, frames, title, flavour="send")
+
+
+async def remeasure(
+    theme: Theme,
+    plans: list[SlidePlan],
+    kept: dict[str, Kept],
+    *,
+    work_file: str,
+    shots_dir: str,
+) -> dict[str, Slide]:
+    """QA again for the given slides, screenshots refreshed: after a text edit,
+    a recolour or a fit. No model call. Every slide comes back measured."""
+    frames = [_frame(p, kept[p.id].composed) for p in plans]
+    fields = {p.id: {f.name: f.text for f in p.fields} for p in plans}
+    result = await browser.measure(theme, frames, fields, work_file, shots_dir)
+    out: dict[str, Slide] = {}
+    for plan, frame in zip(plans, frames, strict=True):
+        m = result[plan.id]
+        status: Literal["passed", "flagged", "unmeasured"] = (
+            "unmeasured" if not m.measured else "flagged" if m.errors else "passed"
+        )
+        out[plan.id] = Slide(
+            id=plan.id,
+            plan_id=plan.id,
+            html=frame.html,
+            css=frame.css,
+            fields=fields[plan.id],
+            origin=kept[plan.id].origin,  # type: ignore[arg-type]  # set only to the literals
+            attempts=0,
+            qa=SlideQA(
+                status=status,
+                errors=m.defects(),
+                warnings=m.warned(),
+                fingerprint=m.fingerprint,
+                screenshot=f"{plan.id}.png",
+            ),
+        )
+    return out
+
+
+def code_built(plan: SlidePlan, theme: Theme) -> Kept:
+    """ "Fit to slide": the slide rebuilt by code from a target of its own, so
+    its words fit by construction (the same code the ladder falls back to)."""
+    rng = random.Random(f"fit/{plan.id}")  # noqa: S311 - layout, not security
+    aim = targets.draw(rng, Archive(), plan.intent, len(plan.fields))
+    return Kept(procedural.build(plan, aim, theme), "fallback")

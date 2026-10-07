@@ -18,8 +18,10 @@ import time
 from collections.abc import Callable
 from datetime import UTC, datetime
 
+import ops
 import settings
 from engine import (
+    Composed,
     Deck,
     Kept,
     ModelError,
@@ -30,9 +32,12 @@ from engine import (
     notes,
     pdf,
     pipeline,
+    recolour,
     research,
+    set_field,
     storyline,
 )
+from engine.design.theme import Theme
 from lib.result import Err
 from store.files import Job, Store
 
@@ -96,6 +101,8 @@ async def run(
                 deck.id, status="approve", storyline=written.value.story, facts=written.value.facts
             )
             store.append_event(deck.id, {"type": "outline_ready"})
+        elif job.kind == "edit":
+            await _edit(store, deck, ops.OP.validate_json(job.payload))
         else:
             await _build(store, deck, seam, design=design, writing=writing, budget_usd=budget_usd)
     finally:
@@ -116,13 +123,6 @@ async def _build(
         if not isinstance(with_notes, Err):
             story = with_notes.value
             store.update(deck.id, storyline=story)
-    look = look_for(
-        deck.id,
-        deck_type=deck.brief.deck_type,
-        tone=deck.brief.tone,
-        words=deck.brief.prompt,
-        nonce=deck.look_nonce,
-    )
     slides_dir = store.slides_dir(deck.id)
 
     def keep(slide_id: str, kept: Kept) -> None:
@@ -134,7 +134,7 @@ async def _build(
     built = await pipeline.build(
         seam,
         story,
-        build_theme(look),
+        theme_of(deck),
         model=design,
         title=deck.title,
         work_file=str(slides_dir / "qa.html"),
@@ -152,6 +152,115 @@ async def _build(
     store.save_export(deck.id, "export.pdf", await pdf.render(built.send))
     aborted = store.aborted(deck.id)
     store.update(deck.id, status="aborted" if aborted else "ready", slides=built.slides)
+    if not aborted:
+        store.snapshot(deck.id, "Generated")  # the first version undo can return to
+
+
+def theme_of(deck: Deck) -> Theme:
+    """The deck's one generated look, recoloured if the user asked for that."""
+    look = look_for(
+        deck.id,
+        deck_type=deck.brief.deck_type,
+        tone=deck.brief.tone,
+        words=deck.brief.prompt,
+        nonce=deck.look_nonce,
+    )
+    if deck.palette_nonce:
+        look = recolour(look, deck.palette_nonce, tone=deck.brief.tone)
+    return build_theme(look)
+
+
+async def _edit(store: Store, deck: Deck, op: ops.Op) -> None:
+    """One editor operation, no model: change, run QA again on what it
+    touched, re-export, and record a version. A slide the change breaks is
+    kept and flagged, with "Fit to slide" offered; never saved silently."""
+    story = deck.storyline
+    if story is None or deck.status != "ready":
+        _fail(store, deck, "This deck can't be edited until it is built.", "not_ready")
+        return
+    kept = store.kept(deck.id)
+    plans = list(story.slides)
+    by = {p.id: p for p in plans}
+    touched: list[str] = []
+    if isinstance(op, ops.TextEdit):
+        plan, slide = by.get(op.slide), kept.get(op.slide)
+        html = set_field(slide.composed.html, op.field, op.text) if slide else None
+        if plan is None or slide is None or html is None:
+            store.append_event(
+                deck.id, {"type": "edit_refused", "message": "That text isn't on this slide."}
+            )
+            return
+        fields = [
+            f.model_copy(update={"text": op.text}) if f.name == op.field else f for f in plan.fields
+        ]
+        by[plan.id] = plan.model_copy(update={"fields": fields})
+        kept[plan.id] = Kept(Composed(html, slide.composed.css), slide.origin)
+        touched = [plan.id]
+    elif isinstance(op, ops.Reorder):
+        ids = [p.id for p in plans]
+        if sorted(op.slides) != sorted(ids) or op.slides[0] != ids[0] or op.slides[-1] != ids[-1]:
+            store.append_event(
+                deck.id,
+                {"type": "edit_refused", "message": "Keep the cover first and the ask last."},
+            )
+            return
+        plans = [by[i] for i in op.slides]
+    elif isinstance(op, ops.Delete):
+        ends = (plans[0].id, plans[-1].id)
+        if op.slide in ends or op.slide not in by or len(plans) <= 3:
+            store.append_event(
+                deck.id,
+                {
+                    "type": "edit_refused",
+                    "message": "The cover and the ask stay, and a deck keeps three slides.",
+                },
+            )
+            return
+        plans = [p for p in plans if p.id != op.slide]
+        kept.pop(op.slide, None)
+        (store.slides_dir(deck.id) / f"{op.slide}.json").unlink(missing_ok=True)
+    elif isinstance(op, ops.Recolour):
+        deck = deck.model_copy(update={"palette_nonce": deck.palette_nonce + 1})
+        touched = [p.id for p in plans]
+    else:  # Fit
+        if op.slide not in by:
+            store.append_event(
+                deck.id, {"type": "edit_refused", "message": "That slide isn't in this deck."}
+            )
+            return
+        theme = theme_of(deck)
+        kept[op.slide] = pipeline.code_built(by[op.slide], theme)
+        touched = [op.slide]
+    plans = [by.get(p.id, p) for p in plans]
+    theme = theme_of(deck)
+    slides_dir = store.slides_dir(deck.id)
+    fresh = await pipeline.remeasure(
+        theme,
+        [p for p in plans if p.id in touched],
+        kept,
+        work_file=str(slides_dir / "qa-edit.html"),
+        shots_dir=str(slides_dir),
+    )
+    (slides_dir / "qa-edit.html").unlink(missing_ok=True)
+    old = {s.id: s for s in deck.slides}
+    slides = [fresh.get(p.id) or old[p.id] for p in plans if p.id in old or p.id in fresh]
+    for sid in touched:
+        store.save_kept(deck.id, sid, kept[sid])
+    present, send = pipeline.export(theme, plans, kept, deck.title)
+    store.save_export(deck.id, "export-present.html", present)
+    store.save_export(deck.id, "export-send.html", send)
+    store.save_export(deck.id, "export.pdf", await pdf.render(send))
+    store.update(
+        deck.id,
+        storyline=story.model_copy(update={"slides": plans}),
+        slides=slides,
+        palette_nonce=deck.palette_nonce,
+    )
+    store.snapshot(deck.id, ops.LABEL[op.kind])
+    flagged = [s for s in touched if fresh[s].qa.status != "passed"]
+    store.append_event(
+        deck.id, {"type": "edit_done", "label": ops.LABEL[op.kind], "flagged": flagged}
+    )
 
 
 async def _beating(store: Store, job: Job, work: asyncio.Task[None]) -> None:

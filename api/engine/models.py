@@ -216,6 +216,7 @@ class Deck(BaseModel):
     ] = "brief"
     error: str = ""  # human copy for the UI, never an exception string
     look_nonce: int = 0  # "another look" bumps it
+    palette_nonce: int = 0  # "recolour" bumps it: same look, another palette
     brief: Brief
     facts: list[Fact] = Field(default_factory=list)
     storyline: Storyline | None = None

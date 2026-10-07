@@ -412,6 +412,11 @@
             ],
             "title": "Owner Id"
           },
+          "palette_nonce": {
+            "default": 0,
+            "title": "Palette Nonce",
+            "type": "integer"
+          },
           "schema_version": {
             "default": 1,
             "title": "Schema Version",
@@ -630,6 +635,27 @@
         "title": "Fact",
         "type": "object"
       },
+      "FieldText": {
+        "properties": {
+          "field": {
+            "pattern": "^[\\w-]+$",
+            "title": "Field",
+            "type": "string"
+          },
+          "text": {
+            "maxLength": 600,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "field",
+          "text"
+        ],
+        "title": "FieldText",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -678,6 +704,24 @@
           "why"
         ],
         "title": "ImageSpec",
+        "type": "object"
+      },
+      "Order": {
+        "properties": {
+          "slides": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 40,
+            "minItems": 3,
+            "title": "Slides",
+            "type": "array"
+          }
+        },
+        "required": [
+          "slides"
+        ],
+        "title": "Order",
         "type": "object"
       },
       "OutlineEdit": {
@@ -1430,6 +1474,43 @@
         "summary": "Export Pdf"
       }
     },
+    "/api/decks/{deck_id}/history": {
+      "get": {
+        "operationId": "history_api_decks__deck_id__history_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "History"
+      }
+    },
     "/api/decks/{deck_id}/interview": {
       "post": {
         "operationId": "answer_api_decks__deck_id__interview_post",
@@ -1524,6 +1605,275 @@
         "summary": "Edit"
       }
     },
+    "/api/decks/{deck_id}/recolour": {
+      "post": {
+        "operationId": "recolour_api_decks__deck_id__recolour_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Recolour"
+      }
+    },
+    "/api/decks/{deck_id}/redo": {
+      "post": {
+        "operationId": "redo_api_decks__deck_id__redo_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Redo"
+      }
+    },
+    "/api/decks/{deck_id}/reorder": {
+      "post": {
+        "operationId": "reorder_api_decks__deck_id__reorder_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Order"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reorder"
+      }
+    },
+    "/api/decks/{deck_id}/slides/{slide_id}": {
+      "delete": {
+        "operationId": "delete_api_decks__deck_id__slides__slide_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slide_id",
+            "required": true,
+            "schema": {
+              "title": "Slide Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete"
+      }
+    },
+    "/api/decks/{deck_id}/slides/{slide_id}/fields": {
+      "patch": {
+        "operationId": "edit_text_api_decks__deck_id__slides__slide_id__fields_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slide_id",
+            "required": true,
+            "schema": {
+              "title": "Slide Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FieldText"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Edit Text"
+      }
+    },
+    "/api/decks/{deck_id}/slides/{slide_id}/fit": {
+      "post": {
+        "operationId": "fit_api_decks__deck_id__slides__slide_id__fit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slide_id",
+            "required": true,
+            "schema": {
+              "title": "Slide Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Fit"
+      }
+    },
     "/api/decks/{deck_id}/slides/{slide_id}/thumb.png": {
       "get": {
         "operationId": "thumb_api_decks__deck_id__slides__slide_id__thumb_png_get",
@@ -1568,6 +1918,43 @@
           }
         },
         "summary": "Thumb"
+      }
+    },
+    "/api/decks/{deck_id}/undo": {
+      "post": {
+        "operationId": "undo_api_decks__deck_id__undo_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Undo"
       }
     }
   }

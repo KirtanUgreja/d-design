@@ -7,9 +7,10 @@ environment. The model client and the clock are injected.
 
 from engine import pipeline
 from engine.compose.author import Composed
+from engine.compose.edit import set_field
 from engine.content import arcs, interview, notes, research, rules, storyline
 from engine.content.interview import Question
-from engine.design.sampler import look_for
+from engine.design.sampler import look_for, recolour
 from engine.design.theme import build as build_theme
 from engine.export import pdf
 from engine.llm.openrouter import (
@@ -56,7 +57,9 @@ __all__ = [
     "parse_fenced",
     "pdf",
     "pipeline",
+    "recolour",
     "research",
     "rules",
+    "set_field",
     "storyline",
 ]

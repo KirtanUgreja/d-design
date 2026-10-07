@@ -10,6 +10,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 import hashlib
 import random
 from dataclasses import dataclass
@@ -299,3 +300,12 @@ def look_for(
     words steer it; ``nonce`` gives a new one when the user asks for another."""
     rng = random.Random(seed_of(f"{deck_id}/{words}/{nonce}"))  # noqa: S311 - a look, not a secret
     return draw(rng, deck_id, nonce, deck_type, brand_hex, tone=tone, words=words)
+
+
+def recolour(look: Look, nonce: int, *, tone: str = "confident") -> Look:
+    """The same look in another palette: type, grid, scale, texture and mark
+    all kept, so every composed slide keeps its layout (docs/v4/plan/28-editor.md
+    -> Look). Deterministic for a nonce; contrast still fitted by resolve()."""
+    rng = random.Random(seed_of(f"{look.id}/recolour/{nonce}"))  # noqa: S311 - a look
+    roles = resolve(palettes.generate(look.hue if nonce == 0 else rng.uniform(0, 360), rng, tone))
+    return dataclasses.replace(look, roles=roles, palette=palettes.describe(roles))
