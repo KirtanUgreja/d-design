@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Fact, Plan, Provenance, Recording } from "@/lib/fixtures";
+import type { Recording } from "@/lib/fixtures";
+import type { Fact, Plan, Provenance } from "@/lib/types";
 
 const CHIP: Record<Provenance, string> = {
   YOU: "From your brief",
@@ -20,12 +21,23 @@ const CHIP: Record<Provenance, string> = {
   AI: "Written by the AI",
 };
 
-export function OutlineGate({ deck }: { deck: Recording }) {
+// What the gate reads: a recording, or a live deck mapped to the same shapes.
+export type GateDeck = Pick<Recording, "id" | "thesis" | "questions" | "outline" | "facts">;
+export type Decisions = Record<string, "approved" | "cut">;
+
+export function OutlineGate({
+  deck,
+  onApprove,
+}: {
+  deck: GateDeck;
+  // Live decks save the decisions and start the build; recordings replay.
+  onApprove?: (decided: Decisions, order: string[]) => void;
+}) {
   const router = useRouter();
   const facts = useMemo(() => new Map(deck.facts.map((f) => [f.id, f])), [deck.facts]);
   const [slides, setSlides] = useState<Plan[]>(deck.outline);
   const [asked, setAsked] = useState(0);
-  const [decided, setDecided] = useState<Record<string, "approved" | "cut">>({});
+  const [decided, setDecided] = useState<Decisions>({});
 
   const pending = deck.facts.filter(
     (f) =>
@@ -78,7 +90,18 @@ export function OutlineGate({ deck }: { deck: Recording }) {
               ? `${pending.length} number${pending.length > 1 ? "s" : ""} without a source. Keep or cut ${pending.length > 1 ? "them" : "it"} first.`
               : "Nothing is generated until you approve. Your deck gets its own look, designed for these words."}
           </p>
-          <Button size="lg" disabled={pending.length > 0} onClick={() => router.push(`/deck/${deck.id}/watch`)}>
+          <Button
+            size="lg"
+            disabled={pending.length > 0}
+            onClick={() =>
+              onApprove
+                ? onApprove(
+                    decided,
+                    slides.map((s) => s.id),
+                  )
+                : router.push(`/deck/${deck.id}/watch`)
+            }
+          >
             Approve outline
           </Button>
         </div>
@@ -93,7 +116,7 @@ function Interview({
   onNext,
   onSkip,
 }: {
-  deck: Recording;
+  deck: GateDeck;
   asked: number;
   onNext: () => void;
   onSkip: () => void;

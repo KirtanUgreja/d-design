@@ -11,6 +11,7 @@ uv run python -m cli fonts                      measure the vendored faces into 
 uv run python -m cli tiles --run NAME           3 sampled looks per brief, as style tiles
 uv run python -m cli export --run NAME [--pdf]  re-assemble built decks with the current player
 uv run python -m cli record --brief ID          a real run as a fixture bundle for web/ (phase 30)
+uv run python -m cli openapi                    the API's schema, for the web's generated types
 uv run python -m cli sameness [--simulate N]    coverage and repeat rate: the archive, or N
                                                 code-built decks (no model call)
 """
@@ -432,6 +433,18 @@ async def _injection(cfg: settings.Settings, run: str) -> int:
     return 1 if leaked else 0
 
 
+def _openapi() -> int:
+    """The API's OpenAPI document, for web/lib/api/schema.d.ts (phase 27).
+    Written sorted, so the gate can fail on any drift between the two."""
+    from app import app as api  # the API module, only for its schema; no store is touched
+
+    out = files.BENCH.parent / "web" / "lib" / "api" / "openapi.json"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(api.openapi(), indent=2, sort_keys=True) + "\n")
+    print(out)
+    return 0
+
+
 def _sameness(simulate: int) -> int:
     """Phase 36's bench. The archive as it stands, or a free simulation."""
     if not simulate:
@@ -486,6 +499,7 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--label", default="engine")
     cmd.add_argument("--set", choices=("one", "smoke", "all"), default="all")
     cmd.add_argument("--pdf", action="store_true")
+    sub.add_parser("openapi")
     cmd = sub.add_parser("sameness")
     cmd.add_argument("--simulate", type=int, default=0, help="N code-built decks, no model")
     cmd = sub.add_parser("wall")
@@ -515,6 +529,8 @@ def main(argv: list[str]) -> int:
         return asyncio.run(_export(args.run, args.label, args.set, args.pdf))
     if args.command == "tiles":
         return asyncio.run(_tiles(args.run, args.set))
+    if args.command == "openapi":
+        return _openapi()
     if args.command == "sameness":
         return _sameness(args.simulate)
     if args.command == "fonts":

@@ -10,40 +10,9 @@ import path from "node:path";
 
 import { err, ok, type Result } from "@/lib/result";
 
-export type Provenance = "YOU" | "AI" | "WEB";
+import type { Fact, Plan, Provenance, Question } from "@/lib/types";
 
-export interface Field {
-  name: string;
-  text: string;
-  factIds: string[];
-}
-
-export interface Plan {
-  id: string;
-  beat: string;
-  intent: string;
-  fields: Field[];
-  provenance: Record<string, Provenance>;
-  notes: string;
-  hasChart: boolean;
-}
-
-export interface Fact {
-  id: string;
-  text: string;
-  value: string | null;
-  source: "user" | "cited" | "illustrative";
-  status: "proposed" | "approved" | "rejected";
-  asOf: string;
-  flags: string[];
-  citation: { url: string; title: string; publisher: string; quote: string } | null;
-}
-
-export interface Question {
-  fills: string;
-  question: string;
-  suggestions: string[];
-}
+export type { Fact, Field, Plan, Provenance, Question } from "@/lib/types";
 
 export interface Look {
   id: string;

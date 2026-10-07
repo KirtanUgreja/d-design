@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api/client";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 interface Example {
@@ -31,18 +32,21 @@ export function Composer({ examples }: { examples: Example[] }) {
   const label = useId();
   const first = examples[0];
 
-  const start = () => {
-    // The prototype can only replay recorded runs. A typed brief that matches
-    // none of them is told so — never silently swapped for another deck.
-    // Phase 27 starts a real generation here.
+  const start = async () => {
+    // A recorded brief replays its recording; anything else is a real deck,
+    // built by the API and the worker (phase 27).
     const target = picked ?? matching(text, examples) ?? (text.trim() ? null : first?.id);
     if (target) {
       router.push(`/deck/${target}/outline`);
       return;
     }
-    setNotice(
-      "This prototype can only replay its recorded decks, so it can't build yours yet. Pick one of the real briefs below — a live build of your own brief arrives with the app's engine connection (phase 27).",
-    );
+    setNotice(null);
+    const made = await api.create(text.trim());
+    if (made.ok) {
+      router.push(`/d/${made.value.id}`);
+      return;
+    }
+    setNotice(`${made.error} Until it is, pick one of the recorded briefs below.`);
   };
 
   return (
@@ -50,7 +54,7 @@ export function Composer({ examples }: { examples: Example[] }) {
       className="grid gap-5"
       onSubmit={(e) => {
         e.preventDefault();
-        start();
+        void start();
       }}
     >
       <label htmlFor={label} className="font-display text-4xl leading-tight tracking-tight md:text-5xl">

@@ -84,7 +84,7 @@ test("nothing scrolls sideways at 200% zoom", async ({ page }) => {
   }
 });
 
-test("a typed brief reaches its own recording, or is told it can't be built yet", async ({ page }) => {
+test("a typed brief reaches its own recording, or says plainly when the deck service is down", async ({ page }) => {
   await page.goto("/");
   await page.getByLabel("What are you presenting?").fill("make a pitch deck for tesla");
   await page.getByRole("button", { name: "Start" }).click();
@@ -95,5 +95,6 @@ test("a typed brief reaches its own recording, or is told it can't be built yet"
   await page.getByLabel("What are you presenting?").fill("Board deck for a coffee roaster");
   await page.getByRole("button", { name: "Start" }).click();
   await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByRole("status")).toContainText("can only replay its recorded decks");
+  // No API runs in the e2e build, so a new brief cannot start: it says so, in words.
+  await expect(page.getByRole("status")).toContainText("can't reach the deck service");
 });

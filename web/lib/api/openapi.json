@@ -1,0 +1,1574 @@
+{
+  "components": {
+    "schemas": {
+      "Answer": {
+        "properties": {
+          "qid": {
+            "title": "Qid",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "qid",
+          "question",
+          "text"
+        ],
+        "title": "Answer",
+        "type": "object"
+      },
+      "Answers": {
+        "properties": {
+          "answers": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Answers",
+            "type": "array"
+          },
+          "skip": {
+            "default": false,
+            "title": "Skip",
+            "type": "boolean"
+          }
+        },
+        "title": "Answers",
+        "type": "object"
+      },
+      "Brand": {
+        "properties": {
+          "colors": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "title": "Colors",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "Brand",
+        "type": "object"
+      },
+      "Brief": {
+        "properties": {
+          "answers": {
+            "items": {
+              "$ref": "#/components/schemas/Answer"
+            },
+            "title": "Answers",
+            "type": "array"
+          },
+          "ask": {
+            "default": "",
+            "title": "Ask",
+            "type": "string"
+          },
+          "audience": {
+            "default": "",
+            "title": "Audience",
+            "type": "string"
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Brand"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deck_type": {
+            "default": "auto",
+            "enum": [
+              "pitch",
+              "sales",
+              "launch",
+              "investor_update",
+              "partnership",
+              "auto"
+            ],
+            "title": "Deck Type",
+            "type": "string"
+          },
+          "delivery": {
+            "default": "live",
+            "enum": [
+              "live",
+              "send"
+            ],
+            "title": "Delivery",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "locale": {
+            "default": "en",
+            "title": "Locale",
+            "type": "string"
+          },
+          "minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Minutes"
+          },
+          "pasted": {
+            "items": {
+              "$ref": "#/components/schemas/Pasted"
+            },
+            "title": "Pasted",
+            "type": "array"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "research": {
+            "default": true,
+            "title": "Research",
+            "type": "boolean"
+          },
+          "slide_count": {
+            "default": 10,
+            "maximum": 25.0,
+            "minimum": 3.0,
+            "title": "Slide Count",
+            "type": "integer"
+          },
+          "tone": {
+            "default": "confident",
+            "enum": [
+              "plain",
+              "confident",
+              "warm",
+              "bold"
+            ],
+            "title": "Tone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "prompt"
+        ],
+        "title": "Brief",
+        "type": "object"
+      },
+      "ChartPoint": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "number"
+          }
+        },
+        "required": [
+          "label",
+          "value"
+        ],
+        "title": "ChartPoint",
+        "type": "object"
+      },
+      "ChartSeries": {
+        "properties": {
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "points": {
+            "items": {
+              "$ref": "#/components/schemas/ChartPoint"
+            },
+            "title": "Points",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "points"
+        ],
+        "title": "ChartSeries",
+        "type": "object"
+      },
+      "ChartSpec": {
+        "properties": {
+          "fact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1,
+            "title": "Fact Ids",
+            "type": "array"
+          },
+          "highlight": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Highlight"
+          },
+          "series": {
+            "items": {
+              "$ref": "#/components/schemas/ChartSeries"
+            },
+            "title": "Series",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "bar",
+              "column",
+              "line",
+              "area",
+              "stacked",
+              "dumbbell",
+              "slope",
+              "diverging",
+              "waffle",
+              "donut"
+            ],
+            "title": "Type",
+            "type": "string"
+          },
+          "unit": {
+            "default": "",
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "series",
+          "fact_ids"
+        ],
+        "title": "ChartSpec",
+        "type": "object"
+      },
+      "Citation": {
+        "properties": {
+          "date": {
+            "default": "",
+            "title": "Date",
+            "type": "string"
+          },
+          "publisher": {
+            "default": "",
+            "title": "Publisher",
+            "type": "string"
+          },
+          "snippet": {
+            "title": "Snippet",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url",
+          "title",
+          "snippet"
+        ],
+        "title": "Citation",
+        "type": "object"
+      },
+      "CreateDeck": {
+        "properties": {
+          "ask": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Ask",
+            "type": "string"
+          },
+          "audience": {
+            "default": "",
+            "maxLength": 300,
+            "title": "Audience",
+            "type": "string"
+          },
+          "deck_type": {
+            "default": "auto",
+            "enum": [
+              "pitch",
+              "sales",
+              "launch",
+              "investor_update",
+              "partnership",
+              "auto"
+            ],
+            "title": "Deck Type",
+            "type": "string"
+          },
+          "prompt": {
+            "maxLength": 4000,
+            "minLength": 3,
+            "title": "Prompt",
+            "type": "string"
+          },
+          "slide_count": {
+            "default": 10,
+            "maximum": 25.0,
+            "minimum": 3.0,
+            "title": "Slide Count",
+            "type": "integer"
+          },
+          "tone": {
+            "default": "confident",
+            "enum": [
+              "plain",
+              "confident",
+              "warm",
+              "bold"
+            ],
+            "title": "Tone",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "title": "CreateDeck",
+        "type": "object"
+      },
+      "Deck": {
+        "properties": {
+          "brief": {
+            "$ref": "#/components/schemas/Brief"
+          },
+          "budget_usd": {
+            "default": 5.0,
+            "title": "Budget Usd",
+            "type": "number"
+          },
+          "error": {
+            "default": "",
+            "title": "Error",
+            "type": "string"
+          },
+          "facts": {
+            "items": {
+              "$ref": "#/components/schemas/Fact"
+            },
+            "title": "Facts",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "look_nonce": {
+            "default": 0,
+            "title": "Look Nonce",
+            "type": "integer"
+          },
+          "owner_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Owner Id"
+          },
+          "schema_version": {
+            "default": 1,
+            "title": "Schema Version",
+            "type": "integer"
+          },
+          "slides": {
+            "items": {
+              "$ref": "#/components/schemas/Slide"
+            },
+            "title": "Slides",
+            "type": "array"
+          },
+          "status": {
+            "default": "brief",
+            "enum": [
+              "brief",
+              "interview",
+              "outline",
+              "approve",
+              "building",
+              "ready",
+              "error",
+              "aborted"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "storyline": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Storyline"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "version": {
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "brief"
+        ],
+        "title": "Deck",
+        "type": "object"
+      },
+      "DeckOut": {
+        "properties": {
+          "deck": {
+            "$ref": "#/components/schemas/Deck"
+          },
+          "pending": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Pending",
+            "type": "array"
+          },
+          "questions": {
+            "items": {
+              "$ref": "#/components/schemas/Question"
+            },
+            "title": "Questions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "deck",
+          "questions",
+          "pending"
+        ],
+        "title": "DeckOut",
+        "type": "object"
+      },
+      "Defect": {
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "field": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field"
+          },
+          "measured": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Measured"
+          },
+          "selector": {
+            "default": "",
+            "title": "Selector",
+            "type": "string"
+          },
+          "threshold": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "string"
+              }
+            ],
+            "title": "Threshold"
+          }
+        },
+        "required": [
+          "code",
+          "measured",
+          "threshold"
+        ],
+        "title": "Defect",
+        "type": "object"
+      },
+      "Fact": {
+        "properties": {
+          "as_of": {
+            "default": "",
+            "title": "As Of",
+            "type": "string"
+          },
+          "citation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Citation"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "flags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Flags",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "user",
+              "cited",
+              "illustrative"
+            ],
+            "title": "Source",
+            "type": "string"
+          },
+          "status": {
+            "default": "proposed",
+            "enum": [
+              "proposed",
+              "approved",
+              "rejected"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "source"
+        ],
+        "title": "Fact",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "ImageSpec": {
+        "properties": {
+          "aspect": {
+            "default": "3:2",
+            "enum": [
+              "3:2",
+              "2:3"
+            ],
+            "title": "Aspect",
+            "type": "string"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "role": {
+            "default": "hero",
+            "enum": [
+              "hero",
+              "bleed",
+              "inset"
+            ],
+            "title": "Role",
+            "type": "string"
+          },
+          "why": {
+            "title": "Why",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt",
+          "why"
+        ],
+        "title": "ImageSpec",
+        "type": "object"
+      },
+      "OutlineEdit": {
+        "properties": {
+          "decisions": {
+            "additionalProperties": {
+              "enum": [
+                "approved",
+                "rejected"
+              ],
+              "type": "string"
+            },
+            "title": "Decisions",
+            "type": "object"
+          },
+          "order": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "version"
+        ],
+        "title": "OutlineEdit",
+        "type": "object"
+      },
+      "Pasted": {
+        "properties": {
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "text"
+        ],
+        "title": "Pasted",
+        "type": "object"
+      },
+      "PlanField": {
+        "properties": {
+          "budget_words": {
+            "title": "Budget Words",
+            "type": "integer"
+          },
+          "fact_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Fact Ids",
+            "type": "array"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "text",
+          "budget_words"
+        ],
+        "title": "PlanField",
+        "type": "object"
+      },
+      "Question": {
+        "properties": {
+          "fills": {
+            "enum": [
+              "audience",
+              "ask",
+              "thought",
+              "proof",
+              "length",
+              "extra"
+            ],
+            "title": "Fills",
+            "type": "string"
+          },
+          "question": {
+            "title": "Question",
+            "type": "string"
+          },
+          "suggestions": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 3,
+            "minItems": 3,
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "fills",
+          "question",
+          "suggestions"
+        ],
+        "title": "Question",
+        "type": "object"
+      },
+      "Slide": {
+        "properties": {
+          "assets": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Assets",
+            "type": "object"
+          },
+          "attempts": {
+            "default": 1,
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "cost_usd": {
+            "default": 0.0,
+            "title": "Cost Usd",
+            "type": "number"
+          },
+          "css": {
+            "title": "Css",
+            "type": "string"
+          },
+          "fields": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Fields",
+            "type": "object"
+          },
+          "html": {
+            "title": "Html",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "origin": {
+            "default": "authored",
+            "enum": [
+              "authored",
+              "repaired",
+              "exemplar",
+              "fallback",
+              "edited"
+            ],
+            "title": "Origin",
+            "type": "string"
+          },
+          "plan_id": {
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "qa": {
+            "$ref": "#/components/schemas/SlideQA"
+          },
+          "version": {
+            "default": 1,
+            "title": "Version",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "plan_id",
+          "html",
+          "css",
+          "fields"
+        ],
+        "title": "Slide",
+        "type": "object"
+      },
+      "SlidePlan": {
+        "properties": {
+          "archetype": {
+            "default": "",
+            "title": "Archetype",
+            "type": "string"
+          },
+          "beat": {
+            "title": "Beat",
+            "type": "string"
+          },
+          "chart": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChartSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "exemplar_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Exemplar Ids",
+            "type": "array"
+          },
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/PlanField"
+            },
+            "title": "Fields",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "image": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImageSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "intent": {
+            "title": "Intent",
+            "type": "string"
+          },
+          "notes": {
+            "default": "",
+            "title": "Notes",
+            "type": "string"
+          },
+          "ornament": {
+            "default": "none",
+            "enum": [
+              "none",
+              "texture",
+              "mark"
+            ],
+            "title": "Ornament",
+            "type": "string"
+          },
+          "provenance": {
+            "additionalProperties": {
+              "enum": [
+                "YOU",
+                "AI",
+                "WEB"
+              ],
+              "type": "string"
+            },
+            "title": "Provenance",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "beat",
+          "intent",
+          "fields"
+        ],
+        "title": "SlidePlan",
+        "type": "object"
+      },
+      "SlideQA": {
+        "properties": {
+          "errors": {
+            "items": {
+              "$ref": "#/components/schemas/Defect"
+            },
+            "title": "Errors",
+            "type": "array"
+          },
+          "fingerprint": {
+            "default": "",
+            "title": "Fingerprint",
+            "type": "string"
+          },
+          "metrics": {
+            "additionalProperties": {
+              "type": "number"
+            },
+            "title": "Metrics",
+            "type": "object"
+          },
+          "screenshot": {
+            "default": "",
+            "title": "Screenshot",
+            "type": "string"
+          },
+          "status": {
+            "default": "unmeasured",
+            "enum": [
+              "passed",
+              "flagged",
+              "unmeasured"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "warnings": {
+            "items": {
+              "$ref": "#/components/schemas/Defect"
+            },
+            "title": "Warnings",
+            "type": "array"
+          }
+        },
+        "title": "SlideQA",
+        "type": "object"
+      },
+      "Storyline": {
+        "properties": {
+          "ask": {
+            "title": "Ask",
+            "type": "string"
+          },
+          "audience": {
+            "title": "Audience",
+            "type": "string"
+          },
+          "deck_type": {
+            "enum": [
+              "pitch",
+              "sales",
+              "launch",
+              "investor_update",
+              "partnership",
+              "auto"
+            ],
+            "title": "Deck Type",
+            "type": "string"
+          },
+          "governing_thought": {
+            "title": "Governing Thought",
+            "type": "string"
+          },
+          "key_points": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "minItems": 3,
+            "title": "Key Points",
+            "type": "array"
+          },
+          "slides": {
+            "items": {
+              "$ref": "#/components/schemas/SlidePlan"
+            },
+            "title": "Slides",
+            "type": "array"
+          }
+        },
+        "required": [
+          "governing_thought",
+          "deck_type",
+          "audience",
+          "ask",
+          "key_points",
+          "slides"
+        ],
+        "title": "Storyline",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "d-design",
+    "version": "0.4.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/decks": {
+      "get": {
+        "operationId": "listing_api_decks_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Deck"
+                  },
+                  "title": "Response Listing Api Decks Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Listing"
+      },
+      "post": {
+        "operationId": "create_api_decks_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDeck"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeckOut"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create"
+      }
+    },
+    "/api/decks/{deck_id}": {
+      "get": {
+        "operationId": "read_api_decks__deck_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Read"
+      }
+    },
+    "/api/decks/{deck_id}/build": {
+      "post": {
+        "operationId": "build_api_decks__deck_id__build_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Build"
+      }
+    },
+    "/api/decks/{deck_id}/build/abort": {
+      "post": {
+        "operationId": "abort_api_decks__deck_id__build_abort_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Abort"
+      }
+    },
+    "/api/decks/{deck_id}/events": {
+      "get": {
+        "description": "SSE that tails events.jsonl. A reconnect sends Last-Event-ID (or\n?after=) and gets every event since, so there is no gap.",
+        "operationId": "events_api_decks__deck_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "after",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "After",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Last-Event-ID",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "title": "Last-Event-Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Events"
+      }
+    },
+    "/api/decks/{deck_id}/export.html": {
+      "get": {
+        "operationId": "export_html_api_decks__deck_id__export_html_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "flavour",
+            "required": false,
+            "schema": {
+              "default": "present",
+              "enum": [
+                "present",
+                "send"
+              ],
+              "title": "Flavour",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Html"
+      }
+    },
+    "/api/decks/{deck_id}/export.pdf": {
+      "get": {
+        "operationId": "export_pdf_api_decks__deck_id__export_pdf_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Export Pdf"
+      }
+    },
+    "/api/decks/{deck_id}/interview": {
+      "post": {
+        "operationId": "answer_api_decks__deck_id__interview_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Answers"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Answer"
+      }
+    },
+    "/api/decks/{deck_id}/outline": {
+      "patch": {
+        "operationId": "edit_api_decks__deck_id__outline_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OutlineEdit"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Edit"
+      }
+    },
+    "/api/decks/{deck_id}/slides/{slide_id}/thumb.png": {
+      "get": {
+        "operationId": "thumb_api_decks__deck_id__slides__slide_id__thumb_png_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slide_id",
+            "required": true,
+            "schema": {
+              "title": "Slide Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Thumb"
+      }
+    }
+  }
+}
