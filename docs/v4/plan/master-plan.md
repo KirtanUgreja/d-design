@@ -13,6 +13,9 @@
 - **Auth is Better Auth with email and password only.** No OAuth keys to set up for a one-day build.
 - **The database is free hosted Postgres** (Neon or Supabase). The owner creates it and gives the connection string.
 - **Parallel build agents: yes.** **Up to $0.10 for two format checks: yes.**
+- **Profiles get a generated avatar** ([DiceBear](https://github.com/dicebear/dicebear)), made automatically at sign-up and changeable by the user.
+- Better Auth was chosen because it is **open source and easy to use**.
+- **No credit system now.** The database is built so that one can be added later (plans, per-user usage, tokens): every model call's tokens and cost are already in the ledger, and from tomorrow each row also carries the user.
 - Build everything on 2026-10-09; test with new credit on 2026-10-10; submit by 2026-10-10.
 
 Evidence for the design direction: [../research-2026-10.md](../research-2026-10.md). The auth decision in the docs: [../../security/tenancy-and-data.md](../../security/tenancy-and-data.md) → Authentication.
@@ -49,7 +52,7 @@ Rules for the sprint:
    - **Gate 2** ("would send to an investor or customer") is yes for at least 9 of 12, rated blind against the one-shot baselines.
 2. **Reliability:** ≤ 3% of slides flagged, ≤ 10% built by code, median ≤ $0.60 and p90 ≤ 5 minutes a deck.
 3. **Accounts and data:**
-   - Sign up, sign in, sign out, an account page and account deletion all work.
+   - Sign up, sign in, sign out, an account page with a **generated avatar the user can change**, and account deletion all work.
    - Each user sees only their own decks; another user's deck is a 404.
    - Data is in the hosted Postgres; a per-user spend cap is in place.
    - Every route is tested with no session and with another user's session.
@@ -67,7 +70,7 @@ If (1) misses, the submission still ships, with the best decks as the showcase a
 | Phase | Sprint scope | Day | Priority |
 |---|---|---|---|
 | [39 — design reset](39-design-reset.md) | Visual languages, the reference library, retrieval and reference-fill, `compose.v11`, imagery, the style preview, model plumbing, the scorer | build | **P0** (scorer P1) |
-| [29 — accounts and deploy](29-accounts-deploy.md) | **Better Auth** (email and password) in the web, hosted Postgres behind the one Python data module with the **tenant wrapper**, JWT verification in FastAPI, user management, a per-user cap, release packaging | build | **P0** (packaging P1) |
+| [29 — accounts and deploy](29-accounts-deploy.md) | **Better Auth** (email and password) in the web, hosted Postgres behind the one Python data module with the **tenant wrapper**, JWT verification in FastAPI, user management with a **DiceBear avatar**, a per-user cap, release packaging | build | **P0** (avatar and packaging P1) |
 | [37 — beautiful data](37-beautiful-data.md) | The "pair" form for two values; the data wall | build / test | **P0** / test |
 | [31 — first run](31-first-run.md) | The brief survives sign-up | build | P1 |
 | [38 — brand kit](38-brand-kit.md) | Per-deck logo upload | build | P1 |
@@ -99,11 +102,12 @@ If (1) misses, the submission still ships, with the best decks as the showcase a
 | B6 | **Style preview**: 3 reference-filled slides with the deck's words at the outline ($0); the style card and **Another style** | 39 | P0 | main | API test; browser run with the fake worker |
 | B7 | **"Pair" chart form** | 37 | P0 | main | goldens |
 | B8 | **Model plumbing** and `cli bakeoff` | 39 | P0 | main | CLI test with fakes |
-| A1 | **SQL store**: SQLAlchemy models (users, decks as JSONB, events, jobs, ledger, versions, kept slides, questions) and an Alembic baseline in the `app` schema. It implements the *same* Store interface with a **tenant scope** on every deck method. Jobs are claimed with `SKIP LOCKED`. Blobs (screenshots, exports, uploads) stay on disk under `data/assets/` | 29 | P0 | **agent A1** | the existing store, API and editor tests run against it (SQLite offline; the hosted Postgres when `DATABASE_URL` is set) |
+| A1 | **SQL store**: SQLAlchemy models (users with name, email and an `avatar` JSON — style, seed, options; decks as JSONB; events; jobs; **a ledger whose rows carry `user_id`**; versions; kept slides; questions) and an Alembic baseline in the `app` schema. It implements the *same* Store interface with a **tenant scope** on every deck method. Jobs are claimed with `SKIP LOCKED`. Blobs (screenshots, exports, uploads) stay on disk under `data/assets/` | 29 | P0 | **agent A1** | the existing store, API and editor tests run against it (SQLite offline; the hosted Postgres when `DATABASE_URL` is set) |
 | A2 | **Better Auth in the web**: email and password, sessions, the **JWT plugin** (JWKS), its tables in the `auth` schema via its CLI. Pages: sign up, sign in, account (name, email, sign out, delete account), **Your decks**. Middleware protects the app routes. Recorded demo decks stay public | 29 | P0 | **agent A2** | e2e: sign up → sign in → protected route → sign out |
 | A3 | **API auth and tenancy**: a FastAPI dependency verifies the JWT with `PyJWKClient` (signature, issuer, audience, expiry, an algorithm allowlist; any failure, including an unreachable JWKS, is 401). A Python `users` row keyed by `sub` on first request. Every deck route goes through the tenant wrapper (another user's deck is 404). Jobs carry the owner. A **per-user daily spend cap** fails closed. Deleting an account cascades. The web client and the SSE reader send the token | 29 | P0 | main | security tests (A4) green |
 | A4 | **Security tests**: every route with no session and with another user's session; a cap check that throws refuses; JWKS unreachable → 401; deletion removes the user's decks and files | 29 | P0 | main | green |
 | A5 | **The brief survives sign-up**: typed before signing up, it starts the deck after | 31 | P1 | main | e2e |
+| A6 | **Profile avatar** ([DiceBear](https://github.com/dicebear/dicebear)): generated at sign-up from a random seed, so every account has a face at once. On the account page the user can pick a style, **shuffle**, and pick a background from the brand colours, saved to their profile. It is drawn **in the browser with the DiceBear library**, never through api.dicebear.com, and shown in the header menu, the account page and **Your decks**. Styles are limited to about 6 whose licences allow it (CC0 or MIT first; CC BY credited on the account page) | 29 | P1 | **agent A2** (UI), main (`GET`/`PATCH /api/me`) | the avatar persists across sign-ins; a licence note per style |
 | B9 | **Scorer and `--candidates N`** | 39 | P1 | main | unit tests |
 | B10 | **Logo per deck** | 38 | P1 | main | API test; refusal path |
 | B11 | **AI edit by instruction** (proposal, accept or discard), the style refusal, notes editing, duplicate | 28 | P1 | main | offline tests; browser run |
@@ -119,7 +123,7 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 |---|---|---|
 | R1–R4 (references) | `api/library/references/<its two languages>/` only | The reference format and authoring rules in [39-design-reset.md](39-design-reset.md) §2. The language manifests from B1. The QA harness; it runs its own test and looks at its contact sheets |
 | A1 (SQL store) | `api/store/sql.py`, `api/store/models.py`, `api/migrations/`, `api/tests/test_store_sql.py` | The Store interface as `store/files.py` defines it, plus a tenant scope. Parametrize the existing tests over both stores |
-| A2 (web auth) | `web/lib/auth*`, `web/app/(auth)/`, `web/app/account/`, `web/app/decks/`, `web/middleware.ts`, auth e2e | Better Auth (current docs, checked first), email and password, the JWT plugin, the `auth` schema, the pages above; the brand and shadcn rules of the web app |
+| A2 (web auth) | `web/lib/auth*`, `web/app/(auth)/`, `web/app/account/`, `web/app/decks/`, `web/components/avatar*`, `web/middleware.ts`, auth e2e | Better Auth (current docs, checked first), email and password, the JWT plugin, the `auth` schema, the pages above; the DiceBear avatar and its picker (A6); the brand and shadcn rules of the web app |
 
 ### Order and times
 
@@ -130,7 +134,7 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 | 09:00–14:00 | B3 → B4 → B7 → B5 | Working |
 | 14:00–17:00 | B6, B8; merge the reference and store work; review every contact sheet; A3 | Merging |
 | 17:00–20:00 | Merge A2; A4; a browser run (sign up → brief → build with the fake worker → edit → export); B14 | Fixes on request |
-| 20:00–22:00 | P1 in order: B11, A5, B10, B12, B9, B13 | — |
+| 20:00–22:00 | P1 in order: A6 (merge A2's avatar), B11, A5, B10, B12, B9, B13 | — |
 | **22:00** | **Cut line.** Anything open moves to "after submission" with its trigger | — |
 
 **The two format checks (≤ $0.10):** one image call to pin OpenRouter's image response, and one `compose.v11` call to confirm the new prompt parses.
@@ -140,6 +144,7 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 | Where | Package | For |
 |---|---|---|
 | web | `better-auth`, `pg` | Auth and its Postgres pool |
+| web | `@dicebear/core` and the chosen style packages | Profile avatars, drawn locally; each style's licence checked |
 | api | `sqlalchemy`, `alembic`, `psycopg[binary]` | The SQL store and its migrations |
 | api | `pyjwt[crypto]` | Verifying Better Auth's JWT against its JWKS |
 
@@ -186,6 +191,7 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 
 | Item | Phase | Trigger or note |
 |---|---|---|
+| **A credit system**: plans, credit balances, usage and token consumption per user | 29 | the owner, 2026-10-08: "as we move forward" — built on the ledger, whose rows carry the user from 2026-10-09 |
 | Google and GitHub sign-in, email verification, password reset, magic links, MFA | 29 | the first outside users; a managed provider reconsidered then |
 | Object storage for blobs; a hosted deploy on more than one machine | 29 | the first deploy beyond one host |
 | Teams, an admin panel, billing | 29 | the first paying team |

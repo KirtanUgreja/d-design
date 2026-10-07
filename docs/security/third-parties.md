@@ -60,6 +60,7 @@ Not bureaucracy — a legal obligation the moment there are EU publishers, and a
 |---|---|---|
 | **OpenRouter + routed model providers** | Brief, interview answers, pasted material, slide content, image prompts | **Highest.** From phase 22 |
 | **Exa / Parallel**, through OpenRouter | Research queries | High — a query can reveal the topic. From phase 24 |
+| **Avatars** — none: DiceBear runs in the browser as a library (2026-10-08); api.dicebear.com is never called | — | None |
 | **The identity provider** — none: Better Auth is self-hosted (owner, 2026-10-08) | Email, password hash, sessions — in our own Postgres | None beyond the Postgres host. A managed provider (WorkOS, Clerk) would add one; reconsidered for OAuth or MFA |
 | **The hosting provider(s) and Postgres** | Everything at rest | Highest. Postgres: a free hosted instance (Neon or Supabase), chosen by the owner 2026-10-08 |
 | **An error tracker**, if adopted | Whatever is not scrubbed | **Medium, and entirely dependent on configuration** |

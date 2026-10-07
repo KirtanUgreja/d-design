@@ -65,7 +65,10 @@
   - SQLAlchemy and Alembic manage the **`app` schema**: users keyed by the token's `sub`, decks as JSONB, events, jobs claimed with `SKIP LOCKED`, the ledger, versions, finished slides, questions.
   - This is the *same* Store interface as `store/files.py`, now behind **the one tenant wrapper**. Another user's deck is a 404.
   - Blobs (screenshots, exports, uploads) stay on disk under `data/assets/` until object storage is needed.
-- **User management:** sign up, sign in, sign out, an account page (name, email), account deletion (cascading to decks and files), and **Your decks**. There is a **per-user daily spend cap** that fails closed.
+- **User management:** sign up, sign in, sign out, an account page (name, email), account deletion (cascading to decks and files), and **Your decks**.
+- **A generated avatar** ([DiceBear](https://github.com/dicebear/dicebear), P1): made at sign-up from a random seed. The user can change the style, shuffle it, or pick a background from the brand colours; the choice is saved as `avatar` JSON on their row. It is drawn in the browser by the library, **never via api.dicebear.com**, and only from styles whose licences allow it (CC BY styles are credited).
+- **A per-user daily spend cap** that fails closed. This is a safety limit (rule 10), **not a credit system**.
+- **Ready for credits later, built now:** every ledger row (tokens, cost, model, stage) carries the user. Plans, balances and usage views come after submission (owner, 2026-10-08).
 - **Release (P1):** Dockerfiles, `docker-compose.yml` (web, api, worker; Postgres external), `.env.example`, run docs. A hosted instance only if the owner names a host. The submission README is P0.
 - **Verify (P0):** every route with no session and with another user's session; a cap check that throws refuses; deletion removes data; the owner's two-account check on test day.
-- **After submission:** Google and GitHub sign-in, email verification, password reset, magic links, MFA, object storage, teams, admin, billing, metering dashboards, signed share links, the privacy policy.
+- **After submission:** **the credit system** (plans, balances, per-user usage and token consumption, on the ledger); Google and GitHub sign-in, email verification, password reset, magic links, MFA, object storage, teams, admin, billing, metering dashboards, signed share links, the privacy policy.
