@@ -70,9 +70,11 @@ One deck (`update-q3`, Harbor), `deepseek-v4.1-flash`, against the 2026-10-05 re
 | compose.v7 (20k cap) | ~12,400 | 0 / 8 | **3 / 8** (contrast E5 not fixed by 2 repairs) | 0.18 |
 | compose.v8 (exact colour pairs, a fresh attempt before the fallback, 20k cap) | ~15,000 | 3 / 8 | 3 / 8 — **every finished slide passed contrast** | 0.16 |
 | compose.v9 (`reasoning: minimal`, 12k cap) | still ~12,000 — **ignored** | 5 / 8, 3 empty answers | 5 / 8 | 0.17 |
+| **compose.v9 (`low`, 32k cap)** | ~10,100 (max 13,549) | **0 / 8** | **0 / 8**, 0 flagged, 0 near-repeats, 97 s | **0.13** |
 
 - **An exact numeric target makes the model reason until it runs out.** Stated as a direction, it reasons about 2.5× longer than v5, not without end.
 - **Without exemplars, the slides the model finishes hold the reference quality; it finishes fewer.** The new failures are contrast on colour fields that repair does not fix.
+- **A 32k cap is the fix:** the model needs about 10k tokens of reasoning per slide without examples, and with room to finish it rarely needs repair. Six of eight slides held the reference bar by eye; two (the margin slide, the hire slide) were sparser than their reference counterparts. The owner's wall decides.
 - **The cause is the missing examples, not the new steps.** A one-slide A/B (2 slides each): without the three-ideas step, reasoning did not drop (12,000 / 10,200); without the target, it dropped some (9,300 / 4,400) but stayed above v5's 3,400.
 - **Exact colour pairs in the rules and in E5 repairs fixed contrast** (v8: every slide the model finished passed).
 - **Code-built fallbacks in a row look alike** (three accent panels in a row in the last run): the fallback is a method, and repeated it reads as a template.

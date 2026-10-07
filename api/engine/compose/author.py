@@ -28,8 +28,7 @@ PAIRS = (
 # Without example slides the design model reasons 2-4x longer, and hidden
 # reasoning is billed out of max_tokens: at 12k and 20k a third of calls were
 # cut off (2026-10-07). "minimal" is ignored by this model and returned empty
-# answers. 32k keeps a deck inside the slide budget (bench.md -> Budgets).
-# ponytail: unvalidated; the next paid deck checks it.
+# answers. 32k: 0 of 8 cut off, $0.13 a deck (findings.md, 2026-10-07).
 COMPOSE_MAX_TOKENS = 32000
 
 RULES = f"""You are a senior editorial designer. You design ONE presentation slide as HTML and CSS.
