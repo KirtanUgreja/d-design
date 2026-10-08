@@ -155,6 +155,9 @@ pg + @types/pg (v4, phase 29) — the Postgres pool Better Auth's adapter
   notionists, lorelei, open-peeps, thumbs, shapes and pixel-art are loaded,
   all CC0 1.0 (the package's LICENSE.md, checked 2026-10-08), each imported
   on demand.
+pyjwt[crypto] (v4, phase 29) — verifies Better Auth's EdDSA JWT against its
+  JWKS in api (A3), with `cryptography` for Ed25519 — token verification is a
+  crypto path; never ours to write.
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."
