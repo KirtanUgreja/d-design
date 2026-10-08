@@ -1,0 +1,22 @@
+<!-- {"language": "cinematic", "shape": "cover", "idea": "A title card: the photograph fills the frame edge to edge; the title sits in a dark band across the lower third, its spaced credits set small to the right like a film's opening", "fields": ["kicker", "headline", "source"], "image": "full", "variants": ["mirror", "accent-number"]} -->
+```html
+<section class="s">
+  <dd-image aspect="16:9" class="frame"></dd-image>
+  <div class="band">
+    <h1 class="title" data-field="headline"></h1>
+    <div class="credits">
+      <p class="kick" data-field="kicker"></p>
+      <p class="src" data-field="source"></p>
+    </div>
+  </div>
+</section>
+```
+```css
+.s { display: flex; flex-direction: column; background-color: var(--c-surface); }
+.frame { flex: 1; width: 1920px; min-height: 540px; }
+.band { background-color: var(--c-ground); display: grid; grid-template-columns: 1fr 440px; column-gap: calc(var(--gutter) * 3); align-items: end; padding: var(--s-5) var(--margin) var(--s-5); }
+.title { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); letter-spacing: var(--track-display); max-width: 1180px; }
+.credits { display: flex; flex-direction: column; gap: var(--s-2); border-left: var(--rule) solid var(--c-accent); padding-left: var(--s-3); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.2em; }
+.src { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.2em; color: var(--c-ink-2); }
+```

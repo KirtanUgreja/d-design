@@ -1,0 +1,28 @@
+<!-- {"language": "editorial", "shape": "number", "idea": "The figure as a drop cap: the number set enormous in the serif on the left with its caption beneath; across a hairline column rule the headline and short paragraphs read like the article it opens", "fields": ["kicker", "headline", "stat", "stat-label", "source", "point-1", "point-2", "point-3"], "image": "none", "variants": ["mirror", "accent-number", "dark-field"]} -->
+```html
+<section class="s">
+  <p class="kick" data-field="kicker"></p>
+  <div class="fig">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+  </div>
+  <div class="story">
+    <h2 class="head" data-field="headline"></h2>
+    <p class="para" data-field="point-1"></p>
+    <p class="para" data-field="point-2"></p>
+    <p class="para" data-field="point-3"></p>
+  </div>
+  <p class="src" data-field="source"></p>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); grid-template-rows: auto 1fr auto; row-gap: var(--s-4); padding: var(--margin); padding-top: var(--s-6); padding-bottom: var(--s-5); }
+.kick { grid-column: 1 / 13; font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.06em; color: var(--c-ink-2); border-bottom: 1px solid var(--c-rule); padding-bottom: var(--s-3); }
+.fig { grid-column: 1 / 7; align-self: center; display: grid; gap: var(--s-3); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d1); line-height: var(--lh-display); letter-spacing: var(--track-display); color: var(--c-accent); }
+.what { font-size: var(--t-body); line-height: 1.3; max-width: 560px; border-top: 1px solid var(--c-ink); padding-top: var(--s-3); }
+.story { grid-column: 7 / 13; align-self: center; display: flex; flex-direction: column; gap: var(--s-3); border-left: 1px solid var(--c-rule); padding-left: calc(var(--gutter) * 2); margin-left: calc(var(--gutter) * -2); }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: 1.1; letter-spacing: var(--track-display); margin-bottom: var(--s-2); }
+.para { font-size: var(--t-body); line-height: 1.35; color: var(--c-ink-2); }
+.src { grid-column: 1 / 13; font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); }
+```

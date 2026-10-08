@@ -1,0 +1,33 @@
+<!-- {"language": "cinematic", "shape": "comparison", "idea": "A split screen in the dark: the frame is cut once by a thin vertical line, each side holds one side of the story set large in the display face; the line above, the verdict quiet below", "fields": ["kicker", "headline", "point-1", "point-2", "point-3", "stat", "stat-label", "source"], "image": "none", "variants": ["mirror", "accent-number"]} -->
+```html
+<section class="s">
+  <div class="top">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+  </div>
+  <div class="fig">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+  </div>
+  <div class="split">
+    <p class="side" data-field="point-1"></p>
+    <p class="side" data-field="point-2"></p>
+  </div>
+  <p class="verdict" data-field="point-3"></p>
+  <p class="src" data-field="source"></p>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); grid-template-rows: auto 1fr auto auto; row-gap: var(--s-4); padding: var(--margin); padding-top: var(--s-5); padding-bottom: var(--s-5); }
+.top { grid-column: 1 / 9; display: flex; flex-direction: column; gap: var(--s-3); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.2em; color: var(--c-ink-2); }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); letter-spacing: var(--track-display); }
+.fig { grid-column: 10 / 13; align-self: start; display: grid; gap: var(--s-1); border-left: var(--rule) solid var(--c-accent); padding-left: var(--s-3); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); }
+.what { font-size: var(--t-body); line-height: 1.3; color: var(--c-ink-2); }
+.split { grid-column: 1 / 13; align-self: end; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.side { font-family: var(--f-display); font-size: var(--t-h2); line-height: 1.15; padding: var(--s-4) var(--s-6) var(--s-4) 0; }
+.side + .side { border-left: 1px solid var(--c-rule); padding-left: var(--s-6); padding-right: 0; }
+.verdict { grid-column: 1 / 10; font-size: var(--t-body); line-height: 1.35; color: var(--c-ink-2); }
+.src { grid-column: 1 / 13; font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.2em; color: var(--c-ink-2); }
+```

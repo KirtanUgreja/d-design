@@ -1,0 +1,36 @@
+<!-- {"language": "cinematic", "shape": "statement", "idea": "Letterbox: the photograph runs as a wide strip between two dark bars; spaced credits sit in the top bar, the line and its figure in the bottom bar like a subtitle", "fields": ["kicker", "headline", "point-1", "stat", "stat-label", "source"], "image": "full", "variants": ["mirror", "accent-number"]} -->
+```html
+<section class="s">
+  <div class="bar top">
+    <p class="kick" data-field="kicker"></p>
+    <p class="src" data-field="source"></p>
+  </div>
+  <dd-image aspect="16:9" class="strip"></dd-image>
+  <div class="bar foot">
+    <div class="line">
+      <h2 class="head" data-field="headline"></h2>
+      <p class="text" data-field="point-1"></p>
+    </div>
+    <div class="fig">
+      <p class="stat" data-field="stat"></p>
+      <p class="what" data-field="stat-label"></p>
+    </div>
+  </div>
+</section>
+```
+```css
+.s { display: flex; flex-direction: column; background-color: var(--c-surface); }
+.bar { background-color: var(--c-ground); padding-left: var(--margin); padding-right: var(--margin); }
+.top { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-6); }
+.top > * { padding-top: var(--s-5); padding-bottom: var(--s-3); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.2em; }
+.src { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.2em; color: var(--c-ink-2); margin-left: auto; text-align: right; }
+.strip { flex: 1; width: 1920px; min-height: 340px; }
+.foot { display: grid; grid-template-columns: 1fr 400px; column-gap: calc(var(--gutter) * 3); align-items: end; padding-top: var(--s-4); padding-bottom: var(--s-5); }
+.line { display: flex; flex-direction: column; gap: var(--s-3); }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); letter-spacing: var(--track-display); max-width: 1180px; }
+.text { font-size: var(--t-body); line-height: 1.35; color: var(--c-ink-2); max-width: 980px; }
+.fig { display: grid; gap: var(--s-1); border-left: var(--rule) solid var(--c-accent); padding-left: var(--s-3); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); }
+.what { font-size: var(--t-body); line-height: 1.3; color: var(--c-ink-2); }
+```
