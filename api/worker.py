@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import sys
 import time
+from collections import Counter
 from collections.abc import Callable
 from datetime import UTC, datetime
 
@@ -27,7 +28,6 @@ from engine import (
     ModelError,
     Seam,
     build_theme,
-    direction,
     interview,
     look_for,
     notes,
@@ -125,17 +125,9 @@ async def _build(
             story = with_notes.value
             store.update(deck.id, storyline=story)
     slides_dir = store.slides_dir(deck.id)
+    deck = with_language(store, deck)
     theme = theme_of(deck)
-    # The deck's art direction, made once and kept: a resumed build or an edit
-    # follows the same visual language.
-    art: direction.Direction | None = None
-    if deck.direction:
-        art = direction.Direction.model_validate_json(deck.direction)
-    else:
-        made = await direction.direct(seam, story, theme, title=deck.title, model=writing)
-        if not isinstance(made, Err):
-            art = made.value
-            store.update(deck.id, direction=art.model_dump_json())
+    _, ref_usage = usage(store)
 
     def keep(slide_id: str, kept: Kept) -> None:
         store.save_kept(deck.id, slide_id, kept)
@@ -156,7 +148,7 @@ async def _build(
         prebuilt=store.kept(deck.id),
         on_final=keep,
         stop=lambda: store.aborted(deck.id),
-        direction=art,
+        ref_usage=ref_usage,
     )
     for stray in slides_dir.glob("qa*.html"):
         stray.unlink()
@@ -169,6 +161,33 @@ async def _build(
         store.snapshot(deck.id, "Generated")  # the first version undo can return to
 
 
+def usage(store: Store) -> tuple[Counter[str], Counter[str]]:
+    """How many decks drew each visual language, and how many slides used each
+    reference: the sampler and the reference pick take the least used.
+    ponytail: reads every deck; a counter table when decks reach thousands."""
+    decks = store.all()
+    languages = Counter(d.language for d in decks if d.language)
+    references = Counter(s.reference for d in decks for s in d.slides if s.reference)
+    return languages, references
+
+
+def with_language(store: Store, deck: Deck) -> Deck:
+    """The deck's visual language, drawn once (balanced by usage) and kept, so
+    every later look of this deck is the same however usage moves."""
+    if deck.language:
+        return deck
+    languages, _ = usage(store)
+    look = look_for(
+        deck.id,
+        deck_type=deck.brief.deck_type,
+        tone=deck.brief.tone,
+        words=deck.brief.prompt,
+        nonce=deck.look_nonce,
+        usage=languages,
+    )
+    return store.update(deck.id, language=look.language)
+
+
 def theme_of(deck: Deck) -> Theme:
     """The deck's one generated look, recoloured if the user asked for that."""
     look = look_for(
@@ -177,6 +196,7 @@ def theme_of(deck: Deck) -> Theme:
         tone=deck.brief.tone,
         words=deck.brief.prompt,
         nonce=deck.look_nonce,
+        language=deck.language,
     )
     if deck.palette_nonce:
         look = recolour(look, deck.palette_nonce, tone=deck.brief.tone)

@@ -24,6 +24,8 @@ import json
 import re
 import statistics
 import sys
+from collections import Counter
+from collections.abc import Mapping
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -42,7 +44,7 @@ from benchtools import (
     shots,
     wall,
 )
-from engine import Brief, Seam, Slide, direction, pipeline
+from engine import Brief, Seam, Slide, pipeline
 from engine.compose.document import Frame
 from engine.design import tiles
 from engine.design.sampler import look_for, sample
@@ -143,6 +145,10 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
     # --repeat N builds every brief N times, each with its own generated look:
     # the sameness bench needs many decks from few frozen outlines (phase 36).
     jobs = [(r, b) for r in range(args.repeat) for b in _ids(args.set)]
+    # Usage within the run, so a bench run rotates languages and references as
+    # the worker does across a user's decks.
+    lang_usage: Counter[str] = Counter()
+    ref_usage: Counter[str] = Counter()
     for index, (repeat, brief_id) in enumerate(jobs):
         item = files.load(brief_id)
         if args.outlines:  # the content engine's outlines (cli content), not the frozen ones
@@ -163,18 +169,13 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
         if args.themes == "fixed":
             theme = themes[index % len(themes)]
         else:
-            theme = _generated(item.brief, nonce=repeat)
+            theme = _generated(item.brief, nonce=repeat, usage=lang_usage)
         seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{args.run}-{label}-{name}")
-        title = item.brief.prompt[:80]
-        art = await direction.direct(seam, item.outline, theme, title=title, model=cfg.model_cheap)
-        chosen = None if isinstance(art, Err) else art.value
-        if chosen is not None:
-            (out / "direction.json").write_text(chosen.model_dump_json(indent=2))
         built = await pipeline.build(
             seam,
             item.outline,
             theme,
-            direction=chosen,
+            ref_usage=ref_usage,
             model=args.model,
             title=item.brief.prompt[:80],
             work_file=str(out / "qa.html"),
@@ -183,6 +184,8 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             archive=archive,
         )
         files.save_archive(archive)
+        lang_usage[theme.language] += 1
+        ref_usage.update(s.reference for s in built.slides if s.reference)
         (out / "deck.html").write_text(built.html)
         (out / "deck-send.html").write_text(built.send)
         files.append_ledger(root / "ledger.jsonl", seam.ledger)
@@ -192,7 +195,8 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             "repeat": repeat,
             "model": args.model,
             "theme": theme.id,
-            "direction": chosen.name if chosen else "",
+            "language": theme.language,
+            "references": origins.count("reference"),
             "slides": len(built.slides),
             "clean_first_pass": built.first_pass_clean,
             "repaired": origins.count("repaired"),
@@ -242,7 +246,7 @@ def _brand(brief: Brief) -> str | None:
     return brief.brand.colors[0] if brief.brand and brief.brand.colors else None
 
 
-def _generated(brief: Brief, nonce: int = 0) -> Theme:
+def _generated(brief: Brief, nonce: int = 0, usage: Mapping[str, int] | None = None) -> Theme:
     """The one look a deck gets, generated from its own words (no menu)."""
     return build_theme(
         look_for(
@@ -252,6 +256,7 @@ def _generated(brief: Brief, nonce: int = 0) -> Theme:
             words=brief.prompt,
             brand_hex=_brand(brief),
             nonce=nonce,
+            usage=usage,
         )
     )
 

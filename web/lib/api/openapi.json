@@ -380,11 +380,6 @@
             "title": "Budget Usd",
             "type": "number"
           },
-          "direction": {
-            "default": "",
-            "title": "Direction",
-            "type": "string"
-          },
           "error": {
             "default": "",
             "title": "Error",
@@ -399,6 +394,11 @@
           },
           "id": {
             "title": "Id",
+            "type": "string"
+          },
+          "language": {
+            "default": "",
+            "title": "Language",
             "type": "string"
           },
           "look_nonce": {
@@ -895,6 +895,7 @@
               "authored",
               "repaired",
               "exemplar",
+              "reference",
               "fallback",
               "edited"
             ],
@@ -907,6 +908,11 @@
           },
           "qa": {
             "$ref": "#/components/schemas/SlideQA"
+          },
+          "reference": {
+            "default": "",
+            "title": "Reference",
+            "type": "string"
           },
           "version": {
             "default": 1,

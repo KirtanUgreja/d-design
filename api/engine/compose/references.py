@@ -193,11 +193,15 @@ def pick(
     return first, second
 
 
-def fill(ref: Reference, words: Mapping[str, str]) -> str:
+_IMAGE = re.compile(r"<dd-image\b[^>]*>\s*</dd-image>")
+
+
+def fill(ref: Reference, words: Mapping[str, str], *, image: bool = True) -> str:
     """The no-model fallback: the reference with the slide's words placed and
     every absent field removed. Design quality, because every reference passed
-    QA filled long and short."""
-    return fill_html(ref.html, words)
+    QA filled long and short. ``image=False`` takes its image slot out."""
+    out = fill_html(ref.html, words)
+    return out if image else _IMAGE.sub("", out)
 
 
 _FIELD = re.compile(r'data-field="([\w-]+)"')

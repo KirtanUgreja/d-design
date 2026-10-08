@@ -11,14 +11,12 @@ real outputs.
 from __future__ import annotations
 
 import json
-import random
 import shutil
 from pathlib import Path
 
 from benchtools import files
 from engine import Brief, Fact, Seam, Storyline, interview, pipeline
-from engine.compose import author, targets
-from engine.compose.archive import Archive
+from engine.compose import author, references
 from engine.design.sampler import look_for
 from engine.design.theme import Theme
 from engine.design.theme import build as build_theme
@@ -89,14 +87,11 @@ async def record(
     (out / "send.html").write_text(built.send)
     (out / "deck.pdf").write_bytes(await pdf_export.render(built.send))
 
-    # One real before/after for the editor: slide 2 recomposed toward a new target.
+    # One real before/after for the editor: slide 2 recomposed from another reference.
     before = built.slides[1]
     plan: SlidePlan = next(p for p in story.slides if p.id == before.id)
-    elsewhere = (
-        Archive([built.descriptors[before.id]] * 50)
-        if before.id in built.descriptors
-        else Archive()
-    )
+    # A different reference from the deck's language, never the one it used.
+    other, _ = references.pick(chosen.language, plan, used_in_deck=frozenset({before.reference}))
     alt = await author.compose(
         seam,
         chosen,
@@ -105,12 +100,7 @@ async def record(
         position=2,
         total=len(story.slides),
         thought=story.governing_thought,
-        target=targets.draw(
-            random.Random(before.id),  # noqa: S311 - layout, not security
-            elsewhere,
-            plan.intent,
-            len(plan.fields),
-        ),
+        reference=other,
     )
     proposal: dict[str, object] | None = None
     if not isinstance(alt, Err):

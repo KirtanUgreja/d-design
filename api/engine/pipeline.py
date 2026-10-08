@@ -10,26 +10,28 @@ import asyncio
 import dataclasses
 import random
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
 from engine.components import charts
 from engine.components import logo as logos
-from engine.compose import author, planner, procedural, targets
+from engine.compose import author, planner, procedural, references, targets
 from engine.compose.archive import Archive
 from engine.compose.author import Composed
 from engine.compose.document import Frame
 from engine.compose.planner import TEXTURE_EVERY
-from engine.design.direction import Direction, render
+from engine.compose.references import Reference
+from engine.design import languages
 from engine.design.theme import Theme
 from engine.export.assemble import assemble
-from engine.llm.openrouter import Seam
+from engine.llm.openrouter import ModelError, Seam
 from engine.models import Slide, SlidePlan, SlideQA, Storyline
 from engine.qa import browser, metrics
 from engine.qa.descriptors import Descriptors, describe, distance
-from lib.result import Err
+from engine.qa.sanitize import sanitize
+from lib.result import Err, Result
 
 PARALLEL = 5
 REPAIR_ROUNDS = 2
@@ -37,10 +39,11 @@ REPAIR_ROUNDS = 2
 # near-repeat. ponytail: provisional; tuned on the sameness bench (phase 36).
 NOVELTY_EPSILON = 0.08
 STEER = (
-    "This composition came out too close to one already made (distance {d:.2f} of 1). Keep "
-    "the content and the target; move the visual mass and the open field somewhere else, "
-    "change the split, and change the scale relation."
+    "This composition came out too close to another slide in this deck (distance {d:.2f} of "
+    "1). Keep the reference's system and the words; move the visual mass and the open field "
+    "somewhere else, and change the scale relation."
 )
+IMAGE_CAP = 6  # images in one deck, at most (phase 39 -> 5)
 
 
 @dataclass(frozen=True)
@@ -91,11 +94,12 @@ async def build(
     prebuilt: dict[str, Kept] | None = None,
     on_final: Callable[[str, Kept], None] | None = None,
     stop: Callable[[], bool] | None = None,
-    direction: Direction | None = None,
+    ref_usage: Mapping[str, int] | None = None,
 ) -> Built:
-    """Every slide climbs its own ladder, concurrently: compose, measure, up to
-    REPAIR_ROUNDS repairs, one fresh composition toward another target (with
-    one repair), the code-built layout, then the flag. A
+    """Every slide climbs its own ladder, concurrently: compose from its
+    reference, measure, up to REPAIR_ROUNDS repairs, one fresh composition from
+    the alternate reference (with one repair), the reference filled by code,
+    the code-built layout, then the flag (phase 39 -> 4). A
     slide is announced the moment it is final, so a watch fills slot by slot
     with what really happened (docs/v4/engine.md -> "Generation jobs and events").
 
@@ -104,10 +108,11 @@ async def build(
     moment it is final, so it can be persisted; ``stop`` (an abort) starts no
     new slide and no new model call, and the deck keeps what is done."""
     started = time.monotonic()
-    # The deck's art direction (design/direction.py) sets its visual language;
-    # without one, the compose prompt carries no style of ours either.
-    art = render(direction) if direction else ""
-    every = {"never": 0, "rare": 4, "often": 2}[direction.texture] if direction else TEXTURE_EVERY
+    # The deck's visual language (design/languages.py) sets its texture policy,
+    # whether it may use shapes, its image budget and its references.
+    lang = languages.get(theme.language) if theme.language else None
+    every = {"never": 0, "rare": 4, "often": 2}[lang.texture] if lang else TEXTURE_EVERY
+    shapes = bool(lang and lang.shapes)
     plans = planner.assign(storyline.slides, every)
     if logo is not None:
         # The user's logo is the deck's signature now: the generated mark steps back.
@@ -124,12 +129,42 @@ async def build(
         previous = aims[plan.id] = targets.draw(
             rng, archive, plan.intent, len(plan.fields), previous
         )
+    # Every slide's reference and alternate, picked in deck order: no reference
+    # twice in a deck, the least used across decks, images within the budget,
+    # and never the same variation twice in a row.
+    refs: dict[str, tuple[Reference | None, Reference | None]] = {}
+    variation: dict[str, str] = {}
+    image_on: dict[str, bool] = {}
+    images_left = min(IMAGE_CAP, round(lang.image.appetite * len(plans))) if lang else 0
+    used: set[str] = set()
+    last = ""
+    for plan in plans:
+        pair = (
+            references.pick(
+                lang.id,
+                plan,
+                used_in_deck=frozenset(used),
+                usage=ref_usage,
+                images_left=images_left,
+            )
+            if lang
+            else (None, None)
+        )
+        refs[plan.id] = pair
+        first = pair[0]
+        if first is not None:
+            used.add(first.id)
+        image_on[plan.id] = bool(first and first.image != "none" and images_left > 0)
+        images_left -= image_on[plan.id]
+        options = [v for v in (first.variants if first else ()) if v != last]
+        variation[plan.id] = last = rng.choice(["", *options])
     accepted: dict[str, Descriptors] = {}
     steered: set[str] = set()
     fields = {p.id: {f.name: f.text for f in p.fields} for p in plans}
     gate = asyncio.Semaphore(PARALLEL)
     browsers = asyncio.Semaphore(MEASURE_PARALLEL)
     origin: dict[str, str] = {}
+    ref_used: dict[str, str] = {}  # slide id -> the reference its composition came from
     attempts: dict[str, int] = {p.id: 0 for p in plans}
     refusals: dict[str, str] = {}
     composed: dict[str, Composed] = {}
@@ -204,29 +239,49 @@ async def build(
         return procedural.build(plan, aim, theme)
 
     def nearest(d: Descriptors, slide_id: str) -> float:
-        deck = [distance(d, e) for k, e in accepted.items() if k != slide_id]
-        return min([archive.nearest(d), *deck])
+        """Within this deck only: across decks, reference rotation and the
+        language draw do that job, and retrying a reference's own geometry
+        would only spend money (phase 39 -> 4)."""
+        return min((distance(d, e) for k, e in accepted.items() if k != slide_id), default=1.0)
+
+    def ref_filled(plan: SlidePlan, ref: Reference) -> Composed | None:
+        """The reference with this slide's words, no model: the rung before
+        the code layout. None when it cannot hold this slide."""
+        html = references.fill(ref, fields[plan.id], image=image_on[plan.id])
+        clean = sanitize(html, frozenset(fields[plan.id]))
+        if isinstance(clean, Err) or (plan.chart is not None) != ("<dd-chart" in clean.value):
+            return None
+        return Composed(clean.value, ref.css)
+
+    async def compose_from(
+        index: int, plan: SlidePlan, ref: Reference | None, var: str, steer: str = ""
+    ) -> Result[Composed, ModelError]:
+        async with gate:
+            return await author.compose(
+                seam,
+                theme,
+                plan,
+                model=model,
+                position=index + 1,
+                total=len(plans),
+                thought=storyline.governing_thought,
+                reference=ref,
+                variation=var,
+                image=image_on[plan.id],
+                shapes=shapes,
+                steer=steer,
+            )
 
     async def novelty(index: int, plan: SlidePlan, m: browser.Measured) -> browser.Measured:
         """One steered retry for a near-repeat; then accept it, warned and
         counted. Cost stays bounded: never a loop."""
         d = describe(m.boxes, m.shapes)
         near = nearest(d, plan.id)
-        if near < NOVELTY_EPSILON and origin[plan.id] != "fallback" and affordable():
+        if near < NOVELTY_EPSILON and origin[plan.id] in ("authored", "repaired") and affordable():
             steered.add(plan.id)
-            async with gate:
-                retry = await author.compose(
-                    seam,
-                    theme,
-                    plan,
-                    model=model,
-                    direction=art,
-                    position=index + 1,
-                    total=len(plans),
-                    thought=storyline.governing_thought,
-                    target=aims[plan.id],
-                    steer=STEER.format(d=near),
-                )
+            retry = await compose_from(
+                index, plan, refs[plan.id][0], variation[plan.id], STEER.format(d=near)
+            )
             attempts[plan.id] += 1
             if not isinstance(retry, Err):
                 kept, composed[plan.id] = composed[plan.id], retry.value
@@ -261,31 +316,29 @@ async def build(
         attempts[plan.id] = 1
         result = None
         if affordable():
-            async with gate:
-                result = await author.compose(
-                    seam,
-                    theme,
-                    plan,
-                    model=model,
-                    direction=art,
-                    position=index + 1,
-                    total=len(plans),
-                    thought=storyline.governing_thought,
-                    target=aims[plan.id],
-                )
+            result = await compose_from(index, plan, refs[plan.id][0], variation[plan.id])
         if result is None or isinstance(result, Err):
             if result is not None:
                 refusals[plan.id] = f"{result.error.kind}: {result.error.detail[:300]}"
-            composed[plan.id], origin[plan.id] = code_built(plan), "fallback"
+            first = refs[plan.id][0]
+            filled = ref_filled(plan, first) if first else None
+            if filled is not None:
+                composed[plan.id], origin[plan.id] = filled, "reference"
+                ref_used[plan.id] = first.id if first else ""  # set: filled needs it
+            else:
+                composed[plan.id], origin[plan.id] = code_built(plan), "fallback"
+                ref_used[plan.id] = ""
         else:
             composed[plan.id], origin[plan.id] = result.value, "authored"
+            first = refs[plan.id][0]
+            ref_used[plan.id] = first.id if first else ""
         m = await measure(plan)
         if not broken(m):
             first_clean.add(plan.id)
 
         # Rung 1: targeted repair from the measured defects.
         for _ in range(REPAIR_ROUNDS):
-            if not broken(m) or origin[plan.id] == "fallback" or not affordable():
+            if not broken(m) or origin[plan.id] not in ("authored", "repaired") or not affordable():
                 break
             async with gate:
                 fixed = await author.repair(
@@ -295,7 +348,7 @@ async def build(
                     composed[plan.id],
                     m.defects(),
                     model=model,
-                    direction=art,
+                    shapes=shapes,
                 )
             attempts[plan.id] += 1
             if isinstance(fixed, Err):
@@ -303,22 +356,15 @@ async def build(
             composed[plan.id], origin[plan.id] = fixed.value, "repaired"
             m = await measure(plan)
 
-        # Rung 2: one fresh composition toward a different target, and one repair.
-        # A code-built slide is the last resort, so a failed first answer gets this too.
-        if (broken(m) or origin[plan.id] == "fallback") and result is not None and affordable():
-            aims[plan.id] = targets.draw(rng, archive, plan.intent, len(plan.fields), aims[plan.id])
-            async with gate:
-                fresh = await author.compose(
-                    seam,
-                    theme,
-                    plan,
-                    model=model,
-                    direction=art,
-                    position=index + 1,
-                    total=len(plans),
-                    thought=storyline.governing_thought,
-                    target=aims[plan.id],
-                )
+        # Rung 2: one fresh composition from the alternate reference, and one
+        # repair. A filled or code-built slide is a fallback, so a failed first
+        # answer gets this too.
+        fell_back = origin[plan.id] in ("fallback", "reference")
+        if (broken(m) or fell_back) and result is not None and affordable():
+            alternate = refs[plan.id][1] or refs[plan.id][0]
+            choices = alternate.variants if alternate else ()
+            other = [v for v in choices if v != variation[plan.id]]
+            fresh = await compose_from(index, plan, alternate, rng.choice(other) if other else "")
             attempts[plan.id] += 1
             if not isinstance(fresh, Err):
                 kept, composed[plan.id] = composed[plan.id], fresh.value
@@ -332,7 +378,7 @@ async def build(
                             composed[plan.id],
                             again.defects(),
                             model=model,
-                            direction=art,
+                            shapes=shapes,
                         )
                     attempts[plan.id] += 1
                     if not isinstance(fixed, Err):
@@ -343,15 +389,34 @@ async def build(
                     m = await measure(plan)  # the kept slide's screenshot back on disk
                 else:
                     m, origin[plan.id] = again, "authored"
+                    ref_used[plan.id] = alternate.id if alternate else ""
 
-        # Rung 3: the code-built layout, from the slide's target. No stored layout.
+        # Rung 3: the reference filled by code, then the alternate's.
         if broken(m):
             refusals[plan.id] = (
                 f"still defective after repair: {sorted({d.code for d in m.defects()})}"
             )
-            if origin[plan.id] != "fallback":
-                composed[plan.id], origin[plan.id] = code_built(plan), "fallback"
-                m = await measure(plan)
+            for ref in (r for r in refs[plan.id] if r is not None):
+                filled = ref_filled(plan, ref)
+                if filled is None or filled == composed[plan.id]:
+                    continue
+                kept_c, kept_o = composed[plan.id], origin[plan.id]
+                composed[plan.id], origin[plan.id] = filled, "reference"
+                kept_r, ref_used[plan.id] = ref_used[plan.id], ref.id
+                again = await measure(plan)
+                if not broken(again):
+                    m = again
+                    break
+                composed[plan.id], origin[plan.id] = kept_c, kept_o
+                ref_used[plan.id] = kept_r
+            else:
+                m = await measure(plan)  # the kept slide's screenshot back on disk
+
+        # Rung 4: the code-built layout, from the slide's target. No stored layout.
+        if broken(m) and origin[plan.id] != "fallback":
+            composed[plan.id], origin[plan.id] = code_built(plan), "fallback"
+            ref_used[plan.id] = ""
+            m = await measure(plan)
 
         # The novelty gate: quality first, then distance from everything made.
         if not broken(m):
@@ -359,7 +424,7 @@ async def build(
         if logo is not None and not broken(m) and wants_logo(index):
             m = await with_logo(index, plan, m, logo)
 
-        # Rung 4, the flag: whatever is still broken is shown, never hidden.
+        # Rung 5, the flag: whatever is still broken is shown, never hidden.
         finish(index, plan, m)
 
     def finish(index: int, plan: SlidePlan, m: browser.Measured, *, persist: bool = True) -> None:
@@ -408,6 +473,7 @@ async def build(
                 css=composed[plan.id].css,
                 fields=fields[plan.id],
                 origin=origin[plan.id],  # type: ignore[arg-type]  # set only to the literals
+                reference=ref_used.get(plan.id, ""),
                 attempts=attempts[plan.id],
                 qa=SlideQA(
                     status=status,

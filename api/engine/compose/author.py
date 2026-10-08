@@ -11,7 +11,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from html import escape
 
-from engine.compose.targets import Target, brief
+from engine.compose.references import Reference
 from engine.design.theme import Theme
 from engine.llm.openrouter import ModelError, Reply, Seam, parse_fenced
 from engine.models import Defect, SlidePlan
@@ -19,58 +19,78 @@ from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "compose.v10"  # v10: the deck's art direction replaces the house style
+PROMPT_VERSION = "compose.v11"  # v11: adapt a reference in the deck's visual language
 PAIRS = (
     "  on --c-ground or --c-surface: --c-ink, or --c-ink-2 for quiet text\n"
     "  on --c-accent: --c-on-accent only, at every size\n"
     "  on --c-ink: --c-ground only"
 )
-# Without example slides the design model reasons 2-4x longer, and hidden
-# reasoning is billed out of max_tokens: at 12k and 20k a third of calls were
-# cut off (2026-10-07). "minimal" is ignored by this model and returned empty
-# answers. 32k: 0 of 8 cut off, $0.13 a deck (findings.md, 2026-10-07).
+# Hidden reasoning is billed out of max_tokens: at 12k and 20k a third of
+# v10's calls were cut off (2026-10-07); 32k cut off none. A reference to
+# adapt needs far less thought, but the ceiling costs nothing unused.
 COMPOSE_MAX_TOKENS = 32000
 
-RULES = f"""You are a senior designer. You design ONE presentation slide as HTML and CSS.
-The slide is projected at exactly 1920x1080px. It must look designed by a person with a point of
-view — this deck's point of view, given below as its ART DIRECTION. It must not look like an
-AI-made or template slide.
+# What a variant name in a reference's metadata asks for (phase 39 -> 4).
+VARIATIONS: dict[str, str] = {
+    "mirror": "Mirror the composition left to right.",
+    "image-other-side": "Move the image to the other side; the text takes its place.",
+    "dark-field": "Set the main block on a --c-ink or --c-accent field instead of the ground.",
+    "accent-number": "Set the number in --c-accent (on --c-ground only).",
+    "hero-number": "Make the number the hero: one step larger, the rest one step quieter.",
+    "rule-top": "Move the structural rule above the title instead of below it.",
+    "flip-vertical": "Flip the composition top to bottom.",
+    "wide-headline": "Give the headline the full width; the rest sits below it.",
+}
 
-OUTPUT: one ```ideas block, then one ```html block and one ```css block. Nothing else.
 
-HOW TO DESIGN IT
-- You are given a COMPOSITION TARGET: roughly where the visual mass sits, how much stays
-  empty, the scale relation, the number of blocks. It is a direction, measured loosely
-  (about +/-20%). Land roughly there. Do NOT do pixel arithmetic to hit it exactly.
-- In the ```ideas block, write three genuinely different compositions for the target, one
-  short line each, each ending with how typical it is of slide design, 0 (never seen) to 1
-  (every template does this). Then build the LEAST typical one that still meets the contract
-  and the design rules.
-- Decide quickly and write the slide. Think in layout ideas, not in calculations.
+def variation_text(name: str) -> str:
+    if not name:
+        return "Keep the reference's composition; change proportions only to fit the words."
+    return VARIATIONS.get(name, f"Apply this variation of the reference: {name}.")
+
+
+def rules(*, shapes: bool) -> str:
+    shape_rule = (
+        '- <dd-shape kind="…" tone="accent|ink|surface|rule"></dd-shape> is a flat shape our\n'
+        "  code draws into its box: kinds disc, ring, arc, half, quarter, diagonal, band, blob,\n"
+        "  steps, plus. At most two, large and structural, as the reference uses them.\n"
+        if shapes
+        else "- No dd-shape: this deck's visual language does not use shapes.\n"
+    )
+    return f"""You are a senior designer. You adapt ONE presentation slide, as HTML and CSS, from a
+REFERENCE slide in this deck's visual language. The slide is projected at exactly 1920x1080px. It
+must look designed by a person in this language, never like a template or an AI-made slide.
+
+OUTPUT: one ```html block and one ```css block. Nothing else.
+
+HOW TO ADAPT THE REFERENCE
+- Keep its system: the grid, how the type behaves (scale, weight, case, tracking), how the
+  elements relate (alignment axes, rules, fields, the image slot's placement).
+- Fit THIS slide's words: change proportions, type steps and spans only as the words need.
+  Drop the reference's elements for fields this slide does not have and let the layout close.
+- Apply the VARIATION you are given.
+- The reference holds no words; use exactly the slide's fields.
 
 HTML CONTRACT
 - One root: <section class="s"> … </section>.
   No <html>, <body>, <style>, <script>, <img>, <a>, <svg>.
 - Allowed tags: div section header footer h1 h2 h3 p span strong em small sup sub br hr ul ol li
-  blockquote figure figcaption dd-texture dd-shape dd-chart.
+  blockquote figure figcaption dd-texture dd-shape dd-chart dd-image.
 - Every field you are given appears EXACTLY ONCE, in an element with data-field="<name>", with its
-  text UNCHANGED. You may wrap words in <em> or <span class="…"> for emphasis and use <br>. You may
-  not add, drop or rewrite words.
+  text UNCHANGED. You may wrap words in <em> or <span class="…"> and use <br>. You may not add,
+  drop or rewrite words.
 - Any other visible text must be decoration: at most 3 words, in an element with data-deco
   (a folio like "04", a big numeral). Do not invent labels, captions or numbers.
+- <dd-image aspect="…" class="…"></dd-image> is an image slot our code fills with this deck's
+  picture. Keep it only when the slide says it has an image; otherwise remove it. Never put text
+  directly over it: text near an image sits on a solid field.
 - <dd-texture kind="…" tone="accent|ink|surface"></dd-texture> is flat colour ("solid") or a
-  pattern; use only the kinds this look lists under THEME TOKENS. Size and place it with a
-  class. Use at most two. A solid one is a rule or bar (under 48px thick); a large one is a
-  pattern, or it sits behind text.
-- <dd-shape kind="…" tone="accent|ink|surface|rule"></dd-shape> is a flat shape our code draws
-  into its box: kinds disc, ring, arc, half, quarter, diagonal, band, blob, steps, plus. Size and
-  place it with a class (any size; it may overlap, sit behind text, or bleed off the slide). Use
-  the kinds the art direction names. Never put small text on a shape.
-- <dd-chart class="…"></dd-chart> is an empty box our code draws a chart into. Place it only
-  when the slide says it has a chart, give it at least 900x480px, and never write numbers,
-  labels or a legend for it: the chart draws its own.
-- Attributes allowed: class, data-field, data-deco, data-layer, data-bleed, and kind/tone on
-  dd-texture and dd-shape. No style attribute, no id.
+  pattern; only the kinds THEME TOKENS lists, at most two, never under text.
+{shape_rule}- <dd-chart class="…"></dd-chart> is an empty box our code draws a chart into.
+  Place it only when the slide says it has a chart, at least 900x480px, and never write its
+  numbers or labels.
+- Attributes allowed: class, data-field, data-deco, data-layer, data-bleed, kind/tone on
+  dd-texture and dd-shape, aspect on dd-image. No style attribute, no id.
 
 CSS CONTRACT
 - Plain class selectors. No @-rules, no :root/html/body/:host, no nesting, no !important.
@@ -81,25 +101,20 @@ CSS CONTRACT
 - Banned: gradients, url(), filter, backdrop-filter, text-shadow, mask, opacity, animation,
   transition, position:fixed, vw/vh units, text in `content`.
 - border-radius: only 0, 50% or var(--radius). box-shadow: only var(--shadow-hard).
-- The root .s is 1920x1080 with overflow hidden. Layout (grid, flex, px positions, sizes) is yours.
 
 DESIGN RULES
 - Keep all text at least 64px from every edge; normally use var(--margin).
 - Sizes: the headline at least 56px; body text at least 32px (--t-body or larger);
   labels, kickers and sources at least 22px (--t-label).
-- Text must never overlap other text and never run outside its box. Long headlines need a smaller
+- Text never overlaps other text and never runs outside its box. A long headline takes a smaller
   --t- step or a wider box: at most 4 lines, never one word per line.
-- Contrast — text colour is decided by the ground it sits on, never by taste:
+- Contrast — text colour is decided by the ground it sits on:
 {PAIRS}
-  Use --c-accent as a TEXT colour only at 64px or larger, and only on --c-ground. Every text
-  inside an accent field — kicker, labels and sources included — must end up --c-on-accent:
-  set color on the field, and never override it with --c-ink-2 inside.
-  Never put text on a dd-texture pattern.
-- A rectangle of flat colour must carry something: the headline, the number, the list. An empty
-  coloured rectangle is refused (E11). Shapes (dd-shape) are graphics and may stand alone.
+  --c-accent as a TEXT colour only at 64px or larger, and only on --c-ground. Every text inside an
+  accent field must be --c-on-accent: set color on the field.
+- A rectangle of flat colour must carry something (the headline, the number, the list); an empty
+  coloured rectangle is refused (E11).
 - NEVER: cards or boxes around each point, icon rows, pills or badges, drop shadows, emoji.
-- How the slide looks — scale, alignment, rules or none, shapes, fields, density — comes from
-  the ART DIRECTION, not from habit.
 """
 
 
@@ -109,19 +124,17 @@ class Composed:
     css: str
 
 
-def prefix(theme: Theme, direction: str = "") -> str:
-    """The stable, cacheable part of every compose call for one deck. No
-    example slides: examples anchor the model to them (phase 36). The deck's
-    art direction (design/direction.py) is part of it: one per deck."""
-    tail = f"\n{direction}\n" if direction else ""
-    return f"{RULES}\nTHEME TOKENS\n{theme.describe()}\n{tail}"
+def prefix(theme: Theme, *, shapes: bool = False) -> str:
+    """The stable, cacheable part of every compose call for one deck: the
+    contract and the theme, whose guidance leads with the visual language."""
+    return f"{rules(shapes=shapes)}\nTHEME TOKENS\n{theme.describe()}\n"
 
 
 def _fields(plan: SlidePlan) -> str:
     return "\n".join(f'- {f.name}: "{f.text}"' for f in plan.fields)
 
 
-def _parser(plan: SlidePlan) -> Callable[[Reply], Result[Composed, str]]:
+def _parser(plan: SlidePlan, *, image: bool = False) -> Callable[[Reply], Result[Composed, str]]:
     names = frozenset(f.name for f in plan.fields)
 
     def parse(reply: Reply) -> Result[Composed, str]:
@@ -138,6 +151,10 @@ def _parser(plan: SlidePlan) -> Callable[[Reply], Result[Composed, str]]:
             problems.append("this slide has a chart: place one empty <dd-chart class=…>")
         if plan.chart is None and "<dd-chart" in clean.value:
             problems.append("this slide has no chart: remove the <dd-chart>")
+        if not image and "<dd-image" in clean.value:
+            problems.append("this slide has no image: remove the <dd-image>")
+        if clean.value.count("<dd-image") > 1:
+            problems.append("one <dd-image> at most")
         if problems:
             return err("fix these:\n- " + "\n- ".join(problems[:20]))
         return ok(Composed(clean.value, blocks.value["css"]))
@@ -154,24 +171,28 @@ async def compose(
     position: int,
     total: int,
     thought: str,
-    target: Target,
+    reference: Reference | None,
+    variation: str = "",
+    image: bool = False,
+    shapes: bool = False,
     steer: str = "",
-    direction: str = "",
 ) -> Result[Composed, ModelError]:
+    ref = (
+        reference.prompt("REFERENCE")
+        if reference
+        else "No reference: design it from the visual language's brief."
+    )
     user = (
         f"Slide {position} of {total}. The deck argues: {thought}\n"
-        f"This slide's job: {plan.intent} ({plan.beat}).\n"
-        f"COMPOSITION TARGET\n{brief(target)}\n"
+        f"This slide's job: {plan.intent} ({plan.beat}).\n\n{ref}\n\n"
+        f"VARIATION: {variation_text(variation)}\n"
         + (f"{steer}\n" if steer else "")
         + f"\nFields:\n{_fields(plan)}"
-        + {
-            "mark": '\nOrnament: this deck\'s mark (<dd-texture kind="mark">), once, 160-360px '
-            "square, as the deck's signature. No other texture.",
-            "texture": "\nOrnament: one texture field from this look's kinds, sized and placed "
-            "for this composition — not in a corner by habit.",
-            "none": "\nOrnament: none. No dd-texture on this slide; type, rules and space "
-            "carry it.",
-        }[plan.ornament]
+        + (
+            "\nThis slide has an image: keep one <dd-image> where the reference places it."
+            if image
+            else "\nThis slide has no image."
+        )
         + (
             f"\nThis slide has a {plan.chart.type} chart of {len(plan.chart.series[0].points)} "
             "values. Place one empty <dd-chart> for it, at least 900x480px."
@@ -181,11 +202,11 @@ async def compose(
     )
     return await seam.complete_text(
         "compose",
-        _parser(plan),
+        _parser(plan, image=image),
         system="Follow the contract exactly.",
         user=user,
         model=model,
-        prefix=prefix(theme, direction),
+        prefix=prefix(theme, shapes=shapes),
         prompt_version=PROMPT_VERSION,
         max_tokens=COMPOSE_MAX_TOKENS,
         reasoning="low",
@@ -201,7 +222,7 @@ async def repair(
     defects: list[Defect],
     *,
     model: str,
-    direction: str = "",
+    shapes: bool = False,
 ) -> Result[Composed, ModelError]:
     """One targeted repair from measured defects: the smallest change that
     fixes them. The model is told what was measured, never asked to judge."""
@@ -224,11 +245,11 @@ async def repair(
     )
     return await seam.complete_text(
         "repair",
-        _parser(plan),
+        _parser(plan, image="<dd-image" in current.html),
         system="Follow the contract exactly.",
         user=user,
         model=model,
-        prefix=prefix(theme, direction),
+        prefix=prefix(theme, shapes=shapes),
         prompt_version=PROMPT_VERSION,
         max_tokens=12000,
         reasoning="low",

@@ -497,11 +497,6 @@ export interface components {
              */
             budget_usd: number;
             /**
-             * Direction
-             * @default
-             */
-            direction: string;
-            /**
              * Error
              * @default
              */
@@ -510,6 +505,11 @@ export interface components {
             facts?: components["schemas"]["Fact"][];
             /** Id */
             id: string;
+            /**
+             * Language
+             * @default
+             */
+            language: string;
             /**
              * Look Nonce
              * @default 0
@@ -706,10 +706,15 @@ export interface components {
              * @default authored
              * @enum {string}
              */
-            origin: "authored" | "repaired" | "exemplar" | "fallback" | "edited";
+            origin: "authored" | "repaired" | "exemplar" | "reference" | "fallback" | "edited";
             /** Plan Id */
             plan_id: string;
             qa?: components["schemas"]["SlideQA"];
+            /**
+             * Reference
+             * @default
+             */
+            reference: string;
             /**
              * Version
              * @default 1

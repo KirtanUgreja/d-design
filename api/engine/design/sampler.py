@@ -320,17 +320,20 @@ def look_for(
     nonce: int = 0,
     usage: Mapping[str, int] | None = None,
     exclude: frozenset[str] = frozenset(),
+    language: str = "",
 ) -> Look:
     """The one look a deck gets — generated, never picked from a menu. The
     visual language is drawn first (balanced by ``usage``, the count of decks
     per language so far), then the tokens it allows. The deck's words steer
     it; ``nonce`` gives a new one when the user asks for another style, and
-    ``exclude`` keeps it off the languages already shown."""
+    ``exclude`` keeps it off the languages already shown; ``language`` forces
+    the language the deck already has."""
     rng = random.Random(seed_of(f"{deck_id}/{words}/{nonce}"))  # noqa: S311 - a look, not a secret
-    language = languages.choose(rng, tone=tone, deck_type=deck_type, usage=usage, exclude=exclude)
-    return draw(
-        rng, deck_id, nonce, deck_type, brand_hex, tone=tone, words=words, language=language
-    )
+    drawn = languages.choose(rng, tone=tone, deck_type=deck_type, usage=usage, exclude=exclude)
+    # A deck keeps the language it drew first (``language``), so its look is
+    # the same on every later call however usage has moved since.
+    chosen = languages.get(language) if language else drawn
+    return draw(rng, deck_id, nonce, deck_type, brand_hex, tone=tone, words=words, language=chosen)
 
 
 def recolour(look: Look, nonce: int, *, tone: str = "confident") -> Look:

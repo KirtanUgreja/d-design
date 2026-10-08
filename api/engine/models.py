@@ -20,7 +20,7 @@ Stage = Literal[
     "research",
     "storyline",
     "notes",
-    "direction",
+    "direction",  # retired 2026-10-08 (phase 39); kept so old ledgers still parse
     "compose",
     "repair",
     "revise",
@@ -177,7 +177,10 @@ class Slide(BaseModel):
     css: str
     fields: dict[str, str]
     assets: dict[str, str] = Field(default_factory=dict)
-    origin: Literal["authored", "repaired", "exemplar", "fallback", "edited"] = "authored"
+    origin: Literal["authored", "repaired", "exemplar", "reference", "fallback", "edited"] = (
+        "authored"
+    )
+    reference: str = ""  # the library reference it was adapted from (phase 39)
     attempts: int = 1
     qa: SlideQA = Field(default_factory=SlideQA)
     cost_usd: float = 0.0
@@ -218,7 +221,7 @@ class Deck(BaseModel):
     error: str = ""  # human copy for the UI, never an exception string
     look_nonce: int = 0  # "another look" bumps it
     palette_nonce: int = 0  # "recolour" bumps it: same look, another palette
-    direction: str = ""  # its art direction as JSON (design/direction.py), made once
+    language: str = ""  # its visual language (design/languages.py), drawn once and kept
     brief: Brief
     facts: list[Fact] = Field(default_factory=list)
     storyline: Storyline | None = None
