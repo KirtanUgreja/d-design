@@ -1,0 +1,26 @@
+<!-- {"language": "minimal", "shape": "sequence", "idea": "Three steps descend like a quiet staircase from left to right across an open field, each a little lower than the last, numbered only by a small accent figure; the claim sits alone at the top", "fields": ["kicker", "headline", "point-1", "point-2", "point-3"], "image": "none", "variants": ["mirror", "dark-field"]} -->
+```html
+<section class="s">
+  <div class="lead">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+  </div>
+  <ol class="steps">
+    <li data-field="point-1"></li>
+    <li data-field="point-2"></li>
+    <li data-field="point-3"></li>
+  </ol>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: auto 1fr; column-gap: var(--gutter); padding: var(--margin); }
+.lead { grid-column: 1 / 9; grid-row: 1; display: grid; row-gap: var(--s-3); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.16em; color: var(--c-ink-2); }
+.head { font-family: var(--f-display); font-weight: var(--w-regular); font-size: var(--t-h2); line-height: 1.12; letter-spacing: var(--track-display); }
+.steps { grid-column: 1 / 13; grid-row: 2; align-self: end; display: grid; grid-template-columns: repeat(3, 1fr); column-gap: var(--gutter); align-items: start; counter-reset: n; }
+.steps li { counter-increment: n; display: grid; row-gap: var(--s-3); padding-right: var(--s-5); font-family: var(--f-text); font-size: var(--t-body); line-height: 1.3; color: var(--c-ink); }
+.steps li::before { content: counter(n); font-family: var(--f-display); font-weight: var(--w-regular); font-size: var(--t-h2); line-height: 1; color: var(--c-accent); }
+.steps li:nth-child(1) { margin-bottom: calc(var(--s-6) * 2); }
+.steps li:nth-child(2) { margin-top: var(--s-6); margin-bottom: var(--s-6); }
+.steps li:nth-child(3) { margin-top: calc(var(--s-6) * 2); }
+```

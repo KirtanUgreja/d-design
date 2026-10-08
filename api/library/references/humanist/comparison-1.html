@@ -1,0 +1,40 @@
+<!-- {"language": "humanist", "shape": "comparison", "idea": "Two soft panels side by side, the old way on a quiet surface and the new way on the warm accent, each opened by a round letter marker; the conclusion and the figure sit together on the ground beneath", "fields": ["kicker", "headline", "point-1", "point-2", "point-3", "stat", "stat-label", "source"], "image": "none", "variants": ["mirror", "accent-number"]} -->
+```html
+<section class="s">
+  <div class="lead">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+  </div>
+  <div class="pair">
+    <p class="side old" data-field="point-1"></p>
+    <p class="side new" data-field="point-2"></p>
+  </div>
+  <div class="foot">
+    <p class="then" data-field="point-3"></p>
+    <div class="fig">
+      <p class="stat" data-field="stat"></p>
+      <p class="what" data-field="stat-label"></p>
+      <p class="src" data-field="source"></p>
+    </div>
+  </div>
+</section>
+```
+```css
+.s { display: flex; flex-direction: column; gap: var(--s-5); padding: var(--margin); counter-reset: side; }
+.lead { display: flex; flex-direction: column; gap: var(--s-3); max-width: 1320px; }
+.kick { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.04em; color: var(--c-ink-2); }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: 1.1; letter-spacing: var(--track-display); }
+.pair { flex: 1 1 auto; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; column-gap: var(--gutter); }
+.side { counter-increment: side; display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-5); border-radius: var(--radius); font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h3); line-height: 1.2; letter-spacing: var(--track-display); }
+.side::before { content: counter(side, upper-alpha); width: 64px; height: 64px; display: grid; place-items: center; border-radius: 50%; font-family: var(--f-label); font-size: var(--t-body); }
+.old { background-color: var(--c-surface); color: var(--c-ink); }
+.old::before { background-color: var(--c-ground); color: var(--c-ink); }
+.new { background-color: var(--c-accent); color: var(--c-on-accent); }
+.new::before { background-color: var(--c-on-accent); color: var(--c-accent); }
+.foot { display: grid; grid-template-columns: 1fr 1fr; column-gap: var(--gutter); align-items: end; }
+.then { grid-column: 1; font-family: var(--f-text); font-size: var(--t-body); line-height: 1.35; color: var(--c-ink); padding-right: var(--s-5); }
+.fig { grid-column: 2; display: flex; flex-wrap: wrap; align-items: baseline; column-gap: var(--s-3); row-gap: var(--s-1); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: 1; color: var(--c-accent); }
+.what { flex: 1 1 360px; font-family: var(--f-text); font-size: var(--t-body); line-height: 1.3; color: var(--c-ink-2); }
+.src { flex: 0 0 100%; font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); }
+```

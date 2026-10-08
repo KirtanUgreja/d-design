@@ -1,0 +1,34 @@
+<!-- {"language": "minimal", "shape": "points", "idea": "A tall object stands at the right edge of a seamless field; on the left the claim and a short numbered list read top to bottom in one calm column, the figure at its foot", "fields": ["kicker", "headline", "point-1", "point-2", "point-3", "stat", "stat-label", "source"], "image": "inset", "variants": ["mirror", "image-other-side", "dark-field"]} -->
+```html
+<section class="s">
+  <div class="copy">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+    <ol class="list">
+      <li data-field="point-1"></li>
+      <li data-field="point-2"></li>
+      <li data-field="point-3"></li>
+    </ol>
+  </div>
+  <div class="foot">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+    <p class="src" data-field="source"></p>
+  </div>
+  <dd-image class="object" aspect="2:3"></dd-image>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: 1fr auto; column-gap: var(--gutter); row-gap: var(--s-4); padding: var(--margin); background-color: var(--c-surface); }
+.copy { grid-column: 1 / 9; grid-row: 1; display: flex; flex-direction: column; gap: var(--s-3); padding-right: var(--s-4); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.16em; color: var(--c-ink-2); }
+.head { font-family: var(--f-display); font-weight: var(--w-regular); font-size: var(--t-h2); line-height: 1.12; letter-spacing: var(--track-display); }
+.list { display: grid; row-gap: var(--s-2); counter-reset: n; }
+.list li { counter-increment: n; display: grid; grid-template-columns: var(--s-6) 1fr; align-items: baseline; font-family: var(--f-text); font-size: var(--t-body); line-height: 1.3; color: var(--c-ink); }
+.list li::before { content: counter(n, decimal-leading-zero); font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.1em; color: var(--c-accent); }
+.foot { grid-column: 1 / 8; grid-row: 2; display: flex; align-items: baseline; flex-wrap: wrap; column-gap: var(--s-3); row-gap: var(--s-1); }
+.stat { font-family: var(--f-display); font-weight: var(--w-regular); font-size: var(--t-d3); line-height: 1; color: var(--c-accent); }
+.what { flex: 1 1 420px; font-family: var(--f-text); font-size: var(--t-body); line-height: 1.3; color: var(--c-ink-2); }
+.src { flex: 0 0 100%; padding-top: var(--s-2); font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.06em; color: var(--c-ink-2); }
+.object { grid-column: 9 / 13; grid-row: 1 / 3; align-self: end; height: 820px; }
+```
