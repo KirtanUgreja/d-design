@@ -1,0 +1,49 @@
+{
+  "id": "poster",
+  "name": "Type poster",
+  "idea": "Type is the picture: giant condensed words cropped by the edge, blocks of colour.",
+  "brief": "A typographic poster. Few words, set enormous in the condensed display face; a key word may run off the edge of the slide and be cropped (keep it legible). Split the slide into one or two flat colour blocks (--c-accent and --c-ground, or --c-surface) with hard edges. Stack lines tightly at var(--lh-display). Small text is only a caption in the label face, tucked in a corner on the grid. Every slide should read from across a room.",
+  "never": [
+    "small type as the main element",
+    "more than three blocks",
+    "bullet lists of more than three",
+    "soft corners"
+  ],
+  "kinds": [
+    "condensed",
+    "wide"
+  ],
+  "pairings": [],
+  "grids": [
+    "poster",
+    "asymmetric"
+  ],
+  "edges": [
+    "sharp"
+  ],
+  "dark": 0.5,
+  "split": 0.35,
+  "density": [
+    "balanced",
+    "airy"
+  ],
+  "ratio": [
+    1.42,
+    1.5
+  ],
+  "texture": "rare",
+  "shapes": false,
+  "image": {
+    "appetite": 0.15,
+    "styles": [
+      "high-contrast graphic black and white photography, strong shadows"
+    ]
+  },
+  "tones": [
+    "bold"
+  ],
+  "deck_types": [
+    "launch",
+    "pitch"
+  ]
+}

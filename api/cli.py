@@ -30,7 +30,18 @@ from pathlib import Path
 from pydantic import BaseModel
 
 import settings
-from benchtools import baseline, content, files, fonts, outline, record, sameness, shots, wall
+from benchtools import (
+    baseline,
+    content,
+    files,
+    fonts,
+    outline,
+    record,
+    refs,
+    sameness,
+    shots,
+    wall,
+)
 from engine import Brief, Seam, Slide, direction, pipeline
 from engine.compose.document import Frame
 from engine.design import tiles
@@ -516,6 +527,12 @@ def main(argv: list[str]) -> int:
     sub.add_parser("openapi")
     cmd = sub.add_parser("sameness")
     cmd.add_argument("--simulate", type=int, default=0, help="N code-built decks, no model")
+    cmd = sub.add_parser("refs", help="the reference library: QA per language, or the wall")
+    cmd.add_argument("--check", default="", help="a language id: QA every reference in it")
+    cmd.add_argument("--looks", type=int, default=30)
+    cmd.add_argument("--wall", action="store_true", help="every reference under two looks")
+    cmd.add_argument("--language", action="append", default=[], help="limit the wall")
+    cmd.add_argument("--out", default="../bench/runs/refs-wall")
     cmd = sub.add_parser("wall")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--seed", type=int, default=0)
@@ -547,6 +564,12 @@ def main(argv: list[str]) -> int:
         return _openapi()
     if args.command == "sameness":
         return _sameness(args.simulate)
+    if args.command == "refs":
+        if args.check:
+            return refs.run_check(args.check, args.looks)
+        page = asyncio.run(refs.wall(Path(args.out), args.language or None))
+        print(page)
+        return 0
     if args.command == "fonts":
         measured = asyncio.run(fonts.measure())
         for family, meta in measured.items():

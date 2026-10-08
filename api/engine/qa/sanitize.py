@@ -44,6 +44,7 @@ TAGS = frozenset(
         "dd-texture",
         "dd-shape",
         "dd-chart",
+        "dd-image",
     ]
 )
 _GLOBAL = frozenset(
@@ -53,7 +54,10 @@ ATTRIBUTES: dict[str, set[str]] = {
     "*": set(_GLOBAL),
     "dd-texture": {"kind", "tone"},
     "dd-shape": {"kind", "tone"},
+    "dd-image": {"aspect"},
 }
+# An image slot's crop (phase 39); our code fills it after sanitizing.
+IMAGE_ASPECTS = frozenset({"3:2", "2:3", "1:1", "16:9", "4:5"})
 TEXTURE_KINDS = _AXES_TEXTURES
 TEXTURE_TONES = frozenset({"accent", "ink", "surface"})
 
@@ -98,6 +102,8 @@ def sanitize(html: str, field_names: frozenset[str]) -> Result[str, str]:
             return value if value in SHAPES else "disc"
         if tag == "dd-shape" and attr == "tone":
             return value if value in ("accent", "ink", "surface", "rule") else "accent"
+        if tag == "dd-image" and attr == "aspect":
+            return value if value in IMAGE_ASPECTS else "3:2"
         if tag == "dd-texture" and attr == "kind":
             return value if value in TEXTURE_KINDS else "solid"
         if tag == "dd-texture" and attr == "tone":

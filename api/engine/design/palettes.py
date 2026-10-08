@@ -54,11 +54,20 @@ def _toward(a: float, b: float, t: float) -> float:
     return (a + d * t) % 360
 
 
-def generate(h: float, rng: random.Random, tone: str = "confident", *, split: bool = True) -> Roles:
-    """Colour roles for one deck around hue ``h``, every value continuous."""
+def generate(
+    h: float,
+    rng: random.Random,
+    tone: str = "confident",
+    *,
+    split: bool = True,
+    dark_chance: float | None = None,
+    split_chance: float | None = None,
+) -> Roles:
+    """Colour roles for one deck around hue ``h``, every value continuous. A
+    visual language may set the chance of a dark ground and of a second hue."""
     tilt = TILTS.get(tone, TILTS["confident"])
-    dark = rng.random() < tilt.dark
-    two_colour = split and rng.random() < tilt.split
+    dark = rng.random() < (tilt.dark if dark_chance is None else dark_chance)
+    two_colour = split and rng.random() < (tilt.split if split_chance is None else split_chance)
     # The ground leans anywhere from neutral to the deck's hue.
     ground_h = _toward(rng.uniform(0, 360), h, rng.random())
     ground_c = rng.uniform(0.0, tilt.tint) * (1.6 if two_colour else 1.0)

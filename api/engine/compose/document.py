@@ -51,6 +51,10 @@ _BASE = (
     "ul,ol{list-style:none}em{font-style:normal}strong{font-weight:inherit}"
     "h1,h2,h3{text-wrap:balance}p,li{text-wrap:pretty}"
     "dd-chart{display:block}"
+    # An image slot (phase 39): a quiet surface field until our code puts the
+    # deck's generated image in it, and the same field if that image fails.
+    "dd-image{display:block;overflow:hidden;background-color:var(--c-surface)}"
+    "dd-image>img{display:block;width:100%;height:100%;object-fit:cover}"
     # Shapes (design/patterns.py): colourless masks over a theme colour; the
     # slide's CSS sizes and places them. Diagonals and bands fill their box.
     "dd-shape{display:block;background-color:var(--c-accent);-webkit-mask-repeat:no-repeat;"

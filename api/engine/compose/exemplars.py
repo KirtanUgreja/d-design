@@ -11,6 +11,7 @@ from __future__ import annotations
 import html
 import json
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
@@ -75,16 +76,21 @@ ARCHETYPES = ("poster", "split", "stack", "grid", "band", "corner")
 
 
 def fill(ex: Exemplar, words: dict[str, str], *, keep_deco: bool = True) -> str:
-    """The exemplar's html with each data-field's text replaced by ``words``.
-    A field with no words is removed, never left holding the exemplar's sample
-    text: a filled slide must not show a word or number the user did not give."""
+    """The exemplar's html with each data-field's text replaced by ``words``."""
+    return fill_html(ex.html, words, keep_deco=keep_deco)
+
+
+def fill_html(source: str, words: Mapping[str, str], *, keep_deco: bool = True) -> str:
+    """``source`` with each data-field's text replaced by ``words``.
+    A field with no words is removed, never left holding the sample text: a
+    filled slide must not show a word or number the user did not give."""
 
     def swap(m: re.Match[str]) -> str:
         text = words.get(m.group(3), "")
         return f"{m.group(1)}{html.escape(text)}{m.group(4)}" if text else ""
 
     out = re.sub(
-        r'(<(\w+)\b[^>]*\bdata-field="([\w-]+)"[^>]*>)(?:.*?)(</\2>)', swap, ex.html, flags=re.S
+        r'(<(\w+)\b[^>]*\bdata-field="([\w-]+)"[^>]*>)(?:.*?)(</\2>)', swap, source, flags=re.S
     )
     if not keep_deco:
         out = re.sub(r"<(\w+)\b[^>]*\bdata-deco\b[^>]*>.*?</\1>", "", out, flags=re.S)

@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING
 
 from pydantic import BaseModel
 
-from engine.design import patterns
+from engine.design import languages, patterns
 from engine.design.axes import DENSITIES
 from engine.design.palettes import series
 
@@ -82,6 +82,7 @@ class Theme:
     variation: str = "normal"
     logo: str = ""  # the user's logo as a data: URL (components/logo.py), once per deck
     shapes: dict[str, str] = field(default_factory=dict)  # dd-shape kind -> mask url
+    language: str = ""  # the visual language's id (design/languages.py)
 
     @property
     def faces(self) -> tuple[Face, ...]:
@@ -332,6 +333,7 @@ def scale_from(heading_ratio: float, display_ratio: float) -> dict[str, int]:
 def build(look: Look) -> Theme:
     """A generated look into a Theme. Pure and deterministic."""
     pairing = look.pairing
+    lang = languages.get(look.language) if look.language else None
     display, text, label = face(pairing.display), face(pairing.text), face(pairing.label)
     roles = look.roles
     colors = {role: c.hex for role, c in roles.items()}
@@ -368,7 +370,9 @@ def build(look: Look) -> Theme:
         leading=_leading(pairing.display, weight),
         cols=grid.cols,
         textures=motif.textures,
-        guidance=f"{grid.note}. Motif: {motif.note}. Type: {pairing.note}.",
+        guidance=(f"{lang.prompt()} " if lang else "")
+        + f"{grid.note}. Motif: {motif.note}. Type: {pairing.note}.",
+        language=look.language,
         look=look.record(),
         tiles=patterns.tiles(look.texture)
         | ({"motif": look.motif_tile} if look.motif_tile else {}),

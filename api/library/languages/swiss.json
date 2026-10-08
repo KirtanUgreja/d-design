@@ -1,0 +1,50 @@
+{
+  "id": "swiss",
+  "name": "Swiss grid",
+  "idea": "A strict grid, flush-left type and heavy rules: the information is the design.",
+  "brief": "Swiss International Style. Hang every element on the 12-column grid (--cols) and align everything flush left to a few shared edges. Heavy rules (var(--rule) and thicker multiples) are structure: they divide the page, underline a section, head a column. Type is the image: a grotesk set tight, very large for numbers and short claims, small and precise for labels. Asymmetry with a strong left axis; generous empty fields on the right or bottom. Numbers are huge and set on the grid. Images, when present, are square-cropped and sit exactly in grid modules.",
+  "never": [
+    "centred text or centred compositions",
+    "rounded corners",
+    "decoration that carries no information",
+    "more than one accent"
+  ],
+  "kinds": [
+    "grotesk",
+    "wide"
+  ],
+  "pairings": [],
+  "grids": [
+    "swiss",
+    "modular"
+  ],
+  "edges": [
+    "sharp"
+  ],
+  "dark": 0.3,
+  "split": 0.0,
+  "density": [
+    "balanced",
+    "dense"
+  ],
+  "ratio": [
+    1.34,
+    1.5
+  ],
+  "texture": "never",
+  "shapes": false,
+  "image": {
+    "appetite": 0.2,
+    "styles": [
+      "monochrome detail photography, tight crop, hard light"
+    ]
+  },
+  "tones": [
+    "plain",
+    "confident"
+  ],
+  "deck_types": [
+    "investor_update",
+    "sales"
+  ]
+}

@@ -13,9 +13,10 @@ from __future__ import annotations
 import dataclasses
 import hashlib
 import random
+from collections.abc import Mapping
 from dataclasses import dataclass
 
-from engine.design import palettes, patterns
+from engine.design import languages, palettes, patterns
 from engine.design.axes import (
     DENSITIES,
     EDGES,
@@ -28,6 +29,7 @@ from engine.design.axes import (
     Pairing,
 )
 from engine.design.color import from_hex
+from engine.design.languages import Language
 from engine.design.palettes import Roles, brand, resolve
 from engine.design.theme import display_width, face
 
@@ -81,6 +83,7 @@ class Look:
     shapes: tuple[tuple[str, str], ...] = ()  # kind -> mask url, drawn per deck
     # The display face's own instance, when it is variable: axis -> value.
     instance: tuple[tuple[str, float], ...] = ()
+    language: str = ""  # the visual language's id (design/languages.py); "" = none
 
     def axis(self, tag: str, default: float) -> float:
         return next((v for t, v in self.instance if t == tag), default)
@@ -104,6 +107,7 @@ class Look:
             "ratios": f"{self.heading_ratio:.2f}/{self.display_ratio:.2f}",
             "margin": str(self.margin),
             "texture": f"dots {self.texture.dot_pitch}px, hatch {self.texture.hatch_angle}deg",
+            "language": self.language,
         }
 
 
@@ -196,28 +200,44 @@ def draw(
     *,
     tone: str = "confident",
     words: str = "",
+    language: Language | None = None,
 ) -> Look:
     """One look, generated: the choices that must be discrete (a font family, a
-    grid) are drawn, and everything that can be continuous is, colour included."""
+    grid) are drawn, and everything that can be continuous is, colour included.
+    A visual language narrows every discrete choice to what its system allows."""
     prior = PRIORS.get(deck_type, {})
-    ratio_range = TONE.get(tone, TONE["confident"])
-    while True:
-        pairing = rng.choice(PAIRINGS)
-        grid_id = _pick(rng, [g.id for g in GRIDS], prior.get("grid"))
+    ratio_range = language.ratio if language else TONE.get(tone, TONE["confident"])
+    pairings = language.allowed_pairings if language else PAIRINGS
+    grid_ids = list(language.grids) if language else [g.id for g in GRIDS]
+    densities = list(language.density) if language else list(DENSITIES)
+    for _ in range(500):  # ponytail: rejection sampling; every language has a fit
+        pairing = rng.choice(pairings)
+        grid_id = _pick(rng, grid_ids, prior.get("grid"))
         grid = next(g for g in GRIDS if g.id == grid_id)
         display_ratio = rng.uniform(*ratio_range)
         scale = _scale_name(display_ratio)
-        density = _pick(rng, list(DENSITIES), prior.get("density"))
+        density = _pick(rng, densities, prior.get("density"))
         if _compatible(pairing, scale, density, grid):
             break
     hue = from_hex(brand_hex).h if brand_hex else _hue(rng, words)
     # A brand keeps its own hue as the accent, so the two-colour split is off.
-    roles = palettes.generate(hue, rng, tone, split=not brand_hex)
+    roles = palettes.generate(
+        hue,
+        rng,
+        tone,
+        split=not brand_hex,
+        dark_chance=language.dark if language else None,
+        split_chance=language.split if language else None,
+    )
     if brand_hex:
         roles = brand(brand_hex, roles)
     roles = resolve(roles)
-    edge = rng.choice(list(EDGES))
+    edge = rng.choice(list(language.edges) if language else list(EDGES))
     motif_tile, motif_note = patterns.motif(rng)
+    motif = Motif("generated", ("motif", "solid"), motif_note)
+    if language and language.texture == "never":
+        motif = Motif("plain", ("solid",), "no texture: flat colour fields only")
+    shapes = patterns.shapes(rng)  # drawn always, so the rng stream stays the same
     wide = pairing.kind in ("wide", "mono")
     return Look(
         id=f"{deck_id}-{n}",
@@ -226,12 +246,12 @@ def draw(
         hue=hue,
         roles=roles,
         grid=grid,
-        motif=Motif("generated", ("motif", "solid"), motif_note),
+        motif=motif,
         scale=scale,
         edge=edge,
         density=density,
         motion=rng.choice(MOTIONS),
-        image=rng.choice(IMAGE_TREATMENTS),
+        image=rng.choice(language.image.styles if language else IMAGE_TREATMENTS),
         heading_ratio=round(rng.uniform(1.18, 1.32), 3),
         display_ratio=round(display_ratio, 3),
         margin=round(rng.uniform(96, 144)),
@@ -243,7 +263,8 @@ def draw(
         mark=patterns.mark(words or deck_id, rng),
         motif_tile=motif_tile,
         instance=_instance(rng, pairing),
-        shapes=tuple(patterns.shapes(rng).items()),
+        shapes=tuple(shapes.items()) if language is None or language.shapes else (),
+        language=language.id if language else "",
     )
 
 
@@ -297,11 +318,19 @@ def look_for(
     words: str = "",
     brand_hex: str | None = None,
     nonce: int = 0,
+    usage: Mapping[str, int] | None = None,
+    exclude: frozenset[str] = frozenset(),
 ) -> Look:
-    """The one look a deck gets — generated, never picked from a menu. The deck's
-    words steer it; ``nonce`` gives a new one when the user asks for another."""
+    """The one look a deck gets — generated, never picked from a menu. The
+    visual language is drawn first (balanced by ``usage``, the count of decks
+    per language so far), then the tokens it allows. The deck's words steer
+    it; ``nonce`` gives a new one when the user asks for another style, and
+    ``exclude`` keeps it off the languages already shown."""
     rng = random.Random(seed_of(f"{deck_id}/{words}/{nonce}"))  # noqa: S311 - a look, not a secret
-    return draw(rng, deck_id, nonce, deck_type, brand_hex, tone=tone, words=words)
+    language = languages.choose(rng, tone=tone, deck_type=deck_type, usage=usage, exclude=exclude)
+    return draw(
+        rng, deck_id, nonce, deck_type, brand_hex, tone=tone, words=words, language=language
+    )
 
 
 def recolour(look: Look, nonce: int, *, tone: str = "confident") -> Look:

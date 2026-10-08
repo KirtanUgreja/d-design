@@ -1,0 +1,51 @@
+{
+  "id": "bauhaus",
+  "name": "Geometric modern",
+  "idea": "One or two big geometric shapes and strong colour fields hold the content.",
+  "brief": "Bauhaus modernism. One or two large geometric shapes (dd-shape) are the structure, not ornament: a half circle framing a number, a quarter circle anchored in a corner, a bar that carries the headline. Strong flat colour fields in --c-accent and --c-surface with hard edges. Grotesk type, tight, aligned to the shapes. Shapes are big (a third of the slide or more), cropped by the slide edge, and touch the content they frame.",
+  "never": [
+    "more than two shapes",
+    "small scattered shapes",
+    "shapes that do not frame or carry content",
+    "soft shadows"
+  ],
+  "kinds": [
+    "grotesk",
+    "wide"
+  ],
+  "pairings": [],
+  "grids": [
+    "modular",
+    "swiss",
+    "asymmetric"
+  ],
+  "edges": [
+    "sharp"
+  ],
+  "dark": 0.3,
+  "split": 0.45,
+  "density": [
+    "balanced"
+  ],
+  "ratio": [
+    1.34,
+    1.5
+  ],
+  "texture": "never",
+  "shapes": true,
+  "image": {
+    "appetite": 0.25,
+    "styles": [
+      "abstract flat geometric illustration, primary forms, no text"
+    ]
+  },
+  "tones": [
+    "bold",
+    "confident"
+  ],
+  "deck_types": [
+    "launch",
+    "pitch",
+    "sales"
+  ]
+}

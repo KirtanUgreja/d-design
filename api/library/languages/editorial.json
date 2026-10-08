@@ -1,0 +1,50 @@
+{
+  "id": "editorial",
+  "name": "Magazine editorial",
+  "idea": "A serif magazine spread: big quotes, columns, photographs with captions.",
+  "brief": "A magazine feature. The display serif is the voice: large, elegant, with real contrast between headline and text sizes. Use editorial moments: a pull quote set huge, a drop-in kicker in the label face, text in one or two narrow columns, a caption under an image. Images sit half-bleed or full-bleed, edge to edge on one side, never floating in a box. Thin hairlines (1-2px) may separate a caption or a kicker; nothing heavier. White space is the luxury.",
+  "never": [
+    "thick rules",
+    "geometric shapes",
+    "boxes and cards around text",
+    "all-caps headlines"
+  ],
+  "kinds": [
+    "serif",
+    "didone"
+  ],
+  "pairings": [],
+  "grids": [
+    "editorial",
+    "asymmetric"
+  ],
+  "edges": [
+    "sharp"
+  ],
+  "dark": 0.15,
+  "split": 0.15,
+  "density": [
+    "airy",
+    "balanced"
+  ],
+  "ratio": [
+    1.3,
+    1.45
+  ],
+  "texture": "rare",
+  "shapes": false,
+  "image": {
+    "appetite": 0.4,
+    "styles": [
+      "editorial documentary photography, natural light, shallow depth of field"
+    ]
+  },
+  "tones": [
+    "warm",
+    "confident"
+  ],
+  "deck_types": [
+    "partnership",
+    "pitch"
+  ]
+}
