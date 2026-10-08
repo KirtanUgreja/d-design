@@ -6,32 +6,64 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
 
+import { Chevron } from "@/components/chevron";
 import { Button } from "@/components/ui/button";
-import { api } from "@/lib/api/client";
+import { api, type DeckKind, type DeckTone, type NewDeckOptions } from "@/lib/api/client";
 import { authClient } from "@/lib/auth-client";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
+const KINDS: [DeckKind, string][] = [
+  ["auto", "Any kind"],
+  ["pitch", "Pitch"],
+  ["sales", "Sales"],
+  ["launch", "Launch"],
+  ["investor_update", "Investor update"],
+  ["partnership", "Partnership"],
+];
+const TONES: [DeckTone, string][] = [
+  ["confident", "Confident"],
+  ["plain", "Plain"],
+  ["warm", "Warm"],
+  ["bold", "Bold"],
+];
+const SLIDES = { min: 5, max: 15, start: 10 };
+
 // A brief typed before signing in survives sign-up (phase 31, A5): kept in
-// this tab only, and started the moment the person is signed in.
+// this tab only, with its settings, and started the moment the person is
+// signed in.
 const PENDING = "dd:pending-brief";
 
-function remember(text: string): void {
+interface Pending {
+  prompt: string;
+  options: NewDeckOptions;
+}
+
+function remember(pending: Pending): void {
   try {
-    sessionStorage.setItem(PENDING, text);
+    sessionStorage.setItem(PENDING, JSON.stringify(pending));
   } catch {
     // storage blocked: the person retypes it; nothing breaks
   }
 }
 
-function takePending(): string {
+function takePending(): Pending | null {
   try {
-    const text = sessionStorage.getItem(PENDING) ?? "";
+    const raw = sessionStorage.getItem(PENDING);
     sessionStorage.removeItem(PENDING);
-    return text;
+    if (!raw) return null;
+    const v: unknown = JSON.parse(raw);
+    if (typeof v !== "object" || v === null || !("prompt" in v) || typeof v.prompt !== "string") return null;
+    const o: Record<string, unknown> = "options" in v && typeof v.options === "object" && v.options !== null ? { ...v.options } : {};
+    // Read back like any stored input: only values the controls can produce.
+    const kind = KINDS.find(([k]) => k === o.kind)?.[0];
+    const tone = TONES.find(([t]) => t === o.tone)?.[0];
+    const slides = typeof o.slides === "number" && o.slides >= SLIDES.min && o.slides <= SLIDES.max ? o.slides : undefined;
+    return { prompt: v.prompt, options: { kind, tone, slides } };
   } catch {
-    return "";
+    return null;
   }
 }
+
 
 interface Example {
   id: string;
@@ -53,6 +85,9 @@ export function Composer({ examples }: { examples: Example[] }) {
   const [text, setText] = useState("");
   const [picked, setPicked] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [kind, setKind] = useState<DeckKind>("auto");
+  const [tone, setTone] = useState<DeckTone>("confident");
+  const [slides, setSlides] = useState(SLIDES.start);
   const label = useId();
   const first = examples[0];
 
@@ -67,17 +102,18 @@ export function Composer({ examples }: { examples: Example[] }) {
       return;
     }
     setNotice(null);
+    const options: NewDeckOptions = { kind, tone, slides };
     const session = await authClient.getSession();
     if (!session.data) {
-      remember(text.trim());
+      remember({ prompt: text.trim(), options });
       router.push(`/sign-up?next=${encodeURIComponent("/")}`);
       return;
     }
-    await create(text.trim());
+    await create(text.trim(), options);
   };
 
-  const create = async (brief: string) => {
-    const made = await api.create(brief);
+  const create = async (brief: string, options: NewDeckOptions) => {
+    const made = await api.create(brief, options);
     if (made.ok) {
       router.push(`/d/${made.value.id}`);
       return;
@@ -91,10 +127,10 @@ export function Composer({ examples }: { examples: Example[] }) {
     const resume = async () => {
       const session = await authClient.getSession();
       if (!live || !session.data) return;
-      const brief = takePending();
-      if (!brief) return;
-      setText(brief);
-      await create(brief);
+      const pending = takePending();
+      if (!pending) return;
+      setText(pending.prompt);
+      await create(pending.prompt, pending.options);
     };
     void resume();
     return () => {
@@ -113,9 +149,9 @@ export function Composer({ examples }: { examples: Example[] }) {
     >
       <label
         htmlFor={label}
-        className="font-display text-[40px] leading-[1.04] tracking-[-0.02em] text-balance sm:text-[56px]"
+        className="font-display text-[44px] leading-[1.02] tracking-[-0.025em] text-balance sm:text-[64px] xl:text-[76px]"
       >
-        What are you presenting?
+        What are you <em>presenting</em>?
       </label>
       <div className="border border-ink bg-paper transition-colors focus-within:border-accent focus-within:ring-1 focus-within:ring-accent">
         <textarea
@@ -129,15 +165,18 @@ export function Composer({ examples }: { examples: Example[] }) {
             setNotice(null);
           }}
           placeholder={first?.prompt ?? "Series A pitch for our CI tool, to seed-stage investors"}
-          className="block min-h-[9.5rem] w-full resize-none bg-transparent px-5 pt-5 pb-3 font-display text-[22px] leading-[1.35] outline-none placeholder:text-ink-2/70 focus-visible:outline-none sm:min-h-0 sm:px-6 sm:text-[26px]"
+          className="block min-h-[9.5rem] w-full resize-none bg-transparent px-5 pt-5 pb-3 font-display text-[22px] leading-[1.35] outline-none placeholder:text-ink-2/60 focus-visible:outline-none sm:min-h-0 sm:px-6 sm:text-[26px]"
         />
-        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-rule px-5 py-3 sm:px-6">
-          <span className="text-[13px] text-ink-2">Paste notes or numbers too: they become your facts.</span>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-rule px-5 py-3 sm:px-6">
+          <Choice label="Kind" value={kind} options={KINDS} onChange={setKind} />
+          <Stepper value={slides} onChange={setSlides} />
+          <Choice label="Tone" value={tone} options={TONES} onChange={setTone} />
           <Button type="submit" size="lg" className="ml-auto px-6">
             Start <span aria-hidden="true">→</span>
           </Button>
         </div>
       </div>
+      <p className="-mt-2 text-[13px] text-ink-2">Paste notes or numbers into the box too: they become your facts, marked YOU.</p>
       {notice && (
         <p role="status" className="border-l-2 border-flag pl-3 text-sm">
           {notice}
@@ -172,5 +211,58 @@ export function Composer({ examples }: { examples: Example[] }) {
         </div>
       )}
     </form>
+  );
+}
+
+function Choice<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: [T, string][];
+  onChange: (v: T) => void;
+}) {
+  return (
+    <label className="flex items-center gap-2 text-[13px]">
+      <span className="text-ink-2">{label}</span>
+      <span className="relative">
+        <select
+          value={value}
+          onChange={(e) => {
+            const next = options.find(([v]) => v === e.target.value);
+            if (next) onChange(next[0]);
+          }}
+          className="cursor-pointer appearance-none border-b border-rule bg-transparent py-1 pr-5 pl-0.5 font-medium text-ink outline-none hover:border-ink focus-visible:border-ink"
+        >
+          {options.map(([v, l]) => (
+            <option key={v} value={v}>
+              {l}
+            </option>
+          ))}
+        </select>
+        <Chevron className="pointer-events-none absolute top-1/2 right-0.5 -translate-y-1/2 text-ink-2" />
+      </span>
+    </label>
+  );
+}
+
+function Stepper({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const step = "grid size-6 place-content-center border border-rule text-ink transition-colors hover:border-ink disabled:opacity-35";
+  return (
+    <div role="group" aria-label="Number of slides" className="flex items-center gap-2 text-[13px]">
+      <span className="text-ink-2">Slides</span>
+      <button type="button" aria-label="Fewer slides" className={step} disabled={value <= SLIDES.min} onClick={() => onChange(value - 1)}>
+        −
+      </button>
+      <span className="w-5 text-center font-medium tabular-nums" aria-live="polite">
+        {value}
+      </span>
+      <button type="button" aria-label="More slides" className={step} disabled={value >= SLIDES.max} onClick={() => onChange(value + 1)}>
+        +
+      </button>
+    </div>
   );
 }

@@ -174,11 +174,30 @@ async function styleCard(path: string): Promise<Result<StyleCard>> {
   });
 }
 
+// What the composer may say about a new deck besides its brief; the API
+// fills in its own defaults for anything left out.
+export type DeckKind = "auto" | "pitch" | "sales" | "launch" | "investor_update" | "partnership";
+export type DeckTone = "plain" | "confident" | "warm" | "bold";
+export interface NewDeckOptions {
+  kind?: DeckKind;
+  tone?: DeckTone;
+  slides?: number;
+}
+
 export const api = {
   style: (id: string) => styleCard(`/api/decks/${id}/style`),
   anotherStyle: (id: string) => call(`/api/decks/${id}/style`, { method: "POST" }),
   styleThumb: (id: string, name: string, version: number) => `/api/decks/${id}/style/${name}?v=${version}`,
-  create: (prompt: string) => call("/api/decks", { method: "POST", body: JSON.stringify({ prompt }) }),
+  create: (prompt: string, options: NewDeckOptions = {}) =>
+    call("/api/decks", {
+      method: "POST",
+      body: JSON.stringify({
+        prompt,
+        ...(options.kind ? { deck_type: options.kind } : {}),
+        ...(options.tone ? { tone: options.tone } : {}),
+        ...(options.slides ? { slide_count: options.slides } : {}),
+      }),
+    }),
   read: (id: string) => call(`/api/decks/${id}`),
   answer: (id: string, answers: string[], skip: boolean) =>
     call(`/api/decks/${id}/interview`, { method: "POST", body: JSON.stringify({ answers, skip }) }),

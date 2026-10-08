@@ -52,16 +52,17 @@ export function AuthForm({ mode, next }: { mode: Mode; next: string }) {
         {signUp && (
           <Field>
             <FieldLabel htmlFor="name">Name</FieldLabel>
-            <Input id="name" name="name" autoComplete="name" />
+            <Input className="h-11 bg-paper text-[15px]" id="name" name="name" autoComplete="name" />
           </Field>
         )}
         <Field data-invalid={error ? true : undefined}>
           <FieldLabel htmlFor="email">Email</FieldLabel>
-          <Input id="email" name="email" type="email" autoComplete="email" required autoFocus aria-invalid={error ? true : undefined} />
+          <Input className="h-11 bg-paper text-[15px]" id="email" name="email" type="email" autoComplete="email" required autoFocus aria-invalid={error ? true : undefined} />
         </Field>
         <Field data-invalid={error ? true : undefined}>
           <FieldLabel htmlFor="password">Password</FieldLabel>
           <Input
+            className="h-11 bg-paper text-[15px]"
             id="password"
             name="password"
             type="password"
@@ -78,7 +79,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next: string }) {
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-      <Button type="submit" size="lg" disabled={busy}>
+      <Button type="submit" size="lg" className="h-11" disabled={busy}>
         {signUp ? (busy ? "Creating your account…" : "Create account") : busy ? "Signing in…" : "Sign in"}
       </Button>
       <p className="text-sm text-muted-foreground">

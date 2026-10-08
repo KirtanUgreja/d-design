@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { Composer } from "@/components/composer";
+import { LanguageReel } from "@/components/language-reel";
 import { Placard } from "@/components/placard";
 import { SlideThumb } from "@/components/slide-thumb";
 import { YourDecks } from "@/components/your-decks";
@@ -14,6 +15,14 @@ const TYPE: Record<string, string> = {
   partnership: "Partnership",
 };
 
+// The real path a deck takes, in order: numbered because order is the point.
+const STEPS = [
+  { title: "One sentence", body: "Who it is for and what you want from them. Paste notes or numbers too." },
+  { title: "A few questions", body: "Answers to pick from, and every one of them skippable." },
+  { title: "An outline you approve", body: "Every number traced to you or a cited source. Nothing is built until you say so." },
+  { title: "Your deck, checked", body: "Composed slide by slide in its own look, measured in a browser, sent as one offline file." },
+];
+
 export default async function Home() {
   const recordings = [];
   for (const id of await recordingIds()) {
@@ -21,28 +30,52 @@ export default async function Home() {
     if (r.ok) recordings.push(r.value);
   }
   const examples = recordings.map((r) => ({ id: r.id, prompt: r.prompt, type: r.deckType }));
-  const featured = recordings[0];
   return (
-    <main className="mx-auto max-w-[1440px] px-4 sm:px-8">
-      <section className="grid gap-12 py-10 sm:py-16 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-16 lg:py-20">
+    <main>
+      <section className="mx-auto grid max-w-[1440px] gap-14 px-4 pt-10 pb-16 sm:px-8 sm:pt-16 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] lg:gap-16 lg:pt-20 lg:pb-24">
         <Composer examples={examples} />
-        {featured && (
-          <figure className="hidden min-w-0 self-start lg:mt-[104px] lg:block">
-            <Link href={`/deck/${featured.id}/edit`} className="group block">
-              <SlideThumb src={asset(featured.id, featured.slides[0]?.thumb ?? "")} alt="The cover of an example deck" />
-              <Placard lead="Example" label={TYPE[featured.deckType] ?? "Deck"} aside="Open it →" />
-            </Link>
-            <figcaption className="mt-2 text-sm leading-snug text-ink-2">
-              Made from one line: <span className="text-ink">“{featured.prompt}”</span>
-            </figcaption>
-          </figure>
-        )}
+        <aside aria-labelledby="how" className="lg:pt-[118px] xl:pt-[150px]">
+          <h2 id="how" className="placard">
+            How a deck gets made
+          </h2>
+          <ol className="mt-3 border-t border-rule">
+            {STEPS.map((s, i) => (
+              <li key={s.title} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 border-b border-rule py-4">
+                <span className="font-display text-[24px] leading-none text-ink-2 tabular-nums">{i + 1}</span>
+                <div>
+                  <p className="text-[15px] font-medium">{s.title}</p>
+                  <p className="mt-0.5 text-sm leading-snug text-ink-2">{s.body}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </aside>
       </section>
-      <YourDecks />
+
+      <div className="mx-auto max-w-[1440px] px-4 sm:px-8">
+        <YourDecks />
+      </div>
+
+      <section aria-labelledby="languages" className="bg-ink text-paper">
+        <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-16 sm:px-8 sm:py-24 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+          <div>
+            <p className="text-[11px] tracking-[0.08em] text-paper/50 uppercase">What makes it yours</p>
+            <h2 id="languages" className="mt-3 font-display text-[34px] leading-[1.05] tracking-[-0.02em] sm:text-[44px]">
+              Every deck gets its own <em>visual language</em>.
+            </h2>
+            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-paper/65">
+              One of eight is drawn for your words. Every slide is adapted from a reference in it, then checked in a
+              browser: nothing overflows, nothing is too small to read, and every number keeps its source.
+            </p>
+          </div>
+          <LanguageReel className="self-center text-[34px] leading-[1.15] tracking-[-0.015em] sm:text-[48px] lg:text-[56px]" />
+        </div>
+      </section>
+
       {recordings.length > 0 && (
-        <section aria-labelledby="examples" className="border-t border-rule py-10">
+        <section aria-labelledby="examples" className="mx-auto max-w-[1440px] px-4 py-14 sm:px-8 sm:py-20">
           <div className="mb-6 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-            <h2 id="examples" className="font-display text-2xl tracking-[-0.01em]">
+            <h2 id="examples" className="font-display text-[28px] tracking-[-0.015em]">
               Example decks
             </h2>
             <p className="text-sm text-ink-2">Recorded runs, start to finish. Opening one spends nothing.</p>

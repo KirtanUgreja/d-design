@@ -23,9 +23,9 @@ export function YourDecks() {
   }, []);
   if (decks.length === 0) return null;
   return (
-    <section aria-labelledby="your-decks" className="border-t border-rule py-10">
+    <section aria-labelledby="your-decks" className="border-t border-rule pt-12 pb-16">
       <div className="mb-6 flex items-baseline justify-between gap-4">
-        <h2 id="your-decks" className="font-display text-2xl tracking-[-0.01em]">
+        <h2 id="your-decks" className="font-display text-[28px] tracking-[-0.015em]">
           Your decks
         </h2>
         {decks.length > SHOWN && (

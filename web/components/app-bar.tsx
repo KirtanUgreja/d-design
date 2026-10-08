@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
 import { ProfileAvatar, useMe } from "@/components/avatar";
+import { Chevron } from "@/components/chevron";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -25,6 +26,8 @@ export function AppBar() {
   const path = usePathname();
   const authPage = path.startsWith("/sign-");
   const here = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
+  // The sign-in pages carry the wordmark in their own stage.
+  if (authPage) return null;
 
   return (
     <header className="sticky top-0 z-30 border-b border-rule bg-paper">
@@ -86,27 +89,42 @@ function Menu({ name, email }: { name: string; email: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="Your account" className="rounded-full">
-          <ProfileAvatar spec={me?.avatar ?? null} name={me?.name ?? name} email={email} size="sm" />
-        </Button>
+        <button
+          type="button"
+          aria-label="Your account"
+          className="flex items-center gap-2.5 rounded-full border border-rule bg-paper py-1 pr-3.5 pl-1 text-sm transition-colors hover:border-ink-2 hover:bg-paper-2 data-[state=open]:border-ink data-[state=open]:bg-paper-2"
+        >
+          <ProfileAvatar spec={me?.avatar ?? null} name={me?.name ?? name} email={email} className="size-8" />
+          <span className="hidden max-w-36 truncate font-medium sm:inline">{(me?.name || name).split(" ")[0]}</span>
+          <Chevron className="text-ink-2" />
+        </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="min-w-56">
-        <DropdownMenuLabel className="flex flex-col gap-0.5">
-          <span className="truncate text-foreground">{me?.name || name}</span>
-          <span className="truncate font-normal">{email}</span>
+      <DropdownMenuContent
+        align="end"
+        sideOffset={10}
+        className="w-auto min-w-64 border border-rule bg-paper p-1.5 ring-0"
+      >
+        <DropdownMenuLabel className="flex items-center gap-3 px-2 py-2.5">
+          <ProfileAvatar spec={me?.avatar ?? null} name={me?.name ?? name} email={email} className="size-11" />
+          <span className="flex min-w-0 flex-col">
+            <span className="truncate text-[15px] font-medium text-foreground">{me?.name || name}</span>
+            <span className="truncate text-[13px] font-normal text-ink-2">{email}</span>
+          </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem asChild className="px-2 py-2 text-[15px]">
             <Link href="/decks">Your decks</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/account">Account</Link>
+          <DropdownMenuItem asChild className="px-2 py-2 text-[15px]">
+            <Link href="/account">Account and avatar</Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onSelect={() => void signOut()}>Sign out</DropdownMenuItem>
+          <DropdownMenuItem className="px-2 py-2 text-[15px]" onSelect={() => void signOut()}>
+            Sign out
+          </DropdownMenuItem>
         </DropdownMenuGroup>
       </DropdownMenuContent>
     </DropdownMenu>
