@@ -15,13 +15,8 @@ const TYPE: Record<string, string> = {
   partnership: "Partnership",
 };
 
-// The real path a deck takes, in order: numbered because order is the point.
-const STEPS = [
-  { title: "One sentence", body: "Who it is for and what you want from them. Paste notes or numbers too." },
-  { title: "A few questions", body: "Answers to pick from, and every one of them skippable." },
-  { title: "An outline you approve", body: "Every number traced to you or a cited source. Nothing is built until you say so." },
-  { title: "Your deck, checked", body: "Composed slide by slide in its own look, measured in a browser, sent as one offline file." },
-];
+// A word or two per recorded example, for its chip.
+const SHORT: Record<string, string> = { "launch-product": "Tessel 2", "pitch-tesla": "Tesla", "update-q3": "Harbor" };
 
 export default async function Home() {
   const recordings = [];
@@ -29,27 +24,16 @@ export default async function Home() {
     const r = await loadRecording(id);
     if (r.ok) recordings.push(r.value);
   }
-  const examples = recordings.map((r) => ({ id: r.id, prompt: r.prompt, type: r.deckType }));
+  const examples = recordings.map((r) => ({
+    id: r.id,
+    prompt: r.prompt,
+    type: r.deckType,
+    short: SHORT[r.id] ?? r.prompt.split(" ").slice(0, 3).join(" "),
+  }));
   return (
     <main>
-      <section className="mx-auto grid max-w-[1440px] gap-14 px-4 pt-10 pb-16 sm:px-8 sm:pt-16 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)] lg:gap-16 lg:pt-20 lg:pb-24">
+      <section className="mx-auto max-w-[920px] px-4 pt-14 pb-20 sm:px-8 sm:pt-24 sm:pb-28">
         <Composer examples={examples} />
-        <aside aria-labelledby="how" className="lg:pt-[118px] xl:pt-[150px]">
-          <h2 id="how" className="placard">
-            How a deck gets made
-          </h2>
-          <ol className="mt-3 border-t border-rule">
-            {STEPS.map((s, i) => (
-              <li key={s.title} className="grid grid-cols-[2rem_minmax(0,1fr)] gap-x-3 border-b border-rule py-4">
-                <span className="font-display text-[24px] leading-none text-ink-2 tabular-nums">{i + 1}</span>
-                <div>
-                  <p className="text-[15px] font-medium">{s.title}</p>
-                  <p className="mt-0.5 text-sm leading-snug text-ink-2">{s.body}</p>
-                </div>
-              </li>
-            ))}
-          </ol>
-        </aside>
       </section>
 
       <div className="mx-auto max-w-[1440px] px-4 sm:px-8">
@@ -57,17 +41,10 @@ export default async function Home() {
       </div>
 
       <section aria-labelledby="languages" className="bg-ink text-paper">
-        <div className="mx-auto grid max-w-[1440px] gap-10 px-4 py-16 sm:px-8 sm:py-24 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
-          <div>
-            <p className="text-[11px] tracking-[0.08em] text-paper/50 uppercase">What makes it yours</p>
-            <h2 id="languages" className="mt-3 font-display text-[34px] leading-[1.05] tracking-[-0.02em] sm:text-[44px]">
-              Every deck gets its own <em>visual language</em>.
-            </h2>
-            <p className="mt-5 max-w-md text-[15px] leading-relaxed text-paper/65">
-              One of eight is drawn for your words. Every slide is adapted from a reference in it, then checked in a
-              browser: nothing overflows, nothing is too small to read, and every number keeps its source.
-            </p>
-          </div>
+        <div className="mx-auto grid max-w-[1440px] items-center gap-10 px-4 py-16 sm:px-8 sm:py-24 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
+          <h2 id="languages" className="font-display text-[34px] leading-[1.05] tracking-[-0.02em] sm:text-[44px]">
+            Every deck gets its own <em>visual language</em>.
+          </h2>
           <LanguageReel className="self-center text-[34px] leading-[1.15] tracking-[-0.015em] sm:text-[48px] lg:text-[56px]" />
         </div>
       </section>

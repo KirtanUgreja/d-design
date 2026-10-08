@@ -69,6 +69,7 @@ interface Example {
   id: string;
   prompt: string;
   type: string;
+  short: string; // a word or two for its chip: "Tessel 2"
 }
 
 const TYPE_LABEL: Record<string, string> = {
@@ -149,7 +150,7 @@ export function Composer({ examples }: { examples: Example[] }) {
     >
       <label
         htmlFor={label}
-        className="font-display text-[44px] leading-[1.02] tracking-[-0.025em] text-balance sm:text-[64px] xl:text-[76px]"
+        className="text-center font-display text-[clamp(2.5rem,5.4vw,4.5rem)] leading-[1.04] tracking-[-0.025em] text-balance"
       >
         What are you <em>presenting</em>?
       </label>
@@ -176,15 +177,14 @@ export function Composer({ examples }: { examples: Example[] }) {
           </Button>
         </div>
       </div>
-      <p className="-mt-2 text-[13px] text-ink-2">Paste notes or numbers into the box too: they become your facts, marked YOU.</p>
       {notice && (
         <p role="status" className="border-l-2 border-flag pl-3 text-sm">
           {notice}
         </p>
       )}
       {examples.length > 0 && (
-        <div className="flex flex-col gap-3">
-          <p className="placard">Or start from a real brief</p>
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
+          <span className="text-[13px] text-ink-2">Try</span>
           <ToggleGroup
             type="single"
             variant="outline"
@@ -195,16 +195,16 @@ export function Composer({ examples }: { examples: Example[] }) {
               setPicked(x ? x.id : null);
               if (x) setText(x.prompt);
             }}
-            className="w-full flex-wrap justify-start"
+            className="flex-wrap justify-center"
           >
             {examples.map((x) => (
               <ToggleGroupItem
                 key={x.id}
                 value={x.id}
-                className="h-auto max-w-full min-w-0 justify-start gap-1.5 px-3 py-1.5 text-left text-[13px] data-[state=on]:border-ink"
+                className="h-auto gap-1.5 px-3 py-1.5 text-[13px] data-[state=on]:border-ink"
               >
-                <span className="shrink-0 text-ink-2">{TYPE_LABEL[x.type] ?? "Deck"} ·</span>
-                <span className="truncate">{x.prompt}</span>
+                <span className="text-ink-2">{TYPE_LABEL[x.type] ?? "Deck"} ·</span>
+                <span>{x.short}</span>
               </ToggleGroupItem>
             ))}
           </ToggleGroup>

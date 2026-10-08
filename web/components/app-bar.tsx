@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 
 import { ProfileAvatar, useMe } from "@/components/avatar";
 import { Chevron } from "@/components/chevron";
+import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -32,8 +33,8 @@ export function AppBar() {
   return (
     <header className="sticky top-0 z-30 border-b border-rule bg-paper">
       <div className="mx-auto flex h-14 max-w-[1440px] items-center gap-6 px-4 sm:px-8">
-        <Link href="/" className="font-display text-[22px] leading-none tracking-[-0.015em]">
-          d-design
+        <Link href="/" aria-label="d-design, home" className="text-[24px]">
+          <Logo bar="var(--color-accent)" />
         </Link>
         {data && !authPage && (
           <nav aria-label="Main" className="flex items-center gap-5 text-sm">
