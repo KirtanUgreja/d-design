@@ -114,7 +114,14 @@ export function LiveDeck({ id }: { id: string }) {
     return (
       <>
         <DeckHeader deck={deck} />
-        <Problem text={deck.error || "Something went wrong on our side."} />
+        <Problem
+          text={deck.error || "Something went wrong on our side."}
+          onRetry={async () => {
+            const again = await api.retry(deck.id);
+            if (again.ok) setDeck(again.value);
+            else setProblem(again.error);
+          }}
+        />
       </>
     );
   }
@@ -160,10 +167,13 @@ export function LiveDeck({ id }: { id: string }) {
 // goal gradient). Real states only.
 const STEPS = ["Questions", "Outline", "Build", "Send"] as const;
 
-function stepOf(status: Deck["status"]): number {
+function stepOf(deck: Deck): number {
+  const { status } = deck;
   if (status === "brief" || status === "interview") return 0;
   if (status === "outline" || status === "approve") return 1;
   if (status === "ready") return 3;
+  // A stopped deck shows the step it stopped in.
+  if (status === "error") return deck.outline.length > 0 ? 2 : deck.questions.length > 0 ? 1 : 0;
   return 2;
 }
 
@@ -178,7 +188,7 @@ function DeckHeader({
   line?: React.ReactNode;
   compact?: boolean; // the editor needs the room: one line of title, no status
 }) {
-  const at = stepOf(deck.status);
+  const at = stepOf(deck);
   return (
     <div className="border-b border-rule">
       <div
@@ -240,16 +250,32 @@ function Waiting({ text }: { text: string }) {
   );
 }
 
-function Problem({ text }: { text: string }) {
+function Problem({ text, onRetry }: { text: string; onRetry?: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
   return (
-    <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-16 sm:px-8">
+    <main className="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-16 sm:px-8">
       <Alert variant="destructive">
         <AlertTitle>This deck stopped</AlertTitle>
-        <AlertDescription>{text}</AlertDescription>
+        <AlertDescription>
+          {text} Your brief and answers are kept, so trying again picks up from the step that failed.
+        </AlertDescription>
       </Alert>
-      <Button asChild variant="link" className="self-start px-0">
-        <Link href="/">Start a new deck</Link>
-      </Button>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        {onRetry && (
+          <Button
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void onRetry().finally(() => setBusy(false));
+            }}
+          >
+            {busy ? "Trying again…" : "Try again"}
+          </Button>
+        )}
+        <Button asChild variant="link" className="px-0 text-ink-2">
+          <Link href="/">Start a new deck</Link>
+        </Button>
+      </div>
     </main>
   );
 }

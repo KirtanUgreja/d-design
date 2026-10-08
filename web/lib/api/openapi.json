@@ -2274,6 +2274,60 @@
         "summary": "Reorder"
       }
     },
+    "/api/decks/{deck_id}/retry": {
+      "post": {
+        "description": "A stopped deck, tried again from the step that failed: nothing the\nperson gave (the brief, the answers, the outline) is asked for twice.",
+        "operationId": "retry_api_decks__deck_id__retry_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Retry"
+      }
+    },
     "/api/decks/{deck_id}/slides/{slide_id}": {
       "delete": {
         "operationId": "delete_api_decks__deck_id__slides__slide_id__delete",

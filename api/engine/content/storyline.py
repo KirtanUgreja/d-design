@@ -344,7 +344,7 @@ async def write(
         user=_user_prompt(brief, facts),
         model=model,
         prompt_version=PROMPT_VERSION,
-        max_tokens=8000,
+        max_tokens=16000,  # reasoning comes out of it too; only what is written is billed
     )
     if isinstance(result, Err):
         return result
@@ -373,7 +373,7 @@ async def write(
             ),
             model=model,
             prompt_version=PROMPT_VERSION,
-            max_tokens=2000,
+            max_tokens=6000,
         )
         if not isinstance(fix, Err):
             _apply(story, fix.value.fixes)

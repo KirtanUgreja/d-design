@@ -28,8 +28,9 @@ from engine.llm.openrouter import ModelError, Reply, Seam, parse_fenced
 from engine.models import Brief, Citation, Fact
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "research.v2"  # v2: every arc asks for a series (phase 37)
+PROMPT_VERSION = "research.v3"  # v3: a ceiling on facts in all; v2 asked for series
 MAX_RESULTS = 30
+MAX_TOKENS = 12000
 OLD_AFTER_YEARS = 3
 # Statistics farms: pages that aggregate numbers from elsewhere, often
 # AI-written. Excluded from the search and refused again in verify().
@@ -68,7 +69,7 @@ Rules:
 - `url` is the exact URL of that result. `date` is the year the number describes, if stated.
 - `measure` names the quantity in a few words ("share of remote workers with weekly outages").
   Two numbers for the same quantity get the same `measure`.
-- At most 3 numbers per need. Fewer is fine. None is fine.
+- At most 3 numbers per need, and at most 15 in all. Fewer is fine. None is fine.
 - {FRAME}
 
 Answer with one ```json block and nothing else:
@@ -219,7 +220,10 @@ async def research(
         user=user,
         model=model,
         prompt_version=PROMPT_VERSION,
-        max_tokens=4000,
+        # The writing model reasons before it answers, out of this same budget:
+        # at 4000 a rich topic was cut off (live deck, 2026-10-09: 1,547
+        # reasoning tokens before the facts). Only what is written is billed.
+        max_tokens=MAX_TOKENS,
         tools=[tool],
     )
     if isinstance(result, Err):

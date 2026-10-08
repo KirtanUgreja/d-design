@@ -68,7 +68,7 @@ async def questions(seam: Seam, brief: Brief, *, model: str) -> Result[list[Ques
         ),
         model=model,
         prompt_version=PROMPT_VERSION,
-        max_tokens=2000,
+        max_tokens=6000,  # reasoning comes out of it too
     )
     if isinstance(result, Err):
         return result

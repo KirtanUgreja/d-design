@@ -204,6 +204,7 @@ export const api = {
   decide: (id: string, version: number, decisions: Record<string, "approved" | "rejected">, order?: string[]) =>
     call(`/api/decks/${id}/outline`, { method: "PATCH", body: JSON.stringify({ version, decisions, order }) }),
   build: (id: string) => call(`/api/decks/${id}/build`, { method: "POST" }),
+  retry: (id: string) => call(`/api/decks/${id}/retry`, { method: "POST" }),
   abort: (id: string) => call(`/api/decks/${id}/build/abort`, { method: "POST" }),
   // The version busts the cache: an edit re-renders the screenshot in place.
   thumb: (id: string, slide: string, version = 0) => `/api/decks/${id}/slides/${slide}/thumb.png?v=${version}`,

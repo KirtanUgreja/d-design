@@ -280,6 +280,30 @@ def create_app(
         t.enqueue("build", deck_id)  # a double click enqueues one job
         return out(t, deck)
 
+    @api.post("/api/decks/{deck_id}/retry", response_model=None)
+    def retry(t: Me, deck_id: str) -> DeckOut | JSONResponse:
+        """A stopped deck, tried again from the step that failed: nothing the
+        person gave (the brief, the answers, the outline) is asked for twice."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if deck.status != "error":
+            return _problem(409, "This deck hasn't stopped.")
+        if t.busy(deck_id):
+            return _problem(409, "This deck is already being worked on.")
+        if no := capped(t):
+            return no
+        if deck.storyline is not None:
+            t.update(deck_id, status="building", error="")
+            t.enqueue("build", deck_id)
+        elif t.questions(deck_id):
+            t.update(deck_id, status="outline", error="")
+            t.enqueue("outline", deck_id)
+        else:
+            t.update(deck_id, status="brief", error="")
+            t.enqueue("interview", deck_id)
+        return out(t, t.read(deck_id))
+
     @api.post("/api/decks/{deck_id}/build/abort", response_model=None)
     def abort(t: Me, deck_id: str) -> DeckOut | JSONResponse:
         if not t.exists(deck_id):

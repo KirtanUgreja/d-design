@@ -98,7 +98,7 @@ async def write(seam: Seam, story: Storyline, *, model: str) -> Result[Storyline
         user=_outline(story),
         model=model,
         prompt_version=PROMPT_VERSION,
-        max_tokens=6000,
+        max_tokens=12000,  # reasoning comes out of it too
     )
     if isinstance(result, Err):
         return result

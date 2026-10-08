@@ -17,6 +17,7 @@ import worker
 from app import LOCAL_USER, create_app
 from benchtools import files
 from engine import Fact, Kept, Seam
+from engine.content.interview import Question
 from store.tenant import AnyStore
 from tests.stores import STORES, make_store
 from tests.test_ladder import AlwaysTheSame, _no_sleep
@@ -240,3 +241,31 @@ def test_a_file_that_is_not_a_logo_is_refused_in_words(tmp_path: Path, kind: str
     assert (
         client.put(f"/api/decks/{deck_id}/logo", json={"data": "not base64!!"}).status_code == 422
     )
+
+
+@each_store
+def test_a_stopped_deck_is_tried_again_from_the_step_that_failed(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
+    deck_id = _approved_deck(store)
+    store.update(deck_id, status="approve")
+    assert client.post(f"/api/decks/{deck_id}/retry").status_code == 409  # not stopped
+    # stopped with an outline: the build runs again
+    store.update(
+        deck_id, status="error", error="The writing service cut its answer short. Try again."
+    )
+    again = client.post(f"/api/decks/{deck_id}/retry")
+    assert again.status_code == 200 and again.json()["deck"]["status"] == "building"
+    assert again.json()["deck"]["error"] == ""
+    assert [j.kind for j in store._jobs("queued")] == ["build"]
+    assert client.post(f"/api/decks/{deck_id}/retry").status_code == 409  # already queued
+    # stopped while writing the outline, after the questions: the outline again
+    other = store.create(files.load("pitch-devtools").brief, owner_id=LOCAL_USER)
+    store.save_questions(
+        other.id, [Question(fills="ask", question="What then?", suggestions=["a", "b", "c"])]
+    )
+    store.update(other.id, status="error", error="x")
+    assert client.post(f"/api/decks/{other.id}/retry").json()["deck"]["status"] == "outline"
+    # stopped before any question: the interview again
+    first = store.create(files.load("pitch-devtools").brief, owner_id=LOCAL_USER)
+    store.update(first.id, status="error", error="x")
+    assert client.post(f"/api/decks/{first.id}/retry").json()["deck"]["status"] == "brief"
