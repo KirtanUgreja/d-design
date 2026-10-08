@@ -153,6 +153,10 @@ Each agent works in its own git worktree, owns only its files, and is merged by 
 | api | `sqlalchemy`, `alembic`, `psycopg[binary]` | The SQL store and its migrations |
 | api | `pyjwt[crypto]` | Verifying Better Auth's JWT against its JWKS |
 
+## Build day — what happened (2026-10-08)
+
+Built in one day instead of two, with model spend of $0.04: **every item B1–B14 and A1–A6**. The reference library has 77 references, not 64: every language has all 8 shapes, and each reference passes QA under 30 looks with long, short and claim-only words. Live: https://web-production-41f09.up.railway.app. What was not done: nothing on the list. What is unproven: the design itself, until the owner's wall on test day.
+
 ## Test day — Friday 2026-10-10
 
 | # | Step | Who | Credit |

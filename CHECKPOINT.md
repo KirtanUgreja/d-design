@@ -5,8 +5,9 @@
 Built (all offline, $0 model spend):
 - **P0 design (phase 39):** 8 languages (B1); 77 references, every one passing QA under 30 looks with long, short and claim-only words (B2); retrieval, reference-fill with figure fitting (B3); `compose.v11` and the new ladder; art direction removed (B4); images (B5); the style card with Another style (B6); pair charts (B7); `cli bakeoff`, `--image-model` (B8).
 - **P0 accounts (phase 29):** Better Auth with an email allowlist, the token proxy, account page with DiceBear avatars, Your decks (A2, A6); the SQL store with users, tenancy, blobs and a per-user ledger (A1); JWT verification, tenancy on every route, `/api/me`, the daily cap (A3); security tests (A4); the Railway deploy (B12); the README (B14).
-- **P1:** the brief survives sign-in (A5).
-- Not built: B9 scorer, B10 logo per deck, B11 AI edit by instruction, B13 watch polish.
+- **P1, all built:** the brief survives sign-in (A5); the design scorer and `--candidates N` (B9); a logo per deck, checked by the worker (B10); ask a slide for a change in words, as a proposal to keep or discard, with colour and type refused (B11); flagged slides named before download (B13).
+- The two format checks ran ($0.04): compose.v11 and image output both work (findings.md).
+- The live chain was smoke-tested with a temporary account (sign-up, the token to the private API, /api/me, a foreign deck 404, deletion), then the account and its allowlist entry were removed.
 
 **Test day next ([docs/v4/plan/master-plan.md](docs/v4/plan/master-plan.md) → Test day):** top up; smoke; the image and compose bake-offs (`cli bakeoff`); the owner curates references on `cli refs --wall`; the 12-deck wall; fixes; the owner's 3 live decks and the two-account check; our pitch deck; the demo script. Known: `test_editor`'s fit test flaked twice under full-suite load (passes alone; it now prints its defects).
 
