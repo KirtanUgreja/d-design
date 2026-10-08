@@ -2,7 +2,6 @@ import Link from "next/link";
 
 import { Composer } from "@/components/composer";
 import { SlideThumb } from "@/components/slide-thumb";
-import { PrototypeNote } from "@/components/step-bar";
 import { asset, loadRecording, recordingIds } from "@/lib/fixtures";
 
 export default async function Home() {
@@ -16,7 +15,6 @@ export default async function Home() {
     <main className="mx-auto grid min-h-dvh max-w-6xl grid-rows-[auto_1fr_auto] px-8">
       <header className="flex items-center gap-6 py-6">
         <span className="font-display text-xl tracking-tight">d-design</span>
-        <PrototypeNote />
       </header>
       <section className="grid content-center gap-10 pb-16 md:grid-cols-[7fr_5fr] md:gap-16">
         <Composer examples={examples} />
@@ -32,7 +30,7 @@ export default async function Home() {
       {recordings.length > 0 && (
         <section aria-labelledby="recent" className="border-t border-rule py-8">
           <h2 id="recent" className="mb-4 text-sm font-medium text-ink-2">
-            Recent
+            Example decks — recorded runs you can open and replay
           </h2>
           <ul className="grid grid-cols-2 gap-6 md:grid-cols-4">
             {recordings.map((r) => (

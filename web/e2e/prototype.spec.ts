@@ -102,16 +102,11 @@ test("nothing scrolls sideways at 200% zoom", async ({ page }) => {
   }
 });
 
-test("a typed brief reaches its own recording, or says plainly when the deck service is down", async ({ page }) => {
+test("a typed brief is a real deck, and says plainly when the deck service is down", async ({ page }) => {
   await signIn(page);
   await page.goto("/");
+  // Even a brief that reads like an example builds for real: only a picked chip replays.
   await page.getByLabel("What are you presenting?").fill("make a pitch deck for tesla");
-  await page.getByRole("button", { name: "Start" }).click();
-  await expect(page).toHaveURL(/\/deck\/pitch-tesla\/outline$/);
-  await expect(page.getByRole("heading", { level: 2 })).toContainText("Tesla");
-
-  await page.goto("/");
-  await page.getByLabel("What are you presenting?").fill("Board deck for a coffee roaster");
   await page.getByRole("button", { name: "Start" }).click();
   await expect(page).toHaveURL(/\/$/);
   // No API runs in the e2e build, so a new brief cannot start: it says so, in words.

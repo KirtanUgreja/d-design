@@ -1,6 +1,6 @@
 "use client";
 // The signed-in user's menu: their avatar, Your decks, Account, Sign out.
-// Renders nothing when signed out, so public pages stay as they are.
+// Signed out, it offers Sign in and Create account instead.
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -19,14 +19,25 @@ import { authClient } from "@/lib/auth-client";
 import { meStore } from "@/lib/auth-me";
 
 export function UserMenu() {
-  const { data } = authClient.useSession();
+  const { data, isPending } = authClient.useSession();
   const path = usePathname();
-  if (!data || path.startsWith("/sign-")) return null;
+  if (isPending || path.startsWith("/sign-")) return null;
   // ponytail: its own slim row above each page's header; the main session can
   // move it into the page headers when they are unified.
   return (
-    <div className="flex justify-end px-8 pt-3">
-      <Menu name={data.user.name} email={data.user.email} />
+    <div className="flex items-center justify-end gap-3 px-8 pt-3">
+      {data ? (
+        <Menu name={data.user.name} email={data.user.email} />
+      ) : (
+        <>
+          <Link href={`/sign-in?next=${encodeURIComponent(path)}`} className="text-sm underline-offset-4 hover:underline">
+            Sign in
+          </Link>
+          <Button asChild size="sm">
+            <Link href={`/sign-up?next=${encodeURIComponent(path)}`}>Create account</Link>
+          </Button>
+        </>
+      )}
     </div>
   );
 }

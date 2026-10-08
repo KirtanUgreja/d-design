@@ -58,7 +58,9 @@ export function Composer({ examples }: { examples: Example[] }) {
   const start = async () => {
     // A recorded brief replays its recording; anything else is a real deck,
     // built by the API and the worker (phase 27).
-    const target = picked ?? matching(text, examples) ?? (text.trim() ? null : first?.id);
+    // Only a picked example (or an empty box) replays a recording: anything
+    // typed is a real deck, even if it reads like an example.
+    const target = picked ?? (text.trim() ? null : first?.id);
     if (target) {
       router.push(`/deck/${target}/outline`);
       return;
@@ -163,14 +165,4 @@ export function Composer({ examples }: { examples: Example[] }) {
       )}
     </form>
   );
-}
-
-const STOP = new Set(["a", "an", "the", "for", "to", "of", "and", "deck", "make", "pitch", "update", "sales", "launch", "our", "my", "with", "on", "in"]);
-
-/** The recording whose brief shares a distinctive word with what was typed. */
-function matching(text: string, examples: Example[]): string | null {
-  const words = new Set(text.toLowerCase().match(/[a-z0-9]{3,}/g)?.filter((w) => !STOP.has(w)) ?? []);
-  if (words.size === 0) return null;
-  const hit = examples.find((x) => (x.prompt.toLowerCase().match(/[a-z0-9]{3,}/g) ?? []).some((w) => words.has(w)));
-  return hit?.id ?? null;
 }
