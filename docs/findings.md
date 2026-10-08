@@ -6,6 +6,11 @@ Facts that cost real work to establish and do not depend on what the product tur
 
 ---
 
+## Measured 2026-10-08 (build day): the two format checks, $0.04
+
+- **compose.v11** on `deepseek/deepseek-v4.1-flash` (an editorial reference, a pitch slide): parsed, sanitized and linted on the first answer; $0.0064.
+- **Image output** on `google/gemini-3.1-flash-lite-image` through OpenRouter's chat completions with `modalities: ["image", "text"]`: one inline `data:image/png;base64` in `message.images`, 117,934 bytes, treated to a 1264×843 webp; $0.0336 an image. The picture is well made but generic (a person at a laptop) in spite of the prompt's "nothing generic or stock-like": the test-day bake-off should judge image models on distinctiveness, not polish. At ~$0.034 an image, the cap of 6 a deck adds up to ~$0.20 a deck.
+
 ## Measured in this codebase
 
 The output space of the art-direction layer, counted on 2026-08-10 against the three shipped art directions:

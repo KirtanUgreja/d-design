@@ -30,9 +30,10 @@ from engine.export.assemble import assemble
 from engine.llm.openrouter import ModelError, Seam
 from engine.models import Slide, SlidePlan, SlideQA, Storyline
 from engine.qa import browser, metrics
+from engine.qa import score as scoring
 from engine.qa.descriptors import Descriptors, describe, distance
 from engine.qa.sanitize import sanitize
-from lib.result import Err, Result
+from lib.result import Err, Ok, Result
 
 PARALLEL = 5
 REPAIR_ROUNDS = 2
@@ -97,6 +98,7 @@ async def build(
     stop: Callable[[], bool] | None = None,
     ref_usage: Mapping[str, int] | None = None,
     image_model: str = "",
+    candidates: int = 1,
 ) -> Built:
     """Every slide climbs its own ladder, concurrently: compose from its
     reference, measure, up to REPAIR_ROUNDS repairs, one fresh composition from
@@ -338,6 +340,30 @@ async def build(
         composed[plan.id] = kept
         return await measure(plan)
 
+    async def best_of(index: int, plan: SlidePlan) -> Result[Composed, ModelError]:
+        """The first composition, or the best of ``candidates`` by the measured
+        design score (qa/score.py): each drawn with its own variation, all
+        measured, a clean one always beating a broken one."""
+        first = refs[plan.id][0]
+        if candidates <= 1:
+            return await compose_from(index, plan, first, variation[plan.id])
+        options = [variation[plan.id], *(first.variants if first else ())]
+        tries = await asyncio.gather(
+            *(
+                compose_from(index, plan, first, options[n % len(options)])
+                for n in range(candidates)
+            )
+        )
+        made = [t.value for t in tries if not isinstance(t, Err)]
+        if not made:
+            return tries[0]
+        ranked: list[tuple[float, Composed]] = []
+        for option in made:
+            composed[plan.id] = option
+            m = await measure(plan)
+            ranked.append((scoring.score(m.boxes, m.shapes, errors=len(m.errors)).total, option))
+        return Ok(max(ranked, key=lambda r: r[0])[1])
+
     async def ladder(index: int, plan: SlidePlan) -> None:
         if plan.id in resumed:  # finished before a restart: measured again, never paid twice
             composed[plan.id], origin[plan.id] = resumed[plan.id].composed, resumed[plan.id].origin
@@ -351,7 +377,7 @@ async def build(
         drawing = asyncio.create_task(picture(plan)) if image_on[plan.id] else None
         result = None
         if affordable():
-            result = await compose_from(index, plan, refs[plan.id][0], variation[plan.id])
+            result = await best_of(index, plan)
         if result is None or isinstance(result, Err):
             if result is not None:
                 refusals[plan.id] = f"{result.error.kind}: {result.error.detail[:300]}"

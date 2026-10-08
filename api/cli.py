@@ -178,6 +178,7 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             theme,
             ref_usage=ref_usage,
             image_model=args.image_model,
+            candidates=args.candidates,
             model=args.model,
             title=item.brief.prompt[:80],
             work_file=str(out / "qa.html"),
@@ -244,6 +245,7 @@ async def _bakeoff(cfg: settings.Settings, args: argparse.Namespace) -> int:
                 "themes": "sampled",
                 "repeat": 1,
                 "outlines": "",
+                "candidates": 1,
             }
         )
         failed += await _build(cfg, one)
@@ -537,6 +539,7 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--outlines", default="", help="a `cli content` run to take outlines from")
     cmd.add_argument("--image-model", default="", help="slide images; empty = no images")
     cmd.add_argument("--briefs", type=int, default=0, help="only the first N briefs of the set")
+    cmd.add_argument("--candidates", type=int, default=1, help="compose N, keep the best scored")
     cmd = sub.add_parser("bakeoff", help="the same briefs built by each model, one wall")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--models", required=True, help="comma-separated compose models")
