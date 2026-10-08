@@ -140,6 +140,21 @@ tinycss2 (v4, phase 22) — parses slide CSS so the lint walks real
 pydantic.mypy (v4, phase 21) — the mypy plugin that ships inside pydantic —
   not a new package. Without it `disallow_any_explicit` rejects every
   BaseModel, because the synthesized __init__ takes **Any.
+better-auth (v4, phase 29) — email-and-password accounts, sessions and the
+  JWT plugin (EdDSA, JWKS at /api/auth/jwks), in web — the owner's choice of
+  2026-10-08 (v4/plan/master-plan.md, A2); a credential path is never ours
+  to write. Its tables live in their own `auth` database through its built-in
+  Kysely adapter, so no ORM is added. Its CLI runs pinned through
+  `pnpm dlx auth@1.7.7 migrate` and is not installed.
+pg + @types/pg (v4, phase 29) — the Postgres pool Better Auth's adapter
+  takes, in web — the adapter is inert without a driver.
+@dicebear/core + @dicebear/styles (v4, phase 29) — profile avatars drawn in
+  the browser from {style, seed, options} (A6), in web — generative SVG art is
+  not a few lines, and drawing locally keeps api.dicebear.com out of the
+  request path. Core is MIT. Styles carry their own licences: only
+  notionists, lorelei, open-peeps, thumbs, shapes and pixel-art are loaded,
+  all CC0 1.0 (the package's LICENSE.md, checked 2026-10-08), each imported
+  on demand.
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."
