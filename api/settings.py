@@ -41,7 +41,12 @@ class Settings:
     # turns images off and every image slot stays a quiet field.
     model_image: str = "google/gemini-3.1-flash-lite-image"
     deck_budget_usd: float = 5.0
+    daily_cap_usd: float = 3.0  # per user per UTC day; not a credit system (2026-10-08)
+    auth_url: str = ""  # BETTER_AUTH_URL: the web app; its JWKS and the JWT issuer
+    auth_disabled: bool = False  # AUTH_DISABLED=1: a laptop run with no accounts
     data_dir: Path = REPO_ROOT / "data"  # the file store (store/files.py); gitignored
+    # Neon `app` (pooled); set = the SQL store (store/tenant.py -> open_store).
+    database_url: str = ""
 
 
 def load() -> Settings:
@@ -52,5 +57,9 @@ def load() -> Settings:
         model_design=os.environ.get("MODEL_DESIGN", Settings.model_design),
         model_cheap=os.environ.get("MODEL_CHEAP", Settings.model_cheap),
         model_image=os.environ.get("MODEL_IMAGE", Settings.model_image),
+        daily_cap_usd=float(os.environ.get("DAILY_CAP_USD", str(Settings.daily_cap_usd))),
+        auth_url=os.environ.get("BETTER_AUTH_URL", "").rstrip("/"),
+        auth_disabled=os.environ.get("AUTH_DISABLED", "") == "1",
         data_dir=Path(os.environ.get("DATA_DIR", str(Settings.data_dir))),
+        database_url=os.environ.get("APP_DATABASE_URL", ""),
     )

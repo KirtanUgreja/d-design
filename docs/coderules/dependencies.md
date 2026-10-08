@@ -158,6 +158,16 @@ pg + @types/pg (v4, phase 29) — the Postgres pool Better Auth's adapter
 pyjwt[crypto] (v4, phase 29) — verifies Better Auth's EdDSA JWT against its
   JWKS in api (A3), with `cryptography` for Ed25519 — token verification is a
   crypto path; never ours to write.
+sqlalchemy (v4, phase 29) — the typed SQL layer under store/sql.py, in api —
+  Postgres in production and SQLite offline from one set of queries; row
+  locks, SKIP LOCKED and upserts per dialect. Hand-written SQL for two
+  dialects is the duplication the rules warn about.
+alembic (v4, phase 29) — schema migrations for the `app` database, in api —
+  the migration tool SQLAlchemy's authors maintain; a versioned schema is
+  not something to improvise at deploy time.
+psycopg[binary] (v4, phase 29) — the Postgres driver (psycopg 3), in api —
+  a wire protocol and TLS client is a codec: never ours. The binary wheel
+  ships libpq, so the container needs no system package.
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."

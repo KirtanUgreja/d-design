@@ -10,10 +10,10 @@ from collections import Counter
 
 from engine import Deck, build_theme, look_for, recolour
 from engine.design.theme import Theme
-from store.files import Store
+from store.tenant import AnyStore
 
 
-def usage(store: Store) -> tuple[Counter[str], Counter[str]]:
+def usage(store: AnyStore) -> tuple[Counter[str], Counter[str]]:
     """How many decks drew each visual language, and how many slides used each
     reference: the sampler and the reference pick take the least used.
     ponytail: reads every deck; a counter table when decks reach thousands."""
@@ -23,7 +23,7 @@ def usage(store: Store) -> tuple[Counter[str], Counter[str]]:
     return languages, references
 
 
-def with_language(store: Store, deck: Deck, *, exclude: frozenset[str] = frozenset()) -> Deck:
+def with_language(store: AnyStore, deck: Deck, *, exclude: frozenset[str] = frozenset()) -> Deck:
     """The deck's visual language, drawn once (balanced by usage) and kept, so
     every later look of this deck is the same however usage moves. ``exclude``
     is for Another style: never the language just shown."""
@@ -55,3 +55,9 @@ def theme_of(deck: Deck) -> Theme:
     if deck.palette_nonce:
         look = recolour(look, deck.palette_nonce, tone=deck.brief.tone)
     return build_theme(look)
+
+
+def preview_names(deck: Deck) -> list[str]:
+    """The style card's thumbnails for the deck's current look. Named by the
+    look, so Another style never shows the last style's pictures."""
+    return [f"preview-{deck.look_nonce}-{n}.png" for n in (1, 2, 3)]

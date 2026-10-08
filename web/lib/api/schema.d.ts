@@ -354,6 +354,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Me */
+        get: operations["me_api_me_get"];
+        put?: never;
+        post?: never;
+        /**
+         * Delete Me
+         * @description Deletes the user's decks, files and history; the web then deletes
+         *     the account itself.
+         */
+        delete: operations["delete_me_api_me_delete"];
+        options?: never;
+        head?: never;
+        /** Edit Me */
+        patch: operations["edit_me_api_me_patch"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -376,6 +399,26 @@ export interface components {
              * @default false
              */
             skip: boolean;
+        };
+        /**
+         * Avatar
+         * @description A DiceBear avatar, drawn in the browser; the web picks the real style.
+         */
+        Avatar: {
+            /**
+             * Options
+             * @default {}
+             */
+            options: {
+                [key: string]: string | number | boolean | string[];
+            };
+            /** Seed */
+            seed: string;
+            /**
+             * Style
+             * @default notionists
+             */
+            style: string;
         };
         /** Brand */
         Brand: {
@@ -668,6 +711,12 @@ export interface components {
             /** Why */
             why: string;
         };
+        /** MeEdit */
+        MeEdit: {
+            avatar?: components["schemas"]["Avatar"] | null;
+            /** Name */
+            name?: string | null;
+        };
         /** Order */
         Order: {
             /** Slides */
@@ -865,7 +914,9 @@ export interface operations {
     listing_api_decks_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -880,12 +931,23 @@ export interface operations {
                     "application/json": components["schemas"]["Deck"][];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     create_api_decks_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -918,7 +980,9 @@ export interface operations {
     read_api_decks__deck_id__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -949,7 +1013,9 @@ export interface operations {
     build_api_decks__deck_id__build_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -980,7 +1046,9 @@ export interface operations {
     abort_api_decks__deck_id__build_abort_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1015,6 +1083,7 @@ export interface operations {
             };
             header?: {
                 "Last-Event-ID"?: number;
+                authorization?: string | null;
             };
             path: {
                 deck_id: string;
@@ -1048,7 +1117,9 @@ export interface operations {
             query?: {
                 flavour?: "present" | "send";
             };
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1079,7 +1150,9 @@ export interface operations {
     export_pdf_api_decks__deck_id__export_pdf_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1110,7 +1183,9 @@ export interface operations {
     history_api_decks__deck_id__history_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1141,7 +1216,9 @@ export interface operations {
     answer_api_decks__deck_id__interview_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1176,7 +1253,9 @@ export interface operations {
     edit_api_decks__deck_id__outline_patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1211,7 +1290,9 @@ export interface operations {
     recolour_api_decks__deck_id__recolour_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1242,7 +1323,9 @@ export interface operations {
     redo_api_decks__deck_id__redo_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1273,7 +1356,9 @@ export interface operations {
     reorder_api_decks__deck_id__reorder_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1308,7 +1393,9 @@ export interface operations {
     delete_api_decks__deck_id__slides__slide_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
                 slide_id: string;
@@ -1340,7 +1427,9 @@ export interface operations {
     edit_text_api_decks__deck_id__slides__slide_id__fields_patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
                 slide_id: string;
@@ -1376,7 +1465,9 @@ export interface operations {
     fit_api_decks__deck_id__slides__slide_id__fit_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
                 slide_id: string;
@@ -1408,7 +1499,9 @@ export interface operations {
     thumb_api_decks__deck_id__slides__slide_id__thumb_png_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
                 slide_id: string;
@@ -1440,7 +1533,9 @@ export interface operations {
     style_api_decks__deck_id__style_get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1471,7 +1566,9 @@ export interface operations {
     another_style_api_decks__deck_id__style_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
@@ -1502,7 +1599,9 @@ export interface operations {
     style_thumb_api_decks__deck_id__style__name__get: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
                 name: string;
@@ -1534,13 +1633,110 @@ export interface operations {
     undo_api_decks__deck_id__undo_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                authorization?: string | null;
+            };
             path: {
                 deck_id: string;
             };
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    me_api_me_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_me_api_me_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    edit_me_api_me_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MeEdit"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

@@ -36,8 +36,9 @@ from engine import (
 )
 from engine.compose import preview
 from lib.result import Err
-from looks import theme_of, usage, with_language
-from store.files import Job, Store
+from looks import preview_names, theme_of, usage, with_language
+from store.files import Job
+from store.tenant import AnyStore, open_store
 
 BEAT_S = 10.0
 
@@ -56,13 +57,13 @@ def human(error: ModelError) -> str:
     return HUMAN.get(error.kind, "Something went wrong on our side. Try again.")
 
 
-def _fail(store: Store, deck: Deck, message: str, code: str) -> None:
+def _fail(store: AnyStore, deck: Deck, message: str, code: str) -> None:
     store.update(deck.id, status="error", error=message)
     store.append_event(deck.id, {"type": "error", "code": code, "message": message})
 
 
 async def run(
-    store: Store,
+    store: AnyStore,
     job: Job,
     *,
     make_seam: Callable[[str], Seam],
@@ -121,7 +122,7 @@ async def run(
 
 
 async def _build(
-    store: Store,
+    store: AnyStore,
     deck: Deck,
     seam: Seam,
     *,
@@ -179,7 +180,7 @@ async def _build(
         store.snapshot(deck.id, "Generated")  # the first version undo can return to
 
 
-async def _previews(store: Store, deck: Deck) -> None:
+async def _previews(store: AnyStore, deck: Deck) -> None:
     """The style card's three thumbnails, filled from the deck's references
     with its real words. No model call. A failure leaves the card without
     thumbnails, never the outline without its gate."""
@@ -189,12 +190,12 @@ async def _previews(store: Store, deck: Deck) -> None:
     shots = store.slides_dir(deck.id) / "style"
     for old in shots.glob("preview-*.png"):
         old.unlink()
-    names = await preview.render(theme_of(deck), story, shots)
-    for name in names:
-        store.save_export(deck.id, name, (shots / name).read_bytes())
+    drawn = await preview.render(theme_of(deck), story, shots)
+    for name, kept_as in zip(drawn, preview_names(deck), strict=False):
+        store.save_export(deck.id, kept_as, (shots / name).read_bytes())
 
 
-async def _edit(store: Store, deck: Deck, op: ops.Op) -> None:
+async def _edit(store: AnyStore, deck: Deck, op: ops.Op) -> None:
     """One editor operation, no model: change, run QA again on what it
     touched, re-export, and record a version. A slide the change breaks is
     kept and flagged, with "Fit to slide" offered; never saved silently."""
@@ -242,7 +243,7 @@ async def _edit(store: Store, deck: Deck, op: ops.Op) -> None:
             return
         plans = [p for p in plans if p.id != op.slide]
         kept.pop(op.slide, None)
-        (store.slides_dir(deck.id) / f"{op.slide}.json").unlink(missing_ok=True)
+        store.drop_kept(deck.id, op.slide)
     elif isinstance(op, ops.Recolour):
         deck = deck.model_copy(update={"palette_nonce": deck.palette_nonce + 1})
         touched = [p.id for p in plans]
@@ -287,7 +288,7 @@ async def _edit(store: Store, deck: Deck, op: ops.Op) -> None:
     )
 
 
-async def _beating(store: Store, job: Job, work: asyncio.Task[None]) -> None:
+async def _beating(store: AnyStore, job: Job, work: asyncio.Task[None]) -> None:
     """Beat every BEAT_S until the work ends, and not a moment longer."""
     while not work.done():
         store.beat(job)
@@ -295,7 +296,7 @@ async def _beating(store: Store, job: Job, work: asyncio.Task[None]) -> None:
 
 
 async def once(
-    store: Store,
+    store: AnyStore,
     *,
     make_seam: Callable[[str], Seam],
     writing: str,
@@ -326,7 +327,7 @@ async def once(
 
 def main() -> int:
     cfg = settings.load()
-    store = Store(cfg.data_dir)
+    store = open_store(cfg)
     print(f"worker: {cfg.data_dir}", flush=True)
     while True:
         try:
