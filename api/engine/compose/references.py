@@ -204,6 +204,39 @@ def fill(ref: Reference, words: Mapping[str, str], *, image: bool = True) -> str
     return out if image else _IMAGE.sub("", out)
 
 
+_STAT_CLASS = re.compile(r'<\w+\b[^>]*\bclass="([^"]+)"[^>]*\bdata-field="stat"')
+_SIZE = re.compile(r"font-size:\s*var\(--t-([a-z0-9]+)\)")
+_STEPS = ("mega", "d1", "d2", "d3", "h1", "h2", "h3", "body")
+
+
+def fit_css(ref: Reference, words: Mapping[str, str]) -> str:
+    """CSS appended to a filled reference so a long figure fits: references
+    are drawn for "$4.2M", but real figures read "8 months" or "9% to 2%"
+    (the 2026-10-08 bench). The figure steps down from the size the
+    reference gives it: one step past 5 characters, two past 8, and a hero
+    figure never stays above d2. It never grows."""
+    stat = words.get("stat", "")
+    m = _STAT_CLASS.search(ref.html)
+    if len(stat) <= 5 or m is None:
+        return ""
+    names = m.group(1).split()
+    rules = [
+        body
+        for sel, body in re.findall(r"([^{}]+)\{([^}]*)\}", ref.css)
+        if any(re.search(rf"\.{re.escape(n)}(?![\w-])", sel) for n in names)
+    ]
+    sizes = [m.group(1) for b in rules if (m := _SIZE.search(b)) and m.group(1) in _STEPS]
+    # An accent figure needs 64px for its contrast, and h1 can be 56px in some
+    # looks: it stops at d3. An ink figure may go to h2.
+    floor = _STEPS.index("d3" if any("--c-accent" in b for b in rules) else "h2")
+    if not sizes:
+        return ""
+    at = _STEPS.index(sizes[-1])
+    down = max(at + (1 if len(stat) <= 8 else 2), 2 if at <= 1 else 0)
+    step = _STEPS[min(down, floor)] if at <= floor else sizes[-1]
+    return f'.s [data-field="stat"]{{font-size:var(--t-{step});line-height:1.1}}'
+
+
 _FIELD = re.compile(r'data-field="([\w-]+)"')
 
 

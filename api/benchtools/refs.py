@@ -31,10 +31,12 @@ LONG: dict[str, str] = {
     "point-1": "Reconciliation runs every night, so nothing waits for month end",
     "point-2": "Every number links back to the ledger line it came from",
     "point-3": "Controllers review exceptions instead of rebuilding spreadsheets",
-    "stat": "$4.2M",
+    "stat": "8 months",  # real figures carry words (the 2026-10-08 bench)
     "stat-label": "annual recurring revenue, up from $1.1M eighteen months ago",
     "source": "Company finance data, September 2026",
 }
+# A slide with only its claim: every block whose fields are gone must close.
+SPARSE: dict[str, str] = {"kicker": "Team", "headline": "Who builds it"}
 SHORT: dict[str, str] = {
     "kicker": "Why now",
     "headline": "Close in two days",
@@ -73,7 +75,7 @@ def static_problems(ref: Reference) -> list[str]:
         problems.append("the image slot and the metadata disagree")
     if ref.shape == "chart" and "<dd-chart" not in ref.html:
         problems.append("a chart reference needs an empty <dd-chart>")
-    for label, words in (("long", LONG), ("short", SHORT)):
+    for label, words in (("long", LONG), ("short", SHORT), ("sparse", SPARSE)):
         clean = sanitize(references.fill(ref, _words(ref, words)), ref.fields)
         if isinstance(clean, Err):
             problems.append(f"sanitize ({label}): {clean.error}")
@@ -87,12 +89,12 @@ async def check(language: str, looks: int = 30, work: Path | None = None) -> dic
     found: dict[str, list[str]] = {r.id: static_problems(r) for r in refs}
     frames, fields = [], {}
     for r in refs:
-        for label, words in (("long", LONG), ("short", SHORT)):
+        for label, words in (("long", LONG), ("short", SHORT), ("sparse", SPARSE)):
             sid = f"{r.id.replace('/', '-')}-{label}"
             clean = sanitize(references.fill(r, _words(r, words)), r.fields)
             if isinstance(clean, Err):
                 continue
-            frames.append(Frame(sid, clean.value, r.css))
+            frames.append(Frame(sid, clean.value, r.css + references.fit_css(r, _words(r, words))))
             fields[sid] = _words(r, words)
     if not frames:
         return found
@@ -124,7 +126,7 @@ async def wall(out: Path, languages: list[str] | None = None, looks: int = 2) ->
             clean = sanitize(references.fill(r, _words(r, LONG)), r.fields)
             if isinstance(clean, Err):
                 continue
-            frames.append(Frame(sid, clean.value, r.css))
+            frames.append(Frame(sid, clean.value, r.css + references.fit_css(r, _words(r, LONG))))
             fields[sid] = _words(r, LONG)
         for i, theme in enumerate(themes(lang, looks, salt="wall")):
             shots = out / lang / str(i)

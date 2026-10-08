@@ -76,7 +76,7 @@ async def render(theme: Theme, story: Storyline, shots_dir: Path) -> list[str]:
         if isinstance(clean, Err) or "<dd-chart" in clean.value:
             continue  # a chart needs its data drawn; the preview shows the rest
         sid = f"preview-{n}"
-        frames.append(Frame(sid, clean.value, ref.css))
+        frames.append(Frame(sid, clean.value, ref.css + references.fit_css(ref, words)))
         fields[sid] = words
     if not frames:
         return []

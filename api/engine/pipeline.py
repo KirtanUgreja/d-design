@@ -255,7 +255,7 @@ async def build(
         clean = sanitize(html, frozenset(fields[plan.id]))
         if isinstance(clean, Err) or (plan.chart is not None) != ("<dd-chart" in clean.value):
             return None
-        return Composed(clean.value, ref.css)
+        return Composed(clean.value, ref.css + references.fit_css(ref, fields[plan.id]))
 
     async def compose_from(
         index: int, plan: SlidePlan, ref: Reference | None, var: str, steer: str = ""
