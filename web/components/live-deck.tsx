@@ -211,6 +211,8 @@ function Building({
   const total = deck.outline.length;
   const finished = deck.status === "ready";
   const stopped = deck.status === "aborted";
+  // Named before anything is downloaded, never hidden (phase 32).
+  const flagged = deck.outline.flatMap((p, i) => (done[p.id] && done[p.id] !== "passed" ? [i + 1] : []));
   return (
     <main className="px-8 py-8">
       <div className="mb-6 flex items-end justify-between gap-6">
@@ -259,6 +261,18 @@ function Building({
           )}
         </div>
       </div>
+      {finished && flagged.length > 0 && !editing && (
+        <Alert className="mb-6">
+          <AlertTitle>
+            {flagged.length === 1 ? "One slide needs" : `${flagged.length} slides need`} your eye before you send it
+          </AlertTitle>
+          <AlertDescription>
+            {flagged.map((n) => `Slide ${n}`).join(", ")}: something on {flagged.length === 1 ? "it" : "them"} didn&apos;t
+            pass the check in the browser (usually text too long for its place). Open Edit, pick the slide and use Fit to
+            slide, or shorten its words.
+          </AlertDescription>
+        </Alert>
+      )}
       {editing && finished ? (
         <LiveEditor deck={deck} notice={notice} onChange={onChange} />
       ) : (
