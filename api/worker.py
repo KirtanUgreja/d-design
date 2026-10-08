@@ -37,6 +37,7 @@ from engine import (
     storyline,
 )
 from engine.components import images as pictures
+from engine.components import logo as logos
 from engine.compose import author, preview
 from engine.design import languages
 from engine.qa.sanitize import sanitize
@@ -107,6 +108,8 @@ async def run(
             )
             await _previews(store, with_language(store, deck))
             store.append_event(deck.id, {"type": "outline_ready"})
+        elif job.kind == "logo":
+            await _logo(store, deck)
         elif job.kind == "style":
             await _previews(store, deck)
             store.append_event(deck.id, {"type": "style_ready"})
@@ -177,6 +180,8 @@ async def _build(
         stop=lambda: store.aborted(deck.id),
         ref_usage=ref_usage,
         image_model=image_model,
+        logo=await _clean_logo(store, deck),
+        logo_on=deck.logo if deck.logo != "none" else "ends",
     )
     for stray in slides_dir.glob("qa*.html"):
         stray.unlink()
@@ -187,6 +192,37 @@ async def _build(
     store.update(deck.id, status="aborted" if aborted else "ready", slides=built.slides)
     if not aborted:
         store.snapshot(deck.id, "Generated")  # the first version undo can return to
+
+
+LOGO_UPLOAD = "logo-upload.bin"  # as received: never decoded by the API
+LOGO_CLEAN = "logo.png"  # re-encoded here, the only form a slide ever sees
+
+
+async def _logo(store: AnyStore, deck: Deck) -> None:
+    """Hostile bytes in, a clean PNG out, or the refusal in words (phase 38)."""
+    raw = store.export(deck.id, LOGO_UPLOAD)
+    if raw is None:
+        return
+    made = await logos.ingest(raw)
+    if isinstance(made, Err):
+        store.update(
+            deck.id, logo="none", logo_note=f"That file can't be used as a logo: {made.error}."
+        )
+        store.append_event(deck.id, {"type": "logo_refused", "message": made.error})
+        return
+    store.save_export(deck.id, LOGO_CLEAN, made.value.png)
+    store.update(deck.id, logo_note="")
+    store.append_event(deck.id, {"type": "logo_ready", "colour": made.value.colour or ""})
+
+
+async def _clean_logo(store: AnyStore, deck: Deck) -> logos.Logo | None:
+    """The deck's logo for the build: ingested again from our own clean PNG,
+    so the build gets its measured size and luminance."""
+    clean = store.export(deck.id, LOGO_CLEAN) if deck.logo != "none" else None
+    if clean is None:
+        return None
+    made = await logos.ingest(clean)
+    return None if isinstance(made, Err) else made.value
 
 
 async def _previews(store: AnyStore, deck: Deck) -> None:

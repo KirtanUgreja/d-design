@@ -462,6 +462,22 @@
             "title": "Language",
             "type": "string"
           },
+          "logo": {
+            "default": "none",
+            "enum": [
+              "none",
+              "cover",
+              "ends",
+              "all"
+            ],
+            "title": "Logo",
+            "type": "string"
+          },
+          "logo_note": {
+            "default": "",
+            "title": "Logo Note",
+            "type": "string"
+          },
           "look_nonce": {
             "default": 0,
             "title": "Look Nonce",
@@ -770,6 +786,32 @@
           "why"
         ],
         "title": "ImageSpec",
+        "type": "object"
+      },
+      "LogoUpload": {
+        "description": "A logo, as base64 in JSON: one parse at entry. The bytes are kept as\nreceived and only the worker decodes them (phase 38: hostile by default).",
+        "properties": {
+          "data": {
+            "maxLength": 2800000,
+            "minLength": 8,
+            "title": "Data",
+            "type": "string"
+          },
+          "placement": {
+            "default": "ends",
+            "enum": [
+              "cover",
+              "ends",
+              "all"
+            ],
+            "title": "Placement",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "LogoUpload",
         "type": "object"
       },
       "MeEdit": {
@@ -1831,6 +1873,173 @@
           }
         },
         "summary": "Answer"
+      }
+    },
+    "/api/decks/{deck_id}/logo": {
+      "delete": {
+        "operationId": "delete_logo_api_decks__deck_id__logo_delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Logo"
+      },
+      "put": {
+        "operationId": "put_logo_api_decks__deck_id__logo_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogoUpload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Logo"
+      }
+    },
+    "/api/decks/{deck_id}/logo.png": {
+      "get": {
+        "operationId": "logo_png_api_decks__deck_id__logo_png_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Logo Png"
       }
     },
     "/api/decks/{deck_id}/outline": {

@@ -10,6 +10,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveEditor } from "@/components/live-editor";
 import { OutlineGate, type Decisions } from "@/components/outline-gate";
 import { SlideThumb } from "@/components/slide-thumb";
+import { LogoPicker } from "@/components/logo-picker";
 import { StyleCard } from "@/components/style-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -106,7 +107,12 @@ export function LiveDeck({ id }: { id: string }) {
     return (
       <OutlineGate
         deck={{ ...deck, questions: [] }}
-        style={<StyleCard deckId={deck.id} />}
+        style={
+          <>
+            <StyleCard deckId={deck.id} />
+            <LogoPicker deck={deck} onChange={refresh} />
+          </>
+        }
         onApprove={async (decided: Decisions, order: string[]) => {
           const decisions = Object.fromEntries(
             Object.entries(decided).map(([k, v]) => [k, v === "cut" ? ("rejected" as const) : ("approved" as const)]),

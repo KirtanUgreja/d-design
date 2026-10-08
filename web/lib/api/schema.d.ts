@@ -162,6 +162,41 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{deck_id}/logo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Put Logo */
+        put: operations["put_logo_api_decks__deck_id__logo_put"];
+        post?: never;
+        /** Delete Logo */
+        delete: operations["delete_logo_api_decks__deck_id__logo_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{deck_id}/logo.png": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Logo Png */
+        get: operations["logo_png_api_decks__deck_id__logo_png_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{deck_id}/outline": {
         parameters: {
             query?: never;
@@ -652,6 +687,17 @@ export interface components {
              */
             language: string;
             /**
+             * Logo
+             * @default none
+             * @enum {string}
+             */
+            logo: "none" | "cover" | "ends" | "all";
+            /**
+             * Logo Note
+             * @default
+             */
+            logo_note: string;
+            /**
              * Look Nonce
              * @default 0
              */
@@ -769,6 +815,21 @@ export interface components {
             role: "hero" | "bleed" | "inset";
             /** Why */
             why: string;
+        };
+        /**
+         * LogoUpload
+         * @description A logo, as base64 in JSON: one parse at entry. The bytes are kept as
+         *     received and only the worker decodes them (phase 38: hostile by default).
+         */
+        LogoUpload: {
+            /** Data */
+            data: string;
+            /**
+             * Placement
+             * @default ends
+             * @enum {string}
+             */
+            placement: "cover" | "ends" | "all";
         };
         /** MeEdit */
         MeEdit: {
@@ -1288,6 +1349,109 @@ export interface operations {
                 "application/json": components["schemas"]["Answers"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_logo_api_decks__deck_id__logo_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogoUpload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_logo_api_decks__deck_id__logo_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    logo_png_api_decks__deck_id__logo_png_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

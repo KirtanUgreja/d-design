@@ -44,7 +44,7 @@ from lib.result import Ok, Result, err, ok
 if TYPE_CHECKING:
     from store.tenant import Tenant
 
-JobKind = Literal["interview", "outline", "build", "edit", "style"]
+JobKind = Literal["interview", "outline", "build", "edit", "style", "logo"]
 UNDO_STEPS = 20  # "Undo restores any of the last 20 operations exactly" (phase 28)
 STALE_S = 60.0  # a running job whose heartbeat is older is claimed again
 

@@ -28,6 +28,8 @@ export interface LiveDeck {
   facts: Fact[];
   slides: LiveSlide[];
   pending: string[];
+  logo: "none" | "cover" | "ends" | "all";
+  logoNote: string;
 }
 
 type Obj = Record<string, unknown>;
@@ -83,6 +85,8 @@ function parseDeck(raw: unknown): LiveDeck | null {
       .filter(isObj)
       .map((s) => ({ id: text(s.id), status: isObj(s.qa) ? text(s.qa.status) : "" })),
     pending: list(raw.pending).map(text),
+    logo: d.logo === "cover" || d.logo === "ends" || d.logo === "all" ? d.logo : "none",
+    logoNote: text(d.logo_note),
   };
 }
 
@@ -188,6 +192,10 @@ export const api = {
   reorder: (id: string, slides: string[]) => call(`/api/decks/${id}/reorder`, { method: "POST", body: JSON.stringify({ slides }) }),
   remove: (id: string, slide: string) => call(`/api/decks/${id}/slides/${slide}`, { method: "DELETE" }),
   recolour: (id: string) => call(`/api/decks/${id}/recolour`, { method: "POST" }),
+  uploadLogo: (id: string, data: string) =>
+    call(`/api/decks/${id}/logo`, { method: "PUT", body: JSON.stringify({ data, placement: "ends" }) }),
+  removeLogo: (id: string) => call(`/api/decks/${id}/logo`, { method: "DELETE" }),
+  logoUrl: (id: string, version: number) => `/api/decks/${id}/logo.png?v=${version}`,
   ask: (id: string, slide: string, instruction: string) =>
     call(`/api/decks/${id}/slides/${slide}/ask`, { method: "POST", body: JSON.stringify({ instruction }) }),
   accept: (id: string, slide: string) => call(`/api/decks/${id}/slides/${slide}/accept`, { method: "POST" }),

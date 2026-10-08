@@ -14,6 +14,7 @@ and local runs only) every request is the one local user.
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 from collections.abc import AsyncIterator
 from typing import Annotated, Literal
@@ -65,6 +66,14 @@ class FieldText(BaseModel):
 
 class AskBody(BaseModel):
     instruction: str = Field(min_length=3, max_length=300)
+
+
+class LogoUpload(BaseModel):
+    """A logo, as base64 in JSON: one parse at entry. The bytes are kept as
+    received and only the worker decodes them (phase 38: hostile by default)."""
+
+    data: str = Field(min_length=8, max_length=2_800_000)  # ~2 MB of file
+    placement: Literal["cover", "ends", "all"] = "ends"
 
 
 class Order(BaseModel):
@@ -379,6 +388,41 @@ def create_app(
         with_language(store, deck, exclude=shown)
         t.enqueue("style", deck_id)
         return out(t, t.read(deck_id))
+
+    # --- the logo (phase 38): per deck, set before the build ---
+
+    @api.put("/api/decks/{deck_id}/logo", response_model=None)
+    def put_logo(t: Me, deck_id: str, body: LogoUpload) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        if t.read(deck_id).status not in ("brief", "interview", "outline", "approve"):
+            return _problem(409, "Add the logo before the build starts.")
+        try:
+            raw = base64.b64decode(body.data, validate=True)
+        except ValueError:
+            return _problem(422, "That isn't a file we can read.")
+        if len(raw) > 2_000_000:
+            return _problem(413, "A logo file is at most 2 MB.")
+        t.save_export(deck_id, "logo-upload.bin", raw)
+        t.update(deck_id, logo=body.placement, logo_note="")
+        t.enqueue("logo", deck_id)
+        return out(t, t.read(deck_id))
+
+    @api.delete("/api/decks/{deck_id}/logo", response_model=None)
+    def delete_logo(t: Me, deck_id: str) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        t.update(deck_id, logo="none", logo_note="")
+        return out(t, t.read(deck_id))
+
+    @api.get("/api/decks/{deck_id}/logo.png", response_model=None)
+    def logo_png(t: Me, deck_id: str) -> Response | JSONResponse:
+        if not t.exists(deck_id) or t.read(deck_id).logo == "none":
+            return _problem(404, missing)
+        data = t.export(deck_id, "logo.png")
+        if data is None:
+            return _problem(404, "The logo is still being checked.")
+        return Response(data, media_type="image/png")
 
     # --- the editor (phase 28): each change is an edit job; undo is file-only ---
 

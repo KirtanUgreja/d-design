@@ -4,6 +4,8 @@ no credit is spent (docs/v4/plan/27-app-create-flow.md -> Verify)."""
 from __future__ import annotations
 
 import asyncio
+import base64
+import io
 import json
 from pathlib import Path
 
@@ -198,3 +200,43 @@ def test_the_style_card_and_another_style(tmp_path: Path) -> None:
     assert [j.kind for j in store._jobs("queued")] == ["style"]
     assert client.get(f"/api/decks/{deck_id}/style").json()["previews"] == []
     assert client.post(f"/api/decks/{deck_id}/style").status_code == 409  # still drawing
+
+
+def _png_logo() -> str:
+    from PIL import Image, ImageDraw
+
+    out = io.BytesIO()
+    img = Image.new("RGBA", (400, 160), (0, 0, 0, 0))
+    ImageDraw.Draw(img).rectangle((20, 20, 380, 140), fill=(200, 40, 40, 255))
+    img.save(out, "PNG")
+    return base64.b64encode(out.getvalue()).decode()
+
+
+@each_store
+def test_a_logo_is_checked_by_the_worker_then_placed_on_the_ends(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
+    deck_id = _approved_deck(store, slides=3)
+    put = client.put(f"/api/decks/{deck_id}/logo", json={"data": _png_logo()})
+    assert put.status_code == 200 and put.json()["deck"]["logo"] == "ends"
+    assert client.get(f"/api/decks/{deck_id}/logo.png").status_code == 404  # not checked yet
+    assert _run_worker(store, AlwaysTheSame())  # the logo job
+    assert client.get(f"/api/decks/{deck_id}/logo.png").content.startswith(b"\x89PNG")
+    client.post(f"/api/decks/{deck_id}/build")
+    assert _run_worker(store, AlwaysTheSame())
+    slides = store.read(deck_id).slides
+    assert "<dd-logo" in slides[0].html and "<dd-logo" in slides[-1].html
+    assert "<dd-logo" not in slides[1].html
+
+
+@each_store
+def test_a_file_that_is_not_a_logo_is_refused_in_words(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
+    deck_id = _approved_deck(store)
+    bad = base64.b64encode(b"<html><script>alert(1)</script></html>").decode()
+    assert client.put(f"/api/decks/{deck_id}/logo", json={"data": bad}).status_code == 200
+    assert _run_worker(store, AlwaysTheSame())
+    deck = store.read(deck_id)
+    assert deck.logo == "none" and "can't be used as a logo" in deck.logo_note
+    assert (
+        client.put(f"/api/decks/{deck_id}/logo", json={"data": "not base64!!"}).status_code == 422
+    )

@@ -222,6 +222,9 @@ class Deck(BaseModel):
     look_nonce: int = 0  # "another look" bumps it
     palette_nonce: int = 0  # "recolour" bumps it: same look, another palette
     language: str = ""  # its visual language (design/languages.py), drawn once and kept
+    # The user's logo (phase 38, per deck): where it goes, and why it was refused.
+    logo: Literal["none", "cover", "ends", "all"] = "none"
+    logo_note: str = ""
     brief: Brief
     facts: list[Fact] = Field(default_factory=list)
     storyline: Storyline | None = None
