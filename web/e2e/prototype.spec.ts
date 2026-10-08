@@ -117,3 +117,18 @@ test("a typed brief reaches its own recording, or says plainly when the deck ser
   // No API runs in the e2e build, so a new brief cannot start: it says so, in words.
   await expect(page.getByRole("status")).toContainText("can't reach the deck service");
 });
+
+test("a brief typed before signing in survives sign-in and starts", async ({ page }) => {
+  await page.goto("/");
+  await page.getByLabel("What are you presenting?").fill("Board deck for a coffee roaster");
+  await page.getByRole("button", { name: "Start" }).click();
+  await expect(page).toHaveURL(/\/sign-up\?next=%2F$/);
+  await page.getByRole("link", { name: /sign in/i }).click();
+  await expect(page).toHaveURL(/\/sign-in/);
+  await signIn(page); // the account exists from the tests above; this sets the session
+  await page.goto("/");
+  // Back on the composer, the waiting brief starts by itself (no API in this
+  // build, so it says so) and is still in the box.
+  await expect(page.getByLabel("What are you presenting?")).toHaveValue("Board deck for a coffee roaster");
+  await expect(page.getByRole("status")).toContainText("can't reach the deck service");
+});

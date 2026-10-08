@@ -4,11 +4,34 @@
 // box, a real brief as the placeholder, real example briefs as chips. No
 // templates, no tour, no form above the prompt (docs/design/app.md § 1).
 import { useRouter } from "next/navigation";
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 
 import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
+import { authClient } from "@/lib/auth-client";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+
+// A brief typed before signing in survives sign-up (phase 31, A5): kept in
+// this tab only, and started the moment the person is signed in.
+const PENDING = "dd:pending-brief";
+
+function remember(text: string): void {
+  try {
+    sessionStorage.setItem(PENDING, text);
+  } catch {
+    // storage blocked: the person retypes it; nothing breaks
+  }
+}
+
+function takePending(): string {
+  try {
+    const text = sessionStorage.getItem(PENDING) ?? "";
+    sessionStorage.removeItem(PENDING);
+    return text;
+  } catch {
+    return "";
+  }
+}
 
 interface Example {
   id: string;
@@ -41,13 +64,41 @@ export function Composer({ examples }: { examples: Example[] }) {
       return;
     }
     setNotice(null);
-    const made = await api.create(text.trim());
+    const session = await authClient.getSession();
+    if (!session.data) {
+      remember(text.trim());
+      router.push(`/sign-up?next=${encodeURIComponent("/")}`);
+      return;
+    }
+    await create(text.trim());
+  };
+
+  const create = async (brief: string) => {
+    const made = await api.create(brief);
     if (made.ok) {
       router.push(`/d/${made.value.id}`);
       return;
     }
     setNotice(`${made.error} Until it is, pick one of the recorded briefs below.`);
   };
+
+  // Back from sign-up or sign-in with a brief waiting: start it.
+  useEffect(() => {
+    let live = true;
+    const resume = async () => {
+      const session = await authClient.getSession();
+      if (!live || !session.data) return;
+      const brief = takePending();
+      if (!brief) return;
+      setText(brief);
+      await create(brief);
+    };
+    void resume();
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
+  }, []);
 
   return (
     <form

@@ -13,8 +13,9 @@ export function proxy(request: NextRequest): NextResponse {
   return NextResponse.redirect(to);
 }
 
-// The app routes. Public on purpose: the recorded demo decks (/deck/*, a
-// replay that never calls the API), /states, sign-in and sign-up.
+// The app routes. Public on purpose: the composer at / (a brief typed there
+// waits through sign-up, A5), the recorded demo decks (/deck/*, a replay that
+// never calls the API), /states, sign-in and sign-up.
 export const config = {
-  matcher: ["/", "/d/:path*", "/account/:path*", "/decks/:path*"],
+  matcher: ["/d/:path*", "/account/:path*", "/decks/:path*"],
 };
