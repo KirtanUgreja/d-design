@@ -1,113 +1,64 @@
-<div align="center">
+# d-design
 
-# ✦ d-design
+**An AI presentation maker whose edge is design.** You type a brief, answer a few questions, approve an outline where every number has a source, see the deck's style, and watch the deck arrive slide by slide. You get a deck that looks designed by a person, unlike the last one it made, exported as **one offline `.html` file** (and a PDF).
 
-### AI presentation engine
+**Live:** https://web-production-41f09.up.railway.app. Sign-up is limited to the owner's allowlist; ask for access.
 
-*The model designs every slide in real HTML. One offline file comes out.*
+## How it makes a deck
 
-<br/>
+| Step | What happens | Where |
+|---|---|---|
+| Brief → questions | A few targeted questions; skippable | `api/engine/content/interview.py` |
+| Research → outline | Web research with citations; a storyline whose every number traces to you or a source, or is held for your decision | `api/engine/content/` |
+| **Style** | The deck draws one of **8 authored visual languages** (Swiss grid, magazine editorial, type poster, cinematic, data journal, quiet minimal, geometric modern, warm humanist), then a generated palette, a type pairing and an instance inside it. Three thumbnails of *your* slides show the style before you pay for a build; **Another style** draws a new one | `api/engine/design/languages.py`, `api/library/languages/` |
+| **Compose** | Each slide is **adapted from a reference** in its language (77 hand-built references, 8 shapes) by a model writing real HTML and CSS, inside the deck's tokens only. Images are generated in the language's one image style; charts are drawn by code from approved facts | `api/engine/compose/`, `api/library/references/` |
+| **Check** | Every slide is rendered in Chromium and measured: overflow, collisions, contrast (WCAG + APCA), type size, empty blocks. A defect climbs a ladder: two targeted repairs, the alternate reference, the reference filled by code, a code layout, then a visible flag. Nothing broken ships silently | `api/engine/qa/`, `api/engine/pipeline.py` |
+| Edit → export | Edit text, reorder, recolour, fit, undo; present, send (one offline file, zero network requests) or PDF | `api/worker.py`, `api/engine/export/` |
 
-<img src="https://img.shields.io/badge/status-v4%20planned-F4B740?style=for-the-badge&labelColor=08090B" alt="Status: v4 planned">
-<img src="https://img.shields.io/badge/deployed-no-F4B740?style=for-the-badge&labelColor=08090B" alt="Deployed: no">
-<img src="https://img.shields.io/badge/phase-21%20reset-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Phase: 21 reset">
-<img src="https://img.shields.io/badge/builder-solo%20%2B%20AI-A78BFA?style=for-the-badge&labelColor=08090B" alt="Builder: solo + AI">
+## Architecture
 
-</div>
+```
+browser ──▶ web (Next.js 16, public) ──private network──▶ api (FastAPI) ──▶ Neon Postgres "app"
+              │ Better Auth (email + password,                                   ▲
+              │ allowlist) ─▶ Neon Postgres "auth"                               │
+              │ signs a short EdDSA JWT per request                    worker (model key, Chromium)
+```
 
-<br/>
+- **web** is the only public service. It never exposes the JWT to the browser: its `/api` proxy mints one per request.
+- **api** verifies the JWT against Better Auth's JWKS. It fails closed: an unreachable JWKS is a 401. Every deck route goes through one tenant wrapper, so another user's deck is a 404. A per-user daily spend cap also fails closed. The api holds **no model key** and runs no browser.
+- **worker** has no inbound port. It is the only holder of the OpenRouter key and of Chromium, and claims jobs from Postgres with `SKIP LOCKED`.
+- **Data:**
+  - In Neon: decks, events, versions, a ledger of every model call's cost per user, and slide files stored by content hash.
+  - Better Auth's tables live in their own database, which Python never reads.
+- **Hosting:** Railway runs the three services in US East, beside Neon.
 
-> [!NOTE]
-> **This repository was reset to zero on 2026-08-10, and rebuilt.** The product code and the `v1`/`v2`/`v3` documentation were deleted — not abandoned, deleted deliberately — because the product was being re-decided from the vision up. What replaced them is described below and in `docs/v1/`, `docs/v2/`, `docs/v3/`; it runs end to end locally.
->
-> **Everything is in git history.** The two commits before the reset hold the deleted system and its full specification.
+## Run it locally
 
+```bash
+./scripts/setup.sh          # once: git hooks, Python deps, Chromium
+cp .env.example .env        # fill in the keys it lists
+./scripts/dev.sh            # api + worker + web → http://localhost:3000
+```
 
-> [!NOTE]
-> **Re-decided on 2026-09-26.** Three releases built a pipeline, an editor, accounts and billing, and every generated deck still came out as a bold heading and one line of text on a flat background. The cause was a rule this README used to open with: *the AI never writes styling*. It is reversed. The plan is [`docs/v4/`](docs/v4/README.md); the v3 code was deleted by its first phase and lives at the tag `v3-final`.
+`web/.env.local` needs `AUTH_DATABASE_URL` and `BETTER_AUTH_SECRET`. Without accounts, `AUTH_DISABLED=1 uv run uvicorn app:serve --factory` serves one local user.
 
----
+## Tests and the gate
 
-## What it is
+```bash
+cd api && uv run pytest -q          # 180 tests, offline: fake models, real Chromium
+cd web && pnpm e2e                  # sign-up, sign-in, the flow, the token proxy
+./scripts/hooks/pre-commit          # ruff, mypy --strict, pytest, eslint, tsc, OpenAPI drift, docs
+cd api && uv run python -m cli refs --check swiss --looks 30   # a language's references under 30 looks
+```
 
-An AI presentation maker for **founders and salespeople presenting live**. You type a brief. You get a deck that looks designed and says something, as **one `.html` file that runs offline** — no network requests, fonts and images inside.
+The security tests (`api/tests/test_security.py`) call every route with no session, with a forged token and with another user's session. They also cover the spend cap, including a cap check that itself fails.
+
+## Status: honest
 
 | | |
 |---|---|
-| 🎨 **The model designs** | Each slide is composed in real HTML and CSS. Colour and type come only from the deck's own design system; layout is free |
-| 🔍 **Every slide is checked** | Rendered in Chromium and measured — overflow, collisions, contrast, type size — then repaired or flagged. Never shipped broken |
-| 📚 **Every number has a source** | Web research with citations plus what you paste. Anything unsourced is flagged for you |
-| 🎲 **No two decks alike** | A seeded sampler picks type pairing, palette strategy, grid and motif from ~40 embedded open-licence fonts |
-| 🚫 **No AI look** | No gradients, neon, blur, glow, icon cards or emoji. Texture carries colour |
+| Built and tested offline | Everything above |
+| Not yet measured | The owner's 12-deck wall for the new design system (design ≥ 4/5, variety ≥ 4/5, "would send it" ≥ 9/12) and the image and compose model bake-offs. These run on test day with fresh model credit. Until then, the design claims are untested |
+| Known limits | One worker, so builds queue. Variety across decks is bounded by the size of the reference library. No password reset or OAuth: email and password for an allowlist only |
 
-## The flow
-
-```
-brief ─► interview (≤5 questions, skippable) ─► research (cited facts)
-      ─► storyline            ⏸ you edit and approve the outline
-      ─► 3 looks              ⏸ you pick one, or shuffle
-      ─► slides composed in parallel ─► checked in a real browser ─► repaired
-      ─► editor ─► present · download .html · PDF
-```
-
-```
-api/   Python · FastAPI     the engine, the data, the export        (docs/v4/engine.md)
-web/   Next.js · TypeScript the app — UI only, it never builds a slide
-bench/ 12 briefs, baselines, and the wall a human scores            (docs/v4/bench.md)
-```
-
-## Where things stand
-
-| Phase | | Status |
-|---|---|---|
-| 21 | Reset: delete the v3 code, new gate, the bench | built — waiting on the owner's baseline ratings |
-| 22 | **Engine spike — the make-or-break gate** | not started |
-| 23–25 | Design system · content engine · composition and QA | not started |
-| 26–28 | Player and export · the app · the editor | not started |
-| 29 | Accounts and deploy — last, on purpose | not started |
-
-Status lives in [`docs/v4/plan/README.md`](docs/v4/plan/README.md). **No phase closes until a human has scored its wall of decks.**
-
-## Docs
-
-<table>
-<tr><th align="left">Path</th><th align="left">What it covers</th></tr>
-<tr><td>🗺️ <a href="docs/v4/README.md"><b>docs/v4</b></a></td><td>The plan: spec, engine, content, design engine, bench, phases 21–29</td></tr>
-<tr><td>📐 <a href="docs/coderules/README.md"><b>docs/coderules</b></a></td><td>How the code stays consistent when an AI writes most of it</td></tr>
-<tr><td>🛡️ <a href="docs/security/README.md"><b>docs/security</b></a></td><td>Threat model and every control, routed by threat</td></tr>
-<tr><td>🧰 <a href="docs/techstack/README.md"><b>docs/techstack</b></a></td><td>What runs where, which model, and why each was chosen</td></tr>
-<tr><td>🎨 <a href="docs/design/README.md"><b>docs/design</b></a></td><td>How <b>our own</b> app and site look — never what the engine produces</td></tr>
-<tr><td>🔬 <a href="docs/findings.md"><b>docs/findings.md</b></a></td><td>Evidence: what the audit measured, model behaviour, the category</td></tr>
-</table>
-
-**[`docs/README.md`](docs/README.md) is the index.** `AGENTS.md` is the contract any agent working here reads first.
-
-## Working here today
-
-```
-./scripts/setup.sh               installs hooks and dependencies — run once per clone
-./scripts/check-docs.sh          every link resolves, every file is indexed
-./scripts/hooks/pre-commit       the gate, on demand
-```
-
-Until the app exists (phase 27) the engine is driven from the CLI:
-
-```
-cd api
-uv run python -m cli smoke                 one live model call; prints its cost
-uv run python -m cli baseline --set smoke  one-shot baseline decks
-uv run python -m cli wall --run NAME       the wall page a human scores
-```
-
-The v3 code is at the tag `v3-final`. It is not a starting point.
-
-
----
-
-<div align="center">
-
-*Gamma reached ~$100M ARR by making presentations **faster**.*<br/>
-*This bets that people will pay for presentations that are **better**.*<br/>
-*Tome bet the same thing and lost — see [`docs/findings.md`](docs/findings.md) → "The category" before building.*
-
-</div>
+Plans and decisions: [`docs/v4/plan/master-plan.md`](docs/v4/plan/master-plan.md). Why things are the way they are: [`docs/v4/spec.md`](docs/v4/spec.md). Rules for code: [`AGENTS.md`](AGENTS.md).

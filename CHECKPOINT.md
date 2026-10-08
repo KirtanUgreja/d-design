@@ -1,3 +1,15 @@
+# Checkpoint — build day (2026-10-08, Thursday)
+
+**Resume here.** Branch `phase-39-design-reset`, not pushed. Live: https://web-production-41f09.up.railway.app (Railway project `d-design`: web public, api and worker private, US East). Neon: `app` (Alembic baseline) and `auth` (Better Auth tables); tests use `app_test` / `auth_test`. The gate is green; about 180 API tests and 10 e2e.
+
+Built (all offline, $0 model spend):
+- **P0 design (phase 39):** 8 languages (B1); 77 references, every one passing QA under 30 looks with long, short and claim-only words (B2); retrieval, reference-fill with figure fitting (B3); `compose.v11` and the new ladder; art direction removed (B4); images (B5); the style card with Another style (B6); pair charts (B7); `cli bakeoff`, `--image-model` (B8).
+- **P0 accounts (phase 29):** Better Auth with an email allowlist, the token proxy, account page with DiceBear avatars, Your decks (A2, A6); the SQL store with users, tenancy, blobs and a per-user ledger (A1); JWT verification, tenancy on every route, `/api/me`, the daily cap (A3); security tests (A4); the Railway deploy (B12); the README (B14).
+- **P1:** the brief survives sign-in (A5).
+- Not built: B9 scorer, B10 logo per deck, B11 AI edit by instruction, B13 watch polish.
+
+**Test day next ([docs/v4/plan/master-plan.md](docs/v4/plan/master-plan.md) → Test day):** top up; smoke; the image and compose bake-offs (`cli bakeoff`); the owner curates references on `cli refs --wall`; the 12-deck wall; fixes; the owner's 3 live decks and the two-account check; our pitch deck; the demo script. Known: `test_editor`'s fit test flaked twice under full-suite load (passes alone; it now prints its defects).
+
 # Checkpoint — 2026-10-08 (end of day): the plan for the sprint
 
 **Resume here: [docs/v4/plan/master-plan.md](docs/v4/plan/master-plan.md).** Tomorrow (2026-10-09) is the build day: **design (phase 39) and accounts + database (phase 29) both**, with parallel agents (approved) — B1 first, then spawn R1–R4 (references), A1 (SQL store), A2 (Better Auth in the web) in worktrees; the main session does B3, B4, B7, B5, B6, B8, A3, A4, B14, then P1. **Needed from the owner: before 09:00 the Neon `DATABASE_URL` in `.env`; by 14:00 a Railway account and `! railway login` (the live link is required).** Auth is Better Auth, email and password only (owner's choice); sign-up limited to `ALLOWED_EMAILS`. No add-ons (owner: one or two users). Test-day extras: our own pitch deck, the demo script. Test day 2026-10-10; submit by 2026-10-10. Credit left: about $1.80; ≤ $0.10 may be used tomorrow for two format checks.
