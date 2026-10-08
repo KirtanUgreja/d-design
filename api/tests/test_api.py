@@ -7,6 +7,7 @@ import asyncio
 import json
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 import worker
@@ -14,15 +15,19 @@ from app import create_app
 from benchtools import files
 from engine import Fact, Kept, Seam
 from store.files import Store
+from store.tenant import AnyStore
+from tests.stores import STORES, make_store, typed
 from tests.test_ladder import AlwaysTheSame, _no_sleep
 
-
-def _client(tmp_path: Path) -> tuple[TestClient, Store]:
-    store = Store(tmp_path / "data")
-    return TestClient(create_app(store)), store
+each_store = pytest.mark.parametrize("kind", STORES)
 
 
-def _approved_deck(store: Store, slides: int = 3) -> str:
+def _client(tmp_path: Path, kind: str = "files") -> tuple[TestClient, AnyStore]:
+    store = make_store(kind, tmp_path)
+    return TestClient(create_app(typed(store))), store
+
+
+def _approved_deck(store: AnyStore, slides: int = 3) -> str:
     """A deck as the outline job leaves it: an outline, waiting for approval."""
     item = files.load("pitch-devtools")
     assert item.outline is not None
@@ -32,8 +37,9 @@ def _approved_deck(store: Store, slides: int = 3) -> str:
     return deck.id
 
 
-def test_create_reads_and_a_missing_deck_is_human(tmp_path: Path) -> None:
-    client, store = _client(tmp_path)
+@each_store
+def test_create_reads_and_a_missing_deck_is_human(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
     made = client.post("/api/decks", json={"prompt": "A seed pitch for Flakeguard"})
     assert made.status_code == 201
     deck_id = made.json()["deck"]["id"]
@@ -44,16 +50,18 @@ def test_create_reads_and_a_missing_deck_is_human(tmp_path: Path) -> None:
     assert client.post("/api/decks", json={"prompt": ""}).status_code == 422
 
 
-def test_a_double_click_on_build_enqueues_one_job(tmp_path: Path) -> None:
-    client, store = _client(tmp_path)
+@each_store
+def test_a_double_click_on_build_enqueues_one_job(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
     deck_id = _approved_deck(store)
     assert client.post(f"/api/decks/{deck_id}/build").status_code == 200
     assert client.post(f"/api/decks/{deck_id}/build").status_code == 200
     assert [j.kind for j in store._jobs("queued")] == ["build"]
 
 
-def test_unsourced_numbers_block_the_build_until_decided(tmp_path: Path) -> None:
-    client, store = _client(tmp_path)
+@each_store
+def test_unsourced_numbers_block_the_build_until_decided(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
     deck_id = _approved_deck(store)
     deck = store.read(deck_id)
     assert deck.storyline is not None
@@ -81,8 +89,9 @@ def test_unsourced_numbers_block_the_build_until_decided(tmp_path: Path) -> None
     assert client.post(f"/api/decks/{deck_id}/build").status_code == 200
 
 
-def test_sse_resumes_from_last_event_id_without_a_gap(tmp_path: Path) -> None:
-    client, store = _client(tmp_path)
+@each_store
+def test_sse_resumes_from_last_event_id_without_a_gap(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
     deck_id = _approved_deck(store)
     for n in range(1, 4):
         store.append_event(deck_id, {"type": "stage", "n": n})
@@ -94,8 +103,9 @@ def test_sse_resumes_from_last_event_id_without_a_gap(tmp_path: Path) -> None:
     assert [d["n"] for d in data] == [2, 3]
 
 
-def test_a_job_is_claimed_once_and_a_dead_worker_is_replaced(tmp_path: Path) -> None:
-    store = Store(tmp_path / "data")
+@each_store
+def test_a_job_is_claimed_once_and_a_dead_worker_is_replaced(tmp_path: Path, kind: str) -> None:
+    store = make_store(kind, tmp_path)
     deck_id = _approved_deck(store)
     store.enqueue("build", deck_id)
     first = store.claim()
@@ -106,10 +116,10 @@ def test_a_job_is_claimed_once_and_a_dead_worker_is_replaced(tmp_path: Path) -> 
     assert again is not None and again.id == first.id and again.attempts == 2
 
 
-def _run_worker(store: Store, transport: AlwaysTheSame) -> bool:
+def _run_worker(store: AnyStore, transport: AlwaysTheSame) -> bool:
     return asyncio.run(
         worker.once(
-            store,
+            typed(store),
             make_seam=lambda deck_id: Seam(
                 api_key="k", transport=transport, sleep=_no_sleep, deck_id=deck_id
             ),
@@ -120,8 +130,9 @@ def _run_worker(store: Store, transport: AlwaysTheSame) -> bool:
     )
 
 
-def test_the_worker_builds_a_deck_end_to_end(tmp_path: Path) -> None:
-    client, store = _client(tmp_path)
+@each_store
+def test_the_worker_builds_a_deck_end_to_end(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
     deck_id = _approved_deck(store)
     client.post(f"/api/decks/{deck_id}/build")
     assert _run_worker(store, AlwaysTheSame())
@@ -130,24 +141,33 @@ def test_the_worker_builds_a_deck_end_to_end(tmp_path: Path) -> None:
     kinds = [e["type"] for e in store.events(deck_id)]
     assert kinds.count("slide_ready") == 3 and kinds[-1] == "done"
     first = deck["slides"][0]["id"]
-    assert client.get(f"/api/decks/{deck_id}/slides/{first}/thumb.png").status_code == 200
-    page = client.get(f"/api/decks/{deck_id}/export.html?flavour=send")
-    assert page.status_code == 200 and "Content-Security-Policy" in page.text
-    assert client.get(f"/api/decks/{deck_id}/export.pdf").content.startswith(b"%PDF")
+    assert (store.slide_png(deck_id, first) or b"").startswith(b"\x89PNG")
+    assert b"Content-Security-Policy" in (store.export(deck_id, "export-send.html") or b"")
+    assert (store.export(deck_id, "export.pdf") or b"").startswith(b"%PDF")
+    if isinstance(store, Store):  # ponytail: the routes read files until app.py reads blobs
+        assert client.get(f"/api/decks/{deck_id}/slides/{first}/thumb.png").status_code == 200
+        page = client.get(f"/api/decks/{deck_id}/export.html?flavour=send")
+        assert page.status_code == 200 and "Content-Security-Policy" in page.text
+        assert client.get(f"/api/decks/{deck_id}/export.pdf").content.startswith(b"%PDF")
     assert not _run_worker(store, AlwaysTheSame())  # the queue is empty
 
 
-def test_an_aborted_build_resumes_without_paying_twice(tmp_path: Path) -> None:
-    client, store = _client(tmp_path)
+@each_store
+def test_an_aborted_build_resumes_without_paying_twice(
+    tmp_path: Path, kind: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client, store = _client(tmp_path, kind)
     deck_id = _approved_deck(store, slides=4)
     client.post(f"/api/decks/{deck_id}/build")
+    keep = store.save_kept
 
-    class AbortAfterCover(Store):
-        def save_kept(self, deck_id: str, slide_id: str, kept: Kept) -> None:
-            super().save_kept(deck_id, slide_id, kept)
-            self.abort(deck_id)  # the user stops it once the cover is in
+    def abort_after_cover(deck_id: str, slide_id: str, kept: Kept) -> None:
+        keep(deck_id, slide_id, kept)
+        store.abort(deck_id)  # the user stops it once the cover is in
 
-    _run_worker(AbortAfterCover(store.root), AlwaysTheSame())
+    monkeypatch.setattr(store, "save_kept", abort_after_cover)
+    _run_worker(store, AlwaysTheSame())
+    monkeypatch.undo()
     assert store.read(deck_id).status == "aborted" and len(store.kept(deck_id)) == 1
     cover = next(iter(store.kept(deck_id)))
 
@@ -156,8 +176,5 @@ def test_an_aborted_build_resumes_without_paying_twice(tmp_path: Path) -> None:
     deck = store.read(deck_id)
     assert deck.status == "ready" and len(deck.slides) == 4
     # The ledger over both runs: the cover was composed once, never again.
-    ledger = (store.dir(deck_id) / "ledger.jsonl").read_text().splitlines()
-    covers = [
-        r for r in map(json.loads, ledger) if r["stage"] == "compose" and r["slide_id"] == cover
-    ]
+    covers = [e for e in store.ledger(deck_id) if e.stage == "compose" and e.slide_id == cover]
     assert len(covers) == 1

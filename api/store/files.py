@@ -10,12 +10,16 @@
     <root>/decks/<id>/export-<flavour>.html, export.pdf
     <root>/decks/<id>/abort             present = the user aborted
     <root>/jobs/{queued,running,done}/<job>.json, running/<job>.beat
+    <root>/users/<sub>.json             an account (phase 29, local runs)
 
 Every write is atomic (write a temp file, then rename) under a per-deck lock;
 a deck write carries the version it read and is refused if another write
 landed first. A job is claimed by renaming it from queued/ to running/: the
 rename succeeds for exactly one worker. ponytail: one host (flock and rename
 are local); phase 29 moves claims to Postgres SKIP LOCKED.
+
+``store/sql.py`` implements the same interface on Postgres; ``store/tenant.py``
+scopes either one to a user. The types every store returns live here.
 """
 
 from __future__ import annotations
@@ -28,17 +32,26 @@ import shutil
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel
 
 from engine import Brief, Composed, Deck, Kept, LedgerEntry, Question
 from lib.result import Ok, Result, err, ok
 
+if TYPE_CHECKING:
+    from store.tenant import Tenant
+
 JobKind = Literal["interview", "outline", "build", "edit"]
 UNDO_STEPS = 20  # "Undo restores any of the last 20 operations exactly" (phase 28)
 STALE_S = 60.0  # a running job whose heartbeat is older is claimed again
+
+
+class NoDeckError(FileNotFoundError):
+    """No such deck, or not the caller's (store/tenant.py): both look the same.
+    A FileNotFoundError, which is what the file store raised before."""
 
 
 class Job(BaseModel):
@@ -48,6 +61,55 @@ class Job(BaseModel):
     created: float
     attempts: int = 0
     payload: str = ""  # an edit job's operation, as JSON (worker.py parses it)
+    user_id: str | None = None  # the deck's owner when it was enqueued
+
+
+AvatarOption = str | int | float | bool | list[str]
+
+
+class Avatar(BaseModel):
+    """A DiceBear avatar, drawn in the browser; the web picks the real style."""
+
+    style: str = "notionists"
+    seed: str
+    options: dict[str, AvatarOption] = {}
+
+
+class User(BaseModel):
+    id: str  # Better Auth's JWT `sub`
+    email: str
+    name: str
+    avatar: Avatar
+    created: datetime
+
+
+def new_avatar() -> Avatar:
+    return Avatar(seed=secrets.token_hex(8))
+
+
+def as_utc(at: datetime) -> datetime:
+    """Naive UTC: an aware time is converted, a naive one is taken as UTC."""
+    return at.astimezone(UTC).replace(tzinfo=None) if at.tzinfo else at
+
+
+def since_midnight_utc() -> datetime:
+    """The start of today in UTC, naive (how the stores keep times)."""
+    return as_utc(datetime.now(UTC)).replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+def content_type(name: str) -> str:
+    suffix = name.rsplit(".", 1)[-1].lower()
+    return {
+        "html": "text/html; charset=utf-8",
+        "pdf": "application/pdf",
+        "png": "image/png",
+        "json": "application/json",
+    }.get(suffix, "application/octet-stream")
+
+
+def safe_name(name: str) -> bool:
+    """An export or upload name: one plain file name, never a path."""
+    return bool(name) and "/" not in name and "\\" not in name and not name.startswith(".")
 
 
 class _Kept(BaseModel):
@@ -97,10 +159,13 @@ class Store:
             finally:
                 fcntl.flock(handle, fcntl.LOCK_UN)
 
-    def create(self, brief: Brief) -> Deck:
+    def create(self, brief: Brief, owner_id: str | None = None) -> Deck:
         deck_id = secrets.token_hex(6)
         deck = Deck(
-            id=deck_id, title=brief.prompt[:80], brief=brief.model_copy(update={"id": deck_id})
+            id=deck_id,
+            title=brief.prompt[:80],
+            brief=brief.model_copy(update={"id": deck_id}),
+            owner_id=owner_id,
         )
         _write(self.dir(deck_id) / "deck.json", deck.model_dump_json())
         return deck
@@ -109,7 +174,20 @@ class Store:
         return deck_id.isalnum() and (self.dir(deck_id) / "deck.json").exists()
 
     def read(self, deck_id: str) -> Deck:
-        return Deck.model_validate_json((self.dir(deck_id) / "deck.json").read_text())
+        path = self.dir(deck_id) / "deck.json"
+        if not path.exists():
+            raise NoDeckError(deck_id)
+        return Deck.model_validate_json(path.read_text())
+
+    def owner(self, deck_id: str) -> str | None:
+        """The deck's owner; None when it has none or does not exist."""
+        return self.read(deck_id).owner_id if self.exists(deck_id) else None
+
+    def tenant(self, user_id: str) -> Tenant:
+        """This store as ``user_id`` sees it: the only way routes reach decks."""
+        from store.tenant import Tenant  # the one wrapper imports both stores
+
+        return Tenant(self, user_id)
 
     def write(self, deck: Deck, *, read_version: int) -> Result[Deck, str]:
         """Save if nobody saved since ``read_version``; the version goes up by one."""
@@ -130,10 +208,13 @@ class Store:
                 return saved.value
             time.sleep(0.01)
 
-    def all(self) -> list[Deck]:
+    def all(self, owner_id: str | None = None) -> list[Deck]:
+        """Newest first; only ``owner_id``'s decks when one is given."""
         out = []
         for path in sorted((self.root / "decks").glob("*/deck.json"), key=os.path.getmtime):
-            out.append(Deck.model_validate_json(path.read_text()))
+            deck = Deck.model_validate_json(path.read_text())
+            if owner_id is None or deck.owner_id == owner_id:
+                out.append(deck)
         return out[::-1]
 
     def save_questions(self, deck_id: str, questions: list[Question]) -> None:
@@ -168,6 +249,24 @@ class Store:
             for e in entries:
                 out.write(e.model_dump_json() + "\n")
 
+    def ledger(self, deck_id: str) -> list[LedgerEntry]:
+        path = self.dir(deck_id) / "ledger.jsonl"
+        if not path.exists():
+            return []
+        lines = path.read_text().splitlines()
+        return [LedgerEntry.model_validate_json(line) for line in lines if line.strip()]
+
+    def daily_spend(self, user_id: str) -> float:
+        """The user's model spend since UTC midnight, over the decks they own.
+        ponytail: scans every deck; the SQL store sums one indexed column."""
+        start = since_midnight_utc()
+        return sum(
+            e.cost_usd
+            for deck in self.all(owner_id=user_id)
+            for e in self.ledger(deck.id)
+            if as_utc(e.at) >= start
+        )
+
     # slides and exports ----------------------------------------------------
 
     def slides_dir(self, deck_id: str) -> Path:
@@ -185,6 +284,25 @@ class Store:
             row = _Kept.model_validate_json(path.read_text())
             out[path.stem] = Kept(Composed(row.html, row.css), row.origin)
         return out
+
+    def drop_kept(self, deck_id: str, slide_id: str) -> None:
+        """A deleted slide: its finished HTML and its screenshot go."""
+        if slide_id.isalnum():
+            for suffix in (".json", ".png"):
+                (self.slides_dir(deck_id) / f"{slide_id}{suffix}").unlink(missing_ok=True)
+
+    def slide_png(self, deck_id: str, slide_id: str) -> bytes | None:
+        if not (deck_id.isalnum() and slide_id.isalnum()):
+            return None
+        path = self.dir(deck_id) / "slides" / f"{slide_id}.png"
+        return path.read_bytes() if path.is_file() else None
+
+    def export(self, deck_id: str, name: str) -> bytes | None:
+        """``export-present.html``, ``export-send.html``, ``export.pdf``, ..."""
+        if not (deck_id.isalnum() and safe_name(name)):
+            return None
+        path = self.dir(deck_id) / name
+        return path.read_bytes() if path.is_file() else None
 
     def save_export(self, deck_id: str, name: str, data: str | bytes) -> None:
         path = self.dir(deck_id) / name
@@ -293,6 +411,7 @@ class Store:
                 deck_id=deck_id,
                 created=time.time(),
                 payload=payload,
+                user_id=self.owner(deck_id),
             )
             _write(self.root / "jobs" / "queued" / f"{job.id}.json", job.model_dump_json())
             return job
@@ -339,3 +458,57 @@ class Store:
         if src.exists():
             os.replace(src, self.root / "jobs" / "done" / f"{job.id}.json")
         (self.root / "jobs" / "running" / f"{job.id}.beat").unlink(missing_ok=True)
+
+    # users (phase 29; local runs keep them as files) ---------------------------
+
+    def _user_path(self, sub: str) -> Path:
+        if not sub or not all(c.isalnum() or c in "-_" for c in sub):
+            raise ValueError("bad user id")
+        return self.root / "users" / f"{sub}.json"
+
+    def upsert_user(self, sub: str, email: str, name: str) -> User:
+        """The user's row, made on first sight with a random avatar. Later calls
+        refresh the email only: the name is the user's to change."""
+        found = self.get_user(sub)
+        if found is not None and found.email == email:
+            return found
+        if found is not None:
+            found = found.model_copy(update={"email": email})
+        else:
+            found = User(
+                id=sub, email=email, name=name, avatar=new_avatar(), created=datetime.now(UTC)
+            )
+        _write(self._user_path(sub), found.model_dump_json())
+        return found
+
+    def get_user(self, sub: str) -> User | None:
+        path = self._user_path(sub)
+        return User.model_validate_json(path.read_text()) if path.exists() else None
+
+    def update_user(
+        self, sub: str, *, name: str | None = None, avatar: Avatar | None = None
+    ) -> User | None:
+        """None when there is no such user."""
+        found = self.get_user(sub)
+        if found is None:
+            return None
+        if name is not None:
+            found = found.model_copy(update={"name": name})
+        if avatar is not None:
+            found = found.model_copy(update={"avatar": avatar})
+        _write(self._user_path(sub), found.model_dump_json())
+        return found
+
+    def delete_user(self, sub: str) -> None:
+        """The account, every deck it owns, and those decks' jobs and files."""
+        path = self._user_path(sub)
+        mine = {deck.id for deck in self.all(owner_id=sub)}
+        for state in ("queued", "running", "done"):
+            for job in self._jobs(state):
+                if job.deck_id in mine:
+                    folder = self.root / "jobs" / state
+                    (folder / f"{job.id}.json").unlink(missing_ok=True)
+                    (folder / f"{job.id}.beat").unlink(missing_ok=True)
+        for deck_id in mine:
+            shutil.rmtree(self.dir(deck_id), ignore_errors=True)
+        path.unlink(missing_ok=True)

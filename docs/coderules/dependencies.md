@@ -140,6 +140,16 @@ tinycss2 (v4, phase 22) — parses slide CSS so the lint walks real
 pydantic.mypy (v4, phase 21) — the mypy plugin that ships inside pydantic —
   not a new package. Without it `disallow_any_explicit` rejects every
   BaseModel, because the synthesized __init__ takes **Any.
+sqlalchemy (v4, phase 29) — the typed SQL layer under store/sql.py, in api —
+  Postgres in production and SQLite offline from one set of queries; row
+  locks, SKIP LOCKED and upserts per dialect. Hand-written SQL for two
+  dialects is the duplication the rules warn about.
+alembic (v4, phase 29) — schema migrations for the `app` database, in api —
+  the migration tool SQLAlchemy's authors maintain; a versioned schema is
+  not something to improvise at deploy time.
+psycopg[binary] (v4, phase 29) — the Postgres driver (psycopg 3), in api —
+  a wire protocol and TLS client is a codec: never ours. The binary wheel
+  ships libpq, so the container needs no system package.
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."

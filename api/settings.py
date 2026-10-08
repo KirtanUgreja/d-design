@@ -39,6 +39,8 @@ class Settings:
     model_cheap: str = "anthropic/claude-haiku-4.5"
     deck_budget_usd: float = 5.0
     data_dir: Path = REPO_ROOT / "data"  # the file store (store/files.py); gitignored
+    # Neon `app` (pooled); set = the SQL store (store/tenant.py -> open_store).
+    database_url: str = ""
 
 
 def load() -> Settings:
@@ -49,4 +51,5 @@ def load() -> Settings:
         model_design=os.environ.get("MODEL_DESIGN", Settings.model_design),
         model_cheap=os.environ.get("MODEL_CHEAP", Settings.model_cheap),
         data_dir=Path(os.environ.get("DATA_DIR", str(Settings.data_dir))),
+        database_url=os.environ.get("APP_DATABASE_URL", ""),
     )
