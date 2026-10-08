@@ -1,0 +1,31 @@
+<!-- {"language": "bauhaus", "shape": "comparison", "idea": "The old way in quiet type on the open ground; the new way inside a vast accent circle rising from the bottom-right corner, the figure at its heart", "fields": ["kicker", "headline", "point-1", "point-2", "point-3", "stat", "stat-label", "source"], "image": "none", "variants": ["mirror", "dark-field"]} -->
+```html
+<section class="s">
+  <div class="was">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+    <p class="a" data-field="point-1"></p>
+    <p class="c" data-field="point-3"></p>
+    <p class="src" data-field="source"></p>
+  </div>
+  <div class="now">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+    <p class="b" data-field="point-2"></p>
+  </div>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); padding: var(--margin); }
+.was { grid-column: 1 / 8; display: flex; flex-direction: column; gap: var(--s-4); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.1em; }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: var(--lh-display); letter-spacing: var(--track-display); }
+.a { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h3); line-height: var(--lh-display); letter-spacing: var(--track-display); color: var(--c-ink-2); border-top: calc(var(--rule) * 2) solid var(--c-ink); padding-top: var(--s-3); }
+.c { font-size: var(--t-body); line-height: 1.25; }
+.src { margin-top: auto; font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-ink-2); }
+.now { position: absolute; right: -260px; bottom: -320px; width: 1140px; height: 1140px; border-radius: 50%; display: flex; flex-direction: column; gap: var(--s-3); padding: 250px 340px 0 220px; background-color: var(--c-accent); color: var(--c-on-accent); }
+.now:not(:has([data-field])) { background-color: transparent; }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d2); line-height: var(--lh-display); letter-spacing: var(--track-display); white-space: nowrap; }
+.what { font-size: var(--t-body); line-height: 1.2; }
+.b { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h3); line-height: var(--lh-display); letter-spacing: var(--track-display); padding-top: var(--s-2); }
+```

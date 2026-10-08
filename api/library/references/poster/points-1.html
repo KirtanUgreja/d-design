@@ -1,0 +1,35 @@
+<!-- {"language": "poster", "shape": "points", "idea": "The claim in capitals up top, the figure and its source pinned top-right; an accent band bleeds across the foot and carries three points as condensed display lines under big numerals", "fields": ["kicker", "headline", "point-1", "point-2", "point-3", "stat", "stat-label", "source"], "image": "none", "variants": ["band-top", "dark-field", "mirror"]} -->
+```html
+<section class="s">
+  <div class="top">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+  </div>
+  <div class="fig">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+    <p class="src" data-field="source"></p>
+  </div>
+  <div class="band">
+    <ol class="pts">
+      <li data-field="point-1"></li>
+      <li data-field="point-2"></li>
+      <li data-field="point-3"></li>
+    </ol>
+  </div>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: 1fr auto; column-gap: var(--gutter); row-gap: var(--s-5); padding: var(--margin) var(--margin) 0; }
+.top { grid-column: 1 / 9; grid-row: 1; display: grid; gap: var(--s-3); align-content: start; }
+.kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.12em; }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); letter-spacing: var(--track-display); text-transform: uppercase; }
+.fig { grid-column: 10 / 13; grid-row: 1; display: grid; gap: var(--s-2); align-content: start; }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d3); line-height: var(--lh-display); letter-spacing: var(--track-display); color: var(--c-accent); }
+.what { font-size: var(--t-body); line-height: 1.2; }
+.band { grid-column: 1 / 13; grid-row: 2; margin: 0 calc(var(--margin) * -1); padding: var(--s-5) var(--margin); background-color: var(--c-accent); color: var(--c-on-accent); }
+.pts { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: var(--s-5); counter-reset: pt; }
+.pts li { counter-increment: pt; font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: var(--lh-display); letter-spacing: var(--track-display); text-transform: uppercase; }
+.pts li::before { content: counter(pt); display: block; font-size: var(--t-h1); padding-bottom: var(--s-2); }
+.src { padding-top: var(--s-3); font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-ink-2); }
+```
