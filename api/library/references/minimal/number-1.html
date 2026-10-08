@@ -1,0 +1,31 @@
+<!-- {"language": "minimal", "shape": "number", "idea": "One number, very large and very light, rests on the floor of the field; the claim hangs small at the top, the details stand in a slim column beside the number's shoulder", "fields": ["kicker", "headline", "stat", "stat-label", "source", "point-1", "point-2", "point-3"], "image": "none", "variants": ["mirror", "accent-number", "dark-field"]} -->
+```html
+<section class="s">
+  <div class="top">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+  </div>
+  <p class="stat" data-field="stat"></p>
+  <div class="side">
+    <p class="what" data-field="stat-label"></p>
+    <ul class="facts">
+      <li data-field="point-1"></li>
+      <li data-field="point-2"></li>
+      <li data-field="point-3"></li>
+    </ul>
+    <p class="src" data-field="source"></p>
+  </div>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: auto 1fr; column-gap: var(--gutter); padding: var(--margin); }
+.top { grid-column: 1 / 8; grid-row: 1; display: grid; row-gap: var(--s-3); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.16em; color: var(--c-ink-2); }
+.head { font-family: var(--f-display); font-weight: var(--w-regular); font-size: var(--t-h2); line-height: 1.12; letter-spacing: var(--track-display); }
+.stat { grid-column: 1 / 8; grid-row: 2; align-self: end; font-family: var(--f-display); font-weight: var(--w-regular); font-size: var(--t-mega); line-height: 0.95; letter-spacing: -0.03em; color: var(--c-accent); }
+.side { grid-column: 9 / 13; grid-row: 1 / 3; align-self: end; display: flex; flex-direction: column; gap: var(--s-4); }
+.what { font-family: var(--f-text); font-size: var(--t-body); line-height: 1.3; color: var(--c-ink); }
+.facts { display: grid; row-gap: var(--s-3); }
+.facts li { font-family: var(--f-text); font-size: var(--t-body); line-height: 1.3; color: var(--c-ink-2); }
+.src { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.06em; color: var(--c-ink-2); }
+```

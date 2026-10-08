@@ -1,0 +1,33 @@
+<!-- {"language": "humanist", "shape": "points", "idea": "Three soft cards sit side by side under the claim, each opened by a round numbered marker, like recipe steps on a kitchen table; the figure rides the headline row on a small accent pill", "fields": ["kicker", "headline", "point-1", "point-2", "point-3", "stat", "stat-label", "source"], "image": "none", "variants": ["accent-number", "mirror"]} -->
+```html
+<section class="s">
+  <div class="lead">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+  </div>
+  <div class="pill">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+  </div>
+  <ol class="cards">
+    <li data-field="point-1"></li>
+    <li data-field="point-2"></li>
+    <li data-field="point-3"></li>
+  </ol>
+  <p class="src" data-field="source"></p>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: auto 1fr auto; column-gap: var(--gutter); row-gap: var(--s-5); padding: var(--margin); }
+.lead { grid-column: 1 / 9; display: flex; flex-direction: column; gap: var(--s-3); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.04em; color: var(--c-ink-2); }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: 1.1; letter-spacing: var(--track-display); }
+.pill { grid-column: 9 / 13; align-self: start; display: flex; flex-direction: column; gap: var(--s-2); padding: var(--s-4); background-color: var(--c-accent); border-radius: var(--radius); }
+.pill:not(:has([data-field])) { display: none; }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: 1; color: var(--c-on-accent); }
+.what { font-family: var(--f-text); font-size: var(--t-body); line-height: 1.3; color: var(--c-on-accent); }
+.cards { grid-column: 1 / 13; grid-row: 2; align-self: end; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; column-gap: var(--gutter); counter-reset: n; }
+.cards li { counter-increment: n; display: flex; flex-direction: column; gap: var(--s-4); min-height: 360px; padding: var(--s-5) var(--s-4) var(--s-4); background-color: var(--c-surface); border-radius: var(--radius); font-family: var(--f-text); font-size: var(--t-body); line-height: 1.35; }
+.cards li::before { content: counter(n); width: 64px; height: 64px; display: grid; place-items: center; border-radius: 50%; background-color: var(--c-accent); font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-body); color: var(--c-on-accent); }
+.src { grid-column: 1 / 13; grid-row: 3; font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); }
+```

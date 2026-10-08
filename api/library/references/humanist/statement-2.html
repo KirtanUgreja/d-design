@@ -1,0 +1,31 @@
+<!-- {"language": "humanist", "shape": "statement", "idea": "A soft card holds an illustration above and the sentence below it, like a page from a picture book; the number, the supporting line and the source sit beside the card on the open ground", "fields": ["kicker", "headline", "point-1", "stat", "stat-label", "source"], "image": "half", "variants": ["mirror", "image-other-side"]} -->
+```html
+<section class="s">
+  <div class="card">
+    <dd-image class="art" aspect="16:9"></dd-image>
+    <div class="words">
+      <p class="kick" data-field="kicker"></p>
+      <h2 class="say" data-field="headline"></h2>
+    </div>
+  </div>
+  <div class="side">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+    <p class="note" data-field="point-1"></p>
+    <p class="src" data-field="source"></p>
+  </div>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); padding: var(--s-5) var(--margin) var(--s-5) var(--s-5); }
+.card { grid-column: 1 / 9; display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-4); background-color: var(--c-surface); border-radius: var(--radius); }
+.art { flex: 1 1 0; min-height: 360px; border-radius: var(--radius); }
+.words { display: flex; flex-direction: column; gap: var(--s-3); padding: 0 var(--s-4) var(--s-3); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.04em; color: var(--c-ink-2); }
+.say { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: 1.1; letter-spacing: var(--track-display); }
+.side { grid-column: 9 / 13; align-self: end; display: flex; flex-direction: column; gap: var(--s-3); padding: 0 0 var(--s-5) var(--s-4); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d3); line-height: 1; color: var(--c-accent); }
+.what { font-family: var(--f-text); font-size: var(--t-body); line-height: 1.35; color: var(--c-ink); }
+.note { padding-top: var(--s-3); font-family: var(--f-text); font-size: var(--t-body); line-height: 1.35; color: var(--c-ink-2); }
+.src { padding-top: var(--s-3); font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); }
+```

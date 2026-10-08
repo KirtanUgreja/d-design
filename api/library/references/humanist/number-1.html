@@ -1,0 +1,33 @@
+<!-- {"language": "humanist", "shape": "number", "idea": "The number lives on a tall, soft accent tile at the right like a big friendly label; the claim and three facts with round numbered markers read down the left on the open ground", "fields": ["kicker", "headline", "stat", "stat-label", "source", "point-1", "point-2", "point-3"], "image": "none", "variants": ["mirror", "accent-number"]} -->
+```html
+<section class="s">
+  <div class="copy">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+    <ol class="facts">
+      <li data-field="point-1"></li>
+      <li data-field="point-2"></li>
+      <li data-field="point-3"></li>
+    </ol>
+    <p class="src" data-field="source"></p>
+  </div>
+  <div class="tile">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+  </div>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--s-6); padding: var(--s-5) var(--s-5) var(--s-5) var(--margin); }
+.copy { grid-column: 1 / 7; align-self: center; display: flex; flex-direction: column; gap: var(--s-4); padding: var(--s-4) 0; }
+.kick { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.04em; color: var(--c-ink-2); }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: 1.1; letter-spacing: var(--track-display); }
+.facts { display: grid; row-gap: var(--s-3); counter-reset: n; }
+.facts li { counter-increment: n; display: grid; grid-template-columns: 56px 1fr; column-gap: var(--s-3); align-items: start; font-family: var(--f-text); font-size: var(--t-body); line-height: 1.35; }
+.facts li::before { content: counter(n); height: 56px; display: grid; place-items: center; border-radius: 50%; background-color: var(--c-surface); font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink); }
+.src { font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); }
+.tile { grid-column: 7 / 13; display: flex; flex-direction: column; justify-content: flex-end; gap: var(--s-3); padding: var(--s-6) var(--s-5) var(--s-5); background-color: var(--c-accent); border-radius: var(--radius); }
+.tile:not(:has([data-field])) { display: none; }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d2); line-height: 1; letter-spacing: -0.02em; color: var(--c-on-accent); }
+.what { font-family: var(--f-text); font-size: var(--t-body); line-height: 1.35; color: var(--c-on-accent); }
+```

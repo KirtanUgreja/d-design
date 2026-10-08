@@ -1,0 +1,28 @@
+<!-- {"language": "humanist", "shape": "sequence", "idea": "A soft path: round numbered stops threaded on one rounded surface band across the slide, each step's words hanging beneath its stop; the claim sits above on the open ground", "fields": ["kicker", "headline", "point-1", "point-2", "point-3"], "image": "none", "variants": ["mirror", "accent-number"]} -->
+```html
+<section class="s">
+  <div class="lead">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+  </div>
+  <div class="path">
+    <div class="band"></div>
+    <ol class="steps">
+      <li data-field="point-1"></li>
+      <li data-field="point-2"></li>
+      <li data-field="point-3"></li>
+    </ol>
+  </div>
+</section>
+```
+```css
+.s { display: flex; flex-direction: column; justify-content: space-between; padding: var(--margin); counter-reset: n; }
+.lead { display: flex; flex-direction: column; gap: var(--s-3); max-width: 1320px; }
+.kick { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.04em; color: var(--c-ink-2); }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: 1.08; letter-spacing: var(--track-display); }
+.path { position: relative; padding-bottom: var(--s-3); }
+.band { position: absolute; left: 0; right: 0; top: 28px; height: 40px; background-color: var(--c-surface); border-radius: var(--radius); }
+.steps { position: relative; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; column-gap: var(--s-5); }
+.steps li { counter-increment: n; display: flex; flex-direction: column; gap: var(--s-4); padding-left: var(--s-3); font-family: var(--f-text); font-size: var(--t-body); line-height: 1.35; }
+.steps li::before { content: counter(n); width: 96px; height: 96px; display: grid; place-items: center; border-radius: 50%; background-color: var(--c-accent); font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h3); color: var(--c-on-accent); }
+```
