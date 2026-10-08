@@ -1,0 +1,34 @@
+<!-- {"language": "journal", "shape": "comparison", "idea": "A two-column versus table: each side headed by its own heavy rule, the left in ink, the right in the accent as the side the reader must see; the difference closes the table as a row ruled above and below, the figure first", "fields": ["kicker", "headline", "point-1", "point-2", "point-3", "stat", "stat-label", "source"], "image": "none", "variants": ["mirror", "dark-field", "accent-left"]} -->
+```html
+<section class="s">
+  <p class="tag" data-field="kicker"></p>
+  <h2 class="head" data-field="headline"></h2>
+  <div class="table">
+    <p class="a" data-field="point-1"></p>
+    <p class="b" data-field="point-2"></p>
+  </div>
+  <div class="diff">
+    <div class="fig">
+      <p class="stat" data-field="stat"></p>
+      <p class="what" data-field="stat-label"></p>
+    </div>
+    <p class="c" data-field="point-3"></p>
+  </div>
+  <p class="src" data-field="source"></p>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); grid-template-rows: auto auto 1fr auto auto; padding: var(--margin); }
+.tag { grid-column: 1 / 13; grid-row: 1; border-top: calc(var(--rule) * 2) solid var(--c-ink); border-bottom: var(--rule) solid var(--c-rule); padding: var(--s-2) 0; font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.06em; }
+.head { grid-column: 1 / 11; grid-row: 2; padding-top: var(--s-4); font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: 1.08; letter-spacing: var(--track-display); }
+.table { grid-column: 1 / 13; grid-row: 3; align-self: center; display: grid; grid-template-columns: repeat(2, 1fr); column-gap: var(--gutter); padding: var(--s-5) 0; }
+.a { border-top: calc(var(--rule) * 3) solid var(--c-ink); padding: var(--s-3) var(--s-5) 0 0; font-size: var(--t-h3); line-height: 1.2; color: var(--c-ink-2); }
+.b { border-top: calc(var(--rule) * 3) solid var(--c-accent); padding: var(--s-3) var(--s-5) 0 0; font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h3); line-height: 1.2; }
+.diff { grid-column: 1 / 13; grid-row: 4; display: grid; grid-template-columns: auto 1fr; column-gap: var(--s-5); align-items: center; border-top: var(--rule) solid var(--c-ink); border-bottom: var(--rule) solid var(--c-ink); padding: var(--s-3) 0; }
+.fig { display: grid; grid-template-columns: auto minmax(0, 420px); column-gap: var(--s-3); align-items: center; }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d3); line-height: var(--lh-display); color: var(--c-accent); }
+.what { font-size: var(--t-body); color: var(--c-ink-2); }
+.c { border-left: var(--rule) solid var(--c-rule); padding-left: var(--s-4); font-size: var(--t-body); }
+.src { grid-column: 1 / 13; grid-row: 5; padding-top: var(--s-2); font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); }
+.table:not(:has([data-field])), .diff:not(:has([data-field])), .fig:not(:has([data-field])) { display: none; }
+```

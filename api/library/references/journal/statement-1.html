@@ -1,0 +1,27 @@
+<!-- {"language": "journal", "shape": "statement", "idea": "A pull-quote page: under the tag bar the claim fills nine columns behind a hairline column rule, while the figure stands in the left margin as an annotation, its label under a short hairline; the source under a hairline at the foot", "fields": ["kicker", "headline", "point-1", "stat", "stat-label", "source"], "image": "none", "variants": ["mirror", "dark-field", "no-margin-figure"]} -->
+```html
+<section class="s">
+  <p class="tag" data-field="kicker"></p>
+  <div class="fig">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+  </div>
+  <div class="main">
+    <h2 class="claim" data-field="headline"></h2>
+    <p class="note" data-field="point-1"></p>
+  </div>
+  <p class="src" data-field="source"></p>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); grid-template-rows: auto 1fr auto; padding: var(--margin); }
+.tag { grid-column: 1 / 13; grid-row: 1; border-top: calc(var(--rule) * 2) solid var(--c-ink); border-bottom: var(--rule) solid var(--c-rule); padding: var(--s-2) 0; font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.06em; }
+.fig { grid-column: 1 / 4; grid-row: 2; align-self: center; display: grid; gap: var(--s-3); padding-right: var(--s-3); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d3); line-height: var(--lh-display); color: var(--c-accent); }
+.what { border-top: var(--rule) solid var(--c-rule); padding-top: var(--s-2); font-size: var(--t-body); color: var(--c-ink-2); }
+.main { grid-column: 4 / 13; grid-row: 2; align-self: center; display: grid; gap: var(--s-4); border-left: var(--rule) solid var(--c-rule); padding-left: var(--s-5); }
+.claim { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: 1.08; letter-spacing: var(--track-display); }
+.note { font-size: var(--t-body); color: var(--c-ink-2); max-width: 1000px; }
+.src { grid-column: 1 / 13; grid-row: 3; border-top: var(--rule) solid var(--c-rule); padding-top: var(--s-2); font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); }
+.fig:not(:has([data-field])), .main:not(:has([data-field])) { display: none; }
+```

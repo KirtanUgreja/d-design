@@ -1,0 +1,31 @@
+<!-- {"language": "journal", "shape": "ask", "idea": "A closing brief: the ask as the claim across the page, then a ruled box at the foot framing the figure on the left and the terms as a ruled list on the right, like the summary box at the end of a report", "fields": ["kicker", "headline", "point-1", "point-2", "point-3", "stat", "stat-label"], "image": "none", "variants": ["mirror", "dark-field", "box-full"]} -->
+```html
+<section class="s">
+  <p class="tag" data-field="kicker"></p>
+  <h2 class="head" data-field="headline"></h2>
+  <div class="box">
+    <div class="fig">
+      <p class="stat" data-field="stat"></p>
+      <p class="what" data-field="stat-label"></p>
+    </div>
+    <ul class="terms">
+      <li data-field="point-1"></li>
+      <li data-field="point-2"></li>
+      <li data-field="point-3"></li>
+    </ul>
+  </div>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); grid-template-rows: auto auto 1fr auto; padding: var(--margin); }
+.tag { grid-column: 1 / 13; grid-row: 1; border-top: calc(var(--rule) * 2) solid var(--c-ink); border-bottom: var(--rule) solid var(--c-rule); padding: var(--s-2) 0; font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.06em; }
+.head { grid-column: 1 / 12; grid-row: 2; padding: var(--s-5) 0 var(--s-5); font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: 1.04; letter-spacing: var(--track-display); }
+.box { grid-column: 1 / 13; grid-row: 4; display: grid; grid-template-columns: 5fr 7fr; border: var(--rule) solid var(--c-ink); }
+.fig { display: grid; align-content: center; gap: var(--s-2); padding: var(--s-4) var(--s-5); border-right: var(--rule) solid var(--c-ink); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d2); line-height: var(--lh-display); color: var(--c-accent); }
+.what { font-size: var(--t-body); }
+.terms { display: grid; align-content: center; padding: var(--s-3) var(--s-5); }
+.terms li { border-bottom: var(--rule) solid var(--c-rule); padding: var(--s-2) 0; font-size: var(--t-body); }
+.terms li:last-child { border-bottom: 0; }
+.box:not(:has([data-field])), .fig:not(:has([data-field])), .terms:not(:has([data-field])) { display: none; }
+```
