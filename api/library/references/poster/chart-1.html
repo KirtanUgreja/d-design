@@ -1,0 +1,26 @@
+<!-- {"language": "poster", "shape": "chart", "idea": "An accent band bleeds across the top and carries the claim; the chart takes the ground below, the figure standing beside it in condensed display", "fields": ["kicker", "headline", "stat", "stat-label", "source"], "image": "none", "variants": ["mirror", "dark-field"]} -->
+```html
+<section class="s">
+  <div class="band">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+  </div>
+  <dd-chart class="chart"></dd-chart>
+  <div class="fig">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+    <p class="src" data-field="source"></p>
+  </div>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: auto 1fr; column-gap: var(--gutter); row-gap: var(--s-4); padding: 0 var(--margin) var(--margin); }
+.band { grid-column: 1 / 13; grid-row: 1; display: grid; gap: var(--s-2); margin: 0 calc(var(--margin) * -1); padding: var(--s-5) var(--margin) var(--s-4); background-color: var(--c-accent); color: var(--c-on-accent); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.12em; }
+.head { max-width: 1500px; font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); letter-spacing: var(--track-display); }
+.chart { grid-column: 1 / 9; grid-row: 2; min-height: 480px; min-width: 900px; }
+.fig { grid-column: 9 / 13; padding-left: var(--s-3); grid-row: 2; display: flex; flex-direction: column; gap: var(--s-2); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d2); line-height: var(--lh-display); letter-spacing: var(--track-display); color: var(--c-accent); }
+.what { font-size: var(--t-body); line-height: 1.2; }
+.src { margin-top: auto; font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-ink-2); }
+```

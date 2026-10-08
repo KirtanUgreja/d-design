@@ -1,0 +1,19 @@
+<!-- {"language": "bauhaus", "shape": "cover", "idea": "A great accent disc rises off the top-right corner like a sun; the title hangs from a heavy ink bar at the bottom-left, its corner just meeting the disc", "fields": ["kicker", "headline", "source"], "image": "none", "variants": ["mirror", "dark-field", "ring-for-disc"]} -->
+```html
+<section class="s">
+  <dd-shape kind="disc" tone="accent" class="sun"></dd-shape>
+  <p class="kick" data-field="kicker"></p>
+  <div class="foot">
+    <h1 class="title" data-field="headline"></h1>
+    <p class="src" data-field="source"></p>
+  </div>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: auto 1fr auto; column-gap: var(--gutter); padding: var(--margin); }
+.sun { position: absolute; width: 840px; height: 840px; right: -190px; top: -380px; }
+.kick { grid-column: 1 / 7; grid-row: 1; font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.1em; }
+.foot { grid-column: 1 / 11; grid-row: 3; display: grid; gap: var(--s-4); }
+.title { border-top: calc(var(--rule) * 4) solid var(--c-ink); padding-top: var(--s-4); font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d3); line-height: var(--lh-display); letter-spacing: var(--track-display); }
+.src { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-ink-2); }
+```
