@@ -8,6 +8,9 @@ const PORT = 3217;
 export default defineConfig({
   testDir: "e2e",
   timeout: 90_000,
+  // One file at a time: auth.spec's stub API owns port 3218 while it runs, and
+  // the prototype's "service is down" test must not reach it.
+  workers: 1,
   use: { baseURL: `http://localhost:${PORT}` },
   webServer: {
     command: `NEXT_DIST_DIR=.next-e2e pnpm build && NEXT_DIST_DIR=.next-e2e pnpm start -p ${PORT}`,
@@ -18,7 +21,7 @@ export default defineConfig({
     // database come from web/.env.local; the API is the spec's own stub.
     env: {
       BETTER_AUTH_URL: `http://localhost:${PORT}`,
-      ALLOWED_EMAILS: "e2e-owner@example.com, Second@Example.com",
+      ALLOWED_EMAILS: "e2e-owner@example.com, Second@Example.com, proto@example.com",
       API_ORIGIN: "http://127.0.0.1:3218",
     },
   },

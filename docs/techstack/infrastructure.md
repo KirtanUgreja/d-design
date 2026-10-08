@@ -22,7 +22,7 @@ d-design/
 | Phases | What runs |
 |---|---|
 | **22–26** | Nothing long-running. `uv run python -m cli …` calls the engine directly and writes a deck to disk |
-| **27–28** | Three processes: `uv run uvicorn app:app`, `uv run python -m worker`, `pnpm dev`. `scripts/setup.sh` prints the three commands |
+| **27–28** | Three processes: `uv run uvicorn app:serve --factory`, `uv run python -m worker`, `pnpm dev`. `scripts/setup.sh` prints the three commands |
 | **29** | Adds Postgres |
 
 **No Docker Compose, no MinIO, no LocalStack.** Compose returns at phase 29 only if Postgres locally is easier that way. v3's compose file brought up six services for a product with no users.

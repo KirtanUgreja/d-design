@@ -4,6 +4,23 @@ import { expect, test, type Page } from "@playwright/test";
 
 const DOHERTY_MS = 400;
 
+/** The app is behind sign-in now (phase 29): an allowed test account, made
+ * once and reused. Its own email, so auth.spec's accounts are never touched. */
+async function signIn(page: Page) {
+  const email = "proto@example.com";
+  const password = "prototype-e2e-password";
+  const headers = { origin: "http://localhost:3217" };
+  // Better Auth rate-limits sign-ins per address; auth.spec has just made several.
+  for (let attempt = 0; attempt < 4; attempt++) {
+    await page.request.post("/api/auth/sign-up/email", { data: { email, password, name: "Proto" }, headers });
+    const res = await page.request.post("/api/auth/sign-in/email", { data: { email, password }, headers });
+    if (res.ok()) return;
+    expect(res.status(), await res.text()).toBe(429);
+    await page.waitForTimeout(11_000);
+  }
+  throw new Error("could not sign in the e2e account");
+}
+
 /** How long a click takes to show its result. */
 async function timed(page: Page, act: () => Promise<void>, shows: () => Promise<void>): Promise<number> {
   const t0 = Date.now();
@@ -14,6 +31,7 @@ async function timed(page: Page, act: () => Promise<void>, shows: () => Promise<
 
 test("composer to reveal, keyboard and mouse", async ({ page }) => {
   test.setTimeout(180_000); // the recording replays at its real build time (about a minute)
+  await signIn(page);
   await page.goto("/");
   await expect(page.getByLabel("What are you presenting?")).toBeFocused();
 
@@ -85,6 +103,7 @@ test("nothing scrolls sideways at 200% zoom", async ({ page }) => {
 });
 
 test("a typed brief reaches its own recording, or says plainly when the deck service is down", async ({ page }) => {
+  await signIn(page);
   await page.goto("/");
   await page.getByLabel("What are you presenting?").fill("make a pitch deck for tesla");
   await page.getByRole("button", { name: "Start" }).click();

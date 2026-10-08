@@ -487,7 +487,12 @@ async def _injection(cfg: settings.Settings, run: str) -> int:
 def _openapi() -> int:
     """The API's OpenAPI document, for web/lib/api/schema.d.ts (phase 27).
     Written sorted, so the gate can fail on any drift between the two."""
-    from app import app as api  # the API module, only for its schema; no store is touched
+    import tempfile
+
+    from app import create_app
+    from store.files import Store
+
+    api = create_app(Store(Path(tempfile.mkdtemp())))  # only for its schema; nothing is stored
 
     out = files.BENCH.parent / "web" / "lib" / "api" / "openapi.json"
     out.parent.mkdir(parents=True, exist_ok=True)

@@ -132,7 +132,9 @@ def test_an_edit_that_breaks_the_slide_is_flagged_and_fit_repairs_it(
     client.post(f"/api/decks/{deck_id}/slides/s02/fit")
     _work(store)
     slide = next(s for s in store.read(deck_id).slides if s.id == "s02")
-    assert slide.qa.status == "passed" and slide.origin == "fallback"
+    assert slide.qa.status == "passed" and slide.origin == "fallback", [
+        (d.code, d.field, d.measured) for d in slide.qa.errors
+    ]
     assert store.history(deck_id).labels[-1] == "Fitted a slide"
 
 

@@ -3,7 +3,7 @@ read. It never calls a model or a browser — the worker does (worker.py). Each
 route parses its input once, at entry; every error the UI can show is human
 copy, never an exception string.
 
-    cd api && uv run uvicorn app:app --port 8000
+    cd api && uv run uvicorn app:serve --factory --port 8000
 
 Who is calling comes from Better Auth's JWT, which the web proxy adds to
 every request (auth.py); every deck route goes through the caller's tenant
@@ -440,7 +440,7 @@ def create_app(
     return api
 
 
-def _app() -> FastAPI:
+def serve() -> FastAPI:
     """The served app. Accounts are on whenever BETTER_AUTH_URL is set; a run
     without it is a laptop run, and must say so (AUTH_DISABLED=1): an API that
     forgot its auth settings refuses to start rather than serve everyone."""
@@ -454,6 +454,3 @@ def _app() -> FastAPI:
             "Set BETTER_AUTH_URL, or AUTH_DISABLED=1 for a local run without accounts."
         )
     return create_app(open_store(cfg), daily_cap_usd=cfg.daily_cap_usd)
-
-
-app = _app()

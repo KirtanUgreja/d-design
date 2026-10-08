@@ -28,7 +28,7 @@ dev = [
 ]
 
 [tool.uv]
-exclude-newer = "2026-08-12"
+exclude-newer = "2026-08-12T00:00:00Z"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
