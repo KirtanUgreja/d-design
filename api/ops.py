@@ -1,6 +1,7 @@
 """Editor operations (docs/v4/plan/28-editor.md): what the API accepts, the
-job queue carries, and the worker does. None of them calls a model; each one
-ends with QA run again on what it touched and a labelled version for undo."""
+job queue carries, and the worker does. Each one ends with QA run again on
+what it touched and a labelled version for undo. Only Ask calls a model, and
+it never changes the deck: it makes a proposal the person accepts or not."""
 
 from __future__ import annotations
 
@@ -35,8 +36,24 @@ class Fit(BaseModel):
     slide: str = Field(pattern=r"^\w+$")
 
 
-Op = Annotated[TextEdit | Reorder | Delete | Recolour | Fit, Field(discriminator="kind")]
-OP: TypeAdapter[TextEdit | Reorder | Delete | Recolour | Fit] = TypeAdapter(Op)
+class Ask(BaseModel):
+    """A change in words ("make the number the hero"): a proposal, never applied."""
+
+    kind: Literal["ask"] = "ask"
+    slide: str = Field(pattern=r"^\w+$")
+    instruction: str = Field(min_length=3, max_length=300)
+
+
+class Accept(BaseModel):
+    """Apply the slide's waiting proposal."""
+
+    kind: Literal["accept"] = "accept"
+    slide: str = Field(pattern=r"^\w+$")
+
+
+AnyOp = TextEdit | Reorder | Delete | Recolour | Fit | Ask | Accept
+Op = Annotated[AnyOp, Field(discriminator="kind")]
+OP: TypeAdapter[AnyOp] = TypeAdapter(Op)
 
 LABEL = {
     "text": "Edited text",
@@ -44,4 +61,6 @@ LABEL = {
     "delete": "Deleted a slide",
     "recolour": "New colours",
     "fit": "Fitted a slide",
+    "ask": "Asked for a change",
+    "accept": "Changed a slide by request",
 }

@@ -146,3 +146,45 @@ def test_undo_keeps_the_last_twenty_operations(tmp_path: Path, kind: str) -> Non
     h = store.history(deck_id)
     assert len(h.labels) == UNDO_STEPS + 1 and h.labels[-1] == f"op {UNDO_STEPS + 4}"
     assert h.at == UNDO_STEPS
+
+
+@each_store
+def test_a_change_in_words_is_a_proposal_until_accepted(tmp_path: Path, kind: str) -> None:
+    client, store, deck_id = _built(tmp_path, kind)
+    before = next(s for s in store.read(deck_id).slides if s.id == "s02").html
+    asked = client.post(
+        f"/api/decks/{deck_id}/slides/s02/ask", json={"instruction": "make the claim the hero"}
+    )
+    assert asked.status_code == 200
+    _work(store)
+    ready = [e for e in store.events(deck_id) if e["type"] == "proposal_ready"]
+    assert ready and ready[-1]["slide_id"] == "s02"
+    # nothing changed yet; the proposal has its own picture
+    assert next(s for s in store.read(deck_id).slides if s.id == "s02").html == before
+    shot = client.get(f"/api/decks/{deck_id}/slides/s02/proposal.png")
+    assert shot.status_code == 200 and shot.content.startswith(b"\x89PNG")
+    client.post(f"/api/decks/{deck_id}/slides/s02/accept")
+    _work(store)
+    after = next(s for s in store.read(deck_id).slides if s.id == "s02")
+    assert after.origin == "edited"  # the fake model answers the same layout
+    assert store.history(deck_id).labels[-1] == "Changed a slide by request"
+
+
+@each_store
+def test_asking_one_slide_for_a_colour_is_refused_without_a_model(
+    tmp_path: Path, kind: str
+) -> None:
+    client, store, deck_id = _built(tmp_path, kind)
+    spent = len(store.ledger(deck_id))
+    client.post(
+        f"/api/decks/{deck_id}/slides/s02/ask", json={"instruction": "make the headline red"}
+    )
+    _work(store)
+    refused = [e for e in store.events(deck_id) if e["type"] == "edit_refused"]
+    assert refused and "Colour and type come from the look" in str(refused[-1]["message"])
+    assert len(store.ledger(deck_id)) == spent  # no model call was made
+    assert client.post(f"/api/decks/{deck_id}/slides/s02/accept").status_code == 200
+    _work(store)  # nothing waiting: refused in words
+    assert "no change waiting" in str(
+        [e for e in store.events(deck_id) if e["type"] == "edit_refused"][-1]["message"]
+    )

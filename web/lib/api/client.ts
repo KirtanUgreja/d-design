@@ -110,6 +110,7 @@ async function call(path: string, init?: RequestInit): Promise<Result<LiveDeck>>
 export interface Notice {
   text: string;
   seq: number;
+  proposal?: string; // a slide id: a change asked in words is ready to compare
 }
 
 export interface History {
@@ -187,6 +188,10 @@ export const api = {
   reorder: (id: string, slides: string[]) => call(`/api/decks/${id}/reorder`, { method: "POST", body: JSON.stringify({ slides }) }),
   remove: (id: string, slide: string) => call(`/api/decks/${id}/slides/${slide}`, { method: "DELETE" }),
   recolour: (id: string) => call(`/api/decks/${id}/recolour`, { method: "POST" }),
+  ask: (id: string, slide: string, instruction: string) =>
+    call(`/api/decks/${id}/slides/${slide}/ask`, { method: "POST", body: JSON.stringify({ instruction }) }),
+  accept: (id: string, slide: string) => call(`/api/decks/${id}/slides/${slide}/accept`, { method: "POST" }),
+  proposalThumb: (id: string, slide: string, seq: number) => `/api/decks/${id}/slides/${slide}/proposal.png?v=${seq}`,
   fit: (id: string, slide: string) => call(`/api/decks/${id}/slides/${slide}/fit`, { method: "POST" }),
   history: (id: string) => history(`/api/decks/${id}/history`),
   undo: (id: string) => history(`/api/decks/${id}/undo`, { method: "POST" }),

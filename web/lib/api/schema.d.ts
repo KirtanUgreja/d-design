@@ -247,6 +247,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{deck_id}/slides/{slide_id}/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Accept */
+        post: operations["accept_api_decks__deck_id__slides__slide_id__accept_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{deck_id}/slides/{slide_id}/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask
+         * @description A change in words: the worker makes a proposal; nothing changes yet.
+         */
+        post: operations["ask_api_decks__deck_id__slides__slide_id__ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{deck_id}/slides/{slide_id}/fields": {
         parameters: {
             query?: never;
@@ -275,6 +312,23 @@ export interface paths {
         put?: never;
         /** Fit */
         post: operations["fit_api_decks__deck_id__slides__slide_id__fit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{deck_id}/slides/{slide_id}/proposal.png": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Proposal */
+        get: operations["proposal_api_decks__deck_id__slides__slide_id__proposal_png_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -399,6 +453,11 @@ export interface components {
              * @default false
              */
             skip: boolean;
+        };
+        /** AskBody */
+        AskBody: {
+            /** Instruction */
+            instruction: string;
         };
         /**
          * Avatar
@@ -1424,6 +1483,78 @@ export interface operations {
             };
         };
     };
+    accept_api_decks__deck_id__slides__slide_id__accept_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+                slide_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ask_api_decks__deck_id__slides__slide_id__ask_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+                slide_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     edit_text_api_decks__deck_id__slides__slide_id__fields_patch: {
         parameters: {
             query?: never;
@@ -1463,6 +1594,40 @@ export interface operations {
         };
     };
     fit_api_decks__deck_id__slides__slide_id__fit_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+                slide_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    proposal_api_decks__deck_id__slides__slide_id__proposal_png_get: {
         parameters: {
             query?: never;
             header?: {

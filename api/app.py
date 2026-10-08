@@ -63,6 +63,10 @@ class FieldText(BaseModel):
     text: str = Field(min_length=1, max_length=600)
 
 
+class AskBody(BaseModel):
+    instruction: str = Field(min_length=3, max_length=300)
+
+
 class Order(BaseModel):
     slides: list[str] = Field(min_length=3, max_length=40)
 
@@ -404,6 +408,30 @@ def create_app(
         if (no := editable(t, deck_id)) or not slide_id.isalnum():
             return no or _problem(404, missing)
         return queue(t, deck_id, ops.Delete(slide=slide_id))
+
+    @api.post("/api/decks/{deck_id}/slides/{slide_id}/ask", response_model=None)
+    def ask(t: Me, deck_id: str, slide_id: str, body: AskBody) -> DeckOut | JSONResponse:
+        """A change in words: the worker makes a proposal; nothing changes yet."""
+        if (no := editable(t, deck_id)) or not slide_id.isalnum():
+            return no or _problem(404, missing)
+        if no := capped(t):
+            return no
+        return queue(t, deck_id, ops.Ask(slide=slide_id, instruction=body.instruction))
+
+    @api.get("/api/decks/{deck_id}/slides/{slide_id}/proposal.png", response_model=None)
+    def proposal(t: Me, deck_id: str, slide_id: str) -> Response | JSONResponse:
+        if not t.exists(deck_id) or not slide_id.isalnum():
+            return _problem(404, missing)
+        data = t.export(deck_id, f"proposal-{slide_id}.png")
+        if data is None:
+            return _problem(404, "There's no change waiting for this slide.")
+        return Response(data, media_type="image/png")
+
+    @api.post("/api/decks/{deck_id}/slides/{slide_id}/accept", response_model=None)
+    def accept(t: Me, deck_id: str, slide_id: str) -> DeckOut | JSONResponse:
+        if (no := editable(t, deck_id)) or not slide_id.isalnum():
+            return no or _problem(404, missing)
+        return queue(t, deck_id, ops.Accept(slide=slide_id))
 
     @api.post("/api/decks/{deck_id}/recolour", response_model=None)
     def recolour(t: Me, deck_id: str) -> DeckOut | JSONResponse:

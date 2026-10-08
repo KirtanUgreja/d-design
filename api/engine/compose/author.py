@@ -257,6 +257,41 @@ async def repair(
     )
 
 
+async def revise(
+    seam: Seam,
+    theme: Theme,
+    plan: SlidePlan,
+    current: Composed,
+    instruction: str,
+    *,
+    model: str,
+    shapes: bool = False,
+) -> Result[Composed, ModelError]:
+    """A change asked in words (phase 28 -> AI edit): the same contract, the
+    same words, the person's instruction for layout and emphasis. The answer
+    is a proposal; nothing is applied until it is accepted."""
+    user = (
+        "The person asked for this change to the slide below. Make it, keep everything "
+        "else, and return the full html and css again. Layout, scale, emphasis and order "
+        "may change; the words may not, and colour and type stay the theme's.\n\n"
+        f"The change: {instruction}\n\n"
+        f"Fields (text must stay unchanged):\n{_fields(plan)}\n\n"
+        f"```html\n{current.html}\n```\n```css\n{current.css}\n```"
+    )
+    return await seam.complete_text(
+        "revise",
+        _parser(plan, image="<dd-image" in current.html),
+        system="Follow the contract exactly.",
+        user=user,
+        model=model,
+        prefix=prefix(theme, shapes=shapes),
+        prompt_version=PROMPT_VERSION,
+        max_tokens=COMPOSE_MAX_TOKENS,
+        reasoning="low",
+        slide_id=plan.id,
+    )
+
+
 _LABEL = (
     "font-family:var(--f-label);font-size:var(--t-label);letter-spacing:0.08em;"
     "text-transform:uppercase"

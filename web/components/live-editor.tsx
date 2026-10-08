@@ -38,6 +38,7 @@ export function LiveEditor({
   const busy =
     pending && pending.version === deck.version && pending.seq === (notice?.seq ?? 0) ? pending.what : null;
   const [problem, setProblem] = useState<string | null>(null);
+  const [dismissed, setDismissed] = useState(0); // the seq of a proposal set aside
   const [history, setHistory] = useState<History>({ labels: [], at: -1 });
   const plan = deck.outline.find((p) => p.id === selected) ?? deck.outline[0];
   const index = deck.outline.findIndex((p) => p.id === plan?.id);
@@ -108,6 +109,23 @@ export function LiveEditor({
           <Button variant="outline" className="justify-self-start" onClick={() => void run("Fitting the slide", () => api.fit(deck.id, plan.id))}>
             Fit to slide
           </Button>
+        )}
+        <AskBox
+          key={plan.id}
+          disabled={!!busy}
+          onAsk={(text) => void run("Asking for a change", () => api.ask(deck.id, plan.id, text))}
+        />
+        {notice?.proposal === plan.id && dismissed !== notice.seq && !busy && (
+          <figure className="grid gap-2">
+            <figcaption className="text-sm text-ink-2">The change you asked for, checked in a browser:</figcaption>
+            <SlideThumb src={api.proposalThumb(deck.id, plan.id, notice.seq)} alt={`Slide ${index + 1}, with your change`} />
+            <div className="flex gap-2">
+              <Button onClick={() => void run("Applying your change", () => api.accept(deck.id, plan.id))}>Keep this</Button>
+              <Button variant="ghost" onClick={() => setDismissed(notice.seq)}>
+                Discard
+              </Button>
+            </div>
+          </figure>
         )}
         {(problem || (notice && !busy)) && (
           <Alert variant={problem ? "destructive" : "default"}>
@@ -197,5 +215,34 @@ function FieldEditor({
         </Button>
       )}
     </label>
+  );
+}
+
+function AskBox({ disabled, onAsk }: { disabled: boolean; onAsk: (text: string) => void }) {
+  const [text, setText] = useState("");
+  return (
+    <form
+      className="grid gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (text.trim().length >= 3) onAsk(text.trim());
+      }}
+    >
+      <label htmlFor="ask" className="text-sm">
+        Ask this slide for a change
+      </label>
+      <Textarea
+        id="ask"
+        rows={2}
+        maxLength={300}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Make the number the hero; put the points in one column"
+        disabled={disabled}
+      />
+      <Button type="submit" size="sm" variant="outline" className="justify-self-start" disabled={disabled || text.trim().length < 3}>
+        Ask
+      </Button>
+    </form>
   );
 }

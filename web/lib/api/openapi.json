@@ -43,6 +43,21 @@
         "title": "Answers",
         "type": "object"
       },
+      "AskBody": {
+        "properties": {
+          "instruction": {
+            "maxLength": 300,
+            "minLength": 3,
+            "title": "Instruction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "instruction"
+        ],
+        "title": "AskBody",
+        "type": "object"
+      },
       "Avatar": {
         "description": "A DiceBear avatar, drawn in the browser; the web picks the real style.",
         "properties": {
@@ -2112,6 +2127,141 @@
         "summary": "Delete"
       }
     },
+    "/api/decks/{deck_id}/slides/{slide_id}/accept": {
+      "post": {
+        "operationId": "accept_api_decks__deck_id__slides__slide_id__accept_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slide_id",
+            "required": true,
+            "schema": {
+              "title": "Slide Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Accept"
+      }
+    },
+    "/api/decks/{deck_id}/slides/{slide_id}/ask": {
+      "post": {
+        "description": "A change in words: the worker makes a proposal; nothing changes yet.",
+        "operationId": "ask_api_decks__deck_id__slides__slide_id__ask_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slide_id",
+            "required": true,
+            "schema": {
+              "title": "Slide Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask"
+      }
+    },
     "/api/decks/{deck_id}/slides/{slide_id}/fields": {
       "patch": {
         "operationId": "edit_text_api_decks__deck_id__slides__slide_id__fields_patch",
@@ -2244,6 +2394,68 @@
           }
         },
         "summary": "Fit"
+      }
+    },
+    "/api/decks/{deck_id}/slides/{slide_id}/proposal.png": {
+      "get": {
+        "operationId": "proposal_api_decks__deck_id__slides__slide_id__proposal_png_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "slide_id",
+            "required": true,
+            "schema": {
+              "title": "Slide Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Proposal"
       }
     },
     "/api/decks/{deck_id}/slides/{slide_id}/thumb.png": {

@@ -13,6 +13,8 @@ never an exception string (the UI shows them). ponytail: one worker process.
 from __future__ import annotations
 
 import asyncio
+import json
+import re
 import sys
 import time
 from collections.abc import Callable
@@ -34,7 +36,10 @@ from engine import (
     set_field,
     storyline,
 )
-from engine.compose import preview
+from engine.components import images as pictures
+from engine.compose import author, preview
+from engine.design import languages
+from engine.qa.sanitize import sanitize
 from lib.result import Err
 from looks import preview_names, theme_of, usage, with_language
 from store.files import Job
@@ -106,7 +111,11 @@ async def run(
             await _previews(store, deck)
             store.append_event(deck.id, {"type": "style_ready"})
         elif job.kind == "edit":
-            await _edit(store, deck, ops.OP.validate_json(job.payload))
+            op = ops.OP.validate_json(job.payload)
+            if isinstance(op, ops.Ask):
+                await _ask(store, deck, op, seam, model=design)
+            else:
+                await _edit(store, deck, op)
         else:
             await _build(
                 store,
@@ -195,6 +204,74 @@ async def _previews(store: AnyStore, deck: Deck) -> None:
         store.save_export(deck.id, kept_as, (shots / name).read_bytes())
 
 
+# Colour and type are the deck's look, not a slide's: asked of one slide they
+# would break the deck, so they are refused in words, without a model call.
+STYLE_ASK = re.compile(
+    r"\b(colou?rs?|red|blue|green|yellow|purple|pink|orange|black|white|grey|gray|"
+    r"fonts?|typefaces?|serif|italic|gradient|shadow|glow)\b",
+    re.IGNORECASE,
+)
+STYLE_REFUSAL = (
+    "Colour and type come from the look, so every slide stays one deck. Use New colours "
+    "for the palette, or ask this slide for layout or emphasis instead."
+)
+
+
+def _proposal_name(slide_id: str, ext: str) -> str:
+    return f"proposal-{slide_id}.{ext}"
+
+
+async def _ask(store: AnyStore, deck: Deck, op: ops.Ask, seam: Seam, *, model: str) -> None:
+    """A change in words: a proposal composed, measured and kept aside with
+    its thumbnail. The deck itself does not change until it is accepted."""
+    story = deck.storyline
+    slide = store.kept(deck.id).get(op.slide)
+    plan = next((p for p in story.slides if p.id == op.slide), None) if story else None
+    if deck.status != "ready" or plan is None or slide is None:
+        store.append_event(deck.id, {"type": "edit_refused", "message": "That slide isn't ready."})
+        return
+    if STYLE_ASK.search(op.instruction):
+        store.append_event(deck.id, {"type": "edit_refused", "message": STYLE_REFUSAL})
+        return
+    theme = theme_of(deck)
+    picture = pictures.picture_of(slide.composed.html)
+    current = Composed(pictures.strip(slide.composed.html), slide.composed.css)
+    shapes = bool(deck.language and languages.get(deck.language).shapes)
+    made = await author.revise(
+        seam, theme, plan, current, op.instruction, model=model, shapes=shapes
+    )
+    if isinstance(made, Err):
+        store.append_event(deck.id, {"type": "edit_refused", "message": human(made.error)})
+        return
+    html = pictures.fill(made.value.html, picture) if picture else made.value.html
+    proposal = Kept(Composed(html, made.value.css), "edited")
+    shots = store.slides_dir(deck.id) / "proposal"
+    shots.mkdir(parents=True, exist_ok=True)
+    checked = await pipeline.remeasure(
+        theme,
+        [plan],
+        {plan.id: proposal},
+        work_file=str(shots / "qa.html"),
+        shots_dir=str(shots),
+    )
+    (shots / "qa.html").unlink(missing_ok=True)
+    if checked[plan.id].qa.status != "passed":
+        store.append_event(
+            deck.id,
+            {
+                "type": "edit_refused",
+                "message": "That change didn't fit the slide. Try a smaller one.",
+            },
+        )
+        return
+    body = json.dumps({"html": proposal.composed.html, "css": proposal.composed.css})
+    store.save_export(deck.id, _proposal_name(plan.id, "json"), body)
+    store.save_export(
+        deck.id, _proposal_name(plan.id, "png"), (shots / f"{plan.id}.png").read_bytes()
+    )
+    store.append_event(deck.id, {"type": "proposal_ready", "slide_id": plan.id})
+
+
 async def _edit(store: AnyStore, deck: Deck, op: ops.Op) -> None:
     """One editor operation, no model: change, run QA again on what it
     touched, re-export, and record a version. A slide the change breaks is
@@ -247,6 +324,27 @@ async def _edit(store: AnyStore, deck: Deck, op: ops.Op) -> None:
     elif isinstance(op, ops.Recolour):
         deck = deck.model_copy(update={"palette_nonce": deck.palette_nonce + 1})
         touched = [p.id for p in plans]
+    elif isinstance(op, ops.Accept):
+        raw = store.export(deck.id, _proposal_name(op.slide, "json"))
+        if raw is None or op.slide not in by:
+            store.append_event(
+                deck.id, {"type": "edit_refused", "message": "There's no change waiting there."}
+            )
+            return
+        parsed = json.loads(raw)
+        clean = sanitize(str(parsed["html"]), frozenset(f.name for f in by[op.slide].fields))
+        if isinstance(clean, Err):  # it was ours, but it is read back from storage: checked again
+            store.append_event(
+                deck.id, {"type": "edit_refused", "message": "That change can't be applied."}
+            )
+            return
+        # The sanitizer drops our own <img>; the picture goes back in after it.
+        picture = pictures.picture_of(str(parsed["html"]))
+        html = pictures.fill(clean.value, picture) if picture else clean.value
+        kept[op.slide] = Kept(Composed(html, str(parsed["css"])), "edited")
+        touched = [op.slide]
+    elif isinstance(op, ops.Ask):  # handled by _ask; never reaches here
+        return
     else:  # Fit
         if op.slide not in by:
             store.append_event(

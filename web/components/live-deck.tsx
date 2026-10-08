@@ -71,6 +71,9 @@ export function LiveDeck({ id }: { id: string }) {
                 const sid = e.slideId;
                 setReady((m) => ({ ...m, [sid]: e.status ?? "passed" }));
               }
+              if (e.type === "proposal_ready" && e.slideId) {
+                setNotice({ text: "Your change is ready. Compare it, then keep it or not.", seq: e.seq, proposal: e.slideId });
+              }
               if (e.type === "edit_done" || e.type === "edit_refused") {
                 const text = e.type === "edit_refused" ? (e.message ?? "That change was not made.") : "Saved and checked.";
                 setNotice({ text, seq: e.seq });

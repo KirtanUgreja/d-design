@@ -94,6 +94,12 @@ def fill(html: str, url: str) -> str:
     return _EMPTY.sub(lambda m: f'{m.group(1)}<img src="{url}" alt="">{m.group(2)}', html, count=1)
 
 
+def picture_of(html: str) -> str:
+    """The slide's own picture, as its data URL; "" if it has none."""
+    m = re.search(r'<dd-image\b[^>]*><img src="(data:image/webp;base64,[^"]+)"', html)
+    return m.group(1) if m else ""
+
+
 def strip(html: str) -> str:
     """The slide without its picture's bytes: what a prompt may carry."""
     return _FILLED.sub(r"\1\2", html)
