@@ -25,4 +25,5 @@
 .facts { grid-column: 8 / 13; align-self: end; display: grid; }
 .facts li { font-size: var(--t-body); border-top: var(--rule) solid var(--c-rule); padding: var(--s-2) 0 var(--s-3); }
 .src { grid-column: 1 / 13; font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); }
+.num:not(:has([data-field])), .facts:not(:has([data-field])) { display: none; }
 ```

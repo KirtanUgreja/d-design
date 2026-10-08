@@ -1,0 +1,29 @@
+<!-- {"language": "swiss", "shape": "points", "idea": "Three grid columns, each headed by a heavy rule, stand at the foot of the page under a nine-column claim; the figure hangs top right on the last three columns", "fields": ["kicker", "headline", "point-1", "point-2", "point-3", "stat", "stat-label", "source"], "image": "none", "variants": ["mirror", "accent-number", "points-high"]} -->
+```html
+<section class="s">
+  <p class="kick" data-field="kicker"></p>
+  <h2 class="head" data-field="headline"></h2>
+  <div class="fig">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+  </div>
+  <ul class="pts">
+    <li data-field="point-1"></li>
+    <li data-field="point-2"></li>
+    <li data-field="point-3"></li>
+  </ul>
+  <p class="src" data-field="source"></p>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); grid-template-rows: auto auto 1fr auto auto; padding: var(--margin); }
+.kick { grid-column: 1 / 9; grid-row: 1; padding-bottom: var(--s-3); font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.08em; }
+.head { grid-column: 1 / 9; grid-row: 2; font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: 1.02; letter-spacing: var(--track-display); }
+.fig { grid-column: 10 / 13; grid-row: 1 / 3; display: grid; align-content: start; gap: var(--s-2); border-top: calc(var(--rule) * 2) solid var(--c-ink); padding-top: var(--s-3); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d3); line-height: var(--lh-display); letter-spacing: -0.02em; color: var(--c-accent); }
+.what { font-size: var(--t-body); }
+.pts { grid-column: 1 / 13; grid-row: 4; display: grid; grid-template-columns: repeat(3, 1fr); column-gap: var(--gutter); padding-top: var(--s-6); }
+.pts li { border-top: calc(var(--rule) * 3) solid var(--c-ink); padding-top: var(--s-3); padding-right: var(--s-4); font-size: var(--t-h3); line-height: 1.15; }
+.src { grid-column: 1 / 13; grid-row: 5; padding-top: var(--s-5); font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); }
+.fig:not(:has([data-field])), .pts:not(:has([data-field])) { display: none; }
+```
