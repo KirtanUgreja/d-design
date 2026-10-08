@@ -1,0 +1,26 @@
+<!-- {"language": "cinematic", "shape": "chart", "idea": "The chart is the shot: it takes the right of the frame at full scale; the line sits above it, and the one figure that matters stands alone at the lower left with its caption", "fields": ["kicker", "headline", "stat", "stat-label", "source"], "image": "none", "variants": ["mirror", "accent-number"]} -->
+```html
+<section class="s">
+  <div class="top">
+    <p class="kick" data-field="kicker"></p>
+    <h2 class="head" data-field="headline"></h2>
+  </div>
+  <div class="fig">
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+    <p class="src" data-field="source"></p>
+  </div>
+  <dd-chart class="chart"></dd-chart>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); grid-template-rows: auto 1fr; row-gap: var(--s-5); padding: var(--margin); padding-top: var(--s-5); padding-bottom: var(--s-5); }
+.top { grid-column: 1 / 10; display: flex; flex-direction: column; gap: var(--s-3); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.2em; color: var(--c-ink-2); }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); letter-spacing: var(--track-display); }
+.fig { grid-column: 1 / 4; align-self: end; display: flex; flex-direction: column; gap: var(--s-2); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d3); line-height: var(--lh-display); }
+.what { font-size: var(--t-body); line-height: 1.3; color: var(--c-ink-2); border-top: var(--rule) solid var(--c-accent); padding-top: var(--s-2); }
+.src { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.2em; color: var(--c-ink-2); margin-top: var(--s-4); }
+.chart { grid-column: 4 / 13; align-self: end; width: 100%; height: 540px; margin-left: var(--s-5); }
+```

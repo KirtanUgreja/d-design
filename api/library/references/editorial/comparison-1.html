@@ -1,0 +1,34 @@
+<!-- {"language": "editorial", "shape": "comparison", "idea": "A two-column face-off: a narrow margin column holds the kicker and the figure; the headline spans the page and the two sides set in the serif meet at a single vertical hairline, the verdict below", "fields": ["kicker", "headline", "point-1", "point-2", "point-3", "stat", "stat-label", "source"], "image": "none", "variants": ["mirror", "dark-field", "accent-number"]} -->
+```html
+<section class="s">
+  <div class="margin">
+    <p class="kick" data-field="kicker"></p>
+    <p class="stat" data-field="stat"></p>
+    <p class="what" data-field="stat-label"></p>
+  </div>
+  <div class="main">
+    <h2 class="head" data-field="headline"></h2>
+    <div class="sides">
+      <p class="side" data-field="point-1"></p>
+      <p class="side" data-field="point-2"></p>
+    </div>
+    <p class="verdict" data-field="point-3"></p>
+  </div>
+  <p class="src" data-field="source"></p>
+</section>
+```
+```css
+.s { display: grid; grid-template-columns: repeat(12, 1fr); column-gap: var(--gutter); grid-template-rows: 1fr auto; row-gap: var(--s-4); padding: var(--margin); padding-top: var(--s-6); padding-bottom: var(--s-5); }
+.margin { grid-column: 1 / 4; display: flex; flex-direction: column; gap: var(--s-2); padding-right: var(--s-3); }
+.margin > :first-child { border-top: 1px solid var(--c-ink); padding-top: var(--s-3); }
+.kick { font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.06em; color: var(--c-ink-2); margin-bottom: var(--s-4); }
+.stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); color: var(--c-accent); }
+.what { font-size: var(--t-body); line-height: 1.3; }
+.main { grid-column: 4 / 13; display: flex; flex-direction: column; gap: var(--s-5); }
+.head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); letter-spacing: var(--track-display); }
+.sides { margin-top: auto; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+.side { font-family: var(--f-display); font-size: var(--t-h3); line-height: 1.2; padding-right: calc(var(--gutter) * 2); }
+.side + .side { border-left: 1px solid var(--c-ink); padding-left: calc(var(--gutter) * 2); padding-right: 0; }
+.verdict { font-size: var(--t-body); line-height: 1.35; color: var(--c-ink-2); border-top: 1px solid var(--c-rule); padding-top: var(--s-3); max-width: 1080px; }
+.src { grid-column: 4 / 13; font-family: var(--f-label); font-size: var(--t-label); color: var(--c-ink-2); }
+```
