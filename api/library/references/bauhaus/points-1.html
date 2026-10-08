@@ -31,4 +31,5 @@
 .mod { position: absolute; right: 0; bottom: 0; top: 42%; width: 34%; display: flex; flex-direction: column; justify-content: flex-end; gap: var(--s-4); padding: var(--s-5) var(--margin) var(--s-5) var(--s-5); background-color: var(--c-accent); color: var(--c-on-accent); counter-reset: pt; }
 .mod li { counter-increment: pt; display: grid; grid-template-columns: var(--s-6) 1fr; align-items: baseline; font-size: var(--t-body); line-height: 1.2; }
 .mod li::before { content: counter(pt); font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: 1; }
+.mod:not(:has([data-field])), .fig:not(:has([data-field])) { display: none; }
 ```

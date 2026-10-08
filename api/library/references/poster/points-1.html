@@ -20,16 +20,17 @@
 </section>
 ```
 ```css
-.s { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: 1fr auto; column-gap: var(--gutter); row-gap: var(--s-5); padding: var(--margin) var(--margin) 0; }
+.s { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: 1fr auto; column-gap: var(--gutter); row-gap: var(--s-5); padding: var(--margin) var(--margin) 0; }
 .top { grid-column: 1 / 9; grid-row: 1; display: grid; gap: var(--s-3); align-content: start; }
 .kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.12em; }
 .head { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h1); line-height: var(--lh-display); letter-spacing: var(--track-display); text-transform: uppercase; }
-.fig { grid-column: 10 / 13; grid-row: 1; display: grid; gap: var(--s-2); align-content: start; }
+.fig { grid-column: 9 / 13; grid-row: 1; display: grid; gap: var(--s-2); align-content: start; }
 .stat { font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-d3); line-height: var(--lh-display); letter-spacing: var(--track-display); color: var(--c-accent); }
 .what { font-size: var(--t-body); line-height: 1.2; }
-.band { grid-column: 1 / 13; grid-row: 2; margin: 0 calc(var(--margin) * -1); padding: var(--s-5) var(--margin); background-color: var(--c-accent); color: var(--c-on-accent); }
+.band { grid-column: 1 / 13; grid-row: 2; margin: 0 calc(var(--margin) * -1); padding: var(--s-5) var(--margin) var(--margin); background-color: var(--c-accent); color: var(--c-on-accent); }
 .pts { display: grid; grid-template-columns: repeat(3, 1fr); column-gap: var(--s-5); counter-reset: pt; }
-.pts li { counter-increment: pt; font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: var(--lh-display); letter-spacing: var(--track-display); text-transform: uppercase; }
-.pts li::before { content: counter(pt); display: block; font-size: var(--t-h1); padding-bottom: var(--s-2); }
+.pts li { counter-increment: pt; display: grid; grid-template-columns: auto minmax(0, 1fr); column-gap: var(--s-3); align-items: baseline; font-family: var(--f-display); font-weight: var(--w-display); font-size: var(--t-h2); line-height: var(--lh-display); letter-spacing: var(--track-display); text-transform: uppercase; }
+.pts li::before { content: counter(pt); font-size: var(--t-h1); }
 .src { padding-top: var(--s-3); font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.1em; color: var(--c-ink-2); }
+.band:not(:has([data-field])), .fig:not(:has([data-field])) { display: none; }
 ```

@@ -18,16 +18,16 @@
 </section>
 ```
 ```css
-.s { display: grid; grid-template-columns: repeat(12, 1fr); grid-template-rows: auto 1fr auto auto; column-gap: var(--gutter); row-gap: var(--s-6); padding: var(--margin); counter-reset: side; }
+.s { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); grid-template-rows: auto minmax(0, 1fr) auto; column-gap: var(--gutter); row-gap: var(--s-5); padding: var(--margin); counter-reset: side; }
 .lead { grid-column: 1 / 9; grid-row: 1; display: grid; row-gap: var(--s-3); }
 .kick { font-family: var(--f-label); font-size: var(--t-label); text-transform: uppercase; letter-spacing: 0.16em; color: var(--c-ink-2); }
 .head { font-family: var(--f-display); font-weight: var(--w-regular); font-size: var(--t-h2); line-height: 1.12; letter-spacing: var(--track-display); }
-.side { grid-row: 3; align-self: start; counter-increment: side; display: grid; row-gap: var(--s-3); padding-right: var(--s-6); font-family: var(--f-display); font-weight: var(--w-regular); font-size: var(--t-h3); line-height: 1.15; letter-spacing: var(--track-display); }
+.side { grid-row: 2; align-self: center; counter-increment: side; display: grid; row-gap: var(--s-3); padding-right: var(--s-6); font-family: var(--f-display); font-weight: var(--w-regular); font-size: var(--t-h3); line-height: 1.15; letter-spacing: var(--track-display); }
 .side::before { content: counter(side, upper-alpha); font-family: var(--f-label); font-size: var(--t-label); letter-spacing: 0.1em; color: var(--c-accent); }
 .a { grid-column: 1 / 7; }
 .b { grid-column: 7 / 13; }
-.then { grid-column: 1 / 7; grid-row: 4; align-self: end; padding-right: var(--s-6); font-family: var(--f-text); font-size: var(--t-body); line-height: 1.3; color: var(--c-ink-2); }
-.fig { grid-column: 7 / 13; grid-row: 4; align-self: end; display: flex; align-items: flex-end; gap: var(--s-4); }
+.then { grid-column: 1 / 7; grid-row: 3; align-self: end; padding-right: var(--s-6); font-family: var(--f-text); font-size: var(--t-body); line-height: 1.3; color: var(--c-ink-2); }
+.fig { grid-column: 7 / 13; grid-row: 3; align-self: end; display: flex; align-items: flex-end; gap: var(--s-4); }
 .stat { flex: none; font-family: var(--f-display); font-weight: var(--w-regular); font-size: var(--t-d3); line-height: 0.9; color: var(--c-accent); }
 .note { display: flex; flex-direction: column; gap: var(--s-2); }
 .what { font-family: var(--f-text); font-size: var(--t-body); line-height: 1.3; color: var(--c-ink-2); }
