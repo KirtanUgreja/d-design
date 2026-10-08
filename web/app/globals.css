@@ -16,21 +16,51 @@
   --color-accent: #3f5220; /* dark olive; 7.9:1 on paper */
   --color-accent-ink: #f6f3ec;
   --color-flag: #8a3b12;
-  /* ponytail: placeholder faces until our licensed display face is chosen
-     (docs/design/questions.md #36). Neither is in the deck registry. */
-  --font-display: "Iowan Old Style", "Charter", "Georgia", serif;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Brygada 1918 for display, Instrument Sans for the interface: both OFL,
+     self-hosted by next/font (no request leaves for a font), and neither is
+     in the deck registry, so our chrome never looks like one of the looks
+     (docs/design/brand.md -> Type). ponytail: until a licensed display face
+     is chosen (docs/design/questions.md #36). */
+  --font-display: var(--font-brygada), "Iowan Old Style", Georgia, serif;
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
   --radius-chrome: 4px;
 }
 
 html { background: var(--color-paper); color: var(--color-ink); }
-body { font-family: var(--font-sans); -webkit-font-smoothing: antialiased; }
+body {
+  font-family: var(--font-sans);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "kern", "ss01";
+}
 
-:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+/* The placard: the small label under every slide and deck, like the card
+   beside a print on a gallery wall (docs/design/brand.md -> gallery wall). */
+@utility placard {
+  font-size: 11px;
+  line-height: 1.3;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* In the base layer, so a component that shows focus its own way (the
+   composer's box) can override it with a utility. */
+@layer base {
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+
+/* Work in progress that has no count yet: a hairline sweeping along. */
+@keyframes sweep {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(300%); }
 }
 
 /* A slide settling into its slot: no bounce, gone under reduced motion. */

@@ -230,7 +230,8 @@ test("sign up, the app, the avatar, sign out, sign in, delete", async ({ page })
   await page.getByLabel("Password").fill(OWNER.password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/decks$/, SLOW);
-  expect(await avatarSeed(page)).toBe(shuffled);
+  // The avatar lives in the app bar now, on every page.
+  expect(await avatarSeed(page, page.getByRole("banner"))).toBe(shuffled);
 
   // Delete the account: its decks go first, then the account.
   await page.goto("/account");

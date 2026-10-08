@@ -48,46 +48,54 @@ export function StyleCard({ deckId }: { deckId: string }) {
     setVersion((v) => v + 1);
   };
 
+  const thumbs = card?.previews ?? [];
   return (
-    <section aria-labelledby="style-title" className="mb-8 flex flex-col gap-3 border-b border-rule pb-8">
+    <section aria-labelledby="style-title" className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between gap-4">
-        <div>
-          <p className="text-sm text-muted-foreground">Your deck&apos;s style</p>
-          <h2 id="style-title" className="font-display text-2xl">
-            {card ? card.name : "Drawing your style…"}
-          </h2>
-          {card && <p className="max-w-2xl text-sm text-muted-foreground">{card.idea}</p>}
-        </div>
-        <Button variant="outline" onClick={another} disabled={busy || !card}>
+        <p className="placard">Your deck&apos;s style</p>
+        <Button variant="link" size="sm" className="h-auto px-0 text-ink" onClick={another} disabled={busy || !card}>
           Another style
         </Button>
       </div>
-      {card && (
-        <p className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          <span>
-            {card.display} · {card.text}
-          </span>
-          <span className="flex gap-1" aria-label="Palette">
-            {Object.entries(card.colors).map(([role, hex]) => (
-              <span key={role} title={role} className="size-4 rounded-full border border-rule" style={{ backgroundColor: hex }} />
-            ))}
-          </span>
-          {card.imageStyle && <span>Images: {card.imageStyle}</span>}
-        </p>
-      )}
-      <div className="grid grid-cols-3 gap-3">
-        {card && card.previews.length > 0
-          ? card.previews.map((name) => (
+      <div>
+        <h2 id="style-title" className="font-display text-[26px] leading-tight tracking-[-0.01em]">
+          {card ? card.name : "Drawing your style…"}
+        </h2>
+        {card && <p className="mt-1 text-sm leading-snug text-ink-2">{card.idea}</p>}
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {thumbs.length > 0
+          ? thumbs.map((name, i) => (
               // eslint-disable-next-line @next/next/no-img-element -- a same-origin screenshot from our API
               <img
                 key={name}
                 src={api.styleThumb(deckId, name, version)}
-                alt="A slide of your deck in this style"
-                className="aspect-video w-full border border-rule object-cover"
+                alt={i === 0 ? "Your cover in this style" : "A slide of your deck in this style"}
+                className={`aspect-video w-full border border-rule bg-paper-2 object-cover ${i === 0 ? "col-span-2" : ""}`}
               />
             ))
-          : [0, 1, 2].map((n) => <Skeleton key={n} className="aspect-video w-full" />)}
+          : [0, 1, 2].map((n) => <Skeleton key={n} className={`aspect-video w-full ${n === 0 ? "col-span-2" : ""}`} />)}
       </div>
+      {card && (
+        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 border-t border-rule pt-3 text-[13px]">
+          <dt className="text-ink-2">Type</dt>
+          <dd className="truncate">
+            {card.display} · {card.text}
+          </dd>
+          <dt className="text-ink-2">Colour</dt>
+          <dd className="flex items-center gap-1.5" aria-label="Palette">
+            {Object.entries(card.colors).map(([role, hex]) => (
+              <span key={role} title={role} className="size-4 rounded-full border border-rule" style={{ backgroundColor: hex }} />
+            ))}
+          </dd>
+          {card.imageStyle && (
+            <>
+              <dt className="text-ink-2">Images</dt>
+              <dd className="leading-snug">{card.imageStyle}</dd>
+            </>
+          )}
+        </dl>
+      )}
       {problem && <p className="text-sm text-destructive">{problem}</p>}
     </section>
   );

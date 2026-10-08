@@ -13,10 +13,7 @@ export type Step = (typeof STEPS)[number]["key"];
 export function StepBar({ deckId, current }: { deckId: string; current: Step }) {
   const at = STEPS.findIndex((s) => s.key === current);
   return (
-    <nav aria-label="Steps" className="flex items-center gap-6 border-b border-rule px-8 py-4 text-sm">
-      <Link href="/" className="font-display text-lg tracking-tight">
-        d-design
-      </Link>
+    <nav aria-label="Steps" className="mx-auto flex max-w-[1440px] flex-wrap items-center gap-x-6 gap-y-2 border-b border-rule px-4 py-3 text-sm sm:px-8">
       <ol className="flex items-center gap-2 text-ink-2">
         {STEPS.map((s, i) => (
           <li key={s.key} className="flex items-center gap-2">
@@ -41,7 +38,7 @@ export function StepBar({ deckId, current }: { deckId: string; current: Step }) 
 export function PrototypeNote() {
   return (
     <p className="ml-auto text-xs text-ink-2">
-      Prototype — replaying a real recorded run. <Link href="/states" className="underline">States</Link>
+      An example: a real recorded run, replayed. Nothing here spends anything.
     </p>
   );
 }

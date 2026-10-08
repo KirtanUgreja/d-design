@@ -60,7 +60,8 @@ export function LogoPicker({ deck, onChange }: { deck: LiveDeck; onChange: () =>
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-3 text-sm">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-rule pt-4 text-sm">
+      <p className="w-full placard">Your logo</p>
       {deck.logo !== "none" && shown > 0 && (
         // eslint-disable-next-line @next/next/no-img-element -- our own checked PNG
         <img src={api.logoUrl(deck.id, shown)} alt="Your logo" className="h-8 w-auto border border-rule bg-paper p-1" />
@@ -81,7 +82,7 @@ export function LogoPicker({ deck, onChange }: { deck: LiveDeck; onChange: () =>
         </Button>
       )}
       <span className="text-muted-foreground">
-        {deck.logo !== "none" && shown === 0 && !deck.logoNote ? "Checking the file…" : "On the cover and the ask."}
+        {deck.logo !== "none" && shown === 0 && !deck.logoNote ? "Checking the file…" : "Placed on the cover and the ask."}
       </span>
       {(problem || deck.logoNote) && <p className="w-full text-destructive">{problem || deck.logoNote}</p>}
     </div>

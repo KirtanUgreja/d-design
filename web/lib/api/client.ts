@@ -169,7 +169,8 @@ async function styleCard(path: string): Promise<Result<StyleCard>> {
     // Only plain hex reaches a style attribute.
     colors: Object.fromEntries(Object.entries(colors).filter((e): e is [string, string] => typeof e[1] === "string" && HEX.test(e[1]))),
     imageStyle: text(body.image_style),
-    previews: list(body.previews).map(text).filter((n) => /^preview-[1-3]\.png$/.test(n)),
+    // Named by the look (preview-<look>-<n>.png), so Another style never shows the last one.
+    previews: list(body.previews).map(text).filter((n) => /^preview-\d+-[1-3]\.png$/.test(n)),
   });
 }
 

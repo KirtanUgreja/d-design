@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { LiveEditor } from "@/components/live-editor";
+import { Placard } from "@/components/placard";
 import { OutlineGate, type Decisions } from "@/components/outline-gate";
 import { SlideThumb } from "@/components/slide-thumb";
 import { LogoPicker } from "@/components/logo-picker";
@@ -15,6 +16,7 @@ import { StyleCard } from "@/components/style-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { api, parseEvent, type LiveDeck as Deck, type LiveEvent, type Notice } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
 
 const WAITING: Partial<Record<Deck["status"], string>> = {
   brief: "Reading your brief and writing a few questions…",
@@ -100,54 +102,153 @@ export function LiveDeck({ id }: { id: string }) {
   if (!deck) return <Waiting text="Opening your deck…" />;
 
   const wait = WAITING[deck.status];
-  if (wait) return <Waiting text={wait} />;
-  if (deck.status === "error") return <Problem text={deck.error || "Something went wrong on our side."} />;
-  if (deck.status === "interview") return <Questions deck={deck} onDone={refresh} />;
+  if (wait) {
+    return (
+      <>
+        <DeckHeader deck={deck} />
+        <Waiting text={wait} />
+      </>
+    );
+  }
+  if (deck.status === "error") {
+    return (
+      <>
+        <DeckHeader deck={deck} />
+        <Problem text={deck.error || "Something went wrong on our side."} />
+      </>
+    );
+  }
+  if (deck.status === "interview") {
+    return (
+      <>
+        <DeckHeader deck={deck} />
+        <Questions deck={deck} onDone={refresh} />
+      </>
+    );
+  }
   if (deck.status === "approve") {
     return (
-      <OutlineGate
-        deck={{ ...deck, questions: [] }}
-        style={
-          <>
-            <StyleCard deckId={deck.id} />
-            <LogoPicker deck={deck} onChange={refresh} />
-          </>
-        }
-        onApprove={async (decided: Decisions, order: string[]) => {
-          const decisions = Object.fromEntries(
-            Object.entries(decided).map(([k, v]) => [k, v === "cut" ? ("rejected" as const) : ("approved" as const)]),
-          );
-          const saved = await api.decide(deck.id, deck.version, decisions, order);
-          if (!saved.ok) return setProblem(saved.error);
-          const started = await api.build(deck.id);
-          if (!started.ok) return setProblem(started.error);
-          setDeck(started.value.status === "approve" ? { ...started.value, status: "building" } : started.value);
-        }}
-      />
+      <>
+        <DeckHeader deck={deck} />
+        <OutlineGate
+          deck={{ ...deck, questions: [] }}
+          thesis={false}
+          style={
+            <>
+              <StyleCard deckId={deck.id} />
+              <LogoPicker deck={deck} onChange={refresh} />
+            </>
+          }
+          onApprove={async (decided: Decisions, order: string[]) => {
+            const decisions = Object.fromEntries(
+              Object.entries(decided).map(([k, v]) => [k, v === "cut" ? ("rejected" as const) : ("approved" as const)]),
+            );
+            const saved = await api.decide(deck.id, deck.version, decisions, order);
+            if (!saved.ok) return setProblem(saved.error);
+            const started = await api.build(deck.id);
+            if (!started.ok) return setProblem(started.error);
+            setDeck(started.value.status === "approve" ? { ...started.value, status: "building" } : started.value);
+          }}
+        />
+      </>
     );
   }
   return <Building deck={deck} ready={ready} notice={notice} onChange={refresh} />;
 }
 
+// The path a deck takes, with where this one stands (docs/v4/ui-research.md ->
+// goal gradient). Real states only.
+const STEPS = ["Questions", "Outline", "Build", "Send"] as const;
+
+function stepOf(status: Deck["status"]): number {
+  if (status === "brief" || status === "interview") return 0;
+  if (status === "outline" || status === "approve") return 1;
+  if (status === "ready") return 3;
+  return 2;
+}
+
+function DeckHeader({
+  deck,
+  actions,
+  line,
+  compact = false,
+}: {
+  deck: Deck;
+  actions?: React.ReactNode;
+  line?: React.ReactNode;
+  compact?: boolean; // the editor needs the room: one line of title, no status
+}) {
+  const at = stepOf(deck.status);
+  return (
+    <div className="border-b border-rule">
+      <div
+        className={cn(
+          "mx-auto flex max-w-[1440px] flex-col gap-5 px-4 sm:px-8 lg:flex-row lg:items-end lg:gap-10",
+          compact ? "py-4" : "py-6",
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link href="/decks" className="placard hover:text-ink">
+              ← Your decks
+            </Link>
+            <ol aria-label="Steps" className="flex items-center gap-2 placard">
+              {STEPS.map((s, i) => (
+                <li key={s} className="flex items-center gap-2">
+                  {i > 0 && <span aria-hidden="true" className="h-px w-3 bg-rule sm:w-5" />}
+                  <span
+                    aria-current={i === at ? "step" : undefined}
+                    className={cn(i === at ? "text-ink" : i < at ? "text-ink-2" : "text-ink-2/50")}
+                  >
+                    {s}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <h1
+            className={cn(
+              "mt-3 max-w-4xl font-display leading-[1.15] tracking-[-0.015em] text-balance",
+              compact ? "truncate text-[20px]" : "line-clamp-3 text-[24px] sm:text-[30px]",
+            )}
+          >
+            {deck.thesis || deck.prompt || "Your deck"}
+          </h1>
+          {line && !compact && (
+            <div className="mt-2 text-sm text-ink-2" aria-live="polite">
+              {line}
+            </div>
+          )}
+        </div>
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      </div>
+    </div>
+  );
+}
+
 function Waiting({ text }: { text: string }) {
   return (
-    <main className="grid min-h-[60dvh] place-content-center px-8">
-      <p className="font-display text-2xl" aria-live="polite">
+    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-24 sm:px-8">
+      <p className="font-display text-[28px] leading-tight" aria-live="polite">
         {text}
       </p>
+      <div aria-hidden="true" className="h-px w-full overflow-hidden bg-rule">
+        <div className="h-px w-1/3 animate-[sweep_1.8s_ease-in-out_infinite] bg-ink" />
+      </div>
+      <p className="text-sm text-ink-2">This takes about a minute. You can leave this page; nothing is lost.</p>
     </main>
   );
 }
 
 function Problem({ text }: { text: string }) {
   return (
-    <main className="mx-auto max-w-xl px-8 py-16">
+    <main className="mx-auto flex max-w-2xl flex-col gap-4 px-4 py-16 sm:px-8">
       <Alert variant="destructive">
         <AlertTitle>This deck stopped</AlertTitle>
         <AlertDescription>{text}</AlertDescription>
       </Alert>
-      <Button asChild variant="link" className="mt-4 px-0">
-        <Link href="/">Start again</Link>
+      <Button asChild variant="link" className="self-start px-0">
+        <Link href="/">Start a new deck</Link>
       </Button>
     </main>
   );
@@ -161,39 +262,50 @@ function Questions({ deck, onDone }: { deck: Deck; onDone: () => void }) {
     await api.answer(deck.id, answers, skip);
     onDone();
   };
+  const set = (i: number, value: string) => setAnswers((a) => a.map((v, j) => (j === i ? value : v)));
   return (
-    <main className="mx-auto grid max-w-2xl gap-8 px-8 py-10">
-      <h1 className="font-display text-3xl">A few questions, so it says what you mean</h1>
-      {deck.questions.map((q, i) => (
-        <fieldset key={q.question} className="grid gap-3">
-          <legend className="mb-2 font-display text-xl">{q.question}</legend>
-          <div className="flex flex-wrap gap-2">
-            {q.suggestions.map((s) => (
-              <Button
-                key={s}
-                type="button"
-                variant={answers[i] === s ? "default" : "outline"}
-                className="h-auto py-2 text-left whitespace-normal"
-                onClick={() => setAnswers((a) => a.map((v, j) => (j === i ? s : v)))}
-              >
-                {s}
-              </Button>
-            ))}
-          </div>
-          <input
-            aria-label="Or in your own words"
-            placeholder="Or in your own words"
-            value={q.suggestions.includes(answers[i] ?? "") ? "" : (answers[i] ?? "")}
-            onChange={(e) => setAnswers((a) => a.map((v, j) => (j === i ? e.target.value : v)))}
-            className="border-b border-ink bg-transparent py-2 outline-none"
-          />
-        </fieldset>
-      ))}
-      <div className="flex items-center gap-4">
+    <main className="mx-auto max-w-2xl px-4 py-10 sm:px-8">
+      <h2 className="font-display text-[28px] leading-tight">A few questions, so it says what you mean</h2>
+      <p className="mt-2 text-sm text-ink-2">Pick an answer or write your own. Any of them can be skipped.</p>
+      <ol className="mt-8 border-t border-rule">
+        {deck.questions.map((q, i) => (
+          <li key={q.question} className="border-b border-rule py-7">
+            <fieldset className="flex flex-col gap-4">
+              <legend className="flex gap-4 font-display text-[22px] leading-snug">
+                <span className="text-ink-2 tabular-nums">{i + 1}</span>
+                <span>{q.question}</span>
+              </legend>
+              <div className="flex flex-wrap gap-2 sm:pl-8">
+                {q.suggestions.map((s) => (
+                  <Button
+                    key={s}
+                    type="button"
+                    variant="outline"
+                    aria-pressed={answers[i] === s}
+                    className="h-auto py-2 text-left whitespace-normal aria-pressed:border-ink aria-pressed:bg-paper-2"
+                    onClick={() => set(i, answers[i] === s ? "" : s)}
+                  >
+                    {answers[i] === s && <span aria-hidden="true">✓</span>}
+                    {s}
+                  </Button>
+                ))}
+              </div>
+              <input
+                aria-label="Or in your own words"
+                placeholder="Or in your own words"
+                value={q.suggestions.includes(answers[i] ?? "") ? "" : (answers[i] ?? "")}
+                onChange={(e) => set(i, e.target.value)}
+                className="border-b border-rule bg-transparent py-2 outline-none placeholder:text-ink-2/70 focus:border-ink sm:ml-8"
+              />
+            </fieldset>
+          </li>
+        ))}
+      </ol>
+      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
         <Button size="lg" disabled={busy} onClick={() => void send(false)}>
           Write my outline
         </Button>
-        <Button variant="link" disabled={busy} className="px-0 text-muted-foreground" onClick={() => void send(true)}>
+        <Button variant="link" disabled={busy} className="px-0 text-ink-2" onClick={() => void send(true)}>
           Skip — use what I gave you
         </Button>
       </div>
@@ -212,7 +324,7 @@ function Building({
   notice: Notice | null;
   onChange: () => void;
 }) {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null); // the slide the editor opens on
   // Finished slides come from the deck as well as the stream, so a reload or a
   // resumed build shows what is already done.
   const done = { ...Object.fromEntries(deck.slides.map((s) => [s.id, s.status])), ...ready };
@@ -222,93 +334,112 @@ function Building({
   const stopped = deck.status === "aborted";
   // Named before anything is downloaded, never hidden (phase 32).
   const flagged = deck.outline.flatMap((p, i) => (done[p.id] && done[p.id] !== "passed" ? [i + 1] : []));
+  const first = deck.outline[0]?.id ?? "";
+
+  const actions = finished ? (
+    <>
+      <Button
+        variant="outline"
+        className="hidden lg:inline-flex"
+        onClick={() => setEditing((v) => (v === null ? first : null))}
+      >
+        {editing !== null ? "Done editing" : "Edit"}
+      </Button>
+      <Button asChild variant="outline">
+        <a href={api.exportUrl(deck.id, "present")} target="_blank" rel="noreferrer">
+          Present
+        </a>
+      </Button>
+      <Button asChild>
+        <a href={api.exportUrl(deck.id, "send")} download="deck.html">
+          Download to send
+        </a>
+      </Button>
+      <Button asChild variant="ghost">
+        <a href={api.exportUrl(deck.id, "pdf")} download="deck.pdf">
+          PDF
+        </a>
+      </Button>
+    </>
+  ) : stopped ? (
+    <Button size="lg" onClick={() => void api.build(deck.id).then(onChange)}>
+      Continue
+    </Button>
+  ) : (
+    <Button variant="outline" onClick={() => void api.abort(deck.id).then(onChange)}>
+      Stop
+    </Button>
+  );
+  const line = finished
+    ? `${total} slides, every one checked in a browser. Present opens it with your notes; the download is the slides only.`
+    : stopped
+      ? `Stopped with ${count} of ${total} slides done. Continue picks up where it stopped, without paying for them again.`
+      : `Composing your deck — ${count} of ${total} done. You can leave this page; nothing is lost.`;
+
   return (
-    <main className="px-8 py-8">
-      <div className="mb-6 flex items-end justify-between gap-6">
-        <div aria-live="polite">
-          <h1 className="font-display text-3xl">
-            {finished ? "Your deck is ready" : stopped ? "Stopped" : `Composing your deck — ${count} of ${total} done`}
-          </h1>
-          <p className="mt-1 text-sm text-ink-2">
-            {finished
-              ? "Every slide was composed and checked in a browser."
-              : stopped
-                ? `${count} finished slides are kept. Continue picks up where it stopped, without paying for them again.`
-                : "Each slide appears once it has been composed and checked. You can leave this page; nothing is lost."}
-          </p>
+    <>
+      <DeckHeader deck={deck} actions={actions} line={line} compact={editing !== null && finished} />
+      {!finished && (
+        <div aria-hidden="true" className="h-0.5 bg-rule">
+          <div className="h-0.5 bg-ink transition-[width] duration-500" style={{ width: `${(count / Math.max(total, 1)) * 100}%` }} />
         </div>
-        <div className="flex items-center gap-3">
-          {finished ? (
-            <>
-              <Button variant={editing ? "default" : "outline"} size="lg" onClick={() => setEditing((v) => !v)}>
-                {editing ? "Done editing" : "Edit"}
-              </Button>
-              <Button asChild size="lg">
-                <a href={api.exportUrl(deck.id, "present")} target="_blank" rel="noreferrer">
-                  Present
-                </a>
-              </Button>
-              <Button asChild variant="outline" size="lg">
-                <a href={api.exportUrl(deck.id, "send")} download="deck.html">
-                  Download to send
-                </a>
-              </Button>
-              <Button asChild variant="ghost" size="lg">
-                <a href={api.exportUrl(deck.id, "pdf")} download="deck.pdf">
-                  PDF
-                </a>
-              </Button>
-            </>
-          ) : stopped ? (
-            <Button size="lg" onClick={() => void api.build(deck.id).then(onChange)}>
-              Continue
-            </Button>
-          ) : (
-            <Button variant="outline" size="lg" onClick={() => void api.abort(deck.id).then(onChange)}>
-              Stop
-            </Button>
-          )}
-        </div>
-      </div>
-      {finished && flagged.length > 0 && !editing && (
-        <Alert className="mb-6">
-          <AlertTitle>
-            {flagged.length === 1 ? "One slide needs" : `${flagged.length} slides need`} your eye before you send it
-          </AlertTitle>
-          <AlertDescription>
-            {flagged.map((n) => `Slide ${n}`).join(", ")}: something on {flagged.length === 1 ? "it" : "them"} didn&apos;t
-            pass the check in the browser (usually text too long for its place). Open Edit, pick the slide and use Fit to
-            slide, or shorten its words.
-          </AlertDescription>
-        </Alert>
       )}
-      {editing && finished ? (
-        <LiveEditor deck={deck} notice={notice} onChange={onChange} />
+      {editing !== null && finished ? (
+        <LiveEditor deck={deck} notice={notice} onChange={onChange} start={editing} />
       ) : (
-      <ol className="grid grid-cols-2 gap-5 md:grid-cols-4">
-        {deck.outline.map((plan, i) => {
-          const status = done[plan.id];
-          const headline = plan.fields.find((f) => f.name === "headline")?.text ?? "";
-          return (
-            <li key={plan.id} className="grid gap-2">
-              {status ? (
-                <div className="animate-[settle_420ms_ease-out]">
-                  <SlideThumb src={api.thumb(deck.id, plan.id, deck.version)} alt={`Slide ${i + 1}: ${headline}`} />
-                </div>
-              ) : (
-                <div className="grid aspect-video content-end border border-dashed border-rule bg-paper-2 p-3">
-                  <p className="line-clamp-3 font-display text-sm leading-snug text-ink-2">{headline}</p>
-                </div>
-              )}
-              <p className="flex justify-between text-xs text-ink-2">
-                <span>{i + 1}</span>
-                <span>{status ? (status === "passed" ? "Checked" : "Needs attention") : stopped ? "Not started" : "Composing"}</span>
-              </p>
-            </li>
-          );
-        })}
-      </ol>
+        <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
+          {finished && flagged.length > 0 && (
+            <Alert className="mb-8 border-flag/40">
+              <AlertTitle>
+                {flagged.length === 1 ? "One slide needs" : `${flagged.length} slides need`} your eye before you send it
+              </AlertTitle>
+              <AlertDescription>
+                {flagged.map((n) => `Slide ${n}`).join(", ")}: something on {flagged.length === 1 ? "it" : "them"} didn&apos;t pass
+                the check in the browser, usually words too long for their place. Open it, then Fit to slide or shorten the
+                words.
+              </AlertDescription>
+            </Alert>
+          )}
+          <ol className="grid gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+            {deck.outline.map((plan, i) => {
+              const status = done[plan.id];
+              const headline = plan.fields.find((f) => f.name === "headline")?.text ?? "";
+              const note = status
+                ? status === "passed"
+                  ? undefined
+                  : "Needs attention"
+                : stopped
+                  ? "Not started"
+                  : "Composing…";
+              return (
+                <li key={plan.id}>
+                  {status ? (
+                    <button
+                      type="button"
+                      disabled={!finished}
+                      onClick={() => setEditing(plan.id)}
+                      className="block w-full animate-[settle_420ms_ease-out] text-left enabled:cursor-pointer lg:enabled:hover:opacity-90"
+                      aria-label={finished ? `Edit slide ${i + 1}` : undefined}
+                    >
+                      <SlideThumb src={api.thumb(deck.id, plan.id, deck.version)} alt={`Slide ${i + 1}: ${headline}`} />
+                    </button>
+                  ) : (
+                    <div className="flex aspect-video flex-col justify-end border border-dashed border-rule bg-paper-2/60 p-4">
+                      <p className="line-clamp-3 font-display text-base leading-snug text-ink-2">{headline}</p>
+                    </div>
+                  )}
+                  <Placard
+                    lead={String(i + 1).padStart(2, "0")}
+                    label={plan.beat || plan.intent}
+                    aside={note}
+                    flag={!!status && status !== "passed"}
+                  />
+                </li>
+              );
+            })}
+          </ol>
+        </main>
       )}
-    </main>
+    </>
   );
 }

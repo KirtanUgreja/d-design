@@ -29,12 +29,15 @@ export function OutlineGate({
   deck,
   onApprove,
   style,
+  thesis = true,
 }: {
   deck: GateDeck;
   // The live deck's style card (phase 39); recordings have none.
   style?: React.ReactNode;
   // Live decks save the decisions and start the build; recordings replay.
   onApprove?: (decided: Decisions, order: string[]) => void;
+  // Off when the page's own header already carries the thesis.
+  thesis?: boolean;
 }) {
   const router = useRouter();
   const facts = useMemo(() => new Map(deck.facts.map((f) => [f.id, f])), [deck.facts]);
@@ -60,21 +63,39 @@ export function OutlineGate({
     });
   };
 
+  const approve = () =>
+    onApprove
+      ? onApprove(
+          decided,
+          slides.map((s) => s.id),
+        )
+      : router.push(`/deck/${deck.id}/watch`);
+  const interviewing = asked < deck.questions.length;
+
   return (
-    <main className="grid min-h-[calc(100dvh-57px)] md:grid-cols-[minmax(320px,4fr)_8fr]">
-      <Interview
-        deck={deck}
-        asked={asked}
-        onNext={() => setAsked((n) => n + 1)}
-        onSkip={() => setAsked(deck.questions.length)}
-      />
-      <section aria-labelledby="outline-title" className="border-l border-rule px-8 py-8">
-        {style}
-        <p className="text-sm text-muted-foreground">The one thing they should remember</p>
-        <h1 id="outline-title" className="mb-8 max-w-3xl font-display text-3xl leading-tight">
-          {deck.thesis}
-        </h1>
-        <ol className="flex flex-col gap-3">
+    <main className="mx-auto grid max-w-[1440px] gap-10 px-4 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16 lg:py-10">
+      <section aria-labelledby="outline-title" className="min-w-0">
+        {thesis ? (
+          <>
+            <p className="placard">The one thing they should remember</p>
+            <h1
+              id="outline-title"
+              className="mt-2 max-w-3xl font-display text-[26px] leading-[1.15] tracking-[-0.015em] sm:text-[32px]"
+            >
+              {deck.thesis}
+            </h1>
+          </>
+        ) : (
+          <h2 id="outline-title" className="font-display text-[24px] leading-tight">
+            The outline · {slides.length} slides
+          </h2>
+        )}
+        <p className="mt-3 max-w-2xl text-[13px] text-ink-2">
+          Move slides, or open a source to read where a line came from. Lines without a mark were written by the AI;{" "}
+          <span className="font-medium text-ink">YOU</span> is from your brief,{" "}
+          <span className="font-medium text-ink">WEB</span> from a cited source.
+        </p>
+        <ol className="mt-6 border-t border-rule">
           {slides.map((s, i) => (
             <SlideCard
               key={s.id}
@@ -88,29 +109,39 @@ export function OutlineGate({
             />
           ))}
         </ol>
-        <div className="sticky bottom-0 mt-8 flex items-center justify-between gap-6 border-t border-rule bg-background py-4">
-          <p className="text-sm text-muted-foreground" aria-live="polite">
-            {pending.length > 0
-              ? `${pending.length} number${pending.length > 1 ? "s" : ""} without a source. Keep or cut ${pending.length > 1 ? "them" : "it"} first.`
-              : "Nothing is generated until you approve. Your deck gets its own look, designed for these words."}
-          </p>
-          <Button
-            size="lg"
-            disabled={pending.length > 0}
-            onClick={() =>
-              onApprove
-                ? onApprove(
-                    decided,
-                    slides.map((s) => s.id),
-                  )
-                : router.push(`/deck/${deck.id}/watch`)
-            }
-          >
+      </section>
+      <aside className="flex min-w-0 flex-col gap-8 lg:sticky lg:top-[72px] lg:max-h-[calc(100dvh-88px)] lg:self-start lg:overflow-y-auto lg:pb-2">
+        {interviewing ? (
+          <Interview
+            deck={deck}
+            asked={asked}
+            onNext={() => setAsked((n) => n + 1)}
+            onSkip={() => setAsked(deck.questions.length)}
+          />
+        ) : (
+          (style ?? <InterviewDone />)
+        )}
+        <div className="flex flex-col gap-3 border-t border-ink pt-5">
+          <Button size="lg" className="w-full" disabled={pending.length > 0} onClick={approve}>
             Approve outline
           </Button>
+          <p className="text-[13px] leading-snug text-ink-2" aria-live="polite">
+            {pending.length > 0
+              ? `${pending.length} number${pending.length > 1 ? "s" : ""} without a source. Keep or cut ${pending.length > 1 ? "them" : "it"} first.`
+              : "Nothing is generated until you approve. The deck takes about two minutes, and you can watch it arrive."}
+          </p>
         </div>
-      </section>
+      </aside>
     </main>
+  );
+}
+
+function InterviewDone() {
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="placard">Interview done</p>
+      <p className="text-sm text-ink-2">When the outline says what you mean, approve it.</p>
+    </div>
   );
 }
 
@@ -131,19 +162,9 @@ function Interview({
     setAnswer("");
     onNext();
   };
-  if (!q) {
-    return (
-      <aside className="flex flex-col gap-2 px-8 py-8">
-        <p className="text-sm text-muted-foreground">Interview done</p>
-        <p>
-          Change anything on the right: move slides, or read where each line came from. When it says what you mean,
-          approve it.
-        </p>
-      </aside>
-    );
-  }
+  if (!q) return <InterviewDone />;
   return (
-    <aside className="flex flex-col gap-5 px-8 py-8" aria-labelledby="question">
+    <section className="flex flex-col gap-5" aria-labelledby="question">
       <div className="flex items-center gap-3">
         <span className="text-sm text-muted-foreground">
           {asked + 1} of {deck.questions.length}
@@ -188,7 +209,7 @@ function Interview({
       <Button variant="link" className="self-start px-0 text-muted-foreground" onClick={onSkip}>
         Skip the rest — use what I gave you
       </Button>
-    </aside>
+    </section>
   );
 }
 
@@ -217,25 +238,33 @@ function SlideCard({
     .map((id) => facts.get(id))
     .filter((f): f is Fact => !!f && f.status === "proposed" && !decided[f.id]);
   return (
-    <li className="group grid grid-cols-[2.5rem_1fr_auto] gap-4 border border-rule bg-background px-5 py-4 transition-colors hover:border-ink-2">
-      <span className="font-display text-xl text-muted-foreground" aria-hidden="true">
+    <li className="group grid grid-cols-[2rem_minmax(0,1fr)_auto] gap-x-4 border-b border-rule py-5 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto]">
+      <span className="pt-4 font-display text-xl leading-none text-ink-2 tabular-nums" aria-hidden="true">
         {index + 1}
       </span>
-      <div className="flex min-w-0 flex-col gap-2">
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <p className="placard">
           {plan.beat}
           {plan.hasChart ? " · chart" : ""}
         </p>
         {headline && (
-          <p className="text-lg leading-snug">
+          <p className="text-[17px] leading-snug font-medium text-ink">
             {headline.text} <Chip plan={plan} name="headline" facts={facts} factIds={headline.factIds} />
           </p>
         )}
         {rest.length > 0 && (
-          <ul className="flex flex-col gap-1 text-sm text-muted-foreground">
-            {rest.map((f) => (
-              <li key={f.name}>
-                {f.text} <Chip plan={plan} name={f.name} facts={facts} factIds={f.factIds} />
+          <ul className="flex flex-wrap gap-x-2 text-sm leading-snug text-ink-2">
+            {rest.map((f, i) => (
+              <li key={f.name} className="flex items-baseline gap-x-2">
+                {i > 0 && (
+                  <span aria-hidden="true" className="text-rule">
+                    ·
+                  </span>
+                )}
+                <span>
+                  {f.text}
+                  <Chip plan={plan} name={f.name} facts={facts} factIds={f.factIds} />
+                </span>
               </li>
             ))}
           </ul>
@@ -254,9 +283,9 @@ function SlideCard({
           </Alert>
         ))}
       </div>
-      <div className="flex flex-col items-end gap-1">
+      <div className="flex flex-col items-end gap-1 pt-3">
         {fixed ? (
-          <Badge variant="outline">{index === 0 ? "Cover" : "The ask"}</Badge>
+          <span className="placard">{index === 0 ? "Cover" : "The ask"}</span>
         ) : (
           <>
             <Button variant="ghost" size="icon-sm" aria-label={`Move slide ${index + 1} up`} onClick={() => onMove(index - 1)}>
@@ -287,9 +316,11 @@ function Chip({
   const cited = factIds
     .map((id) => facts.get(id))
     .filter((f): f is Fact => !!f && f.source === "cited" && !!f.citation);
-  // AI is the default: a quiet mark. YOU and WEB are the claims worth noticing.
+  // AI is the default and goes unmarked (the legend says so). YOU and WEB are
+  // the claims worth noticing.
+  if (kind === "AI") return null;
   const badge = (
-    <Badge variant={kind === "AI" ? "ghost" : "outline"} className="ml-1 align-middle font-mono text-[10px] tracking-wider">
+    <Badge variant="outline" className="ml-1 align-middle text-[10px] font-medium tracking-wider">
       {kind}
     </Badge>
   );

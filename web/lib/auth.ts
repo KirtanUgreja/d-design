@@ -10,6 +10,7 @@
 // handlers, server components and the proxy import it.
 import { betterAuth } from "better-auth";
 import { APIError, createAuthMiddleware } from "better-auth/api";
+import { getSessionCookie } from "better-auth/cookies";
 import { nextCookies } from "better-auth/next-js";
 import { jwt } from "better-auth/plugins";
 import { Pool } from "pg";
@@ -82,11 +83,40 @@ export const auth = betterAuth({
   ],
 });
 
-/** A short-lived JWT for the signed-in user of these request headers, or null when there is no session. */
-export async function tokenFor(headers: Headers): Promise<string | null> {
+async function mint(headers: Headers): Promise<string | null> {
   const session = await auth.api.getSession({ headers });
   if (!session) return null;
   const { token } = await auth.api.getToken({ headers });
+  return token;
+}
+
+// One JWT serves a session's requests for a minute: a deck page asks for a
+// dozen thumbnails at once, and minting each costs several database round
+// trips. Concurrent requests share the one in flight. ponytail: a revoked
+// session keeps API access for at most REUSE_MS; per process, so a second web
+// replica mints its own. Upgrade: Better Auth's cookie cache, or no reuse.
+const REUSE_MS = 60_000;
+const minted = new Map<string, { at: number; token: Promise<string | null> }>();
+
+/** A short-lived JWT for the signed-in user of these request headers, or null when there is no session. */
+export async function tokenFor(headers: Headers): Promise<string | null> {
+  const cookie = getSessionCookie(headers);
+  if (!cookie) return null; // no session cookie, no session: nothing to mint
+  const now = Date.now();
+  const hit = minted.get(cookie);
+  if (hit && now - hit.at < REUSE_MS) return hit.token;
+  if (minted.size > 1000) {
+    for (const [key, v] of minted) if (now - v.at >= REUSE_MS) minted.delete(key);
+  }
+  const token = mint(headers);
+  minted.set(cookie, { at: now, token });
+  // A failed or empty mint is never reused: the next request asks again.
+  token.then(
+    (t) => {
+      if (!t) minted.delete(cookie);
+    },
+    () => minted.delete(cookie),
+  );
   return token;
 }
 

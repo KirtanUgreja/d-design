@@ -14,7 +14,7 @@ export default async function SignUpPage({ searchParams }: { searchParams: Promi
   return (
     <div className="flex flex-col gap-8">
       <div className="flex flex-col gap-2">
-        <h1 className="font-display text-3xl tracking-tight">Create an account</h1>
+        <h1 className="font-display text-[40px] leading-none tracking-[-0.02em]">Create an account</h1>
         <p className="text-sm text-muted-foreground">This preview is open to invited emails only.</p>
       </div>
       <AuthForm mode="sign-up" next={next} />

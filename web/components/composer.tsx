@@ -45,6 +45,7 @@ const TYPE_LABEL: Record<string, string> = {
   launch: "Launch",
   investor_update: "Investor update",
   partnership: "Partnership",
+  auto: "Pitch",
 };
 
 export function Composer({ examples }: { examples: Example[] }) {
@@ -104,20 +105,23 @@ export function Composer({ examples }: { examples: Example[] }) {
 
   return (
     <form
-      className="grid gap-5"
+      className="flex min-w-0 flex-col gap-6"
       onSubmit={(e) => {
         e.preventDefault();
         void start();
       }}
     >
-      <label htmlFor={label} className="font-display text-4xl leading-tight tracking-tight md:text-5xl">
+      <label
+        htmlFor={label}
+        className="font-display text-[40px] leading-[1.04] tracking-[-0.02em] text-balance sm:text-[56px]"
+      >
         What are you presenting?
       </label>
-      <div className="border border-ink bg-paper focus-within:outline-2 focus-within:outline-accent">
+      <div className="border border-ink bg-paper transition-colors focus-within:border-accent focus-within:ring-1 focus-within:ring-accent">
         <textarea
           id={label}
           autoFocus
-          rows={4}
+          rows={3}
           value={text}
           onChange={(e) => {
             setText(e.target.value);
@@ -125,23 +129,23 @@ export function Composer({ examples }: { examples: Example[] }) {
             setNotice(null);
           }}
           placeholder={first?.prompt ?? "Series A pitch for our CI tool, to seed-stage investors"}
-          className="block w-full resize-none bg-transparent p-4 text-lg outline-none placeholder:text-ink-2"
+          className="block min-h-[9.5rem] w-full resize-none bg-transparent px-5 pt-5 pb-3 font-display text-[22px] leading-[1.35] outline-none placeholder:text-ink-2/70 focus-visible:outline-none sm:min-h-0 sm:px-6 sm:text-[26px]"
         />
-        <div className="flex items-center justify-between border-t border-rule px-4 py-3">
-          <span className="text-sm text-ink-2">Paste notes or numbers into the box — they become your facts.</span>
-          <Button type="submit" size="lg">
-            Start
+        <div className="flex flex-wrap items-center justify-between gap-3 border-t border-rule px-5 py-3 sm:px-6">
+          <span className="text-[13px] text-ink-2">Paste notes or numbers too: they become your facts.</span>
+          <Button type="submit" size="lg" className="ml-auto px-6">
+            Start <span aria-hidden="true">→</span>
           </Button>
         </div>
       </div>
       {notice && (
-        <p role="status" className="border-l-2 border-ink pl-3 text-sm">
+        <p role="status" className="border-l-2 border-flag pl-3 text-sm">
           {notice}
         </p>
       )}
       {examples.length > 0 && (
-        <div className="grid gap-2">
-          <p className="text-sm text-ink-2">Or start from a real brief:</p>
+        <div className="flex flex-col gap-3">
+          <p className="placard">Or start from a real brief</p>
           <ToggleGroup
             type="single"
             variant="outline"
@@ -152,12 +156,16 @@ export function Composer({ examples }: { examples: Example[] }) {
               setPicked(x ? x.id : null);
               if (x) setText(x.prompt);
             }}
-            className="flex-wrap"
+            className="w-full flex-wrap justify-start"
           >
             {examples.map((x) => (
-              <ToggleGroupItem key={x.id} value={x.id} className="h-auto py-1.5 text-left">
-                <span className="text-muted-foreground">{TYPE_LABEL[x.type] ?? x.type} ·</span>
-                {x.prompt.length > 70 ? `${x.prompt.slice(0, 70)}…` : x.prompt}
+              <ToggleGroupItem
+                key={x.id}
+                value={x.id}
+                className="h-auto max-w-full min-w-0 justify-start gap-1.5 px-3 py-1.5 text-left text-[13px] data-[state=on]:border-ink"
+              >
+                <span className="shrink-0 text-ink-2">{TYPE_LABEL[x.type] ?? "Deck"} ·</span>
+                <span className="truncate">{x.prompt}</span>
               </ToggleGroupItem>
             ))}
           </ToggleGroup>

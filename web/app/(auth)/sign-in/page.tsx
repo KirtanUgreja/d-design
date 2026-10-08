@@ -13,7 +13,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   if (await auth.api.getSession({ headers: await headers() })) redirect(next);
   return (
     <div className="flex flex-col gap-8">
-      <h1 className="font-display text-3xl tracking-tight">Sign in</h1>
+      <h1 className="font-display text-[40px] leading-none tracking-[-0.02em]">Sign in</h1>
       <AuthForm mode="sign-in" next={next} />
     </div>
   );
