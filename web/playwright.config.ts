@@ -14,6 +14,13 @@ export default defineConfig({
     url: `http://localhost:${PORT}`,
     timeout: 180_000,
     reuseExistingServer: false,
+    // Auth for the e2e server (e2e/auth.spec.ts). The secret and the auth_test
+    // database come from web/.env.local; the API is the spec's own stub.
+    env: {
+      BETTER_AUTH_URL: `http://localhost:${PORT}`,
+      ALLOWED_EMAILS: "e2e-owner@example.com, Second@Example.com",
+      API_ORIGIN: "http://127.0.0.1:3218",
+    },
   },
   projects: engines.map((name) => ({
     name,
