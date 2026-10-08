@@ -77,11 +77,21 @@ SPECS = {
     ),
     "diverging": _spec("bar", [("North", 12), ("South", -8), ("East", 5)], unit="%"),
     "waffle": _spec("bar", [("of shippers stay", 88)], unit="%"),
+    "pair": _spec("bar", [("2024", 70), ("2026", 58)], unit="%"),
 }
 
 
 def test_the_form_follows_the_data() -> None:
     assert {k: charts.form(s) for k, s in SPECS.items()} == {k: k for k in SPECS}
+
+
+def test_two_values_become_a_pair_with_their_change() -> None:
+    assert charts.change(70, 58, "%") == "-12 pts"
+    assert charts.change(2, 9, "$M") == "4.5x"
+    assert charts.change(10, 12, "") == "+20%"
+    split = _spec("bar", [("Yes", 60), ("No", 40)], unit="%")
+    assert charts.form(split) == "stacked"  # a share of a whole stays a stack
+    assert "-12 pts" in charts.svg(SPECS["pair"])
 
 
 def test_annotations_come_from_the_values() -> None:

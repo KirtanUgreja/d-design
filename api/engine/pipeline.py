@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Literal
 
 from engine.components import charts
+from engine.components import images as pictures
 from engine.components import logo as logos
 from engine.compose import author, planner, procedural, references, targets
 from engine.compose.archive import Archive
@@ -95,6 +96,7 @@ async def build(
     on_final: Callable[[str, Kept], None] | None = None,
     stop: Callable[[], bool] | None = None,
     ref_usage: Mapping[str, int] | None = None,
+    image_model: str = "",
 ) -> Built:
     """Every slide climbs its own ladder, concurrently: compose from its
     reference, measure, up to REPAIR_ROUNDS repairs, one fresh composition from
@@ -135,7 +137,9 @@ async def build(
     refs: dict[str, tuple[Reference | None, Reference | None]] = {}
     variation: dict[str, str] = {}
     image_on: dict[str, bool] = {}
-    images_left = min(IMAGE_CAP, round(lang.image.appetite * len(plans))) if lang else 0
+    # No image model (offline runs, the bench without images): no image slots.
+    appetite = lang.image.appetite if lang and image_model else 0.0
+    images_left = min(IMAGE_CAP, max(1, round(appetite * len(plans)))) if appetite else 0
     used: set[str] = set()
     last = ""
     for plan in plans:
@@ -304,6 +308,36 @@ async def build(
         accepted[plan.id] = d
         return m
 
+    async def picture(plan: SlidePlan) -> str:
+        """The slide's image as our own webp data URL, or "" (a quiet field).
+        Drawn while the slide is composed, never before or after it."""
+        first = refs[plan.id][0]
+        if first is None or not affordable():
+            return ""
+        style = theme.look.get("image", "editorial photography")
+        made = await seam.complete_image(
+            pictures.prompt(plan, style, theme.colors.get("accent", ""), deck=title),
+            model=image_model,
+            aspect=pictures.aspect_of(first.html),
+            slide_id=plan.id,
+        )
+        if isinstance(made, Err):
+            return ""
+        treated = pictures.treat(made.value, pictures.aspect_of(first.html))
+        return "" if isinstance(treated, Err) else pictures.data_url(treated.value)
+
+    async def with_picture(plan: SlidePlan, m: browser.Measured, url: str) -> browser.Measured:
+        """The picture into its slot, measured again; taken out if anything broke."""
+        kept = composed[plan.id]
+        if not url or "<dd-image" not in kept.html:
+            return m
+        composed[plan.id] = Composed(pictures.fill(kept.html, url), kept.css)
+        placed = await measure(plan)
+        if not broken(placed):
+            return placed
+        composed[plan.id] = kept
+        return await measure(plan)
+
     async def ladder(index: int, plan: SlidePlan) -> None:
         if plan.id in resumed:  # finished before a restart: measured again, never paid twice
             composed[plan.id], origin[plan.id] = resumed[plan.id].composed, resumed[plan.id].origin
@@ -314,6 +348,7 @@ async def build(
             return
         # The first rung: compose (or the code layout if the budget is spent).
         attempts[plan.id] = 1
+        drawing = asyncio.create_task(picture(plan)) if image_on[plan.id] else None
         result = None
         if affordable():
             result = await compose_from(index, plan, refs[plan.id][0], variation[plan.id])
@@ -423,6 +458,9 @@ async def build(
             m = await novelty(index, plan, m)
         if logo is not None and not broken(m) and wants_logo(index):
             m = await with_logo(index, plan, m, logo)
+
+        if drawing is not None and not broken(m):
+            m = await with_picture(plan, m, await drawing)
 
         # Rung 5, the flag: whatever is still broken is shown, never hidden.
         finish(index, plan, m)

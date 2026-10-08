@@ -144,7 +144,8 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
     archive = files.load_archive()
     # --repeat N builds every brief N times, each with its own generated look:
     # the sameness bench needs many decks from few frozen outlines (phase 36).
-    jobs = [(r, b) for r in range(args.repeat) for b in _ids(args.set)]
+    briefs = _ids(args.set)[: args.briefs or None]
+    jobs = [(r, b) for r in range(args.repeat) for b in briefs]
     # Usage within the run, so a bench run rotates languages and references as
     # the worker does across a user's decks.
     lang_usage: Counter[str] = Counter()
@@ -176,6 +177,7 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             item.outline,
             theme,
             ref_usage=ref_usage,
+            image_model=args.image_model,
             model=args.model,
             title=item.brief.prompt[:80],
             work_file=str(out / "qa.html"),
@@ -226,6 +228,26 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
         costs = [float(str(r["cost_usd"])) for r in rows]
         print(f"{label}: {len(rows)} decks, median ${statistics.median(costs):.3f}")
     return 0 if rows else 1
+
+
+async def _bakeoff(cfg: settings.Settings, args: argparse.Namespace) -> int:
+    """Each model builds the same briefs into bench/runs/<run>/<model>/; then
+    `cli wall --run <run>` puts every model's decks on one wall to score."""
+    failed = 0
+    for model in [m.strip() for m in args.models.split(",") if m.strip()]:
+        one = argparse.Namespace(
+            **{
+                **vars(args),
+                "model": model,
+                "label": "",
+                "force": False,
+                "themes": "sampled",
+                "repeat": 1,
+                "outlines": "",
+            }
+        )
+        failed += await _build(cfg, one)
+    return _wall(args.run, 0, False) or (1 if failed else 0)
 
 
 def _wall(run: str, seed: int, baselines: bool) -> int:
@@ -508,6 +530,15 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--themes", choices=("sampled", "fixed"), default="sampled")
     cmd.add_argument("--repeat", type=int, default=1, help="build each brief N times, N looks")
     cmd.add_argument("--outlines", default="", help="a `cli content` run to take outlines from")
+    cmd.add_argument("--image-model", default="", help="slide images; empty = no images")
+    cmd.add_argument("--briefs", type=int, default=0, help="only the first N briefs of the set")
+    cmd = sub.add_parser("bakeoff", help="the same briefs built by each model, one wall")
+    cmd.add_argument("--run", required=True)
+    cmd.add_argument("--models", required=True, help="comma-separated compose models")
+    cmd.add_argument("--set", choices=("one", "smoke", "all"), default="all")
+    cmd.add_argument("--briefs", type=int, default=2)
+    cmd.add_argument("--budget", type=float, default=0.5, help="hard cap per deck, USD")
+    cmd.add_argument("--image-model", default="", help="slide images; empty = no images")
     cmd = sub.add_parser("tiles")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--set", choices=("one", "smoke", "all"), default="all")
@@ -553,6 +584,8 @@ def main(argv: list[str]) -> int:
         return asyncio.run(_baseline(cfg, args.set, args.force))
     if args.command == "build":
         return asyncio.run(_build(cfg, args))
+    if args.command == "bakeoff":
+        return asyncio.run(_bakeoff(cfg, args))
     if args.command == "outline":
         return asyncio.run(_outline(cfg, args.brief, args.run))
     if args.command == "content":

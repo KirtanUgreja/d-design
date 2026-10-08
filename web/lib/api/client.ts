@@ -130,7 +130,48 @@ async function history(path: string, init?: RequestInit): Promise<Result<History
   return ok({ labels: list(body.labels).map(text), at: body.at });
 }
 
+// The deck's one generated style (phase 39): shown at the outline gate.
+export interface StyleCard {
+  language: string;
+  name: string;
+  idea: string;
+  display: string;
+  text: string;
+  colors: Record<string, string>;
+  imageStyle: string;
+  previews: string[];
+}
+
+const HEX = /^#[0-9a-f]{6}$/i;
+
+async function styleCard(path: string): Promise<Result<StyleCard>> {
+  let res: Response;
+  try {
+    res = await fetch(path);
+  } catch {
+    return err(UNREACHABLE);
+  }
+  const body: unknown = await res.json().catch(() => null);
+  if (!res.ok) return err(isObj(body) && typeof body.error === "string" ? body.error : UNREACHABLE);
+  if (!isObj(body) || typeof body.language !== "string") return err("The deck service sent something we couldn't read.");
+  const colors = isObj(body.colors) ? body.colors : {};
+  return ok({
+    language: body.language,
+    name: text(body.name),
+    idea: text(body.idea),
+    display: text(body.display),
+    text: text(body.text),
+    // Only plain hex reaches a style attribute.
+    colors: Object.fromEntries(Object.entries(colors).filter((e): e is [string, string] => typeof e[1] === "string" && HEX.test(e[1]))),
+    imageStyle: text(body.image_style),
+    previews: list(body.previews).map(text).filter((n) => /^preview-[1-3]\.png$/.test(n)),
+  });
+}
+
 export const api = {
+  style: (id: string) => styleCard(`/api/decks/${id}/style`),
+  anotherStyle: (id: string) => call(`/api/decks/${id}/style`, { method: "POST" }),
+  styleThumb: (id: string, name: string, version: number) => `/api/decks/${id}/style/${name}?v=${version}`,
   create: (prompt: string) => call("/api/decks", { method: "POST", body: JSON.stringify({ prompt }) }),
   read: (id: string) => call(`/api/decks/${id}`),
   answer: (id: string, answers: string[], skip: boolean) =>

@@ -371,6 +371,54 @@ def _waffle(spec: ChartSpec) -> str:
     return "".join(out)
 
 
+def change(a: float, b: float, unit: str) -> str:
+    """The change between two values, computed, never written by a model:
+    "-12 pts" for a share, "2.4x" for a big rise, "+38%" otherwise."""
+    if unit == "%":
+        return f"{b - a:+.0f} pts"
+    if a > 0 and b / a >= 1.5:
+        return f"{b / a:.1f}x"
+    if a > 0:
+        return f"{(b / a - 1) * 100:+.0f}%"
+    return ""
+
+
+def _pair_figures(spec: ChartSpec) -> str:
+    """Two values: two figures in the display face and the change between
+    them. Two bars would say less with more ink (the 2026-10-08 run)."""
+    (first, second) = spec.series[0].points[:2]
+    places = _decimals([first.value, second.value])
+    texts = [_num(p.value, spec.unit, places) for p in (first, second)]
+    longest = max(len(t) for t in texts)
+    # Wide display faces run near 0.8em a figure: keep each inside 40% of the width.
+    size = min(200.0, W * 0.4 / (0.8 * max(longest, 1)))
+    base = 380.0
+    under = base + size * 0.12 + FONT * 1.6
+    mark = min(W * 0.4, size * 0.8 * longest)
+    out = [
+        _t(0, base, texts[0], face="display", weight="display", size=size, fill=QUIET),
+        _t(0, under, first.label, fill=QUIET),
+        _t(W, base, texts[1], anchor="end", face="display", weight="display", size=size),
+        _t(W, under, second.label, anchor="end"),
+        # The later value carries the series colour as a mark, never as text.
+        _rect(W - mark, under + FONT, mark, 8, series_colour(0)),
+        _t(W / 2, base - size * 0.3, "\u2192", anchor="middle", size=size * 0.45, fill=QUIET),
+    ]
+    delta = change(first.value, second.value, spec.unit)
+    if delta:
+        out.append(
+            _t(
+                W / 2,
+                base - size * 0.3 - size * 0.45,
+                delta,
+                anchor="middle",
+                weight="bold",
+                size=FONT * 1.5,
+            )
+        )
+    return "".join(out)
+
+
 _DRAW = {
     "bar": _bar,
     "column": _column,
@@ -382,6 +430,7 @@ _DRAW = {
     "slope": _slope,
     "diverging": _diverging,
     "waffle": _waffle,
+    "pair": _pair_figures,
 }
 
 
@@ -393,6 +442,12 @@ def form(spec: ChartSpec) -> str:
     timed = len(points) >= 3 and all(_TIME.match(p.label) for p in points)
     if any(v < 0 for v in values):
         return "diverging"
+    if (
+        len(spec.series) == 1
+        and len(points) == 2
+        and not (spec.unit == "%" and 97 <= sum(values) <= 103)
+    ):
+        return "pair"  # two values: two figures and the change, not two bars
     if len(spec.series) >= 2 and len(points) >= 2 and not timed:
         return "slope" if len(points) >= 5 else "dumbbell"
     if len(points) == 1 and spec.unit == "%" and 0 < values[0] <= 100:

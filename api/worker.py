@@ -15,7 +15,6 @@ from __future__ import annotations
 import asyncio
 import sys
 import time
-from collections import Counter
 from collections.abc import Callable
 from datetime import UTC, datetime
 
@@ -27,19 +26,17 @@ from engine import (
     Kept,
     ModelError,
     Seam,
-    build_theme,
     interview,
-    look_for,
     notes,
     pdf,
     pipeline,
-    recolour,
     research,
     set_field,
     storyline,
 )
-from engine.design.theme import Theme
+from engine.compose import preview
 from lib.result import Err
+from looks import theme_of, usage, with_language
 from store.files import Job, Store
 
 BEAT_S = 10.0
@@ -72,6 +69,7 @@ async def run(
     writing: str,
     design: str,
     budget_usd: float,
+    image: str = "",
 ) -> None:
     """Do one job. Every outcome is written to the deck and its event log."""
     deck = store.read(job.deck_id)
@@ -98,20 +96,39 @@ async def run(
             if isinstance(written, Err):
                 _fail(store, deck, human(written.error), written.error.kind)
                 return
-            store.update(
+            deck = store.update(
                 deck.id, status="approve", storyline=written.value.story, facts=written.value.facts
             )
+            await _previews(store, with_language(store, deck))
             store.append_event(deck.id, {"type": "outline_ready"})
+        elif job.kind == "style":
+            await _previews(store, deck)
+            store.append_event(deck.id, {"type": "style_ready"})
         elif job.kind == "edit":
             await _edit(store, deck, ops.OP.validate_json(job.payload))
         else:
-            await _build(store, deck, seam, design=design, writing=writing, budget_usd=budget_usd)
+            await _build(
+                store,
+                deck,
+                seam,
+                design=design,
+                writing=writing,
+                budget_usd=budget_usd,
+                image_model=image,
+            )
     finally:
         store.append_ledger(deck.id, seam.ledger)
 
 
 async def _build(
-    store: Store, deck: Deck, seam: Seam, *, design: str, writing: str, budget_usd: float
+    store: Store,
+    deck: Deck,
+    seam: Seam,
+    *,
+    design: str,
+    writing: str,
+    budget_usd: float,
+    image_model: str = "",
 ) -> None:
     story = deck.storyline
     if story is None:
@@ -149,6 +166,7 @@ async def _build(
         on_final=keep,
         stop=lambda: store.aborted(deck.id),
         ref_usage=ref_usage,
+        image_model=image_model,
     )
     for stray in slides_dir.glob("qa*.html"):
         stray.unlink()
@@ -161,46 +179,19 @@ async def _build(
         store.snapshot(deck.id, "Generated")  # the first version undo can return to
 
 
-def usage(store: Store) -> tuple[Counter[str], Counter[str]]:
-    """How many decks drew each visual language, and how many slides used each
-    reference: the sampler and the reference pick take the least used.
-    ponytail: reads every deck; a counter table when decks reach thousands."""
-    decks = store.all()
-    languages = Counter(d.language for d in decks if d.language)
-    references = Counter(s.reference for d in decks for s in d.slides if s.reference)
-    return languages, references
-
-
-def with_language(store: Store, deck: Deck) -> Deck:
-    """The deck's visual language, drawn once (balanced by usage) and kept, so
-    every later look of this deck is the same however usage moves."""
-    if deck.language:
-        return deck
-    languages, _ = usage(store)
-    look = look_for(
-        deck.id,
-        deck_type=deck.brief.deck_type,
-        tone=deck.brief.tone,
-        words=deck.brief.prompt,
-        nonce=deck.look_nonce,
-        usage=languages,
-    )
-    return store.update(deck.id, language=look.language)
-
-
-def theme_of(deck: Deck) -> Theme:
-    """The deck's one generated look, recoloured if the user asked for that."""
-    look = look_for(
-        deck.id,
-        deck_type=deck.brief.deck_type,
-        tone=deck.brief.tone,
-        words=deck.brief.prompt,
-        nonce=deck.look_nonce,
-        language=deck.language,
-    )
-    if deck.palette_nonce:
-        look = recolour(look, deck.palette_nonce, tone=deck.brief.tone)
-    return build_theme(look)
+async def _previews(store: Store, deck: Deck) -> None:
+    """The style card's three thumbnails, filled from the deck's references
+    with its real words. No model call. A failure leaves the card without
+    thumbnails, never the outline without its gate."""
+    story = deck.storyline
+    if story is None:
+        return
+    shots = store.slides_dir(deck.id) / "style"
+    for old in shots.glob("preview-*.png"):
+        old.unlink()
+    names = await preview.render(theme_of(deck), story, shots)
+    for name in names:
+        store.save_export(deck.id, name, (shots / name).read_bytes())
 
 
 async def _edit(store: Store, deck: Deck, op: ops.Op) -> None:
@@ -310,6 +301,7 @@ async def once(
     writing: str,
     design: str,
     budget_usd: float,
+    image: str = "",
 ) -> bool:
     """Claim and do one job; False when the queue is empty."""
     store.requeue_stale()
@@ -324,6 +316,7 @@ async def once(
             writing=writing,
             design=design,
             budget_usd=budget_usd,
+            image=image,
         )
     )
     await asyncio.gather(work, _beating(store, job, work))
@@ -344,6 +337,7 @@ def main() -> int:
                     writing=cfg.model_writing,
                     design=cfg.model_design,
                     budget_usd=cfg.deck_budget_usd,
+                    image=cfg.model_image,
                 )
             )
         except Exception as e:

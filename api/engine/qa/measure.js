@@ -128,6 +128,7 @@
     for (const el of root.querySelectorAll("*")) {
       if (el === s || el.tagName === "STYLE" || el.querySelector("[data-field]") || el.closest("[data-field]")) continue;
       if (el.tagName === "DD-SHAPE") continue; // a shape is graphic, not an empty block
+      if (el.closest("dd-image")) continue; // an image slot: a picture, or its quiet field
       const texture = el.tagName === "DD-TEXTURE";
       if (texture && el.getAttribute("kind") !== "solid") continue;
       const bg = getComputedStyle(el).backgroundColor;

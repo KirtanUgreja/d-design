@@ -9,6 +9,7 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
+import looks
 import worker
 from app import create_app
 from benchtools import files
@@ -161,3 +162,23 @@ def test_an_aborted_build_resumes_without_paying_twice(tmp_path: Path) -> None:
         r for r in map(json.loads, ledger) if r["stage"] == "compose" and r["slide_id"] == cover
     ]
     assert len(covers) == 1
+
+
+def test_the_style_card_and_another_style(tmp_path: Path) -> None:
+    client, store = _client(tmp_path)
+    deck_id = _approved_deck(store, slides=5)
+    assert client.get(f"/api/decks/{deck_id}/style").status_code == 404  # not drawn yet
+    deck = looks.with_language(store, store.read(deck_id))
+    asyncio.run(worker._previews(store, deck))
+    card = client.get(f"/api/decks/{deck_id}/style").json()
+    assert card["language"] == deck.language and card["name"] and card["previews"]
+    first = card["previews"][0]
+    shot = client.get(f"/api/decks/{deck_id}/style/{first}")
+    assert shot.status_code == 200 and shot.headers["content-type"] == "image/png"
+    assert client.get(f"/api/decks/{deck_id}/style/..%2Fdeck.json").status_code == 404
+    again = client.post(f"/api/decks/{deck_id}/style")
+    assert again.status_code == 200
+    assert again.json()["deck"]["language"] != deck.language  # never the style just shown
+    assert [j.kind for j in store._jobs("queued")] == ["style"]
+    assert client.get(f"/api/decks/{deck_id}/style").json()["previews"] == []
+    assert client.post(f"/api/decks/{deck_id}/style").status_code == 409  # still drawing

@@ -22,10 +22,13 @@ from pydantic import BaseModel, Field
 import ops
 import settings
 from engine import Brief, Deck, Question, interview
+from engine.compose import preview
 from lib.result import Ok
+from looks import theme_of, with_language
 from store.files import History, Store
 
 FINAL = {"ready", "error", "aborted"}
+PREVIEWS = ("preview-1.png", "preview-2.png", "preview-3.png")
 POLL_S = 0.4
 
 
@@ -68,6 +71,19 @@ class DeckOut(BaseModel):
 
 class Problem(BaseModel):
     error: str
+
+
+class StyleCard(BaseModel):
+    """The deck's one generated style, shown at the outline gate (phase 39 -> 6)."""
+
+    language: str
+    name: str
+    idea: str
+    display: str
+    text: str
+    colors: dict[str, str]
+    image_style: str
+    previews: list[str]  # thumbnail names, in order; empty while being drawn
 
 
 def _problem(status: int, message: str) -> JSONResponse:
@@ -241,6 +257,51 @@ def create_app(store: Store) -> FastAPI:
         if not path.exists():
             return _problem(404, "The deck isn't built yet.")
         return Response(path.read_bytes(), media_type="application/pdf")
+
+    # --- the style card (phase 39): one generated style, changeable, never a menu ---
+
+    @api.get("/api/decks/{deck_id}/style", response_model=None)
+    def style(deck_id: str) -> StyleCard | JSONResponse:
+        if not store.exists(deck_id):
+            return _problem(404, missing)
+        deck = store.read(deck_id)
+        if not deck.language:
+            return _problem(404, "The style is drawn with the outline.")
+        c = preview.card(theme_of(deck))
+        names = [n for n in PREVIEWS if (store.dir(deck_id) / n).exists()]
+        return StyleCard(**c.__dict__, previews=names)
+
+    @api.get("/api/decks/{deck_id}/style/{name}", response_model=None)
+    def style_thumb(deck_id: str, name: str) -> FileResponse | JSONResponse:
+        if not store.exists(deck_id) or name not in (
+            "preview-1.png",
+            "preview-2.png",
+            "preview-3.png",
+        ):
+            return _problem(404, missing)
+        path = store.dir(deck_id) / name
+        if not path.exists():
+            return _problem(404, "That preview isn't drawn yet.")
+        return FileResponse(path, media_type="image/png")
+
+    @api.post("/api/decks/{deck_id}/style", response_model=None)
+    def another_style(deck_id: str) -> DeckOut | JSONResponse:
+        """Another style: a new language and look, never the one just shown;
+        the thumbnails are redrawn by the worker for free."""
+        if not store.exists(deck_id):
+            return _problem(404, missing)
+        deck = store.read(deck_id)
+        if deck.status != "approve":
+            return _problem(409, "The style can change until the build starts.")
+        if store.busy(deck_id):
+            return _problem(409, "The last style is still being drawn.")
+        for old in PREVIEWS:
+            (store.dir(deck_id) / old).unlink(missing_ok=True)
+        shown = frozenset({deck.language} if deck.language else set())
+        deck = store.update(deck_id, look_nonce=deck.look_nonce + 1, palette_nonce=0)
+        with_language(store, deck, exclude=shown)
+        store.enqueue("style", deck_id)
+        return out(store.read(deck_id))
 
     # --- the editor (phase 28): each change is an edit job; undo is file-only ---
 

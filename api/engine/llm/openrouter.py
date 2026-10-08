@@ -20,6 +20,7 @@ never an answer (docs/security/operations.md).
 from __future__ import annotations
 
 import asyncio
+import base64
 import json
 import re
 import time
@@ -39,6 +40,8 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 # One corrective pass per call, then fail visibly. An unbounded loop is a token
 # furnace, and the model never decides how many times this runs.
 MAX_REPAIRS = 1
+IMAGE_VERSION = "image.v1"
+MAX_IMAGE_B64 = 16_000_000  # ~12 MB decoded: far above any real slide image
 # Transport retries for 429 and 5xx only. Bounded for the same reason.
 MAX_TRANSPORT_RETRIES = 2
 RETRYABLE = frozenset({429, 500, 502, 503, 504})
@@ -70,6 +73,7 @@ class Reply:
 
     text: str
     citations: tuple[Citation, ...] = ()
+    images: tuple[str, ...] = ()  # data: URLs, from an image-output model
 
 
 class Transport(Protocol):
@@ -92,10 +96,19 @@ class _Annotation(BaseModel):
     url_citation: _UrlCitation | None = None
 
 
+class _ImageUrl(BaseModel):
+    url: str = ""
+
+
+class _Image(BaseModel):
+    image_url: _ImageUrl = Field(default_factory=_ImageUrl)
+
+
 class _Message(BaseModel):
     content: str | None = None
     refusal: str | None = None
     annotations: list[_Annotation] = Field(default_factory=list)
+    images: list[_Image] = Field(default_factory=list)  # image output (phase 39)
 
 
 class _Choice(BaseModel):
@@ -293,6 +306,54 @@ class Seam:
             extra=extra,
         )
 
+    async def complete_image(
+        self,
+        prompt: str,
+        *,
+        model: str,
+        aspect: str,
+        slide_id: str | None = None,
+    ) -> Result[bytes, ModelError]:
+        """One generated image, as the bytes the model returned. Only an inline
+        data: URL is accepted: we never fetch a URL a model hands us. No repair:
+        a failed image becomes a quiet field, never a second charge."""
+        if not self.api_key:
+            return err(ModelError("no_key", "OPENROUTER_API_KEY is not set"))
+        refused = self._refused()
+        if refused is not None:
+            return err(refused)
+        body: dict[str, object] = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}],
+            "modalities": ["image", "text"],
+            "image_config": {"aspect_ratio": aspect},
+            "usage": {"include": True},
+        }
+        if self.deck_id:
+            body["session_id"] = self.deck_id
+        sent = await self._send(
+            body,
+            stage="image",
+            model=model,
+            prompt_version=IMAGE_VERSION,
+            slide_id=slide_id,
+            attempt=1,
+        )
+        if isinstance(sent, Err):
+            return sent
+        for url in sent.value.images:
+            head, _, data = url.partition(",")
+            if head.startswith("data:image/") and head.endswith(";base64") and data:
+                if len(data) > MAX_IMAGE_B64:
+                    break
+                try:
+                    return ok(base64.b64decode(data, validate=True))
+                except ValueError:
+                    break
+        self.ledger[-1].ok = False
+        self.ledger[-1].error_kind = "invalid"
+        return err(ModelError("invalid", "no inline image in the answer"))
+
     async def _with_repair[T](
         self,
         stage: Stage,
@@ -451,7 +512,8 @@ class Seam:
             return fail("truncated", "the answer hit max_tokens")
         if choice.message.refusal or choice.finish_reason == "content_filter":
             return fail("refused", "the model refused")
-        if not choice.message.content:
+        images = tuple(i.image_url.url for i in choice.message.images if i.image_url.url)
+        if not choice.message.content and not images:
             return fail("transport", "the answer was empty")
 
         citations = tuple(
@@ -459,4 +521,4 @@ class Seam:
             for a in choice.message.annotations
             if a.type == "url_citation" and a.url_citation is not None
         )
-        return ok(Reply(choice.message.content, citations))
+        return ok(Reply(choice.message.content or "", citations, images))

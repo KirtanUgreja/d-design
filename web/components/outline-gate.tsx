@@ -28,8 +28,11 @@ export type Decisions = Record<string, "approved" | "cut">;
 export function OutlineGate({
   deck,
   onApprove,
+  style,
 }: {
   deck: GateDeck;
+  // The live deck's style card (phase 39); recordings have none.
+  style?: React.ReactNode;
   // Live decks save the decisions and start the build; recordings replay.
   onApprove?: (decided: Decisions, order: string[]) => void;
 }) {
@@ -66,6 +69,7 @@ export function OutlineGate({
         onSkip={() => setAsked(deck.questions.length)}
       />
       <section aria-labelledby="outline-title" className="border-l border-rule px-8 py-8">
+        {style}
         <p className="text-sm text-muted-foreground">The one thing they should remember</p>
         <h1 id="outline-title" className="mb-8 max-w-3xl font-display text-3xl leading-tight">
           {deck.thesis}
