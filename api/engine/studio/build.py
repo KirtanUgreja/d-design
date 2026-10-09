@@ -139,6 +139,11 @@ async def build(
             refusals["direction"] = f"{got.error.kind}: {got.error.detail[:300]}"
     emit("stage", name="direction", state="done")
 
+    # A motif on every slide reads as a template (the halftone on 6 of 10,
+    # 2026-10-09): the pattern is kept for the cover, the ask and one slide
+    # between them.
+    patterned = {plans[0].id, plans[-1].id, plans[len(plans) // 2].id} if plans else set()
+
     def wants_picture(plan: SlidePlan) -> bool:
         d = direction.of(plan.id)
         return bool(image_model and d and d.image and plan.chart is None and plan.visual is None)
@@ -245,6 +250,8 @@ async def build(
                     thought=storyline.governing_thought,
                     concept=direction.concept,
                     image=image,
+                    pattern=plan.id in patterned,
+                    logo_room=logo is not None and wants_logo(index),
                 )
             if not isinstance(made, Err) or made.error.kind != "transport" or tries:
                 break

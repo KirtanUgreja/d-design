@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from html import escape
 
+from engine.components import charts
 from engine.design.theme import Theme
 from engine.llm.openrouter import ModelError, Seam
 from engine.models import Defect, SlidePlan
@@ -52,6 +53,8 @@ async def compose(
     thought: str,
     concept: str,
     image: bool,
+    pattern: bool = True,
+    logo_room: bool = False,
 ) -> Result[Composed, ModelError]:
     idea = (
         f"Hero: {direction.hero}. Main field: {direction.ground}.\n{direction.idea}"
@@ -70,9 +73,26 @@ async def compose(
             else "\nThis slide has no picture."
         )
         + (
-            f"\nThis slide has a {plan.chart.type} chart of "
-            f"{len(plan.chart.series[0].points)} values: place one empty <dd-chart>."
+            (
+                "\nThis slide's chart is two big figures and the change between them: it IS "
+                "the hero. Place one empty <dd-chart> of at least 1300x520px; the rest is small."
+                if charts.form(plan.chart) == "pair"
+                else f"\nThis slide has a {plan.chart.type} chart of "
+                f"{len(plan.chart.series[0].points)} values: place one empty <dd-chart>."
+            )
             if plan.chart
+            else ""
+        )
+        + (
+            ""
+            if pattern
+            else "\nNo patterned dd-texture on this slide (solid fields only): the deck "
+            "keeps its pattern for a few slides."
+        )
+        + (
+            "\nThe person's logo is placed by our code in the top-right corner: keep a "
+            "clear 300x140px area there, nothing in it."
+            if logo_room
             else ""
         )
         + (

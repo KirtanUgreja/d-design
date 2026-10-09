@@ -12,6 +12,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from engine.components import charts
 from engine.design.theme import Theme
 from engine.llm.openrouter import ModelError, Seam
 from engine.models import SlidePlan, Storyline
@@ -78,7 +79,11 @@ class Direction(BaseModel):
 def _outline(story: Storyline) -> str:
     lines = [f"The deck argues: {story.governing_thought}", f"Audience: {story.audience}", ""]
     for n, p in enumerate(story.slides, start=1):
-        has = ["chart"] if p.chart else []
+        has = (
+            ["chart: two big figures" if charts.form(p.chart) == "pair" else "chart"]
+            if p.chart
+            else []
+        )
         has += [f"visual:{p.visual.kind}"] if p.visual else []
         extra = " — has " + ", ".join(has) if has else ""
         lines.append(f"[{p.id}] slide {n}, {p.intent} ({p.beat}){extra}")

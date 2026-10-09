@@ -175,7 +175,9 @@ def place(occupied: list[Rect], logo: Logo, *, height: float, prefer_top: bool) 
     h = w * logo.height / logo.width
     left, right = SAFE + 8, 1920 - SAFE - 8 - w
     top, bottom = SAFE - 16, 1080 - SAFE + 16 - h
-    corners = [(left, top), (right, top), (left, bottom), (right, bottom)]
+    # Top-right first: the designer keeps it clear on the slides that get the
+    # logo (studio, 2026-10-09).
+    corners = [(right, top), (left, top), (left, bottom), (right, bottom)]
     if not prefer_top:
         corners = [(right, bottom), (left, bottom), (right, top), (left, top)]
     for x, y in corners:

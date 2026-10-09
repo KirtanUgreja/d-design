@@ -59,6 +59,10 @@ _BANNED_PROPS = frozenset(
         "transition",
         "font",
         "opacity",
+        # Multi-column text breaks a sentence across columns (team slide, 2026-10-09).
+        "columns",
+        "column-count",
+        "column-width",
     ]
 )
 _BANNED_FUNCTIONS = frozenset(
