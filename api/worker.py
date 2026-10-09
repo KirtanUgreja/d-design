@@ -315,7 +315,7 @@ async def _ask(store: AnyStore, deck: Deck, op: ops.Ask, seam: Seam, *, model: s
         store.append_event(deck.id, {"type": "edit_refused", "message": STYLE_REFUSAL})
         return
     theme = theme_of(deck)
-    picture = pictures.picture_of(slide.composed.html)
+    picture = _picture_for(plan, slide.composed.html, ready_screens(store, deck))
     current = Composed(pictures.strip(slide.composed.html), slide.composed.css)
     made = await designer.revise(
         seam, plan, current, op.instruction, prefix=prefix(theme), model=model
@@ -352,6 +352,13 @@ async def _ask(store: AnyStore, deck: Deck, op: ops.Ask, seam: Seam, *, model: s
     store.append_event(deck.id, {"type": "proposal_ready", "slide_id": plan.id})
 
 
+def _picture_for(plan: SlidePlan, html: str, own: dict[int, tuple[str, str, str]]) -> str:
+    """The picture an edit puts back: the slide's own, else the person's
+    screenshot the slide was planned to show (its image box is required)."""
+    shot = own.get(plan.screenshot) if plan.screenshot else None
+    return pictures.picture_of(html) or (shot[0] if shot else "")
+
+
 async def _ask_deck(
     store: AnyStore, deck: Deck, op: ops.AskDeck, seam: Seam, *, model: str
 ) -> None:
@@ -370,10 +377,11 @@ async def _ask_deck(
     kept = store.kept(deck.id)
     plans = [p for p in story.slides if p.id in kept]
     gate = asyncio.Semaphore(4)
+    own = ready_screens(store, deck)
 
     async def one(plan: SlidePlan) -> tuple[str, Kept] | None:
         slide = kept[plan.id]
-        picture = pictures.picture_of(slide.composed.html)
+        picture = _picture_for(plan, slide.composed.html, own)
         current = Composed(pictures.strip(slide.composed.html), slide.composed.css)
         async with gate:
             made = await designer.revise(

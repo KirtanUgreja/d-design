@@ -172,7 +172,12 @@ def parser(
                 problems.append(f"this slide has one: place one empty <{tag} class=…>")
             if planned is None and f"<{tag}" in html:
                 problems.append(f"this slide has none: remove the <{tag}>")
-        if not image and "<dd-image" in html:
+        if plan.screenshot is not None and "<dd-image" not in html:  # never a drawn stand-in
+            problems.append(
+                "this slide shows the person's screenshot: place one <dd-image aspect=…> "
+                "as its main content, not a drawing of a screen"
+            )
+        if not image and plan.screenshot is None and "<dd-image" in html:
             problems.append("this slide has no image: remove the <dd-image>")
         if html.count("<dd-image") > 1:
             problems.append("one <dd-image> at most")

@@ -192,3 +192,19 @@ def test_the_persons_screenshot_is_placed_not_generated(tmp_path: Path) -> None:
     )
     assert url in built.slides[1].html
     assert transport.calls.count("image") <= 1  # only the art director's own pick, if any
+
+
+def test_a_screenshot_slide_must_show_it_not_draw_a_screen() -> None:
+    # Live, 2026-10-10: the designer drew a browser in flat SVG and the
+    # person's own screenshot never reached the slide.
+    from engine.llm.openrouter import Reply
+    from engine.studio.slide import parser
+    from lib.result import Err
+
+    plan = _story(2).slides[1].model_copy(update={"screenshot": 1, "chart": None, "visual": None})
+    body = "".join(f'<p data-field="{f.name}">{f.text}</p>' for f in plan.fields)
+    css = "```css\n.s{color:var(--c-ink)}\n```"
+    drawn = parser(plan)(Reply(f'```html\n<section class="s">{body}</section>\n```\n{css}'))
+    assert isinstance(drawn, Err) and "screenshot" in drawn.error
+    shown = f'<section class="s">{body}<dd-image aspect="16:9"></dd-image></section>'
+    assert not isinstance(parser(plan)(Reply(f"```html\n{shown}\n```\n{css}")), Err)

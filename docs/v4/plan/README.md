@@ -6,6 +6,8 @@ Phase numbers continue from v3 ([../../versions.md](../../versions.md): a phase 
 
 **[master-plan.md](master-plan.md)** — build everything on 2026-10-09 (no credit), test on 2026-10-10 (the owner tops up), submit by 2026-10-10. It orders the work, sets the cut lines and the budget, and says which phase owns each item.
 
+**[demo-script.md](demo-script.md)** — the 3-minute stage demo for 2026-10-10: showcase decks, the click path, and what to do if the live build is slow.
+
 ## Status
 
 | Phase | Size | Status |
