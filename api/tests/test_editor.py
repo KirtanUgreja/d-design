@@ -169,6 +169,30 @@ def test_a_change_in_words_is_a_proposal_until_accepted(tmp_path: Path, kind: st
 
 
 @each_store
+def test_an_accepted_change_keeps_a_full_size_picture(tmp_path: Path, kind: str) -> None:
+    # Live, 2026-10-10: a picture alone is over the sanitizer's size cap, so
+    # every proposal on a slide with a photo or screenshot was refused.
+    import json
+
+    from engine.components import images
+
+    client, store, deck_id = _built(tmp_path, kind)
+    client.post(f"/api/decks/{deck_id}/slides/s02/ask", json={"instruction": "bigger"})
+    _work(store)
+    raw = store.export(deck_id, "proposal-s02.json")
+    assert raw is not None
+    proposal = json.loads(raw)
+    url = images.data_url(b"w" * 40_000)
+    framed = f'<dd-image aspect="16:9"><img src="{url}" alt=""></dd-image></section>'
+    proposal["html"] = proposal["html"].replace("</section>", framed)
+    store.save_export(deck_id, "proposal-s02.json", json.dumps(proposal))
+    client.post(f"/api/decks/{deck_id}/slides/s02/accept")
+    _work(store)
+    assert not [e for e in store.events(deck_id) if e["type"] == "edit_refused"]
+    assert url in next(s for s in store.read(deck_id).slides if s.id == "s02").html
+
+
+@each_store
 def test_asking_one_slide_for_a_colour_is_refused_without_a_model(
     tmp_path: Path, kind: str
 ) -> None:

@@ -503,14 +503,16 @@ async def _edit(store: AnyStore, deck: Deck, op: ops.Op) -> None:
             )
             return
         parsed = json.loads(raw)
-        clean = sanitize(str(parsed["html"]), frozenset(f.name for f in by[op.slide].fields))
+        # Checked again without the picture's bytes (a picture alone is over the
+        # sanitizer's size cap); our own picture goes back in after it.
+        picture = pictures.picture_of(str(parsed["html"]))
+        names = frozenset(f.name for f in by[op.slide].fields)
+        clean = sanitize(pictures.strip(str(parsed["html"])), names)
         if isinstance(clean, Err):  # it was ours, but it is read back from storage: checked again
             store.append_event(
                 deck.id, {"type": "edit_refused", "message": "That change can't be applied."}
             )
             return
-        # The sanitizer drops our own <img>; the picture goes back in after it.
-        picture = pictures.picture_of(str(parsed["html"]))
         html = pictures.fill(clean.value, picture) if picture else clean.value
         kept[op.slide] = Kept(Composed(html, str(parsed["css"])), "edited")
         touched = [op.slide]
