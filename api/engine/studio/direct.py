@@ -125,7 +125,7 @@ async def direct(
         model=model,
         prefix=prefix,
         prompt_version=PROMPT_VERSION,
-        max_tokens=16000,
+        max_tokens=12000,
         reasoning="medium",  # one call for the whole deck: worth the thought
     )
     if isinstance(got, Err):

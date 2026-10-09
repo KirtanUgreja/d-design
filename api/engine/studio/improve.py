@@ -18,6 +18,7 @@ from engine.studio.slide import Composed, fields_text, parser
 from lib.result import Err, Result, ok
 
 PROMPT_VERSION = "improve.v2"  # v2: names the AI tells it sees
+MAX_TOKENS = 10000  # see design.MAX_TOKENS: the gateway reserves the ceiling
 SHOT_WIDTH = 1280  # what the critic sees: enough for layout, a third of the tokens
 
 SYSTEM = """You are the creative director. A designer made this slide; you see it rendered
@@ -81,7 +82,7 @@ async def improve(
         model=model,
         prefix=prefix,
         prompt_version=PROMPT_VERSION,
-        max_tokens=32000,
+        max_tokens=MAX_TOKENS,
         reasoning="low",
         slide_id=plan.id,
         images=(screenshot,),

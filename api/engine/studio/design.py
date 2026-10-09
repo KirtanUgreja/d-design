@@ -16,8 +16,10 @@ from engine.studio.slide import PAIRS, Composed, fields_text, parser
 from lib.result import Err, Result, ok
 
 PROMPT_VERSION = "design.v2"  # v2: checks the AI tells
-# Hidden reasoning is billed out of max_tokens; a ceiling costs nothing unused.
-MAX_TOKENS = 32000
+# The gateway reserves a call's maximum cost while it runs: at 32k four calls
+# at once were refused on a low balance (402, 2026-10-09). Measured answers are
+# 600-2,100 tokens with no hidden reasoning at low effort.
+MAX_TOKENS = 10000
 
 SYSTEM = """You are a senior presentation designer. You design ONE slide, in HTML, CSS and flat
 SVG, inside the deck's design system, from your art director's plan. Every slide you make
@@ -131,7 +133,7 @@ async def repair(
         model=model,
         prefix=prefix,
         prompt_version=PROMPT_VERSION,
-        max_tokens=16000,
+        max_tokens=MAX_TOKENS,
         reasoning="low",
         slide_id=plan.id,
     )

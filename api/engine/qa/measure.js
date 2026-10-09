@@ -163,6 +163,10 @@
       else if (el.tagName === "DD-SHAPE") kind = "shape";
       else if (el.tagName === "IMG") kind = "image";
       else if (el.tagName === "DD-LOGO") kind = "logo";
+      // Decoration and drawings take space too: the logo never lands on them
+      // (it sat on a giant cropped "Demo", 2026-10-09).
+      else if (el.hasAttribute("data-deco")) kind = "deco";
+      else if (el.tagName.toLowerCase() === "svg") kind = "drawing";
       else { const bg = getComputedStyle(el).backgroundColor; if (opaque(bg) && rgb(bg).join() !== ground) kind = "field"; }
       if (!kind) continue;
       const r = rel(el.getBoundingClientRect());

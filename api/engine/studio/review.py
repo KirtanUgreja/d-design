@@ -75,7 +75,7 @@ async def review(
         model=model,
         prefix=prefix,
         prompt_version=PROMPT_VERSION,
-        max_tokens=12000,
+        max_tokens=6000,
         images=(sheet(shots),),
     )
     if isinstance(got, Err):
