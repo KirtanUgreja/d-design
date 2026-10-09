@@ -124,7 +124,10 @@ class Studio:
         if job == "review":
             ids = re.findall(r"s\d\d", user.split("Ids in order:")[-1])
             redo = [{"id": ids[1], "note": "make the headline the hero"}] if len(ids) > 1 else []
-            return _ok(jsonlib.dumps({"verdict": "close", "redo": redo}))
+            scores = {
+                k: 6 for k in ("consistency", "hierarchy", "detail", "readability", "innovation")
+            }
+            return _ok(jsonlib.dumps({"verdict": "close", "scores": scores, "redo": redo}))
         answer = _slide(user, off_canvas=self.broken)
         if job == "improve":
             answer = "```critique\n- bigger\n```\n" + answer

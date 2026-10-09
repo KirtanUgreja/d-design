@@ -17,19 +17,22 @@ from PIL import Image, ImageDraw
 from pydantic import BaseModel, Field
 
 from engine.llm.openrouter import ModelError, Seam
+from engine.studio.slide import SCORING
 from lib.result import Err, Result, ok
 
-PROMPT_VERSION = "review.v1"
+PROMPT_VERSION = "review.v2"  # v2: five scored dimensions
 MAX_REDOS = 2
 THUMB = (640, 360)
 COLUMNS = 3
 
-SYSTEM = """You are the design director reviewing a finished deck before it goes to the client.
+SYSTEM = f"""You are the design director reviewing a finished deck before it goes to the client.
 You see every slide on one sheet, in order, each labelled with its id. Judge the DECK, not one
 slide: does it have rhythm (a bold opener, a denser middle, an open close)? Does any slide look
 like its neighbour, break the deck's style, feel empty or crowded, bury its one idea, or show
 THE TELLS OF AN AI-MADE SLIDE (equal boxes, metric tiles, decorative bars, everything centred,
 the same structure repeated)?
+
+Score the deck. {SCORING}
 
 Name at most two slides that most need redoing, weakest first, each with one note a designer
 can act on ("the headline fights the number: make 400+ the hero, headline smaller, top-left").
@@ -41,8 +44,17 @@ class Redo(BaseModel):
     note: str
 
 
+class Scores(BaseModel):
+    consistency: int
+    hierarchy: int
+    detail: int
+    readability: int
+    innovation: int
+
+
 class Review(BaseModel):
     verdict: str  # one sentence on the deck as a whole
+    scores: Scores
     redo: list[Redo] = Field(default_factory=list)
 
 

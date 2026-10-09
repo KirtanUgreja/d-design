@@ -184,3 +184,29 @@ def test_a_word_unit_does_not_shrink_a_pair_figure() -> None:
     hours = _spec("bar", [("2021", 21.5), ("2024", 14.8)], unit="hours")
     out = charts.svg(hours)
     assert "font-size:106px" in out and "> hours</tspan>" in out  # was 60px with the word inline
+
+
+def test_a_before_and_after_of_one_thing_is_two_figures_and_the_change() -> None:
+    churn = ChartSpec.model_validate(
+        {
+            "type": "bar",
+            "title": "Monthly churn",
+            "unit": "%",
+            "series": [
+                {"name": "Q2 2026", "points": [{"label": "Monthly churn", "value": 4.4}]},
+                {"name": "Q3 2026", "points": [{"label": "Monthly churn", "value": 3.1}]},
+            ],
+            "fact_ids": ["u3"],
+        }
+    )
+    assert charts.form(churn) == "pair"
+    out = charts.svg(churn)
+    assert "4.4%" in out and "3.1%" in out and "Q2 2026" in out and "→" in out
+
+
+def test_two_different_things_side_by_side_are_not_a_change() -> None:
+    users = _spec("bar", [("Spotify listeners", 713), ("Strava users", 180)], unit="M")
+    assert charts.form(users) == "pair"
+    out = charts.svg(users)
+    assert "713" in out and "180" in out
+    assert "→" not in out and "-75" not in out  # no arrow, no "-75%"

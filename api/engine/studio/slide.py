@@ -111,9 +111,22 @@ AI_TELLS = """THE TELLS OF AN AI-MADE SLIDE — never do these:
 - an italic serif word as a flourish in every headline; a pale cream ground by default
 - icons or clip art standing in for an idea; a generic picture that could sit in any deck
 - a number in a box with a label under it, repeated slide after slide
+- a kicker or label that says the headline again in other words; the same label style on
+  every slide whatever it says
 What a designer does instead: ONE dominant element per slide that the eye lands on first, the rest
 clearly demoted; a rhythm across the deck (a bold opener, denser middle, an open close); real
 evidence (the product, the data) instead of decoration; whitespace that is one deliberate field."""
+
+
+# The five dimensions a design is scored on (open-design's critique skill,
+# after huashu-design), with its discipline: evidence for every score, the
+# worst sustained band, no grade inflation.
+SCORING = """Score it on five dimensions, 0-10 each, with one line of evidence naming a specific
+element: CONSISTENCY (one direction in every choice), HIERARCHY (a stranger knows what to read
+first, second, third), DETAIL (alignment, baselines, leading, spacing rhythm), READABILITY
+(legible from the back of a room, nothing cramped), INNOVATION (one move that is not the
+median). The score is the worst sustained band, not the average. A 7 means strong; every
+score at 7 or more means you are not looking hard enough."""
 
 
 def fields_text(plan: SlidePlan) -> str:

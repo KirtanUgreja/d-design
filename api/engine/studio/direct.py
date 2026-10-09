@@ -18,7 +18,7 @@ from engine.llm.openrouter import ModelError, Seam
 from engine.models import SlidePlan, Storyline
 from lib.result import Err, Result, ok
 
-PROMPT_VERSION = "direct.v2"  # v2: rhythm, one idea, the AI tells
+PROMPT_VERSION = "direct.v3"  # v3: alternation; v2: rhythm, one idea, the AI tells
 IMAGE_CAP = 3  # pictures in one deck: where a picture says something, not as filler
 
 Hero = Literal["headline", "number", "chart", "visual", "image", "diagram", "quote", "list"]
@@ -47,6 +47,7 @@ Rules of the rhythm:
   where the evidence and the product live, and an open, confident close.
 - One idea per slide, and at most one number as the hero: several figures are a chart or
   several slides, never a row of tiles.
+- Big-number slides and dense slides (a flow, a chart, a list) alternate, so the eye rests.
 - No two slides in a row share a layout idea, a hero or a ground. At least two slides sit on
   an accent or ink field. The cover and the ask are the two strongest slides.
 - Scale contrast is the tool: a hero 4 to 8 times the size of the body text.
@@ -116,7 +117,29 @@ def plain(plans: list[SlidePlan]) -> Direction:
                 idea=f"The {hero} large on the {side}, the rest in the other columns.",
             )
         )
-    return Direction(concept="", slides=slides)
+    return Direction(concept="", slides=rhythm(slides))
+
+
+def rhythm(slides: list[SlideDirection]) -> list[SlideDirection]:
+    """The hard rules of a deck's rhythm, enforced by code whatever the plan
+    said (open-design's deck checklist, 2026-10-09): never three slides in a
+    row on the same field, and at least one dark (ink) slide and one light
+    (ground or surface) slide once a deck has five."""
+    out = list(slides)
+    for i in range(2, len(out)):
+        if out[i].ground == out[i - 1].ground == out[i - 2].ground:
+            options: list[Ground] = ["ink", "accent", "surface", "ground"]
+            pick = next(g for g in options if g != out[i].ground)
+            out[i] = out[i].model_copy(update={"ground": pick})
+    if len(out) >= 5:
+        middle = range(1, len(out) - 1)
+        if not any(s.ground == "ink" for s in out):
+            i = next((j for j in middle if out[j].hero in ("number", "quote", "headline")), 1)
+            out[i] = out[i].model_copy(update={"ground": "ink"})
+        if not any(s.ground in ("ground", "surface") for s in out):
+            i = next((j for j in middle if out[j].hero in ("chart", "list", "visual")), 2)
+            out[i] = out[i].model_copy(update={"ground": "ground"})
+    return out
 
 
 async def direct(
@@ -146,4 +169,4 @@ async def direct(
         wants = wants and pictured < IMAGE_CAP
         pictured += wants
         slides.append(s.model_copy(update={"image": wants}))
-    return ok(plan.model_copy(update={"slides": slides}))
+    return ok(plan.model_copy(update={"slides": rhythm(slides)}))

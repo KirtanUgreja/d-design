@@ -99,6 +99,12 @@ A single generic "swap theme" would overflow slides composed for different font 
 - **Pictures are flat editorial illustrations** in the deck's accent, not AI photographs, which give themselves away through hands, light and implausible detail. Gamma 5 moved to illustration for the same reason.
 - **A deck-level look** (layer 5): a slide is judged against its neighbours, which a per-slide critic cannot see.
 
+**What open-design taught us (2026-10-09).** Studied: [nexu-io/open-design](https://github.com/nexu-io/open-design), specifically its deck template's checklist (guizang-ppt) and its critique skill (after huashu-design).
+- **Rhythm is enforced by code** (`direct.rhythm`): never three slides in a row on the same field, and at least one dark and one light slide in any deck of five or more. Big-number slides and dense slides alternate (prompt).
+- **The critic scores five dimensions** (consistency, hierarchy, detail, readability, innovation), each 0–10 with one line of evidence. The score is the worst sustained band, and inflated scores are called out. The deck review sends its five scores on a `review` event.
+- **One more tell:** a kicker that says the headline again in other words.
+- Not taken: their **five-direction picker**. Users never pick a look from a menu (owner, 2026-10-05). Also not taken: WebGL backgrounds and CDN icon fonts, which break the offline export and the no-icons rule.
+
 **Flat SVG (new).** The designer may draw with `svg g path rect circle ellipse line polyline polygon`, using geometry attributes only. The sanitizer keeps nothing else: no text, links, scripts, `foreignObject`, styles or gradients. Colour is applied through CSS classes, which the lint restricts to `var(--c-…)`. An unstyled shape defaults to `--c-ink`, never browser black.
 
 **What stayed:** the theme tokens and visual languages (type, palette, texture policy), the sanitizer and lint at entry, Chromium QA on every slide, components drawn by code (`dd-chart`, `dd-visual`, `dd-image`), the logo placed by code, the budget cap that fails closed, resume without paying twice, and abort.

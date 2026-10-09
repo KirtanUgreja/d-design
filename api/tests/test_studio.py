@@ -156,3 +156,24 @@ def test_a_picture_lands_where_the_art_director_asked(tmp_path: Path) -> None:
     second = built.slides[1]
     assert '<img src="data:image/webp;base64,' in second.html
     assert "Absolutely no text anywhere" in transport.prompts[0]
+
+
+def test_the_rhythm_rules_hold_whatever_the_plan_says() -> None:
+    from engine.studio.direct import SlideDirection, rhythm
+
+    flat = [
+        SlideDirection(id=f"s{n}", hero="headline", ground="accent", image=False, idea="x")
+        for n in range(6)
+    ]
+    fixed = [s.ground for s in rhythm(flat)]
+    assert not any(fixed[i] == fixed[i - 1] == fixed[i - 2] for i in range(2, len(fixed)))
+    assert "ink" in fixed and ({"ground", "surface"} & set(fixed))
+
+
+def test_the_review_scores_ride_on_an_event(tmp_path: Path) -> None:
+    events: list[dict[str, object]] = []
+    _build(tmp_path, Studio(), _story(4), on_event=events.append)
+    [review] = [e for e in events if e["type"] == "review"]
+    scores = review["scores"]
+    assert isinstance(scores, dict)
+    assert set(scores) == {"consistency", "hierarchy", "detail", "readability", "innovation"}

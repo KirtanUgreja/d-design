@@ -362,6 +362,11 @@ async def build(
             seam, shots, prefix=head, model=model, thought=storyline.governing_thought
         )
         if not isinstance(verdict, Err):
+            emit(
+                "review",
+                scores=verdict.value.scores.model_dump(),
+                redo=[r.id for r in verdict.value.redo],
+            )
             for redo in verdict.value.redo:
                 plan = next(p for p in order if p.id == redo.id)
                 # ponytail: a slide that already carries the logo or its picture is

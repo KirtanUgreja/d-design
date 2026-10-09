@@ -14,20 +14,19 @@ from PIL import Image
 from engine.llm.openrouter import ModelError, Seam
 from engine.models import Defect, SlidePlan
 from engine.studio.direct import SlideDirection
-from engine.studio.slide import Composed, fields_text, parser
+from engine.studio.slide import SCORING, Composed, fields_text, parser
 from lib.result import Err, Result, ok
 
-PROMPT_VERSION = "improve.v2"  # v2: names the AI tells it sees
+PROMPT_VERSION = "improve.v3"  # v3: scores five dimensions; v2: names the AI tells
 MAX_TOKENS = 10000  # see design.MAX_TOKENS: the gateway reserves the ceiling
 SHOT_WIDTH = 1280  # what the critic sees: enough for layout, a third of the tokens
 
-SYSTEM = """You are the creative director. A designer made this slide; you see it rendered
+SYSTEM = f"""You are the creative director. A designer made this slide; you see it rendered
 at 1920x1080 and you see its code. Your standard: a slide a top studio would put in its
 portfolio. Not "fine". Not a template.
 
-First, a critique of at most five short lines: what is weak in hierarchy (is there one clear
-hero?), scale contrast, use of the canvas (dead space, cramped areas, things floating),
-alignment, boldness, and every one of THE TELLS OF AN AI-MADE SLIDE you can see in it.
+First, the critique. {SCORING}
+Then name, in at most three short lines, every one of THE TELLS OF AN AI-MADE SLIDE you see.
 
 Then REDESIGN it: return the complete html and css of the better slide. Make the changes the
 critique calls for — usually bigger and bolder, fewer competing elements, a stronger grid, a
