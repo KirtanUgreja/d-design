@@ -45,5 +45,10 @@
   "deck_types": [
     "launch",
     "pitch"
-  ]
+  ],
+  "finishes": [
+    "none",
+    "fine"
+  ],
+  "glow": false
 }

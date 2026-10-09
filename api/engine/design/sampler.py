@@ -84,6 +84,8 @@ class Look:
     # The display face's own instance, when it is variable: axis -> value.
     instance: tuple[tuple[str, float], ...] = ()
     language: str = ""  # the visual language's id (design/languages.py); "" = none
+    finish: str = "none"  # none · fine · film: the grain over every slide
+    glow: bool = False  # may a slide carry one soft glow (dd-glow)
 
     def axis(self, tag: str, default: float) -> float:
         return next((v for t, v in self.instance if t == tag), default)
@@ -239,6 +241,7 @@ def draw(
         motif = Motif("plain", ("solid",), "no texture: flat colour fields only")
     shapes = patterns.shapes(rng)  # drawn always, so the rng stream stays the same
     wide = pairing.kind in ("wide", "mono")
+    finish, glow = _surface(deck_id, n, language)
     return Look(
         id=f"{deck_id}-{n}",
         pairing=pairing,
@@ -265,7 +268,17 @@ def draw(
         instance=_instance(rng, pairing),
         shapes=tuple(shapes.items()) if language is None or language.shapes else (),
         language=language.id if language else "",
+        finish=finish,
+        glow=glow,
     )
+
+
+def _surface(deck_id: str, n: int, language: Language | None) -> tuple[str, bool]:
+    """The deck's finish and glow, from what its language allows. Its own
+    random stream, so adding it moved no existing look."""
+    rng = random.Random(seed_of(f"{deck_id}/{n}/surface"))  # noqa: S311 - a look
+    finishes = language.finishes if language else ("none",)
+    return rng.choice(finishes), bool(language and language.glow and rng.random() < 0.7)
 
 
 def distance(a: Look, b: Look) -> float:

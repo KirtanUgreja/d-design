@@ -47,5 +47,10 @@
   "deck_types": [
     "pitch",
     "launch"
-  ]
+  ],
+  "finishes": [
+    "film",
+    "fine"
+  ],
+  "glow": true
 }

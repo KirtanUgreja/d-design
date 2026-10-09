@@ -52,6 +52,11 @@ class Language(BaseModel):
     image: Imagery
     tones: tuple[str, ...] = ()
     deck_types: tuple[str, ...] = ()
+    # Its surface (owner, 2026-10-09: textured references, but "I don't want
+    # every deck to look the same"): the finishes a deck in it may draw, and
+    # whether it may carry one soft glow. Most languages stay crisp and flat.
+    finishes: tuple[Literal["none", "fine", "film"], ...] = ("none",)
+    glow: bool = False
 
     def allows(self, pairing: Pairing) -> bool:
         return pairing.kind in self.kinds or pairing.id in self.pairings

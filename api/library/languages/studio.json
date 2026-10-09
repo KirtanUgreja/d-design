@@ -1,0 +1,61 @@
+{
+  "id": "studio",
+  "name": "Studio",
+  "idea": "A dark, textured investor deck: wide technical type, treated photography, one accent, numbers in a bento grid.",
+  "brief": "The deck of a design studio's best pitch work (owner's references, 2026-10-09). A dark ground with film grain; ONE accent used sparingly, as a light in the frame. Display type wide and technical, often uppercase and tracked, or a grotesk with a single italic word for emphasis. Every slide carries editorial chrome: tiny uppercase labels in the label face in two or three corners (the deck's name, the section, the page as '04 — 10'), and fine hairlines dividing the canvas into a visible grid. Imagery is photography treated in the deck's colours: full-bleed behind the title on the cover, cropped into columns or cards elsewhere. Numbers sit in a bento grid of UNEQUAL cards (one large, the rest smaller), or as a big figure with a striped progress bar beside it. Light slides, when used, are a pale ground with the same chrome. Generous dark space; nothing centred unless it is the cover's one line.",
+  "never": [
+    "pastel colours",
+    "more than one accent",
+    "equal cards in a row",
+    "clip art or icons",
+    "bright light grounds on more than two slides"
+  ],
+  "kinds": [
+    "wide",
+    "grotesk",
+    "mono"
+  ],
+  "pairings": [],
+  "grids": [
+    "asymmetric",
+    "poster"
+  ],
+  "edges": [
+    "sharp",
+    "soft"
+  ],
+  "dark": 0.9,
+  "split": 0.1,
+  "density": [
+    "balanced",
+    "dense"
+  ],
+  "ratio": [
+    1.32,
+    1.46
+  ],
+  "texture": "never",
+  "shapes": false,
+  "image": {
+    "appetite": 0.55,
+    "styles": [
+      "cinematic photograph, dramatic motion blur, shallow depth of field, dark, high contrast, editorial",
+      "studio photograph of an abstract polished chrome object on black, soft rim light, high contrast"
+    ]
+  },
+  "tones": [
+    "bold",
+    "confident"
+  ],
+  "deck_types": [
+    "pitch",
+    "launch",
+    "sales",
+    "partnership"
+  ],
+  "finishes": [
+    "film",
+    "fine"
+  ],
+  "glow": true
+}

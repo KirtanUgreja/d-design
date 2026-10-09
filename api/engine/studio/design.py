@@ -251,7 +251,11 @@ def fallback(plan: SlidePlan, theme: Theme | None = None) -> Composed:
         )
         css = (
             ".s{display:grid;grid-template-rows:auto auto 1fr auto;gap:var(--s-4);padding:64px}"
-            f".h{{{_DISPLAY};font-size:var(--t-h2);line-height:1.05}}"
+            # The text face, not the display face: a wide display face cannot
+            # hold 229 characters in four lines at the smallest headline step
+            # (the editor's fit test, under a wide-type look).
+            ".h{font-family:var(--f-text);font-weight:var(--w-bold);font-size:var(--t-h2);"
+            "line-height:1.12}"
             ".r{display:grid;grid-template-columns:1fr 1fr;gap:var(--s-6);align-items:end}"
             ".n{display:grid;gap:var(--s-2)}"
             f".st{{{_DISPLAY};font-size:var(--t-d3);line-height:var(--lh-display);color:var(--c-ink)}}"

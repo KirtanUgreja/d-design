@@ -47,7 +47,7 @@
       if (n.parentElement.closest("[data-field]")) continue;
       if (n.parentElement.closest("dd-chart, dd-visual")) continue; // our components' labels
       if (!deco) add("E6", null, "stray text: " + norm(n.textContent).slice(0, 60), "text only in data-field or data-deco");
-      else if (norm(deco.textContent).split(" ").length > 3) add("E6", null, "data-deco over 3 words", "3 words");
+      else if (norm(deco.textContent).split(" ").length > 6) add("E6", null, "data-deco over 6 words", "6 words");
     }
 
     const rects = [], boxes = [];

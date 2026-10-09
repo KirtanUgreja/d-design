@@ -105,6 +105,15 @@ A single generic "swap theme" would overflow slides composed for different font 
 - **One more tell:** a kicker that says the headline again in other words.
 - Not taken: their **five-direction picker**. Users never pick a look from a menu (owner, 2026-10-05). Also not taken: WebGL backgrounds and CDN icon fonts, which break the offline export and the no-icons rule.
 
+**Surface: grain and glow, per look (owner, 2026-10-09).** The owner's references are a tennis-tech investor deck and a fintech pitch deck, both on Behance. They are dark, film-grained, with one soft glow, treated photography and mono corner labels. He also said **not every deck should look like that**.
+- Each visual language lists the **finishes** it allows: `none`, `fine` grain or `film` grain. It also says whether it may **glow**. A deck draws its own finish from that list, on a separate random stream.
+- Swiss, Bauhaus and Minimal stay flat. Editorial, Journal, Humanist and Poster may get fine grain. Cinematic and the new **Studio** language may get film grain and a glow.
+- The grain is a seeded noise tile, defined once per deck as `--grain`. `dd-glow` is a radial gradient our code draws from the accent. Slides in looks without them draw nothing, because the base CSS reads both with a `none` fallback.
+- **Photographs** are used only where a language's image style asks for one. Our code then **duotones** them onto the deck's dark, accent and light colours. That gives one treated look across the deck and hides the tells of an AI photo. Every other style gets flat illustration.
+- **Studio** (`library/languages/studio.json`) is the references as a language. Wide technical display type or a grotesk with one italic word, mono corner chrome, hairline grids, treated photography, numbers in an unequal bento grid.
+- Decoration (`data-deco`) may run to 6 words, so slides can carry editorial chrome ("INVESTMENT PRESENTATION", "04 — 10").
+- **Soft** (`library/languages/soft.json`) is the owner's second set of references (the Pawvera pitch deck on Behance). It alternates a cream ground with a deep field, uses rounded cards and pill section tags, a friendly sentence-case grotesk, the product on a phone, and one giant soft brand motif cropped off an edge. It never grains heavily or glows. Studio and Soft sit beside the other eight, so decks keep varying.
+
 **Flat SVG (new).** The designer may draw with `svg g path rect circle ellipse line polyline polygon`, using geometry attributes only. The sanitizer keeps nothing else: no text, links, scripts, `foreignObject`, styles or gradients. Colour is applied through CSS classes, which the lint restricts to `var(--c-…)`. An unstyled shape defaults to `--c-ink`, never browser black.
 
 **What stayed:** the theme tokens and visual languages (type, palette, texture policy), the sanitizer and lint at entry, Chromium QA on every slide, components drawn by code (`dd-chart`, `dd-visual`, `dd-image`), the logo placed by code, the budget cap that fails closed, resume without paying twice, and abort.

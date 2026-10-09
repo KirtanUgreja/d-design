@@ -13,7 +13,7 @@ import base64
 import io
 import re
 
-from PIL import Image
+from PIL import Image, ImageOps
 
 from engine.models import SlidePlan
 from lib.result import Result, err, ok
@@ -39,33 +39,47 @@ def aspect_of(html: str) -> str:
     return m.group(1) if m and m.group(1) in ASPECTS else "3:2"
 
 
+def is_photo(style: str) -> bool:
+    return "photograph" in style.lower()
+
+
 def prompt(plan: SlidePlan, style: str, accent: str, *, deck: str = "") -> str:
     """What to picture: the slide's subject, the deck's one image style and
     its accent as a mood. Words come from the user's approved fields only."""
     by = {f.name: f.text for f in plan.fields}
     subject = by.get("headline", "")
     detail = "; ".join(v for k, v in sorted(by.items()) if k.startswith("point-"))
-    # Illustration, not photography: AI photos give themselves away (hands,
-    # light, implausible detail); Gamma 5 moved to illustration for the same
-    # reason (research of 2026-10-09).
-    return (
-        "A flat editorial illustration for a presentation slide: bold simple shapes, a "
+    # A photograph only where the deck's language asks for one, and then our
+    # code tints it to the deck's colours (duotone, below), which also hides the
+    # tells of an AI photo; everywhere else a flat illustration (Gamma 5 moved to
+    # illustration for those tells; research of 2026-10-09).
+    head = (
+        f"A {style} for a presentation slide. Dark, simple, one subject, strong shapes; "
+        "no people's faces in close-up, no hands in focus.\n"
+        if is_photo(style)
+        else "A flat editorial illustration for a presentation slide: bold simple shapes, a "
         f"limited palette built on {accent} with deep neutrals, no gradients, no glow, no "
         f"3D render, no photograph. Mood: {style}.\n"
+    )
+    return (
+        head
         # The idea, never its words: a headline given as the subject came back
         # lettered into the picture (live deck, 2026-10-09).
-        f"Picture the idea behind this line, without writing any of its words: {subject}"
+        + f"Picture the idea behind this line, without writing any of its words: {subject}"
         + (f" ({detail})" if detail else "")
         + "\n"
         + (f"The presentation is about: {deck}\n" if deck else "")
-        + "One clear subject, generous negative space, the quality of a magazine "
-        "illustration, nothing generic or stock-like.\n" + NO_TEXT
+        + "One clear subject, generous negative space, editorial quality, nothing "
+        "generic or stock-like.\n" + NO_TEXT
     )
 
 
-def treat(raw: bytes, aspect: str) -> Result[bytes, str]:
+def treat(raw: bytes, aspect: str, tones: tuple[str, str, str] | None = None) -> Result[bytes, str]:
     """Decode with the pixel cap set, crop to the slot's aspect from the
-    centre, fit within 1600px, and write webp with no metadata."""
+    centre, fit within 1600px, and write webp with no metadata. With
+    ``tones`` (shadow, mid, light hex), the picture is mapped onto the deck's
+    own colours: one treated look across the deck, as in the owner's
+    references, and the AI photo's tells drowned in the tint."""
     target = ASPECTS.get(aspect, 1.5)
     try:
         with Image.open(io.BytesIO(raw)) as probe:
@@ -84,6 +98,10 @@ def treat(raw: bytes, aspect: str) -> Result[bytes, str]:
         ch = round(w / target)
         image = image.crop((0, (h - ch) // 2, w, (h - ch) // 2 + ch))
     image.thumbnail((MAX_SIDE, MAX_SIDE))
+    if tones is not None:
+        shadow, mid, light = tones
+        grey = ImageOps.autocontrast(image.convert("L"), cutoff=1)
+        image = ImageOps.colorize(grey, black=shadow, white=light, mid=mid)
     out = io.BytesIO()
     image.save(out, "WEBP", quality=QUALITY)  # a fresh encode carries no EXIF or XMP
     return ok(out.getvalue())

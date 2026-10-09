@@ -56,9 +56,10 @@ HTML
   blockquote figure figcaption, our components (below) and flat SVG (below).
 - Every field you are given appears EXACTLY ONCE, in an element with data-field="<name>", its
   text UNCHANGED. You may wrap words in <em> or <span class="…"> and break lines with <br>.
-- Any other visible text is decoration: at most 3 words, in an element with data-deco (a folio
-  like "04", a giant numeral, a single word set huge and cropped). Never invent a number, a
-  label or a caption.
+- Any other visible text is decoration: at most 6 words, in an element with data-deco: a folio
+  ("04 — 10"), a giant numeral, a word set huge and cropped, or editorial chrome (tiny
+  uppercase labels in the corners: the deck's name, the section, the year). Never invent a
+  number, a claim or a caption.
 - Attributes: class, data-field, data-deco, data-bleed, and the component attributes below.
 
 OUR COMPONENTS — empty boxes our code fills after you; size and place them with CSS:
@@ -72,6 +73,8 @@ OUR COMPONENTS — empty boxes our code fills after you; size and place them wit
   has one. Size its box to its aspect. Text never sits on it; text near it sits on a solid field.
 - <dd-texture kind="…" tone="accent|ink|surface" class="…"></dd-texture>: a flat field or a
   pattern, of a kind THEME TOKENS lists; never under text.
+- <dd-glow tone="accent|ink|surface" class="…"></dd-glow>: one soft glow, ONLY when THEME
+  TOKENS says this look has one.
 
 FLAT SVG — draw structure, diagrams and abstract product art yourself:
 - <svg class="…" viewBox="…"> with g path rect circle ellipse line polyline polygon. Geometry
@@ -88,6 +91,13 @@ CSS
 - Banned: gradients, url(), filter, backdrop-filter, text-shadow, mask, opacity, animation,
   transition, position:fixed, vw/vh. border-radius: 0, 50% or var(--radius). box-shadow:
   only var(--shadow-hard).
+
+TYPOGRAPHY (open-design's craft rules)
+- ALL CAPS text always gets letter-spacing of 0.06em to 0.12em; display type 64px and up gets
+  var(--track-display) or tighter. Body text at most about 65 characters a line.
+- The accent appears at most twice on a slide. About 80% of every slide is neutral.
+- Cards only as an UNEQUAL bento grid carrying real numbers or pictures (one large, the rest
+  smaller); never equal boxes around bullet points.
 
 READABILITY (measured after you; a failure is sent back)
 - All text at least 64px from every edge (var(--margin) is the norm). Text never overlaps text

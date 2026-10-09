@@ -47,5 +47,9 @@
     "launch",
     "pitch",
     "sales"
-  ]
+  ],
+  "finishes": [
+    "none"
+  ],
+  "glow": false
 }

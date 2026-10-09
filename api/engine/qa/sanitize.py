@@ -81,6 +81,7 @@ TAGS = frozenset(
         "dd-chart",
         "dd-image",
         "dd-visual",
+        "dd-glow",
         # Flat SVG the designer draws (studio, 2026-10-09): geometry only, colour
         # through CSS classes the lint holds to theme tokens; no text, no links.
         *SVG_TAGS,
@@ -95,6 +96,7 @@ ATTRIBUTES: dict[str, set[str]] = {
     "dd-texture": {"kind", "tone"},
     "dd-shape": {"kind", "tone"},
     "dd-image": {"aspect"},
+    "dd-glow": {"tone"},
 }
 # An image slot's crop (phase 39); our code fills it after sanitizing.
 IMAGE_ASPECTS = frozenset({"3:2", "2:3", "1:1", "16:9", "4:5"})
@@ -142,6 +144,8 @@ def sanitize(html: str, field_names: frozenset[str]) -> Result[str, str]:
             return value if value in SHAPES else "disc"
         if tag == "dd-shape" and attr == "tone":
             return value if value in ("accent", "ink", "surface", "rule") else "accent"
+        if tag == "dd-glow" and attr == "tone":
+            return value if value in ("accent", "ink", "surface") else "accent"
         if tag == "dd-image" and attr == "aspect":
             return value if value in IMAGE_ASPECTS else "3:2"
         if tag == "dd-texture" and attr == "kind":

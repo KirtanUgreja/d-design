@@ -23,12 +23,25 @@ PAIRS = [
 ]
 
 
-def test_eight_languages_load() -> None:
+def test_ten_languages_load() -> None:
     ids = [lang.id for lang in all_languages()]
     assert ids == sorted(
-        ["swiss", "editorial", "poster", "cinematic", "journal", "minimal", "bauhaus", "humanist"]
+        [
+            *("swiss", "editorial", "poster", "cinematic", "journal", "minimal", "bauhaus"),
+            *("humanist", "studio", "soft"),
+        ]
     )
     assert all(lang.allowed_pairings for lang in all_languages())
+
+
+def test_the_surface_varies_by_language_and_by_deck() -> None:
+    from engine.design.sampler import look_for
+
+    flat = {look_for(f"d{n}", language="swiss").finish for n in range(30)}
+    assert flat == {"none"}  # a Swiss deck is never grained
+    studio = [look_for(f"d{n}", language="studio") for n in range(40)]
+    assert {s.finish for s in studio} == {"film", "fine"}  # it varies deck to deck
+    assert {s.glow for s in studio} == {True, False}
 
 
 def test_a_thousand_seeds_stay_inside_their_language() -> None:
@@ -63,7 +76,7 @@ def test_a_thousand_seeds_stay_inside_their_language() -> None:
             failures.append((seed, "the brief is not in the guidance"))
     assert failures == []
     assert set(drawn) == {lang.id for lang in all_languages()}
-    assert min(drawn.values()) >= 50  # roughly balanced, with priors
+    assert min(drawn.values()) >= 40  # roughly balanced over ten languages, with priors
 
 
 def test_usage_balances_the_draw() -> None:

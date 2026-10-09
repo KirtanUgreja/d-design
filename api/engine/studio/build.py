@@ -23,6 +23,7 @@ from typing import Literal
 from engine.components import charts
 from engine.components import images as pictures
 from engine.components import logo as logos
+from engine.design.color import from_hex
 from engine.design.theme import Theme
 from engine.export.assemble import assemble
 from engine.llm.openrouter import Seam
@@ -205,7 +206,12 @@ async def build(
         )
         if isinstance(made, Err):
             return ""
-        treated = pictures.treat(made.value, aspect)
+        tones = None
+        if pictures.is_photo(style):
+            c = theme.colors
+            dark, light = sorted((c["ground"], c["ink"]), key=lambda h: from_hex(h).l)
+            tones = (dark, c["accent"], light)
+        treated = pictures.treat(made.value, aspect, tones)
         return "" if isinstance(treated, Err) else pictures.data_url(treated.value)
 
     async def with_picture(plan: SlidePlan, m: browser.Measured) -> browser.Measured:

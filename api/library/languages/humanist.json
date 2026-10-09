@@ -52,5 +52,10 @@
   "deck_types": [
     "sales",
     "partnership"
-  ]
+  ],
+  "finishes": [
+    "fine",
+    "none"
+  ],
+  "glow": false
 }

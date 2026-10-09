@@ -21,7 +21,12 @@ from engine.qa import metrics
 _MEASURE = (Path(__file__).parent / "measure.js").read_text()
 _PIXELS = (Path(__file__).parent / "pixels.js").read_text()
 # Every field's text made transparent, so a screenshot shows only what is behind it.
-_HIDE_TEXT = """() => { for (const host of document.querySelectorAll('.dd-slide')) {
+# The pixel check reads the ground behind each text box with the text hidden.
+# The deck's film grain is taken off too: it is a fine uniform noise a reader
+# averages out, and left on, its speckles read as a weaker ground (2026-10-09).
+# Screenshots are taken before this, so they keep the grain.
+_HIDE_TEXT = """() => { document.documentElement.style.setProperty('--grain', 'none');
+for (const host of document.querySelectorAll('.dd-slide')) {
   const root = host.shadowRoot; if (!root) continue;
   for (const el of root.querySelectorAll('[data-field], [data-field] *'))
     el.style.setProperty('color', 'transparent', 'important');

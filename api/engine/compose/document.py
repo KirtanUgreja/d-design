@@ -52,6 +52,15 @@ _BASE = (
     "h1,h2,h3{text-wrap:balance}p,li{text-wrap:pretty}"
     "dd-chart{display:block}"
     "dd-visual{display:block}"
+    # Film grain over the whole slide (owner, 2026-10-09: the references he
+    # wants are textured, never flat). Ours, offline, too faint to touch QA.
+    ".s::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:40;"
+    "background-image:var(--grain,none);background-size:180px 180px}"
+    # A soft glow the slide may place once, drawn by us: the one gradient a
+    # slide carries (owner, 2026-10-09: "slight gradient, not AI slop").
+    "dd-glow{display:block;pointer-events:none;background:var(--glow-accent,none)}"
+    "dd-glow[tone=ink]{background:var(--glow-ink,none)}"
+    "dd-glow[tone=surface]{background:var(--glow-surface,none)}"
     # Unstyled SVG would draw in browser black: the theme's ink instead, at no specificity.
     ":where(.s svg) :where(path,rect,circle,ellipse,line,polyline,polygon)"
     "{fill:var(--c-ink);stroke:none}"

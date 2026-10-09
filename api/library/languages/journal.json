@@ -50,5 +50,10 @@
   "deck_types": [
     "investor_update",
     "sales"
-  ]
+  ],
+  "finishes": [
+    "fine",
+    "none"
+  ],
+  "glow": false
 }

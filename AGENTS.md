@@ -64,7 +64,7 @@ Full text and reasons: `docs/coderules/README.md`.
 4. Import across features only through their public surface.
 5. No new dependency without a ledger line. An agent framework needs one too.
 6. The engine is pure: `api/engine/` imports no web framework and reads no environment.
-7. **Model output may reference only theme tokens for colour and type.** No gradients, blur, glow, links, icons or animation in slides.
+7. **Model output may reference only theme tokens for colour and type.** No gradients, blur, glow, links, icons or animation written by the model. A soft glow (`dd-glow`) and film grain are drawn by our code, and only in looks whose visual language allows them (owner, 2026-10-09: "slight gradient, not AI slop", and not every deck the same).
 8. Data access lives in one Python data module. The web app has no database — except Better Auth's own tables in the `auth` database (owner, 2026-10-08), which Python never reads.
 9. One tenant wrapper, in Python, from phase 29.
 10. Anything that grants, fails closed — including the budget cap and QA ("a failure to measure is an error").

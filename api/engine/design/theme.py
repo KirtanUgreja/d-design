@@ -9,6 +9,7 @@ from __future__ import annotations
 import functools
 import random
 from dataclasses import dataclass, field
+from functools import cache
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -20,6 +21,26 @@ from engine.design.palettes import series
 
 if TYPE_CHECKING:
     from engine.design.sampler import Look
+
+
+@cache
+def grain(finish: str = "fine") -> str:
+    """A 180px tile of monochrome noise at about 6% alpha, as a PNG data URL:
+    film grain that reads on light and dark grounds alike (owner, 2026-10-09:
+    textured, never flat). Seeded, so every export is byte-identical."""
+    import base64
+    import io
+    import random
+
+    from PIL import Image
+
+    rng = random.Random(7)  # noqa: S311 - texture, not a secret
+    tile = Image.new("LA", (180, 180))
+    lo, hi = (8, 26) if finish == "film" else (4, 12)
+    tile.putdata([(rng.choice((0, 255)), rng.randint(lo, hi)) for _ in range(180 * 180)])
+    out = io.BytesIO()
+    tile.save(out, "PNG", optimize=True)
+    return "data:image/png;base64," + base64.b64encode(out.getvalue()).decode()
 
 
 @dataclass(frozen=True)
@@ -83,6 +104,8 @@ class Theme:
     logo: str = ""  # the user's logo as a data: URL (components/logo.py), once per deck
     shapes: dict[str, str] = field(default_factory=dict)  # dd-shape kind -> mask url
     language: str = ""  # the visual language's id (design/languages.py)
+    finish: str = "none"  # none · fine · film (sampler._surface)
+    glow: bool = False
 
     @property
     def faces(self) -> tuple[Face, ...]:
@@ -121,6 +144,19 @@ class Theme:
             f"--mark:{self.mark};",
             "--shadow-hard:14px 14px 0 var(--c-ink);",
         ]
+        # The surface: defined only when this deck has it, so slides without
+        # it draw nothing (base CSS reads these with a "none" fallback).
+        if self.finish != "none":
+            lines.append(f"--grain:url({grain(self.finish)});")
+        if self.glow:
+            lines += [
+                "--glow-accent:radial-gradient(closest-side,"
+                "color-mix(in oklab,var(--c-accent) 55%,transparent),transparent);",
+                "--glow-ink:radial-gradient(closest-side,"
+                "color-mix(in oklab,var(--c-ink) 20%,transparent),transparent);",
+                "--glow-surface:radial-gradient(closest-side,"
+                "color-mix(in oklab,var(--c-surface) 85%,transparent),transparent);",
+            ]
         return ":root{" + "".join(lines) + "}"
 
     def describe(self) -> str:
@@ -145,7 +181,20 @@ class Theme:
             f"--cols ({self.cols}) columns. --track-display ({self.track:.3f}em) is the "
             "display letter-spacing. dd-texture kinds in this look: "
             f'{", ".join(self.textures)}, and "mark" — this deck\'s own emblem, for the '
-            "cover and the ask only." + (f"\nThis look: {self.guidance}" if self.guidance else "")
+            "cover and the ask only."
+            + (f"\nThis look: {self.guidance}" if self.guidance else "")
+            + (
+                '\nThis look may carry ONE soft glow per slide: <dd-glow tone="accent|ink|surface" '
+                'class="…"></dd-glow>, large (900-1500px), partly off a corner, behind content, '
+                "never under small text. Not on every slide."
+                if self.glow
+                else "\nThis look has no glow: no dd-glow."
+            )
+            + (
+                "\nIts slides carry a film grain: keep fields flat, the grain is the texture."
+                if self.finish != "none"
+                else ""
+            )
         )
 
 
@@ -373,6 +422,8 @@ def build(look: Look) -> Theme:
         guidance=(f"{lang.prompt()} " if lang else "")
         + f"{grid.note}. Motif: {motif.note}. Type: {pairing.note}.",
         language=look.language,
+        finish=look.finish,
+        glow=look.glow,
         look=look.record(),
         tiles=patterns.tiles(look.texture)
         | ({"motif": look.motif_tile} if look.motif_tile else {}),
