@@ -53,6 +53,7 @@ def _slide(**kw: object) -> DraftSlide:
 
 def test_at_most_three_visuals_per_deck() -> None:
     draft = Draft(
+        title="Tessel",
         governing_thought="g",
         key_points=["a"],
         slides=[_slide(visual="chat", visual_lines=["I need an app"]) for _ in range(5)],

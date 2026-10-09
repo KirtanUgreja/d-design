@@ -157,6 +157,9 @@ class SlidePlan(BaseModel):
 
 
 class Storyline(BaseModel):
+    # The deck's name: one to three words ("Swarvani", "Brewly Q3"), what the
+    # deck list and the export show (owner, 2026-10-09: titles were sentences).
+    title: str = ""
     governing_thought: str
     deck_type: DeckType
     audience: str

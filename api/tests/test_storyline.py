@@ -40,6 +40,7 @@ def _slide(**kw: object) -> DraftSlide:
 
 def test_numbers_link_to_facts_or_become_proposed_illustrations() -> None:
     draft = Draft(
+        title="Tessel",
         governing_thought="Offline notes never fail you",
         key_points=["a"],
         slides=[
@@ -88,6 +89,7 @@ def test_a_chart_survives_only_if_every_value_is_an_approved_fact() -> None:
     )
     bad = good.model_copy(update={"values": [0.6, 1.6, 3.1]})
     draft = Draft(
+        title="Tessel",
         governing_thought="ARR nearly fourfold",
         key_points=["a"],
         slides=[
@@ -159,6 +161,7 @@ def test_a_chart_slide_gets_its_figure_from_the_chart() -> None:
         fact_ids=["w6"],
     )
     draft = Draft(
+        title="Tessel",
         governing_thought="g",
         key_points=["a"],
         slides=[_slide(intent="chart", headline="The market grows sixfold by 2031", chart=chart)],
@@ -167,3 +170,10 @@ def test_a_chart_slide_gets_its_figure_from_the_chart() -> None:
     fields = {f.name: f for f in story.slides[0].fields}
     assert fields["stat"].text == "$78.97B" and fields["stat"].fact_ids == ["w6"]
     assert fields["stat-label"].text == "AI code generation market, 2031"
+
+
+def test_the_deck_title_is_a_name_not_a_sentence() -> None:
+    from engine.studio.outline import short_title
+
+    assert short_title("Swarvani") == "Swarvani"
+    assert short_title("Brewly Q3 investor update for the board.") == "Brewly Q3 investor"

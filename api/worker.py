@@ -106,8 +106,13 @@ async def run(
             if isinstance(written, Err):
                 _fail(store, deck, human(written.error), written.error.kind)
                 return
+            story = written.value.story
             deck = store.update(
-                deck.id, status="approve", storyline=written.value.story, facts=written.value.facts
+                deck.id,
+                status="approve",
+                storyline=story,
+                facts=written.value.facts,
+                title=story.title or deck.title,
             )
             await _previews(store, with_language(store, deck))
             store.append_event(deck.id, {"type": "outline_ready"})

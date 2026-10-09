@@ -1064,6 +1064,11 @@ export interface components {
             key_points: string[];
             /** Slides */
             slides: components["schemas"]["SlidePlan"][];
+            /**
+             * Title
+             * @default
+             */
+            title: string;
         };
         /** ValidationError */
         ValidationError: {

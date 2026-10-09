@@ -5,7 +5,8 @@ import { err, ok, type Result } from "@/lib/result";
 
 export interface DeckRow {
   id: string;
-  title: string;
+  title: string; // the deck's short name (1-3 words) once its outline exists
+  thesis: string; // its one sentence
   status: string;
   version: number;
   slides: number; // in its outline
@@ -36,7 +37,8 @@ function row(v: unknown): DeckRow | null {
   const built = status === "ready" || status === "aborted";
   return {
     id: v.id,
-    title: text(story.governing_thought) || text(v.title) || text(brief.prompt) || "Untitled deck",
+    title: text(story.title) || text(v.title) || text(brief.prompt) || "Untitled deck",
+    thesis: text(story.governing_thought),
     status,
     version: typeof v.version === "number" ? v.version : 0,
     slides: plans.length,

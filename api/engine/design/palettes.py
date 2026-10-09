@@ -48,6 +48,21 @@ TILTS: dict[str, Tilt] = {
 }
 
 
+# Yellow-green at print chroma is khaki and olive: the owner called the Linear
+# deck's khaki the worst palette (2026-10-09; accent at hue 100, chroma 0.09),
+# and Brewly's olive (hue 112) drab. An accent there moves to the nearest edge:
+# amber below, green above. A user's own brand colour is never moved.
+DRAB = (78.0, 128.0)
+ACCENT_C_FLOOR = 0.11
+
+
+def away_from_drab(h: float) -> float:
+    lo, hi = DRAB
+    if lo <= h <= hi:
+        return lo - 8 if h - lo < hi - h else hi + 12
+    return h
+
+
 def _toward(a: float, b: float, t: float) -> float:
     """The hue t of the way from a to b, the short way round."""
     d = ((b - a + 540) % 360) - 180
@@ -80,10 +95,11 @@ def generate(
     ink_c = rng.uniform(0.0, 0.07)
     ink_l = rng.uniform(0.92, 0.97) if dark else rng.uniform(0.13, 0.26)
     quiet = rng.uniform(0.17, 0.28)
-    accent_h = (h + rng.uniform(120, 240)) % 360 if two_colour else h
+    accent_h = away_from_drab((h + rng.uniform(120, 240)) % 360 if two_colour else h)
     accent_l = rng.uniform(0.68, 0.8) if dark else rng.uniform(0.42, 0.62)
-    # A light accent at full chroma is pastel neon as a field: dark decks take less.
-    accent_c = rng.uniform(*tilt.accent_c) * (0.7 if dark else 1.0)
+    # A light accent at full chroma is pastel neon as a field: dark decks take
+    # a little less, never so little it turns muddy (owner, 2026-10-09).
+    accent_c = max(ACCENT_C_FLOOR, rng.uniform(*tilt.accent_c) * (0.85 if dark else 1.0))
     return {
         "ground": ground,
         "surface": surface,

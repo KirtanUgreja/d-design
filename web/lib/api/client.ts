@@ -22,6 +22,7 @@ export interface LiveDeck {
   status: Status;
   error: string;
   prompt: string;
+  title: string; // the deck's short name, once the outline exists
   thesis: string;
   questions: Question[];
   outline: Plan[];
@@ -54,6 +55,7 @@ function parseDeck(raw: unknown): LiveDeck | null {
     status,
     error: text(d.error),
     prompt: text(d.brief.prompt),
+    title: story ? text(story.title) : "",
     thesis: story ? text(story.governing_thought) : "",
     questions: list(raw.questions)
       .filter(isObj)

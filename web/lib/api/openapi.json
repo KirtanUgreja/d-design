@@ -1275,6 +1275,11 @@
             },
             "title": "Slides",
             "type": "array"
+          },
+          "title": {
+            "default": "",
+            "title": "Title",
+            "type": "string"
           }
         },
         "required": [

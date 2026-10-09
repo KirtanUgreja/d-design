@@ -15,11 +15,12 @@ export function DeckCard({ deck }: { deck: DeckRow }) {
         <SlideThumb src={api.thumb(deck.id, deck.cover, deck.version)} alt={`The cover of: ${deck.title}`} />
       ) : (
         <div className="flex aspect-video flex-col justify-end border border-rule bg-paper-2 p-4 sm:p-5">
-          <p className="line-clamp-3 font-display text-lg leading-snug text-ink-2">{deck.title}</p>
+          <p className="line-clamp-3 font-display text-lg leading-snug text-ink-2">{deck.thesis || deck.title}</p>
         </div>
       )}
       <Placard label={label} aside={deck.slides ? `${deck.slides} slides` : undefined} flag={deck.status === "error"} />
-      <p className="mt-1 line-clamp-2 text-sm leading-snug underline-offset-4 group-hover:underline">{deck.title}</p>
+      <p className="mt-1 truncate font-display text-[17px] leading-snug underline-offset-4 group-hover:underline">{deck.title}</p>
+      {deck.thesis && <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-ink-2">{deck.thesis}</p>}
     </Link>
   );
 }

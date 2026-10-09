@@ -233,8 +233,11 @@ function DeckHeader({
               compact ? "truncate text-[20px]" : "line-clamp-3 text-[24px] sm:text-[30px]",
             )}
           >
-            {deck.thesis || deck.prompt || "Your deck"}
+            {deck.title || deck.thesis || deck.prompt || "Your deck"}
           </h1>
+          {deck.title && deck.thesis && !compact && (
+            <p className="mt-1.5 max-w-3xl text-[15px] leading-snug text-ink-2">{deck.thesis}</p>
+          )}
           {line && !compact && (
             <div className="mt-2 text-sm text-ink-2" aria-live="polite">
               {line}

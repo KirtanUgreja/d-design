@@ -33,7 +33,7 @@ from engine.models import (
 )
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "storyline.v7"  # v7: a body line per slide; v6: drawn visuals
+PROMPT_VERSION = "storyline.v8"  # v8: a short deck title; v7: a body line per slide
 SEND_FACTOR = 1.5  # a deck that is sent must explain itself
 MAX_VISUALS = 3  # drawn visuals per deck: the product's world, not every slide
 
@@ -47,6 +47,9 @@ something: a round, a deal, a launch, a partner. The deck makes ONE argument, ba
 and ends with the ask.
 
 Rules:
+- title: the deck's name, ONE to THREE words, the way a person would name the file: the
+  product or company and, if it helps, the occasion ("Swarvani", "Linear Pilot", "Brewly Q3").
+  Never a sentence, never the governing thought.
 - governing_thought: one sentence, at most 25 words — the deck's thesis. Every headline supports
   it. State it on slide 1 or 2 and again at the close.
 - Exactly the requested number of slides. Follow the arc's beats, adapted to the material; never
@@ -144,6 +147,7 @@ class DraftSlide(BaseModel):
 
 
 class Draft(BaseModel):
+    title: str
     governing_thought: str
     key_points: list[str]
     slides: list[DraftSlide]
@@ -266,6 +270,11 @@ def chart_spec(d: DraftChart, live: dict[str, Fact]) -> ChartSpec | None:
         highlight=d.highlight if d.highlight in d.labels else None,
         fact_ids=used,
     )
+
+
+def short_title(title: str) -> str:
+    """The deck's name, held to three words and no closing full stop."""
+    return " ".join(title.strip().rstrip(".").split()[:3])
 
 
 def visual_lines(lines: list[str]) -> list[str]:
@@ -391,6 +400,7 @@ def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, 
     key_points = [p for p in draft.key_points if p.strip()][:5]
     key_points += [draft.governing_thought] * (3 - len(key_points))
     story = Storyline(
+        title=short_title(draft.title),
         governing_thought=draft.governing_thought,
         deck_type=brief.deck_type,
         audience=brief.audience,
