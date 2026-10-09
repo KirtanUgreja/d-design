@@ -216,3 +216,9 @@ def test_years_on_a_line_are_spaced_to_scale() -> None:
     assert charts._positions(["2025", "2026", "2031"]) == [0.0, 1 / 6, 1.0]
     assert charts._positions(["Q1", "Q2", "Q3"]) == [0.0, 0.5, 1.0]
     assert charts._positions(["2026", "2025", "2031"]) == [0.0, 0.5, 1.0]  # unsorted: even
+
+
+def test_a_word_unit_does_not_shrink_a_pair_figure() -> None:
+    hours = _spec("bar", [("2021", 21.5), ("2024", 14.8)], unit="hours")
+    out = charts.svg(hours)
+    assert "font-size:106px" in out and "> hours</tspan>" in out  # was 60px with the word inline

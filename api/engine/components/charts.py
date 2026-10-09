@@ -397,22 +397,41 @@ def change(a: float, b: float, unit: str) -> str:
     return ""
 
 
+def _figure(x: float, y: float, part: list[str], size: float, anchor: str, fill: str) -> str:
+    """A display figure with its word unit, if any, a third of its size."""
+    number, word = part
+    unit = (
+        f'<tspan style="font-family:var(--f-text);font-size:{size / 3:.0f}px;'
+        f'font-weight:var(--w-regular)"> {html.escape(word)}</tspan>'
+        if word
+        else ""
+    )
+    return (
+        f'<text x="{x:.1f}" y="{y:.1f}" text-anchor="{anchor}" style="font-family:var(--f-display);'
+        f'font-size:{size:.0f}px;font-weight:var(--w-display);fill:{fill}">'
+        f"{html.escape(number)}{unit}</text>"
+    )
+
+
 def _pair_figures(spec: ChartSpec) -> str:
     """Two values: two figures in the display face and the change between
     them. Two bars would say less with more ink (the 2026-10-08 run)."""
     (first, second) = spec.series[0].points[:2]
     places = _decimals([first.value, second.value])
     texts = [_num(p.value, spec.unit, places) for p in (first, second)]
-    longest = max(len(t) for t in texts)
+    # A word unit ("21.5 hours") is set at a third of the figure's size, so it
+    # no longer shrinks the figure to fit (live deck, 2026-10-09).
+    parts = [t.split(" ", 1) if " " in t else [t, ""] for t in texts]
+    longest = max(len(n) + len(w) / 3 for n, w in parts)
     # Wide display faces run near 0.8em a figure: keep each inside 40% of the width.
     size = min(200.0, W * 0.4 / (0.8 * max(longest, 1)))
     base = 380.0
     under = base + size * 0.12 + FONT * 1.6
     mark = min(W * 0.4, size * 0.8 * longest)
     out = [
-        _t(0, base, texts[0], face="display", weight="display", size=size, fill=QUIET),
+        _figure(0, base, parts[0], size, "start", QUIET),
         _t(0, under, first.label, fill=QUIET),
-        _t(W, base, texts[1], anchor="end", face="display", weight="display", size=size),
+        _figure(W, base, parts[1], size, "end", "var(--c-ink)"),
         _t(W, under, second.label, anchor="end"),
         # The later value carries the series colour as a mark, never as text.
         _rect(W - mark, under + FONT, mark, 8, series_colour(0)),
