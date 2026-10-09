@@ -336,10 +336,15 @@ def look_for(
     return draw(rng, deck_id, nonce, deck_type, brand_hex, tone=tone, words=words, language=chosen)
 
 
-def recolour(look: Look, nonce: int, *, tone: str = "confident") -> Look:
+def recolour(
+    look: Look, nonce: int, *, tone: str = "confident", brand_hex: str | None = None
+) -> Look:
     """The same look in another palette: type, grid, scale, texture and mark
     all kept, so every composed slide keeps its layout (docs/v4/plan/28-editor.md
     -> Look). Deterministic for a nonce; contrast still fitted by resolve()."""
     rng = random.Random(seed_of(f"{look.id}/recolour/{nonce}"))  # noqa: S311 - a look
+    if brand_hex:  # a brand keeps its accent; new colours means a new ground and ink
+        roles = resolve(brand(brand_hex, palettes.generate(from_hex(brand_hex).h, rng, tone)))
+        return dataclasses.replace(look, roles=roles, palette=palettes.describe(roles))
     roles = resolve(palettes.generate(look.hue if nonce == 0 else rng.uniform(0, 360), rng, tone))
     return dataclasses.replace(look, roles=roles, palette=palettes.describe(roles))

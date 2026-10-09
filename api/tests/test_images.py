@@ -119,7 +119,7 @@ def test_a_generated_image_lands_in_its_slot_as_our_webp(tmp_path: Path, library
         assert got.format == "WEBP"
         assert abs(got.width / got.height - 2 / 3) < 0.02  # cropped to the slot
         assert not got.info.get("exif")
-    assert "No text, no letters" in painter.prompts[0]
+    assert "Absolutely no text anywhere" in painter.prompts[0]
     # embedded in the export: no request needed to show it
     assert "data:image/webp;base64," in built.html
     assert not re.search(r'src="https?:', built.html)

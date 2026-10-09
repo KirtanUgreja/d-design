@@ -11,6 +11,7 @@ import { LiveEditor } from "@/components/live-editor";
 import { Placard } from "@/components/placard";
 import { OutlineGate, type Decisions } from "@/components/outline-gate";
 import { SlideThumb } from "@/components/slide-thumb";
+import { BrandColours } from "@/components/brand-colours";
 import { LogoPicker } from "@/components/logo-picker";
 import { StyleCard } from "@/components/style-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -145,7 +146,8 @@ export function LiveDeck({ id }: { id: string }) {
           thesis={false}
           style={
             <>
-              <StyleCard deckId={deck.id} />
+              <StyleCard deckId={deck.id} drawn={deck.brand.join(",")} />
+              <BrandColours deck={deck} onChange={refresh} />
               <LogoPicker deck={deck} onChange={refresh} />
             </>
           }

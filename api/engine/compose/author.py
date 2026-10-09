@@ -19,7 +19,7 @@ from engine.qa.lint import lint
 from engine.qa.sanitize import sanitize
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "compose.v11"  # v11: adapt a reference in the deck's visual language
+PROMPT_VERSION = "compose.v12"  # v12: dd-visual; v11: adapt a reference in its visual language
 PAIRS = (
     "  on --c-ground or --c-surface: --c-ink, or --c-ink-2 for quiet text\n"
     "  on --c-accent: --c-on-accent only, at every size\n"
@@ -75,7 +75,7 @@ HTML CONTRACT
 - One root: <section class="s"> … </section>.
   No <html>, <body>, <style>, <script>, <img>, <a>, <svg>.
 - Allowed tags: div section header footer h1 h2 h3 p span strong em small sup sub br hr ul ol li
-  blockquote figure figcaption dd-texture dd-shape dd-chart dd-image.
+  blockquote figure figcaption dd-texture dd-shape dd-chart dd-image dd-visual.
 - Every field you are given appears EXACTLY ONCE, in an element with data-field="<name>", with its
   text UNCHANGED. You may wrap words in <em> or <span class="…"> and use <br>. You may not add,
   drop or rewrite words.
@@ -89,6 +89,10 @@ HTML CONTRACT
 {shape_rule}- <dd-chart class="…"></dd-chart> is an empty box our code draws a chart into.
   Place it only when the slide says it has a chart, at least 900x480px, and never write its
   numbers or labels.
+- <dd-visual class="…"></dd-visual> is an empty box our code draws a picture of the product
+  into (a voice waveform, a phone or browser screen, a chat, a flow of steps). Place it only
+  when the slide says it has one, as the slide's HERO: large (at least 720x520px, a phone at
+  least 420x680px), bold, often bleeding off one edge with data-bleed. Never write its words.
 - Attributes allowed: class, data-field, data-deco, data-layer, data-bleed, kind/tone on
   dd-texture and dd-shape, aspect on dd-image. No style attribute, no id.
 
@@ -151,6 +155,10 @@ def _parser(plan: SlidePlan, *, image: bool = False) -> Callable[[Reply], Result
             problems.append("this slide has a chart: place one empty <dd-chart class=…>")
         if plan.chart is None and "<dd-chart" in clean.value:
             problems.append("this slide has no chart: remove the <dd-chart>")
+        if plan.visual is not None and "<dd-visual" not in clean.value:
+            problems.append("this slide has a visual: place one empty <dd-visual class=…>")
+        if plan.visual is None and "<dd-visual" in clean.value:
+            problems.append("this slide has no visual: remove the <dd-visual>")
         if not image and "<dd-image" in clean.value:
             problems.append("this slide has no image: remove the <dd-image>")
         if clean.value.count("<dd-image") > 1:
@@ -197,6 +205,12 @@ async def compose(
             f"\nThis slide has a {plan.chart.type} chart of {len(plan.chart.series[0].points)} "
             "values. Place one empty <dd-chart> for it, at least 900x480px."
             if plan.chart
+            else ""
+        )
+        + (
+            f"\nThis slide has a {plan.visual.kind} visual. Place one empty <dd-visual> as the "
+            "hero, where the reference puts its image or its biggest shape, and larger."
+            if plan.visual
             else ""
         )
     )

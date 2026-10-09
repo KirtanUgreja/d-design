@@ -42,18 +42,27 @@ def with_language(store: AnyStore, deck: Deck, *, exclude: frozenset[str] = froz
     return store.update(deck.id, language=look.language)
 
 
+def brand_hex(deck: Deck) -> str | None:
+    """The user's brand colour, when they gave one."""
+    brand = deck.brief.brand
+    return brand.colors[0] if brand and brand.colors else None
+
+
 def theme_of(deck: Deck) -> Theme:
-    """The deck's one generated look, recoloured if the user asked for that."""
+    """The deck's one generated look, in the user's brand colour if they gave
+    one, and recoloured if they asked for that."""
+    mine = brand_hex(deck)
     look = look_for(
         deck.id,
         deck_type=deck.brief.deck_type,
         tone=deck.brief.tone,
         words=deck.brief.prompt,
+        brand_hex=mine,
         nonce=deck.look_nonce,
         language=deck.language,
     )
     if deck.palette_nonce:
-        look = recolour(look, deck.palette_nonce, tone=deck.brief.tone)
+        look = recolour(look, deck.palette_nonce, tone=deck.brief.tone, brand_hex=mine)
     return build_theme(look)
 
 

@@ -148,7 +148,7 @@ What the compose call returns: one fenced `html` block and one fenced `css` bloc
 |---|---|
 | Canvas | 1920×1080. `compose/document.py` wraps each slide in its own Declarative Shadow DOM root; theme tokens and fonts reach inside, slide CSS cannot leak out |
 | Fields | Every `SlidePlan` field has **exactly one** `data-field` node. Its text, with whitespace normalised, must equal the plan's text; inline `em`, `strong`, `span` and `br` are allowed for emphasis and line breaks. The model designs the words; it never rewrites them |
-| Components | `dd-image`, `dd-chart` and `dd-texture` are empty. Our code fills them after sanitising |
+| Components | `dd-image`, `dd-chart`, `dd-visual` and `dd-texture` are empty. Our code fills them after sanitising |
 | Decoration | Text outside fields only as `data-deco`, ≤3 words (folios, "Q3", "01") |
 | Intentional overlap | `data-layer` on the element meant to overlap. Collision allows it; contrast is then measured on the real pixels |
 | Bleed | `data-bleed` lets an image or texture cross the safe area. **Never text** |
@@ -215,6 +215,10 @@ Warnings become errors only when the bench shows they track the owner's scores.
 
 ---
 
+**Shapes per deck (2026-10-09).** A visual language's signature shape is used on at most 3 slides in a deck. After that, the compose call is told to leave the reference's `dd-shape` out. A live Bauhaus deck had the same circle on 8 of its 10 slides.
+
+**Brand colour (2026-10-09).** At the outline gate the user can give one colour. The palette is built around it: its hue is kept, and its lightness is fitted for contrast. The logo's main colour is offered as a suggestion, never applied on its own. **New colours** keeps the brand accent and changes the ground and ink.
+
 ## Repair ladder
 
 The ladder (`pipeline.py`) has three steps, and never loops:
@@ -232,6 +236,7 @@ It never silently ships a failing slide and never asks a vision model for a verd
 | Component | Rule |
 |---|---|
 | `dd-chart` (`components/charts.py`) | **Form by the data's job** (phase 37, `charts.form`): bar (long names, sorted), column, line (time), area (one long trend), stacked (parts of a whole; replaces the donut), dumbbell (before and after), slope (two moments, many items), diverging (above or below zero), waffle (a share of 100). Built from `SlidePlan.chart`, every value an approved `Fact`. Colour last: the deck's series (`design/dataviz.py`) pass the dataviz checks — lightness band, chroma floor, colour-blind ΔE ≥ 8 and normal-vision ΔE ≥ 15 on adjacent pairs, 3:1 on the ground — in a fixed order, never cycled. One highlight in slot 1, the rest a quiet tint; values on the data; a legend only for two or more series; one callout computed from the values ("3.8x since 2022"). The data rides as `<desc>` text and in the speaker notes. Hand-written SVG, no chart library |
+| `dd-visual` (`components/visuals.py`) | **A picture of the product's world, drawn by code** (owner, 2026-10-09: "don't limit it to simple shapes"). Five kinds: a voice waveform, an app on a phone, a web app in a browser, a chat, and a flow of steps. The storyline picks a kind for at most three slides that show the product, never a chart slide. It also writes up to four lines (at most 6 words each, no numbers) that become the screen's rows, the chat's messages or the flow's steps. Flat fills in theme roles only, so a brand colour carries through. A slide with a visual takes no generated image. Its words sit inside the component, so QA skips them like a chart's labels |
 | `dd-image` (`components/images.py`) | 0–4 per deck, each with a stated "why". The prompt is the plan's subject + the look's image fragment + the palette + "no text, no logos, no UI, no charts". Pillow applies the treatment, writes webp, and adds the XMP AI tag. A cheap vision check asks one narrow question — "does this image contain text?" — with one regeneration. **A failed image becomes a texture field plus a warning, never a failed deck** (v3 failed the build on a fifth image) |
 | `dd-texture` (`components/texture.py`) | The theme's motif as an SVG mask over a token colour |
 

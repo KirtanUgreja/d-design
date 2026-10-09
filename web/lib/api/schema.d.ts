@@ -39,6 +39,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{deck_id}/brand": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Put Brand
+         * @description The user's colours: the palette is built around the first; the
+         *     thumbnails are redrawn by the worker for free.
+         */
+        put: operations["put_brand_api_decks__deck_id__brand_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{deck_id}/build": {
         parameters: {
             query?: never;
@@ -542,6 +563,14 @@ export interface components {
             /** Name */
             name: string;
         };
+        /**
+         * BrandColours
+         * @description The user's brand colours, as hex: one parse at entry. Empty clears them.
+         */
+        BrandColours: {
+            /** Colors */
+            colors: string[];
+        };
         /** Brief */
         Brief: {
             /** Answers */
@@ -713,6 +742,11 @@ export interface components {
              * @enum {string}
              */
             logo: "none" | "cover" | "ends" | "all";
+            /**
+             * Logo Colour
+             * @default
+             */
+            logo_colour: string;
             /**
              * Logo Note
              * @default
@@ -984,6 +1018,7 @@ export interface components {
             provenance?: {
                 [key: string]: "YOU" | "AI" | "WEB";
             };
+            visual?: components["schemas"]["VisualSpec"] | null;
         };
         /** SlideQA */
         SlideQA: {
@@ -1042,6 +1077,19 @@ export interface components {
             msg: string;
             /** Error Type */
             type: string;
+        };
+        /**
+         * VisualSpec
+         * @description A picture of the product's world, drawn by code (components/visuals.py).
+         */
+        VisualSpec: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "waveform" | "phone" | "browser" | "chat" | "flow";
+            /** Lines */
+            lines?: string[];
         };
     };
     responses: never;
@@ -1130,6 +1178,43 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    put_brand_api_decks__deck_id__brand_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BrandColours"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

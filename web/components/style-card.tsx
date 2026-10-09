@@ -12,7 +12,8 @@ import { api, type StyleCard as Card } from "@/lib/api/client";
 const POLL_MS = 1500;
 const POLL_LIMIT = 40; // about a minute: thumbnails take seconds, not minutes
 
-export function StyleCard({ deckId }: { deckId: string }) {
+// `drawn` names what the thumbnails show (the brand colours): a change redraws them.
+export function StyleCard({ deckId, drawn = "" }: { deckId: string; drawn?: string }) {
   const [card, setCard] = useState<Card | null>(null);
   const [problem, setProblem] = useState("");
   const [busy, setBusy] = useState(false);
@@ -36,7 +37,15 @@ export function StyleCard({ deckId }: { deckId: string }) {
     return () => {
       live = false;
     };
-  }, [deckId, version]);
+  }, [deckId, version, drawn]);
+
+  // New colours: the old thumbnails are stale until the worker redraws them.
+  const [seen, setSeen] = useState(drawn);
+  if (seen !== drawn) {
+    setSeen(drawn);
+    setCard(null);
+    setVersion((v) => v + 1);
+  }
 
   const another = async () => {
     setBusy(true);

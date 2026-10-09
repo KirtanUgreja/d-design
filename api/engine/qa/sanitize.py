@@ -45,6 +45,7 @@ TAGS = frozenset(
         "dd-shape",
         "dd-chart",
         "dd-image",
+        "dd-visual",
     ]
 )
 _GLOBAL = frozenset(

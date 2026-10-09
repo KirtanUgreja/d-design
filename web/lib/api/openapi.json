@@ -125,6 +125,25 @@
         "title": "Brand",
         "type": "object"
       },
+      "BrandColours": {
+        "description": "The user's brand colours, as hex: one parse at entry. Empty clears them.",
+        "properties": {
+          "colors": {
+            "items": {
+              "pattern": "^#[0-9a-fA-F]{6}$",
+              "type": "string"
+            },
+            "maxItems": 2,
+            "title": "Colors",
+            "type": "array"
+          }
+        },
+        "required": [
+          "colors"
+        ],
+        "title": "BrandColours",
+        "type": "object"
+      },
       "Brief": {
         "properties": {
           "answers": {
@@ -471,6 +490,11 @@
               "all"
             ],
             "title": "Logo",
+            "type": "string"
+          },
+          "logo_colour": {
+            "default": "",
+            "title": "Logo Colour",
             "type": "string"
           },
           "logo_note": {
@@ -1141,6 +1165,16 @@
             },
             "title": "Provenance",
             "type": "object"
+          },
+          "visual": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/VisualSpec"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -1291,6 +1325,35 @@
           "type"
         ],
         "title": "ValidationError",
+        "type": "object"
+      },
+      "VisualSpec": {
+        "description": "A picture of the product's world, drawn by code (components/visuals.py).",
+        "properties": {
+          "kind": {
+            "enum": [
+              "waveform",
+              "phone",
+              "browser",
+              "chat",
+              "flow"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "lines": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 4,
+            "title": "Lines",
+            "type": "array"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "VisualSpec",
         "type": "object"
       }
     }
@@ -1456,6 +1519,70 @@
           }
         },
         "summary": "Read"
+      }
+    },
+    "/api/decks/{deck_id}/brand": {
+      "put": {
+        "description": "The user's colours: the palette is built around the first; the\nthumbnails are redrawn by the worker for free.",
+        "operationId": "put_brand_api_decks__deck_id__brand_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BrandColours"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Put Brand"
       }
     },
     "/api/decks/{deck_id}/build": {

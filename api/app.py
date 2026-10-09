@@ -28,6 +28,7 @@ import settings
 from auth import Verifier
 from engine import Brief, Deck, Question, interview
 from engine.compose import preview
+from engine.models import Brand
 from lib.result import Ok
 from looks import preview_names, theme_of, with_language
 from store.files import Avatar, History, User
@@ -74,6 +75,12 @@ class LogoUpload(BaseModel):
 
     data: str = Field(min_length=8, max_length=2_800_000)  # ~2 MB of file
     placement: Literal["cover", "ends", "all"] = "ends"
+
+
+class BrandColours(BaseModel):
+    """The user's brand colours, as hex: one parse at entry. Empty clears them."""
+
+    colors: list[Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}$")]] = Field(max_length=2)
 
 
 class Order(BaseModel):
@@ -410,6 +417,23 @@ def create_app(
         shown = frozenset({deck.language} if deck.language else set())
         deck = t.update(deck_id, look_nonce=deck.look_nonce + 1, palette_nonce=0)
         with_language(store, deck, exclude=shown)
+        t.enqueue("style", deck_id)
+        return out(t, t.read(deck_id))
+
+    @api.put("/api/decks/{deck_id}/brand", response_model=None)
+    def put_brand(t: Me, deck_id: str, body: BrandColours) -> DeckOut | JSONResponse:
+        """The user's colours: the palette is built around the first; the
+        thumbnails are redrawn by the worker for free."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if deck.status != "approve":
+            return _problem(409, "The colours can change until the build starts.")
+        if t.busy(deck_id):
+            return _problem(409, "The last style is still being drawn.")
+        colors = [c.lower() for c in body.colors]
+        brand = Brand(name=deck.title, colors=colors) if colors else None
+        t.update(deck_id, brief=deck.brief.model_copy(update={"brand": brand}), palette_nonce=0)
         t.enqueue("style", deck_id)
         return out(t, t.read(deck_id))
 

@@ -51,6 +51,7 @@ _BASE = (
     "ul,ol{list-style:none}em{font-style:normal}strong{font-weight:inherit}"
     "h1,h2,h3{text-wrap:balance}p,li{text-wrap:pretty}"
     "dd-chart{display:block}"
+    "dd-visual{display:block}"
     # An image slot (phase 39): a quiet surface field until our code puts the
     # deck's generated image in it, and the same field if that image fails.
     "dd-image{display:block;overflow:hidden;background-color:var(--c-surface)}"

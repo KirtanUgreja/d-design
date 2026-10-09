@@ -213,7 +213,7 @@ async def _logo(store: AnyStore, deck: Deck) -> None:
         store.append_event(deck.id, {"type": "logo_refused", "message": made.error})
         return
     store.save_export(deck.id, LOGO_CLEAN, made.value.png)
-    store.update(deck.id, logo_note="")
+    store.update(deck.id, logo_note="", logo_colour=made.value.colour or "")
     store.append_event(deck.id, {"type": "logo_ready", "colour": made.value.colour or ""})
 
 

@@ -127,6 +127,16 @@ class ImageSpec(BaseModel):
     role: Literal["hero", "bleed", "inset"] = "hero"
 
 
+VisualKind = Literal["waveform", "phone", "browser", "chat", "flow"]
+
+
+class VisualSpec(BaseModel):
+    """A picture of the product's world, drawn by code (components/visuals.py)."""
+
+    kind: VisualKind
+    lines: list[str] = Field(default_factory=list, max_length=4)  # short, no numbers
+
+
 class SlidePlan(BaseModel):
     id: str
     beat: str
@@ -136,6 +146,7 @@ class SlidePlan(BaseModel):
     fields: list[PlanField]
     chart: ChartSpec | None = None
     image: ImageSpec | None = None
+    visual: VisualSpec | None = None
     # Set by the planner: the deck's mark on its ends, a texture on about one
     # slide in three, and nothing on the rest (design-engine.md -> rhythm).
     ornament: Literal["none", "texture", "mark"] = "none"
@@ -225,6 +236,7 @@ class Deck(BaseModel):
     # The user's logo (phase 38, per deck): where it goes, and why it was refused.
     logo: Literal["none", "cover", "ends", "all"] = "none"
     logo_note: str = ""
+    logo_colour: str = ""  # the logo's main colour: offered as the brand colour, never applied
     brief: Brief
     facts: list[Fact] = Field(default_factory=list)
     storyline: Storyline | None = None

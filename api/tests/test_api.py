@@ -203,6 +203,22 @@ def test_the_style_card_and_another_style(tmp_path: Path) -> None:
     assert client.post(f"/api/decks/{deck_id}/style").status_code == 409  # still drawing
 
 
+def test_brand_colours_build_the_palette_around_the_users_colour(tmp_path: Path) -> None:
+    from engine.design.color import from_hex
+
+    client, store = _client(tmp_path)
+    deck_id = _approved_deck(store, slides=5)
+    looks.with_language(store, store.read(deck_id))
+    assert client.put(f"/api/decks/{deck_id}/brand", json={"colors": ["red"]}).status_code == 422
+    put = client.put(f"/api/decks/{deck_id}/brand", json={"colors": ["#E8541C"]})
+    assert put.status_code == 200 and put.json()["deck"]["brief"]["brand"]["colors"] == ["#e8541c"]
+    assert [j.kind for j in store._jobs("queued")] == ["style"]  # the thumbnails are redrawn
+    accent = from_hex(looks.theme_of(store.read(deck_id)).colors["accent"])
+    assert abs(accent.h - from_hex("#e8541c").h) < 2  # the brand's hue, lightness fitted
+    again = looks.theme_of(store.read(deck_id).model_copy(update={"palette_nonce": 2}))
+    assert abs(from_hex(again.colors["accent"]).h - accent.h) < 2  # new colours keep it
+
+
 def _png_logo() -> str:
     from PIL import Image, ImageDraw
 

@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
-from engine.components import charts
+from engine.components import charts, visuals
 from engine.components import images as pictures
 from engine.components import logo as logos
 from engine.compose import author, planner, procedural, references, targets
@@ -53,6 +53,13 @@ REPEAT = (
     "or above instead of beside, give the colour field to another block, and change the scale "
     "relation between the figure and the headline."
 )
+# A language's signature shape on every slide reads as a template (live deck,
+# 2026-10-09: the same circle on 8 of 10). After this many, slides go without.
+SHAPE_CAP = 3
+NO_SHAPE = (
+    "Leave out the reference's dd-shape on this slide: this deck already has enough of them. "
+    "Carry the composition with type scale, a colour field and the grid instead."
+)
 IMAGE_CAP = 6  # images in one deck, at most (phase 39 -> 5)
 
 
@@ -78,8 +85,10 @@ class Built:
 
 
 def _frame(plan: SlidePlan, c: Composed) -> Frame:
-    # Charts are drawn by our code after sanitizing, so QA measures them too.
-    return Frame(plan.id, charts.fill(c.html, plan.chart), c.css)
+    # Charts and visuals are drawn by our code after sanitizing, so QA measures them too.
+    drawn = charts.fill(c.html, plan.chart)
+    drawn = visuals.fill(drawn, plan.visual) if plan.visual else visuals.strip(drawn)
+    return Frame(plan.id, drawn, c.css)
 
 
 Event = dict[str, object]
@@ -152,6 +161,7 @@ async def build(
     images_left = min(IMAGE_CAP, max(1, round(appetite * len(plans)))) if appetite else 0
     used: set[str] = set()
     first_use: dict[str, tuple[int, str]] = {}  # reference id -> (slide number, its variation)
+    shaped = 0  # slides whose reference carries a dd-shape
     repeat: dict[str, str] = {}  # slide id -> how to tell it apart from the earlier use
     last = ""
     for n, plan in enumerate(plans, start=1):
@@ -169,12 +179,19 @@ async def build(
         refs[plan.id] = pair
         first = pair[0]
         earlier = first_use.get(first.id) if first is not None else None
-        image_on[plan.id] = bool(first and first.image != "none" and images_left > 0)
+        # A slide with a drawn visual takes no picture: the visual is its hero.
+        image_on[plan.id] = bool(
+            first and first.image != "none" and images_left > 0 and plan.visual is None
+        )
         images_left -= image_on[plan.id]
         options = [v for v in (first.variants if first else ()) if v != last]
         if earlier is not None:  # the only reference for its shape, used again
             options = [v for v in options if v != earlier[1]] or options
             repeat[plan.id] = REPEAT.format(n=earlier[0])
+        if first is not None and "<dd-shape" in first.html:
+            shaped += 1
+            if shaped > SHAPE_CAP:
+                repeat[plan.id] = f"{repeat.get(plan.id, '')} {NO_SHAPE}".strip()
         variation[plan.id] = last = rng.choice((options if earlier else []) or ["", *options])
         if first is not None:
             used.add(first.id)

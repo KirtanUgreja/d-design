@@ -24,8 +24,8 @@ MAX_PIXELS = 40_000_000  # checked before decoding: a decompression bomb is refu
 FORMATS = frozenset({"PNG", "JPEG", "WEBP"})
 ASPECTS: dict[str, float] = {"3:2": 1.5, "2:3": 2 / 3, "1:1": 1.0, "16:9": 16 / 9, "4:5": 0.8}
 NO_TEXT = (
-    "No text, no letters, no numbers, no logos, no watermarks, no user interface, no charts, "
-    "no diagrams."
+    "Absolutely no text anywhere in the image: no words, letters, numbers, captions, signs, "
+    "labels, logos or watermarks. No user interface, no charts, no diagrams."
 )
 
 _SLOT = re.compile(r'<dd-image\b[^>]*\baspect="([^"]+)"[^>]*>\s*</dd-image>')
@@ -47,7 +47,9 @@ def prompt(plan: SlidePlan, style: str, accent: str, *, deck: str = "") -> str:
     detail = "; ".join(v for k, v in sorted(by.items()) if k.startswith("point-"))
     return (
         f"A photograph or illustration for a presentation slide. Style: {style}.\n"
-        f"Subject: {subject}"
+        # The idea, never its words: a headline given as the subject came back
+        # lettered into the picture (live deck, 2026-10-09).
+        f"Picture the idea behind this line, without writing any of its words: {subject}"
         + (f" ({detail})" if detail else "")
         + "\n"
         + (f"The presentation is about: {deck}\n" if deck else "")

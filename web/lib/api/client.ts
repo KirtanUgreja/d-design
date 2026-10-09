@@ -30,6 +30,8 @@ export interface LiveDeck {
   pending: string[];
   logo: "none" | "cover" | "ends" | "all";
   logoNote: string;
+  logoColour: string; // the logo's main colour, offered as the brand colour
+  brand: string[]; // the user's brand colours, as #rrggbb; empty = generated
 }
 
 type Obj = Record<string, unknown>;
@@ -37,6 +39,7 @@ const isObj = (v: unknown): v is Obj => typeof v === "object" && v !== null && !
 const list = (v: unknown): unknown[] => (Array.isArray(v) ? v : []);
 const text = (v: unknown): string => (typeof v === "string" ? v : "");
 const STATUSES: readonly Status[] = ["brief", "interview", "outline", "approve", "building", "ready", "error", "aborted"];
+const HEX = /^#[0-9a-f]{6}$/i;
 const provenance = (v: unknown): Provenance => (v === "YOU" || v === "WEB" ? v : "AI");
 
 function parseDeck(raw: unknown): LiveDeck | null {
@@ -87,6 +90,8 @@ function parseDeck(raw: unknown): LiveDeck | null {
     pending: list(raw.pending).map(text),
     logo: d.logo === "cover" || d.logo === "ends" || d.logo === "all" ? d.logo : "none",
     logoNote: text(d.logo_note),
+    logoColour: HEX.test(text(d.logo_colour)) ? text(d.logo_colour) : "",
+    brand: (isObj(d.brief.brand) ? list(d.brief.brand.colors) : []).map(text).filter((c) => HEX.test(c)),
   };
 }
 
@@ -147,8 +152,6 @@ export interface StyleCard {
   previews: string[];
 }
 
-const HEX = /^#[0-9a-f]{6}$/i;
-
 async function styleCard(path: string): Promise<Result<StyleCard>> {
   let res: Response;
   try {
@@ -187,6 +190,8 @@ export interface NewDeckOptions {
 export const api = {
   style: (id: string) => styleCard(`/api/decks/${id}/style`),
   anotherStyle: (id: string) => call(`/api/decks/${id}/style`, { method: "POST" }),
+  setBrand: (id: string, colors: string[]) =>
+    call(`/api/decks/${id}/brand`, { method: "PUT", body: JSON.stringify({ colors }) }),
   styleThumb: (id: string, name: string, version: number) => `/api/decks/${id}/style/${name}?v=${version}`,
   create: (prompt: string, options: NewDeckOptions = {}) =>
     call("/api/decks", {
