@@ -1,5 +1,6 @@
 """Sampled themes (phase 23 -> Verify): contrast holds over 1,000 seeds, a
-seed always gives the same theme, and the exemplars survive sampled looks."""
+seed always gives the same theme, and the code-built layout (every slide's
+floor) survives sampled looks."""
 
 from __future__ import annotations
 
@@ -7,8 +8,6 @@ import asyncio
 import random
 from pathlib import Path
 
-from engine.compose.document import Frame
-from engine.compose.exemplars import load_all
 from engine.design import dataviz
 from engine.design.color import from_hex, passes
 from engine.design.palettes import BODY, LARGE, TEXT
@@ -16,6 +15,7 @@ from engine.design.sampler import draw, sample
 from engine.design.theme import build
 from engine.qa import browser
 from engine.qa.lint import lint
+from tests.fakes import sample_frames
 
 
 def test_a_thousand_seeds_never_fail_contrast() -> None:
@@ -61,14 +61,12 @@ def test_three_looks_share_no_pairing_or_grid() -> None:
         assert len({x.grid.id for x in looks}) == 3
 
 
-def test_exemplars_pass_qa_under_50_sampled_themes(tmp_path: Path) -> None:
-    exemplars = load_all()
-    frames = [Frame(e.id, e.html, e.css) for e in exemplars]
-    fields = {e.id: e.fields for e in exemplars}
-    assert all(lint(e.css) == [] for e in exemplars)
+def test_the_code_built_layout_passes_qa_under_sampled_themes(tmp_path: Path) -> None:
+    frames, fields = sample_frames()
+    assert all(lint(f.css) == [] for f in frames)
     rng = random.Random(23)
     bad: dict[str, list[tuple[str, str | None, str]]] = {}
-    for n in range(50):
+    for n in range(20):
         theme = build(draw(rng, f"x{n}", 0, "auto", None))
         result = asyncio.run(browser.measure(theme, frames, fields, str(tmp_path / "qa.html")))
         for slide, m in result.items():

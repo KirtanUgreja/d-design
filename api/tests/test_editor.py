@@ -14,9 +14,9 @@ from app import create_app
 from engine import Seam
 from store.files import UNDO_STEPS
 from store.tenant import AnyStore
+from tests.fakes import Studio, _no_sleep
 from tests.stores import STORES, make_store
 from tests.test_api import _approved_deck
-from tests.test_ladder import AlwaysTheSame, _no_sleep
 
 each_store = pytest.mark.parametrize("kind", STORES)
 
@@ -26,9 +26,7 @@ def _work(store: AnyStore) -> None:
     while asyncio.run(
         worker.once(
             store,
-            make_seam=lambda d: Seam(
-                api_key="k", transport=AlwaysTheSame(), sleep=_no_sleep, deck_id=d
-            ),
+            make_seam=lambda d: Seam(api_key="k", transport=Studio(), sleep=_no_sleep, deck_id=d),
             writing="w",
             design="d",
             budget_usd=1.0,

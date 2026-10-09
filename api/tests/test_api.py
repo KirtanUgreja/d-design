@@ -19,8 +19,8 @@ from benchtools import files
 from engine import Fact, Kept, Seam
 from engine.content.interview import Question
 from store.tenant import AnyStore
+from tests.fakes import Studio, _no_sleep
 from tests.stores import STORES, make_store
-from tests.test_ladder import AlwaysTheSame, _no_sleep
 
 each_store = pytest.mark.parametrize("kind", STORES)
 
@@ -120,7 +120,7 @@ def test_a_job_is_claimed_once_and_a_dead_worker_is_replaced(tmp_path: Path, kin
     assert again is not None and again.id == first.id and again.attempts == 2
 
 
-def _run_worker(store: AnyStore, transport: AlwaysTheSame) -> bool:
+def _run_worker(store: AnyStore, transport: Studio) -> bool:
     return asyncio.run(
         worker.once(
             store,
@@ -139,7 +139,7 @@ def test_the_worker_builds_a_deck_end_to_end(tmp_path: Path, kind: str) -> None:
     client, store = _client(tmp_path, kind)
     deck_id = _approved_deck(store)
     client.post(f"/api/decks/{deck_id}/build")
-    assert _run_worker(store, AlwaysTheSame())
+    assert _run_worker(store, Studio())
     deck = client.get(f"/api/decks/{deck_id}").json()["deck"]
     assert deck["status"] == "ready" and len(deck["slides"]) == 3
     kinds = [e["type"] for e in store.events(deck_id)]
@@ -152,7 +152,7 @@ def test_the_worker_builds_a_deck_end_to_end(tmp_path: Path, kind: str) -> None:
     page = client.get(f"/api/decks/{deck_id}/export.html?flavour=send")
     assert page.status_code == 200 and "Content-Security-Policy" in page.text
     assert client.get(f"/api/decks/{deck_id}/export.pdf").content.startswith(b"%PDF")
-    assert not _run_worker(store, AlwaysTheSame())  # the queue is empty
+    assert not _run_worker(store, Studio())  # the queue is empty
 
 
 @each_store
@@ -169,13 +169,13 @@ def test_an_aborted_build_resumes_without_paying_twice(
         store.abort(deck_id)  # the user stops it once the cover is in
 
     monkeypatch.setattr(store, "save_kept", abort_after_cover)
-    _run_worker(store, AlwaysTheSame())
+    _run_worker(store, Studio())
     monkeypatch.undo()
     assert store.read(deck_id).status == "aborted" and len(store.kept(deck_id)) == 1
     cover = next(iter(store.kept(deck_id)))
 
     client.post(f"/api/decks/{deck_id}/build")
-    _run_worker(store, AlwaysTheSame())
+    _run_worker(store, Studio())
     deck = store.read(deck_id)
     assert deck.status == "ready" and len(deck.slides) == 4
     # The ledger over both runs: the cover was composed once, never again.
@@ -236,10 +236,10 @@ def test_a_logo_is_checked_by_the_worker_then_placed_on_the_ends(tmp_path: Path,
     put = client.put(f"/api/decks/{deck_id}/logo", json={"data": _png_logo()})
     assert put.status_code == 200 and put.json()["deck"]["logo"] == "ends"
     assert client.get(f"/api/decks/{deck_id}/logo.png").status_code == 404  # not checked yet
-    assert _run_worker(store, AlwaysTheSame())  # the logo job
+    assert _run_worker(store, Studio())  # the logo job
     assert client.get(f"/api/decks/{deck_id}/logo.png").content.startswith(b"\x89PNG")
     client.post(f"/api/decks/{deck_id}/build")
-    assert _run_worker(store, AlwaysTheSame())
+    assert _run_worker(store, Studio())
     slides = store.read(deck_id).slides
     assert "<dd-logo" in slides[0].html and "<dd-logo" in slides[-1].html
     assert "<dd-logo" not in slides[1].html
@@ -251,7 +251,7 @@ def test_a_file_that_is_not_a_logo_is_refused_in_words(tmp_path: Path, kind: str
     deck_id = _approved_deck(store)
     bad = base64.b64encode(b"<html><script>alert(1)</script></html>").decode()
     assert client.put(f"/api/decks/{deck_id}/logo", json={"data": bad}).status_code == 200
-    assert _run_worker(store, AlwaysTheSame())
+    assert _run_worker(store, Studio())
     deck = store.read(deck_id)
     assert deck.logo == "none" and "can't be used as a logo" in deck.logo_note
     assert (

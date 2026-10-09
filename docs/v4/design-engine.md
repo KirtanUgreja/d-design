@@ -80,47 +80,23 @@ A single generic "swap theme" would overflow slides composed for different font 
 
 ---
 
-## Compositions
+## The studio (2026-10-09) — replaces compositions, references and exemplars
 
-> **Changing in phase 39 (2026-10-09):** each slide is adapted from a **reference** of the deck's **visual language**, retrieved by the slide's shape; the composition target below stays only as the code layout's input and the sameness bench's data. See [plan/39-design-reset.md](plan/39-design-reset.md) and "References" below.
+**Decided by the owner on 2026-10-09** after two live decks: "delete the whole build agent and rebuild it in layers". The reference library, the composition targets, the novelty archive and the exemplars are deleted (`git log` keeps them; tag `v3-final` and the phase-39 commits). The engine is now `api/engine/studio/`, four layers, each on Sonnet 5.5:
 
-`compose/planner.py` checks each slide's **intent** (what the slide does) against its data and rations its ornament. **How a slide is built is not chosen from a list** (phase 36): `compose/targets.py` draws a **composition target** — a point in a continuous space of measured descriptors (`qa/descriptors.py`: where the visual mass sits, how much is empty and where, the scale relation, blocks, edge use, colour-field share) — from the region the archive (`compose/archive.py`) has used least, fitted to the intent and away from the previous slide. The model is given the target as plain geometry.
+| Layer | File | Job |
+|---|---|---|
+| 1. Research | `research.py` | Two web searches in parallel. The **product file** covers what it is, what it does, for whom, features, pricing, team, traction and competitors. The **market evidence** covers what the arc needs. A line or number is kept only if a returned page quotes it |
+| 2. Outline | `outline.py` | The argument. Each slide has a headline claim, a body line (at most 28 words) that explains it to a reader alone, points, a figure, a chart from approved facts, or a drawn visual. Every number is linked to a fact |
+| 3a. Art director | `direct.py` | One call that sees the whole outline and the design system. It plans each slide's **hero** (headline, number, chart, visual, image, diagram, quote or list), **field** (ground, surface, accent or ink), whether it gets a picture (at most 3 per deck) and a buildable **idea** (placement, scale, crop, bleed). Rules: no two neighbours share a layout, hero or field, and the cover and ask are the strongest slides. If the call fails, a plain plan that still varies by position is used |
+| 3b. Designer | `design.py` | Writes one slide in HTML, CSS and **flat SVG** from the plan, inside the contract (`slide.py`). There is no template: the plan and the deck's design system are the only inputs |
+| 4. Improver | `improve.py` | A creative director gets a **screenshot of the rendered slide** (a 1280px JPEG) and its code. It critiques the slide in up to five lines (hierarchy, scale, canvas, alignment, boldness, sameness) and returns a redesign. The redesign is kept only if QA measures it no worse |
 
-| | Values |
-|---|---|
-| **Intents** (15) | cover · statement · number · number-set · points · comparison · steps · timeline · chart · quote · image-led · team · case · section · ask |
-| **Descriptors** (12, each 0–1) | mass x/y · spread · empty share and its x/y · hero scale · hero area · blocks · axis (column ↔ band) · edge · field — plus a 32×18 occupancy hash. Geometry only: never text or colour |
+**Flat SVG (new).** The designer may draw with `svg g path rect circle ellipse line polyline polygon`, using geometry attributes only. The sanitizer keeps nothing else: no text, links, scripts, `foreignObject`, styles or gradients. Colour is applied through CSS classes, which the lint restricts to `var(--c-…)`. An unstyled shape defaults to `--c-ink`, never browser black.
 
-**Rhythm rules:**
-- Each slide's target moves away from the previous one; the novelty gate refuses a composition within ε of any archived slide or any slide in the deck (one steered retry, then a W8 warning).
-- At most 2 centred compositions and at most 1 card grid per deck.
-- Image-led slides are ≤40% of the deck, and every image has a stated "why".
-- Section slides only in decks over 12 slides.
-- The cover and the ask are the fixed ends.
-- A number or chart intent needs an approved `Fact`.
+**What stayed:** the theme tokens and visual languages (type, palette, texture policy), the sanitizer and lint at entry, Chromium QA on every slide, components drawn by code (`dd-chart`, `dd-visual`, `dd-image`), the logo placed by code, the budget cap that fails closed, resume without paying twice, and abort.
 
----
-
-## References (phase 39) — replaces "Exemplars" from 2026-10-09
-
-**The product's taste asset**, reviewed like code and gated by the owner: `api/library/references/<language>/<shape>-<n>.{html,css,json}` — 8 visual languages × 8 content shapes, each passing QA filled long and short under 30 looks of its language. Per slide, code retrieves one (and an alternate) by the deck's language and the slide's shape, never twice in a deck and least-used across decks; the model **adapts** it to the deck's words, tokens and imagery; filled as-is it is the no-model fallback. Languages live in `api/library/languages/<id>.json`, authored by hand. Why: the 2026-10-08 walls and the research ([research-2026-10.md](research-2026-10.md)).
-
-The section below records the exemplar library as it was through phase 38; its 12 files remain QA fixtures.
-
-## Exemplars (through phase 38)
-
-`api/library/exemplars/<id>.{html,json}` was **the product's taste asset.** Changes to it are reviewed like code.
-
-| | |
-|---|---|
-| What an exemplar is | A composition written in the slide contract, using only theme tokens, tagged by intent and archetype |
-| Jobs since phase 36 | **QA fixtures and style-tile content only.** They are never in a compose prompt (examples anchor the model to them) and never a fallback (a test asserts the first) |
-| Size | 12 at phase 22 (6 archetypes × 2). About 40 at phase 25, **only if phase 22's with/without A/B shows exemplars help** |
-| Where the taste comes from | Studied references: Swiss/International-style posters, editorial magazine spreads, brand-agency and product-launch decks. **Never template marketplaces**: their output is the look this product exists to avoid. Each exemplar records the idea it borrows |
-| How it grows | The design model drafts candidates; the owner curates them on a wall; only kept ones enter the library |
-| Selection per slide | 2–3 exemplars matching the intent or archetype, rotated so one exemplar never drives consecutive slides |
-
----
+**Cost (estimate, unmeasured until the first live deck):** about $1 a deck, against $0.3 before. The art director costs about $0.05, then a design call and an improver call per slide, each with the deck's contract cached.
 
 ## The slide contract
 
@@ -221,13 +197,13 @@ Warnings become errors only when the bench shows they track the owner's scores.
 
 ## Repair ladder
 
-The ladder (`pipeline.py`) has three steps, and never loops:
+The safety net under the studio (`studio/build.py`) has three steps and never loops:
 
 1. **Targeted repair**, at most 2 rounds. The model gets the slide, the defect list (code, selector, measured value, threshold) and the rule it broke, and is asked for the smallest change.
-2. **The code-built layout** (`compose/procedural.py`). Code builds the slide from its own composition target, fitting type before placing it. No model call, no stored layout; it passed QA on 3,270 bench slides under 30 generated looks.
+2. **The code-built layout** (`studio/design.py` → `fallback`). Code builds the slide from its fields: a colour field for a number, a ruled list, a chart or visual below the claim, or a single sentence at poster scale. No model call; words fit by construction. It is also the style preview and "Fit to slide".
 3. **Flag.** If even that fails, keep the best version and mark it **needs attention**. The editor shows the flag, and export lists flagged slides before download.
 
-It never silently ships a failing slide and never asks a vision model for a verdict.
+The improver (layer 4) looks at a screenshot to judge **design**. Whether a slide is **broken** is still decided only by measurement.
 
 ---
 

@@ -5,10 +5,8 @@ Pure by rule 6: nothing under ``engine`` imports a web framework or reads the
 environment. The model client and the clock are injected.
 """
 
-from engine import pipeline
-from engine.compose.author import Composed
 from engine.compose.edit import set_field
-from engine.content import arcs, interview, notes, research, rules, storyline
+from engine.content import arcs, interview, notes, rules
 from engine.content.interview import Question
 from engine.design.sampler import look_for, recolour
 from engine.design.theme import build as build_theme
@@ -30,7 +28,11 @@ from engine.models import (
     SlidePlan,
     Storyline,
 )
-from engine.pipeline import Built, Kept
+from engine.studio import build as pipeline
+from engine.studio import outline as storyline
+from engine.studio import research
+from engine.studio.build import Built
+from engine.studio.slide import Composed, Kept
 
 __all__ = [
     "Brief",

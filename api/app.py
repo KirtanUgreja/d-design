@@ -27,8 +27,8 @@ import ops
 import settings
 from auth import Verifier
 from engine import Brief, Deck, Question, interview
-from engine.compose import preview
 from engine.models import Brand
+from engine.studio import preview
 from lib.result import Ok
 from looks import preview_names, theme_of, with_language
 from store.files import Avatar, History, User

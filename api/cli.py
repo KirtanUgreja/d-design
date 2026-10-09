@@ -8,12 +8,8 @@ uv run python -m cli outline --brief ID         interview, research, storyline, 
 uv run python -m cli content --run NAME         phase 24 bench: every brief, metrics, inverse spec
 uv run python -m cli injection --run NAME       the injection corpus through the content stages
 uv run python -m cli fonts                      measure the vendored faces into meta.json
-uv run python -m cli tiles --run NAME           3 sampled looks per brief, as style tiles
 uv run python -m cli export --run NAME [--pdf]  re-assemble built decks with the current player
-uv run python -m cli record --brief ID          a real run as a fixture bundle for web/ (phase 30)
 uv run python -m cli openapi                    the API's schema, for the web's generated types
-uv run python -m cli sameness [--simulate N]    coverage and repeat rate: the archive, or N
-                                                code-built decks (no model call)
 """
 
 from __future__ import annotations
@@ -21,7 +17,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
-import re
 import statistics
 import sys
 from collections import Counter
@@ -38,15 +33,11 @@ from benchtools import (
     files,
     fonts,
     outline,
-    record,
-    refs,
-    sameness,
     shots,
     wall,
 )
 from engine import Brief, Seam, Slide, pipeline
 from engine.compose.document import Frame
-from engine.design import tiles
 from engine.design.sampler import look_for, sample
 from engine.design.theme import THEMES, Theme
 from engine.design.theme import build as build_theme
@@ -141,15 +132,13 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
     root = files.BENCH / "runs" / args.run / label
     themes = list(THEMES.values())
     rows: list[dict[str, object]] = []
-    archive = files.load_archive()
     # --repeat N builds every brief N times, each with its own generated look:
     # the sameness bench needs many decks from few frozen outlines (phase 36).
     briefs = _ids(args.set)[: args.briefs or None]
     jobs = [(r, b) for r in range(args.repeat) for b in briefs]
-    # Usage within the run, so a bench run rotates languages and references as
-    # the worker does across a user's decks.
+    # Usage within the run, so a bench run rotates languages as the worker
+    # does across a user's decks.
     lang_usage: Counter[str] = Counter()
-    ref_usage: Counter[str] = Counter()
     for index, (repeat, brief_id) in enumerate(jobs):
         item = files.load(brief_id)
         if args.outlines:  # the content engine's outlines (cli content), not the frozen ones
@@ -176,19 +165,15 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             seam,
             item.outline,
             theme,
-            ref_usage=ref_usage,
             image_model=args.image_model,
-            candidates=args.candidates,
+            improving=not args.no_improve,
             model=args.model,
             title=item.brief.prompt[:80],
             work_file=str(out / "qa.html"),
             shots_dir=str(out),
             budget_usd=args.budget,
-            archive=archive,
         )
-        files.save_archive(archive)
         lang_usage[theme.language] += 1
-        ref_usage.update(s.reference for s in built.slides if s.reference)
         (out / "deck.html").write_text(built.html)
         (out / "deck-send.html").write_text(built.send)
         files.append_ledger(root / "ledger.jsonl", seam.ledger)
@@ -199,13 +184,11 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             "model": args.model,
             "theme": theme.id,
             "language": theme.language,
-            "references": origins.count("reference"),
             "slides": len(built.slides),
             "clean_first_pass": built.first_pass_clean,
+            "improved": built.improved,
             "repaired": origins.count("repaired"),
             "fallback": origins.count("fallback"),
-            "novelty_retries": built.novelty_retries,
-            "near_repeats": built.near_repeats,
             "flagged": sum(s.qa.status != "passed" for s in built.slides),
             "cost_usd": round(seam.spent_usd, 4),
             "seconds": round(built.seconds),
@@ -245,7 +228,7 @@ async def _bakeoff(cfg: settings.Settings, args: argparse.Namespace) -> int:
                 "themes": "sampled",
                 "repeat": 1,
                 "outlines": "",
-                "candidates": 1,
+                "no_improve": False,
             }
         )
         failed += await _build(cfg, one)
@@ -293,34 +276,6 @@ def _sampled(brief: Brief) -> list[Theme]:
     ]
 
 
-async def _record(cfg: settings.Settings, brief_id: str, outlines: str, prompt: str) -> int:
-    """A bench brief from its saved outline, or a new brief from ``--prompt``
-    through the whole content engine (interview, research, storyline, notes)."""
-    if prompt:
-        filler = {"make", "a", "an", "the", "for", "deck", "of", "to", "me", "please", "create"}
-        words = [w for w in re.findall(r"[a-z0-9]+", prompt.lower()) if w not in filler]
-        slug = "-".join(words[:4]) or "deck"
-        brief = Brief(id=slug, prompt=prompt)
-        seam = _seam(cfg, f"record-{slug}")
-        made = await content.make(seam, brief, model=cfg.model_writing, year=_year(), ask=None)
-        if isinstance(made, str):
-            print(made)
-            return 1
-        story, facts = made.story, made.facts
-    else:
-        brief = files.load(brief_id).brief
-        story, facts = content.load(
-            files.BENCH / "runs" / outlines / "content" / f"{brief_id}.json"
-        )
-        seam = _seam(cfg, f"record-{brief_id}")
-    out = await record.record(
-        seam, brief, story, facts, writing=cfg.model_writing, design=cfg.model_design
-    )
-    files.append_ledger(files.BENCH / "runs" / "ledger.jsonl", seam.ledger)
-    print(f"{brief.id} -> {out}  ${seam.spent_usd:.3f}")
-    return 0
-
-
 def _theme_for(theme_id: str, brief: Brief) -> Theme:
     """The theme a run recorded: one of phase 22's three, or a sampled look."""
     if theme_id in THEMES:
@@ -359,41 +314,6 @@ async def _export(run: str, label: str, which: str, pdf: bool) -> int:
             (out / "deck.pdf").write_bytes(data)
             line += f", pdf {len(data) / 1e6:.2f} MB"
         print(line, flush=True)
-    return 0
-
-
-async def _tiles(run: str, which: str) -> int:
-    root = files.BENCH / "runs" / run / "tiles"
-    root.mkdir(parents=True, exist_ok=True)
-    rows: list[str] = []
-    broken = 0
-    for brief_id in _ids(which):
-        item = files.load(brief_id)
-        if item.outline is None:
-            continue
-        cells: list[str] = []
-        for variant, theme in enumerate(_sampled(item.brief)):
-            frames, bad = await tiles.render(
-                theme, item.outline, variant, str(root / "work.html"), str(root)
-            )
-            broken += len(bad)
-            look = theme.look
-            caption = (
-                f"{look['pairing']} · {look['palette']} · {look['grid']} · {look['motif']} · "
-                f"{look['scale']}" + (f" · <b>QA {'; '.join(bad)}</b>" if bad else "")
-            )
-            imgs = "".join(f'<img src="tiles/{f.slide_id}.png">' for f in frames)
-            cells.append(f"<figure>{imgs}<figcaption>{caption}</figcaption></figure>")
-        rows.append(f"<section><h2>{brief_id}</h2><div class=row>{''.join(cells)}</div></section>")
-    page = files.BENCH / "runs" / run / "tiles.html"
-    page.write_text(
-        "<!doctype html><meta charset=utf-8><title>Style tiles</title><style>"
-        "body{font:14px system-ui;margin:24px;background:#ddd}h2{margin:24px 0 8px}"
-        ".row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}"
-        "figure{margin:0;background:#fff;padding:8px}img{width:100%;display:block;margin-bottom:6px}"
-        "</style>" + "".join(rows)
-    )
-    print(f"{len(rows)} briefs x 3 looks -> {page}  ({broken} tiles with QA errors)")
     return 0
 
 
@@ -503,22 +423,6 @@ def _openapi() -> int:
     return 0
 
 
-def _sameness(simulate: int) -> int:
-    """Phase 36's bench. The archive as it stands, or a free simulation."""
-    if not simulate:
-        entries = files.load_archive().entries
-        if not entries:
-            print("the archive is empty: build or record a deck first")
-            return 1
-        print(sameness.report(entries).line())
-        return 0
-    work = files.BENCH / "runs" / "sameness"
-    work.mkdir(parents=True, exist_ok=True)
-    for n, r in enumerate(sameness.run(simulate, work), start=1):
-        print(f"deck {n:>3}: {r.line()}")
-    return 0
-
-
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="cli")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -539,7 +443,7 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--outlines", default="", help="a `cli content` run to take outlines from")
     cmd.add_argument("--image-model", default="", help="slide images; empty = no images")
     cmd.add_argument("--briefs", type=int, default=0, help="only the first N briefs of the set")
-    cmd.add_argument("--candidates", type=int, default=1, help="compose N, keep the best scored")
+    cmd.add_argument("--no-improve", action="store_true", help="skip the improver layer")
     cmd = sub.add_parser("bakeoff", help="the same briefs built by each model, one wall")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--models", required=True, help="comma-separated compose models")
@@ -547,9 +451,6 @@ def main(argv: list[str]) -> int:
     cmd.add_argument("--briefs", type=int, default=2)
     cmd.add_argument("--budget", type=float, default=0.5, help="hard cap per deck, USD")
     cmd.add_argument("--image-model", default="", help="slide images; empty = no images")
-    cmd = sub.add_parser("tiles")
-    cmd.add_argument("--run", required=True)
-    cmd.add_argument("--set", choices=("one", "smoke", "all"), default="all")
     cmd = sub.add_parser("outline")
     cmd.add_argument("--brief", required=True)
     cmd.add_argument("--run", default="outlines")
@@ -559,24 +460,12 @@ def main(argv: list[str]) -> int:
     cmd = sub.add_parser("injection")
     cmd.add_argument("--run", required=True)
     sub.add_parser("fonts")
-    cmd = sub.add_parser("record")
-    cmd.add_argument("--brief", default="")
-    cmd.add_argument("--prompt", default="", help="a new brief, run through the content engine")
-    cmd.add_argument("--outlines", default="2026-10-01-content")
     cmd = sub.add_parser("export")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--label", default="engine")
     cmd.add_argument("--set", choices=("one", "smoke", "all"), default="all")
     cmd.add_argument("--pdf", action="store_true")
     sub.add_parser("openapi")
-    cmd = sub.add_parser("sameness")
-    cmd.add_argument("--simulate", type=int, default=0, help="N code-built decks, no model")
-    cmd = sub.add_parser("refs", help="the reference library: QA per language, or the wall")
-    cmd.add_argument("--check", default="", help="a language id: QA every reference in it")
-    cmd.add_argument("--looks", type=int, default=30)
-    cmd.add_argument("--wall", action="store_true", help="every reference under two looks")
-    cmd.add_argument("--language", action="append", default=[], help="limit the wall")
-    cmd.add_argument("--out", default="../bench/runs/refs-wall")
     cmd = sub.add_parser("wall")
     cmd.add_argument("--run", required=True)
     cmd.add_argument("--seed", type=int, default=0)
@@ -600,22 +489,10 @@ def main(argv: list[str]) -> int:
         return asyncio.run(_content(cfg, args.run, args.set))
     if args.command == "injection":
         return asyncio.run(_injection(cfg, args.run))
-    if args.command == "record":
-        return asyncio.run(_record(cfg, args.brief, args.outlines, args.prompt))
     if args.command == "export":
         return asyncio.run(_export(args.run, args.label, args.set, args.pdf))
-    if args.command == "tiles":
-        return asyncio.run(_tiles(args.run, args.set))
     if args.command == "openapi":
         return _openapi()
-    if args.command == "sameness":
-        return _sameness(args.simulate)
-    if args.command == "refs":
-        if args.check:
-            return refs.run_check(args.check, args.looks)
-        page = asyncio.run(refs.wall(Path(args.out), args.language or None))
-        print(page)
-        return 0
     if args.command == "fonts":
         measured = asyncio.run(fonts.measure())
         for family, meta in measured.items():

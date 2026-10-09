@@ -20,8 +20,9 @@ Stage = Literal[
     "research",
     "storyline",
     "notes",
-    "direction",  # retired 2026-10-08 (phase 39); kept so old ledgers still parse
+    "direction",  # the art director (studio, 2026-10-09); retired once on 2026-10-08
     "compose",
+    "improve",  # the critic that looks at a rendered slide and redesigns it
     "repair",
     "revise",
     "image",
@@ -188,9 +189,9 @@ class Slide(BaseModel):
     css: str
     fields: dict[str, str]
     assets: dict[str, str] = Field(default_factory=dict)
-    origin: Literal["authored", "repaired", "exemplar", "reference", "fallback", "edited"] = (
-        "authored"
-    )
+    origin: Literal[
+        "authored", "improved", "repaired", "exemplar", "reference", "fallback", "edited"
+    ] = "authored"
     reference: str = ""  # the library reference it was adapted from (phase 39)
     attempts: int = 1
     qa: SlideQA = Field(default_factory=SlideQA)

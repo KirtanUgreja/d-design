@@ -38,11 +38,12 @@ from engine import (
 )
 from engine.components import images as pictures
 from engine.components import logo as logos
-from engine.compose import author, preview
-from engine.design import languages
 from engine.qa.sanitize import sanitize
+from engine.studio import design as designer
+from engine.studio import preview
+from engine.studio.slide import prefix
 from lib.result import Err
-from looks import preview_names, theme_of, usage, with_language
+from looks import preview_names, theme_of, with_language
 from store.files import Job
 from store.tenant import AnyStore, open_store
 
@@ -159,7 +160,6 @@ async def _build(
     slides_dir = store.slides_dir(deck.id)
     deck = with_language(store, deck)
     theme = theme_of(deck)
-    _, ref_usage = usage(store)
 
     def keep(slide_id: str, kept: Kept) -> None:
         store.save_kept(deck.id, slide_id, kept)
@@ -180,7 +180,6 @@ async def _build(
         prebuilt=store.kept(deck.id),
         on_final=keep,
         stop=lambda: store.aborted(deck.id),
-        ref_usage=ref_usage,
         image_model=image_model,
         logo=await _clean_logo(store, deck),
         logo_on=deck.logo if deck.logo != "none" else "ends",
@@ -274,9 +273,8 @@ async def _ask(store: AnyStore, deck: Deck, op: ops.Ask, seam: Seam, *, model: s
     theme = theme_of(deck)
     picture = pictures.picture_of(slide.composed.html)
     current = Composed(pictures.strip(slide.composed.html), slide.composed.css)
-    shapes = bool(deck.language and languages.get(deck.language).shapes)
-    made = await author.revise(
-        seam, theme, plan, current, op.instruction, model=model, shapes=shapes
+    made = await designer.revise(
+        seam, plan, current, op.instruction, prefix=prefix(theme), model=model
     )
     if isinstance(made, Err):
         store.append_event(deck.id, {"type": "edit_refused", "message": human(made.error)})

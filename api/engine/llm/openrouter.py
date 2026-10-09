@@ -287,16 +287,20 @@ class Seam:
         reasoning: ReasoningEffort | None = None,
         slide_id: str | None = None,
         tools: list[dict[str, object]] | None = None,
+        images: tuple[str, ...] = (),
     ) -> Result[T, ModelError]:
         """One call whose answer we parse ourselves, with one repair.
 
         ``tools`` carries server tools only (``openrouter:web_search``). The
-        model gets no tool with side effects.
+        model gets no tool with side effects. ``images`` are data URLs the
+        model looks at with the user message (our own screenshots, never a
+        user's file).
         """
         extra: dict[str, object] = {"tools": tools} if tools else {}
         return await self._with_repair(
             stage,
             parse,
+            images=images,
             system=system,
             user=user,
             model=model,
@@ -370,6 +374,7 @@ class Seam:
         reasoning: ReasoningEffort | None,
         slide_id: str | None,
         extra: dict[str, object],
+        images: tuple[str, ...] = (),
     ) -> Result[T, ModelError]:
         if not self.api_key:
             return err(ModelError("no_key", "OPENROUTER_API_KEY is not set"))
@@ -382,9 +387,15 @@ class Seam:
                 {"type": "text", "text": prefix, "cache_control": {"type": "ephemeral"}},
                 {"type": "text", "text": system},
             ]
+        user_content: object = user
+        if images:
+            user_content = [
+                {"type": "text", "text": user},
+                *({"type": "image_url", "image_url": {"url": u}} for u in images),
+            ]
         messages: list[dict[str, object]] = [
             {"role": "system", "content": system_content},
-            {"role": "user", "content": user},
+            {"role": "user", "content": user_content},
         ]
         body: dict[str, object] = {
             "model": model,

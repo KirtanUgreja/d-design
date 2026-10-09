@@ -18,10 +18,10 @@ import pytest
 from playwright.async_api import Browser, Page, Route, async_playwright
 
 from engine.compose.document import Frame
-from engine.compose.exemplars import load_all
 from engine.design.theme import THEMES
 from engine.export import pdf
 from engine.export.assemble import Flavour, assemble
+from tests.fakes import sample_frames
 
 ENGINES = os.environ.get("DD_ENGINES", "chromium,webkit").split(",")
 THEME = next(iter(THEMES.values()))
@@ -29,7 +29,7 @@ SECRET = "Only the presenter may read this note"
 
 
 def _deck() -> tuple[list[Frame], dict[str, str]]:
-    frames = [Frame(e.id, e.html, e.css) for e in load_all()[:4]]
+    frames, _ = sample_frames(4)
     # Slide 2 reveals its fields in steps.
     second = frames[1]
     built = re.sub(r'data-field="', 'data-build="1" data-field="', second.html, count=2)

@@ -35,7 +35,9 @@ class Settings:
     # (docs/techstack/ai-stack.md). Cheap paid models by the owner's decision
     # of 2026-09-30; the one-shot baseline was made on claude-opus-5.5.
     model_writing: str = "anthropic/claude-sonnet-5.5"
-    model_design: str = "deepseek/deepseek-v4.1-flash"
+    # The studio's art director, designer and improver (owner, 2026-10-09: "Sonnet
+    # throughout"); the flash model it replaces designed every slide alike.
+    model_design: str = "anthropic/claude-sonnet-5.5"
     # The interview and speaker notes (2026-10-09): Haiku 5.5 is a twentieth of
     # Sonnet's price; research and the storyline stay on model_writing.
     model_cheap: str = "anthropic/claude-haiku-5.5"

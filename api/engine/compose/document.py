@@ -52,6 +52,9 @@ _BASE = (
     "h1,h2,h3{text-wrap:balance}p,li{text-wrap:pretty}"
     "dd-chart{display:block}"
     "dd-visual{display:block}"
+    # Unstyled SVG would draw in browser black: the theme's ink instead, at no specificity.
+    ":where(.s svg) :where(path,rect,circle,ellipse,line,polyline,polygon)"
+    "{fill:var(--c-ink);stroke:none}"
     # An image slot (phase 39): a quiet surface field until our code puts the
     # deck's generated image in it, and the same field if that image fails.
     "dd-image{display:block;overflow:hidden;background-color:var(--c-surface)}"

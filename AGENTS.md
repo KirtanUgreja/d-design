@@ -28,7 +28,7 @@ uv run python -m cli smoke                 one live model call; prints its cost
 uv run python -m cli freeze --set all      freeze outlines for the bench briefs
 uv run python -m cli baseline --set all    one-shot baseline decks + screenshots
 uv run python -m cli wall --run NAME       the wall page the owner scores
-uv run python -m cli sameness              coverage and repeat rate (phase 36)
+uv run python -m cli build --run NAME --model M   decks from frozen outlines through the studio
 uv run uvicorn app:serve --factory --port 8000 the API (enqueues and reads; never calls a model)
 uv run python worker.py                    the worker (holds the key; builds decks)
 ```

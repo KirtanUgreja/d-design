@@ -3,8 +3,8 @@ illustrative one; provenance and source lines are code's job (offline)."""
 
 from __future__ import annotations
 
-from engine.content.storyline import Draft, DraftSlide, assemble
 from engine.models import Brief, Citation, Fact
+from engine.studio.outline import Draft, DraftSlide, assemble
 
 BRIEF = Brief(
     id="b", prompt="Launch Tessel 2, the offline notes app.", ask="Upgrade today", delivery="send"
@@ -72,7 +72,7 @@ def test_numbers_link_to_facts_or_become_proposed_illustrations() -> None:
 
 
 def test_a_chart_survives_only_if_every_value_is_an_approved_fact() -> None:
-    from engine.content.storyline import DraftChart
+    from engine.studio.outline import DraftChart
 
     arr = [
         Fact(id=f"a{n}", text=f"ARR reached ${v}M in {q}", source="user", status="approved")
@@ -105,7 +105,7 @@ def test_a_chart_survives_only_if_every_value_is_an_approved_fact() -> None:
 
 
 def test_a_before_and_after_chart_needs_every_value_sourced() -> None:
-    from engine.content.storyline import DraftChart, chart_spec
+    from engine.studio.outline import DraftChart, chart_spec
 
     facts = {
         f"r{n}": Fact(id=f"r{n}", text=t, source="user", status="approved")
@@ -139,7 +139,7 @@ def test_a_before_and_after_chart_needs_every_value_sourced() -> None:
 
 
 def test_a_chart_slide_gets_its_figure_from_the_chart() -> None:
-    from engine.content.storyline import DraftChart
+    from engine.studio.outline import DraftChart
 
     market = Fact(
         id="w6",

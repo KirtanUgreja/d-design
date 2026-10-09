@@ -17,6 +17,41 @@ from engine.design.axes import TEXTURE_KINDS as _AXES_TEXTURES
 from engine.design.patterns import SHAPES
 from lib.result import Result, err, ok
 
+SVG_TAGS = (
+    "svg",
+    "g",
+    "path",
+    "rect",
+    "circle",
+    "ellipse",
+    "line",
+    "polyline",
+    "polygon",
+)
+SVG_GEOMETRY = frozenset(
+    {
+        "viewbox",
+        "viewBox",
+        "preserveaspectratio",
+        "preserveAspectRatio",
+        "d",
+        "x",
+        "y",
+        "width",
+        "height",
+        "rx",
+        "ry",
+        "cx",
+        "cy",
+        "r",
+        "x1",
+        "y1",
+        "x2",
+        "y2",
+        "points",
+        "transform",
+    }
+)
 TAGS = frozenset(
     [
         "div",
@@ -46,6 +81,9 @@ TAGS = frozenset(
         "dd-chart",
         "dd-image",
         "dd-visual",
+        # Flat SVG the designer draws (studio, 2026-10-09): geometry only, colour
+        # through CSS classes the lint holds to theme tokens; no text, no links.
+        *SVG_TAGS,
     ]
 )
 _GLOBAL = frozenset(
@@ -53,6 +91,7 @@ _GLOBAL = frozenset(
 )
 ATTRIBUTES: dict[str, set[str]] = {
     "*": set(_GLOBAL),
+    **{tag: set(SVG_GEOMETRY) for tag in SVG_TAGS},
     "dd-texture": {"kind", "tone"},
     "dd-shape": {"kind", "tone"},
     "dd-image": {"aspect"},
@@ -62,9 +101,9 @@ IMAGE_ASPECTS = frozenset({"3:2", "2:3", "1:1", "16:9", "4:5"})
 TEXTURE_KINDS = _AXES_TEXTURES
 TEXTURE_TONES = frozenset({"accent", "ink", "surface"})
 
-MAX_ELEMENTS = 150
+MAX_ELEMENTS = 240  # a drawing has more elements than a layout
 MAX_DEPTH = 12
-MAX_BYTES = 16_000
+MAX_BYTES = 28_000
 
 _CLASS = re.compile(r"^[a-z][a-z0-9-]{0,39}$")
 _VOID = frozenset({"br", "hr"})

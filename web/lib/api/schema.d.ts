@@ -969,7 +969,7 @@ export interface components {
              * @default authored
              * @enum {string}
              */
-            origin: "authored" | "repaired" | "exemplar" | "reference" | "fallback" | "edited";
+            origin: "authored" | "improved" | "repaired" | "exemplar" | "reference" | "fallback" | "edited";
             /** Plan Id */
             plan_id: string;
             qa?: components["schemas"]["SlideQA"];

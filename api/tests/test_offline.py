@@ -14,10 +14,9 @@ from pathlib import Path
 
 from playwright.async_api import Route, async_playwright
 
-from engine.compose.document import Frame
-from engine.compose.exemplars import load_all
 from engine.design.theme import THEMES
 from engine.export.assemble import assemble
+from tests.fakes import sample_frames
 
 
 def _keep_only(url: str, left: list[str]) -> Callable[[Route], Awaitable[None]]:
@@ -34,7 +33,7 @@ def _keep_only(url: str, left: list[str]) -> Callable[[Route], Awaitable[None]]:
 
 
 def test_export_makes_zero_requests(tmp_path: Path) -> None:
-    frames = [Frame(e.id, e.html, e.css) for e in load_all()]
+    frames, _ = sample_frames()
 
     async def run() -> dict[str, list[str]]:
         leaks: dict[str, list[str]] = {}

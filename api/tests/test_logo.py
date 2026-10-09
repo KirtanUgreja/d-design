@@ -15,7 +15,7 @@ from engine import Seam, pipeline
 from engine.components import logo
 from engine.design.theme import THEMES
 from lib.result import Err, Ok
-from tests.test_ladder import AlwaysTheSame, _no_sleep
+from tests.fakes import Studio, _no_sleep
 
 
 def _png(size: tuple[int, int] = (400, 200), colour: tuple[int, ...] = (200, 40, 40, 255)) -> bytes:
@@ -104,7 +104,7 @@ def test_the_pipeline_places_the_logo_on_the_ends_and_keeps_qa_clean(tmp_path: P
     assert isinstance(mark, Ok)
     built = asyncio.run(
         pipeline.build(
-            Seam(api_key="k", transport=AlwaysTheSame(), sleep=_no_sleep),
+            Seam(api_key="k", transport=Studio(), sleep=_no_sleep),
             story,
             THEMES["ledger"],
             model="m",

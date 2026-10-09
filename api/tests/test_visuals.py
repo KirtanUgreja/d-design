@@ -8,8 +8,8 @@ import re
 import pytest
 
 from engine.components import visuals
-from engine.content.storyline import Draft, DraftSlide, assemble, visual_lines
 from engine.models import Brief, VisualSpec
+from engine.studio.outline import Draft, DraftSlide, assemble, visual_lines
 
 KINDS = ["waveform", "phone", "browser", "chat", "flow"]
 

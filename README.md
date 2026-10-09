@@ -8,11 +8,13 @@
 
 | Step | What happens | Where |
 |---|---|---|
-| Brief → questions | A few targeted questions; skippable | `api/engine/content/interview.py` |
-| Research → outline | Web research with citations; a storyline whose every number traces to you or a source, or is held for your decision | `api/engine/content/` |
-| **Style** | The deck draws one of **8 authored visual languages** (Swiss grid, magazine editorial, type poster, cinematic, data journal, quiet minimal, geometric modern, warm humanist), then a generated palette, a type pairing and an instance inside it. Three thumbnails of *your* slides show the style before you pay for a build; **Another style** draws a new one | `api/engine/design/languages.py`, `api/library/languages/` |
-| **Compose** | Each slide is **adapted from a reference** in its language (77 hand-built references, 8 shapes) by a model writing real HTML and CSS, inside the deck's tokens only. Images are generated in the language's one image style; charts are drawn by code from approved facts | `api/engine/compose/`, `api/library/references/` |
-| **Check** | Every slide is rendered in Chromium and measured: overflow, collisions, contrast (WCAG + APCA), type size, empty blocks. A defect climbs a ladder: two targeted repairs, the alternate reference, the reference filled by code, a code layout, then a visible flag. Nothing broken ships silently | `api/engine/qa/`, `api/engine/pipeline.py` |
+| Brief → questions | A few targeted questions, including what the product does; skippable | `api/engine/content/interview.py` |
+| **1. Research** | Two web searches at once: a **product file** (what it does, for whom, features, pricing, traction, competitors) and the **market evidence** the story needs. Only what a returned page quotes is kept | `api/engine/studio/research.py` |
+| **2. Outline** | One argument, a claim and a short explanation per slide, points, a figure, a chart from approved facts or a drawn product visual. Every number traces to you or a source, or is held for your decision | `api/engine/studio/outline.py` |
+| **Style** | One of **8 visual languages**, then a generated palette (built around **your brand colour** if you give one) and a type pairing. Three thumbnails of *your* slides show it before you pay for a build | `api/engine/design/`, `api/library/languages/` |
+| **3. Art director → designer** | One call plans every slide's composition for the whole deck (hero, field, crop, scale), so no two neighbours look alike. Then a designer writes each slide in real HTML, CSS and flat SVG, inside the deck's tokens. No templates, no reference library | `api/engine/studio/direct.py`, `design.py` |
+| **4. Improver** | A creative director **looks at a screenshot of each rendered slide**, critiques it and redesigns it to be bolder. The redesign is kept only if QA measures it no worse | `api/engine/studio/improve.py` |
+| **Check** | Every slide is rendered in Chromium and measured: overflow, collisions, contrast (WCAG + APCA), type size, empty blocks. A defect gets two targeted repairs, then a code-built layout, then a visible flag. Nothing broken ships silently | `api/engine/qa/`, `api/engine/studio/build.py` |
 | Edit → export | Edit text, reorder, recolour, fit, undo; present, send (one offline file, zero network requests) or PDF | `api/worker.py`, `api/engine/export/` |
 
 ## Architecture

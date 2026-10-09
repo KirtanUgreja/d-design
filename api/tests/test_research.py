@@ -3,9 +3,9 @@ source is discarded. Offline: the citations are built here."""
 
 from __future__ import annotations
 
-from engine.content.research import Candidate, user_facts, verify
 from engine.llm.openrouter import Citation as Found
 from engine.models import Brief, Pasted
+from engine.studio.research import Candidate, user_facts, verify
 
 PAGE = Found(
     url="https://www.ons.gov.uk/report",
@@ -82,7 +82,7 @@ def test_user_facts_are_the_brief_sentences_with_numbers() -> None:
 
 
 def test_what_the_product_is_needs_a_returned_page_that_says_it() -> None:
-    from engine.content.research import About, verify_about
+    from engine.studio.research import About, verify_about
 
     site = Found(
         url="https://swarvani.ai",

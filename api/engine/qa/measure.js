@@ -138,7 +138,7 @@
       const under = rects.some((f) => Math.min(f.r.r, r.r) - Math.max(f.r.l, r.l) > 4 && Math.min(f.r.b, r.b) - Math.max(f.r.t, r.t) > 4);
       if (!under) add("E11", null, `empty block ${Math.round(w)}x${Math.round(h)}px`, "a solid field carries text, or is under 48px thick");
     }
-    // Shapes for the composition descriptors (qa/descriptors.py): every
+    // Shapes for the rhythm checks (qa/metrics.py): every
     // colour field, texture, chart and image, as geometry only.
     const shapes = [], ground = rgb(scs.backgroundColor).join();
     for (const el of root.querySelectorAll("*")) {
