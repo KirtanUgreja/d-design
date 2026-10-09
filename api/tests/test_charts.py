@@ -203,3 +203,16 @@ def test_the_code_built_chart_layout_passes_qa_for_every_form(tmp_path: Path) ->
         result = asyncio.run(browser.measure(theme, frames, fields, str(tmp_path / "q.html")))
         bad += [(k, [d.code for d in m.errors]) for k, m in result.items() if m.errors]
     assert bad == []
+
+
+def test_a_few_periods_are_columns_with_every_value_labelled() -> None:
+    market = _spec("line", [("2025", 11.8), ("2026", 16.13), ("2031", 78.97)], unit="$B")
+    assert charts.form(market) == "column"
+    out = charts.svg(market)
+    assert all(v in out for v in ("$11.8B", "$16.1B", "$79.0B"))
+
+
+def test_years_on_a_line_are_spaced_to_scale() -> None:
+    assert charts._positions(["2025", "2026", "2031"]) == [0.0, 1 / 6, 1.0]
+    assert charts._positions(["Q1", "Q2", "Q3"]) == [0.0, 0.5, 1.0]
+    assert charts._positions(["2026", "2025", "2031"]) == [0.0, 0.5, 1.0]  # unsorted: even

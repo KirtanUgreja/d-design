@@ -5,6 +5,8 @@ Research queries come from an arc's evidence needs, not from the topic alone.
 
 from __future__ import annotations
 
+import re
+
 from engine.models import DeckType
 
 ARCS: dict[str, tuple[str, ...]] = {
@@ -70,7 +72,7 @@ EVIDENCE: dict[str, tuple[str, ...]] = {
     ),
     "sales": ("the cost of the status quo in the buyer's industry", "industry benchmarks", SERIES),
     "launch": (
-        "how often the problem occurs for this audience",
+        "how often the problem occurs for this audience, and what it costs them",
         "adoption of the category",
         SERIES,
     ),
@@ -79,5 +81,21 @@ EVIDENCE: dict[str, tuple[str, ...]] = {
 }
 
 
-def arc_for(deck_type: DeckType) -> str:
-    return "pitch" if deck_type == "auto" else deck_type
+# Words in a brief left on "auto" that name its arc; first match wins.
+# ponytail: keywords, not a model call. Upgrade: let the interview call name the type.
+_NAMED = (
+    (
+        "investor_update",
+        re.compile(r"\b(investor|board|monthly|quarterly) update|\bQ[1-4]\b", re.I),
+    ),
+    ("launch", re.compile(r"\blaunch", re.I)),
+    ("sales", re.compile(r"\b(sales|prospect|customer pitch|proposal)\b", re.I)),
+    ("partnership", re.compile(r"\bpartner", re.I)),
+)
+
+
+def arc_for(deck_type: DeckType, prompt: str = "") -> str:
+    """The arc for a deck type. "auto" reads the brief's words, else a pitch."""
+    if deck_type != "auto":
+        return deck_type
+    return next((arc for arc, words in _NAMED if words.search(prompt)), "pitch")

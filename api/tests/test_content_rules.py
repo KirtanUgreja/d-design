@@ -139,3 +139,33 @@ def test_a_proof_suggestion_asks_for_the_proof_itself() -> None:
     replies = iter(["1"])
     [(_, text)] = run_interview([q], lambda _: next(replies))
     assert text == "None yet"
+
+
+def test_a_picked_proof_placeholder_is_not_proof_and_the_product_is_material() -> None:
+    from engine.content.interview import Question, apply
+    from engine.models import Brief
+
+    proof = Question(
+        fills="proof",
+        question="What proof do you have?",
+        suggestions=["None yet", "Search the web", "Pilot results to paste"],
+    )
+    product = Question(fills="product", question="What does Swarvani AI do?", suggestions=[])
+    brief = Brief(id="b", prompt="create a launch deck about swarvani ai")
+    out = apply(
+        brief,
+        [(proof, "Pilot results to paste"), (product, "It turns a voice note into a spec.")],
+    )
+    assert [p.title for p in out.pasted] == ["What it does, from the interview"]
+    assert [a.qid for a in out.answers] == ["product"]  # the placeholder is dropped entirely
+    pasted = apply(brief, [(proof, "12 pilots, 3 paid")])
+    assert [p.text for p in pasted.pasted] == ["12 pilots, 3 paid"]
+
+
+def test_auto_takes_its_arc_from_the_brief() -> None:
+    from engine.content.arcs import arc_for
+
+    assert arc_for("auto", "create a launch deck about swarvani ai") == "launch"
+    assert arc_for("auto", "Our Q3 investor update") == "investor_update"
+    assert arc_for("auto", "Raise a seed round for Tessel") == "pitch"
+    assert arc_for("sales", "launch") == "sales"  # a chosen type always wins

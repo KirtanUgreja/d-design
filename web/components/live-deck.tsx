@@ -280,8 +280,15 @@ function Problem({ text, onRetry }: { text: string; onRetry?: () => Promise<void
   );
 }
 
+// The proof question's third suggestion names a kind of proof; picking it asks
+// for the proof itself, never sends the suggestion as if it were proof.
+const NO_PROOF = ["none yet", "search the web"];
+const asksPaste = (q: Deck["questions"][number], s: string) =>
+  q.fills === "proof" && !NO_PROOF.includes(s.toLowerCase());
+
 function Questions({ deck, onDone }: { deck: Deck; onDone: () => void }) {
   const [answers, setAnswers] = useState<string[]>(deck.questions.map(() => ""));
+  const [picked, setPicked] = useState<(string | null)[]>(deck.questions.map(() => null));
   const [busy, setBusy] = useState(false);
   const send = async (skip: boolean) => {
     setBusy(true);
@@ -289,43 +296,74 @@ function Questions({ deck, onDone }: { deck: Deck; onDone: () => void }) {
     onDone();
   };
   const set = (i: number, value: string) => setAnswers((a) => a.map((v, j) => (j === i ? value : v)));
+  const pick = (i: number, s: string | null) => setPicked((p) => p.map((v, j) => (j === i ? s : v)));
   return (
     <main className="mx-auto max-w-2xl px-4 py-10 sm:px-8">
       <h2 className="font-display text-[28px] leading-tight">A few questions, so it says what you mean</h2>
       <p className="mt-2 text-sm text-ink-2">Pick an answer or write your own. Any of them can be skipped.</p>
       <ol className="mt-8 border-t border-rule">
-        {deck.questions.map((q, i) => (
-          <li key={q.question} className="border-b border-rule py-7">
-            <fieldset className="flex flex-col gap-4">
-              <legend className="flex gap-4 font-display text-[22px] leading-snug">
-                <span className="text-ink-2 tabular-nums">{i + 1}</span>
-                <span>{q.question}</span>
-              </legend>
-              <div className="flex flex-wrap gap-2 sm:pl-8">
-                {q.suggestions.map((s) => (
-                  <Button
-                    key={s}
-                    type="button"
-                    variant="outline"
-                    aria-pressed={answers[i] === s}
-                    className="h-auto py-2 text-left whitespace-normal aria-pressed:border-ink aria-pressed:bg-paper-2"
-                    onClick={() => set(i, answers[i] === s ? "" : s)}
-                  >
-                    {answers[i] === s && <span aria-hidden="true">✓</span>}
-                    {s}
-                  </Button>
-                ))}
-              </div>
-              <input
-                aria-label="Or in your own words"
-                placeholder="Or in your own words"
-                value={q.suggestions.includes(answers[i] ?? "") ? "" : (answers[i] ?? "")}
-                onChange={(e) => set(i, e.target.value)}
-                className="border-b border-rule bg-transparent py-2 outline-none placeholder:text-ink-2/70 focus:border-ink sm:ml-8"
-              />
-            </fieldset>
-          </li>
-        ))}
+        {deck.questions.map((q, i) => {
+          const chip = picked[i] ?? null;
+          const paste = chip !== null && asksPaste(q, chip);
+          // The product question has no suggestions: only the speaker knows what it does.
+          const long = q.fills === "product" || paste;
+          return (
+            <li key={q.question} className="border-b border-rule py-7">
+              <fieldset className="flex flex-col gap-4">
+                <legend className="flex gap-4 font-display text-[22px] leading-snug">
+                  <span className="text-ink-2 tabular-nums">{i + 1}</span>
+                  <span>{q.question}</span>
+                </legend>
+                {q.suggestions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 sm:pl-8">
+                    {q.suggestions.map((s) => (
+                      <Button
+                        key={s}
+                        type="button"
+                        variant="outline"
+                        aria-pressed={chip === s}
+                        className="h-auto py-2 text-left whitespace-normal aria-pressed:border-ink aria-pressed:bg-paper-2"
+                        onClick={() => {
+                          const off = chip === s;
+                          pick(i, off ? null : s);
+                          set(i, off || asksPaste(q, s) ? "" : s);
+                        }}
+                      >
+                        {chip === s && <span aria-hidden="true">✓</span>}
+                        {s}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                {long ? (
+                  <textarea
+                    aria-label={paste ? "Paste your proof" : "In your own words"}
+                    placeholder={
+                      paste
+                        ? "Paste it here: numbers, quotes, customer names. Leave empty if you have none yet."
+                        : "What it does, who it is for, and its two or three main features"
+                    }
+                    rows={4}
+                    value={answers[i] ?? ""}
+                    onChange={(e) => set(i, e.target.value)}
+                    className="resize-y border border-rule bg-transparent px-3 py-2.5 outline-none placeholder:text-ink-2/70 focus:border-ink sm:ml-8"
+                  />
+                ) : (
+                  <input
+                    aria-label="Or in your own words"
+                    placeholder="Or in your own words"
+                    value={chip !== null ? "" : (answers[i] ?? "")}
+                    onChange={(e) => {
+                      pick(i, null);
+                      set(i, e.target.value);
+                    }}
+                    className="border-b border-rule bg-transparent py-2 outline-none placeholder:text-ink-2/70 focus:border-ink sm:ml-8"
+                  />
+                )}
+              </fieldset>
+            </li>
+          );
+        })}
       </ol>
       <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
         <Button size="lg" disabled={busy} onClick={() => void send(false)}>

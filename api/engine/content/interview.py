@@ -1,4 +1,4 @@
-"""The interview: at most five questions, each with three suggested answers,
+"""The interview: at most six questions, most with three suggested answers,
 always skippable (docs/v4/content.md -> Interview).
 
 One call writes the questions. Code drops what the brief already answers and
@@ -17,16 +17,19 @@ from engine.llm.openrouter import ModelError, Seam
 from engine.models import Answer, Brief, Pasted
 from lib.result import Err, Result, ok
 
-PROMPT_VERSION = "interview.v1"
-MAX_QUESTIONS = 5
+PROMPT_VERSION = "interview.v2"  # v2: asks what the product does
+MAX_QUESTIONS = 6
 NO_PROOF = ("none yet", "search the web")
 
-Fills = Literal["audience", "ask", "thought", "proof", "length", "extra"]
+Fills = Literal["product", "audience", "ask", "thought", "proof", "length", "extra"]
 
 SYSTEM = """You prepare a short interview before a presentation is written. The speaker is a
-founder or salesperson presenting to win something. Ask at most five questions, in this order,
-each with exactly three suggested answers written for THIS brief:
+founder or salesperson presenting to win something. Ask at most six questions, in this order,
+each with exactly three suggested answers written for THIS brief, except where stated:
 
+0. product — when the brief names a product, company or service the speaker is presenting and
+   does not already say what it does: "What does <name> do, and for whom? Name its two or three
+   main features." Suggestions: none (an empty list) — only the speaker knows; never guess.
 1. audience — who is in the room, and what do they already believe?
 2. ask — what should they do at the end (the amount, the decision, the next meeting)?
 3. thought — the one sentence they must remember. Suggestions are candidate theses.
@@ -44,7 +47,8 @@ Suggestions are short (at most 15 words) and never invent a specific number."""
 class Question(BaseModel):
     fills: Fills
     question: str
-    suggestions: list[str] = Field(min_length=3, max_length=3)
+    # Three, except the product question: only the speaker can answer it.
+    suggestions: list[str] = Field(max_length=3)
 
 
 class Questions(BaseModel):
@@ -63,7 +67,8 @@ async def questions(seam: Seam, brief: Brief, *, model: str) -> Result[list[Ques
         Questions,
         system=SYSTEM,
         user=(
-            f"Deck type: {arc_for(brief.deck_type)}\nAudience: {brief.audience or 'not stated'}\n"
+            f"Deck type: {arc_for(brief.deck_type, brief.prompt)}\n"
+            f"Audience: {brief.audience or 'not stated'}\n"
             f"The ask: {brief.ask or 'not stated'}\nBrief: {brief.prompt}"
         ),
         model=model,
@@ -72,7 +77,12 @@ async def questions(seam: Seam, brief: Brief, *, model: str) -> Result[list[Ques
     )
     if isinstance(result, Err):
         return result
-    kept = [q for q in result.value.questions if not _answered(q, brief)]
+    kept = [
+        # Only the speaker knows what their product does: a suggestion would be a guess.
+        q.model_copy(update={"suggestions": []}) if q.fills == "product" else q
+        for q in result.value.questions
+        if not _answered(q, brief)
+    ]
     return ok(kept[:MAX_QUESTIONS])
 
 
@@ -85,8 +95,14 @@ def apply(brief: Brief, answered: list[tuple[Question, str]]) -> Brief:
         text = text.strip()
         if not text:
             continue
+        if q.fills == "proof" and text in q.suggestions and text.lower() not in NO_PROOF:
+            # The suggestion that names a kind of proof asks the speaker to paste it;
+            # picked without pasting, it is a placeholder, not proof (live deck, 2026-10-09).
+            continue
         answers.append(Answer(qid=q.fills, question=q.question, text=text))
-        if q.fills == "audience":
+        if q.fills == "product":
+            pasted.append(Pasted(title="What it does, from the interview", text=text))
+        elif q.fills == "audience":
             update["audience"] = text
         elif q.fills == "ask":
             update["ask"] = text

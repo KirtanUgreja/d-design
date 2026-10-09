@@ -195,16 +195,30 @@ def _xy(spec: ChartSpec, area: bool) -> tuple[list[str], float, float, float, fl
     return labels, lo, (hi - lo) or 1, H - FONT * 2, FONT * 2.4
 
 
+def _positions(labels: list[str]) -> list[float]:
+    """Where each label sits across the axis, 0..1. Plain years are spaced to
+    scale, so 2025, 2026, 2031 does not draw five years as one; anything else
+    is evenly spaced."""
+    if len(labels) < 2:
+        return [0.0] * len(labels)
+    if all(re.fullmatch(r"(19|20)\d\d", x) for x in labels):
+        years = [int(x) for x in labels]
+        first, span = years[0], (years[-1] - years[0])
+        if span > 0 and years == sorted(years):
+            return [(y - first) / span for y in years]
+    return [i / (len(labels) - 1) for i in range(len(labels))]
+
+
 def _line(spec: ChartSpec, area: bool = False) -> str:
     """Change over time. The latest value is labelled at the end, and the one
     callout the data earns sits above it."""
     labels, lo, span, base, head = _xy(spec, area)
     places = _decimals([p.value for s in spec.series for p in s.points])
     left, right = 24, 200  # room on the right for end labels
-    step = (W - left - right) / max(len(labels) - 1, 1)
+    at = _positions(labels)
 
     def xy(i: int, v: float) -> tuple[float, float]:
-        return left + i * step, base - (base - head) * (v - lo) / span
+        return left + (W - left - right) * at[i], base - (base - head) * (v - lo) / span
 
     out = [_baseline(base), _legend(spec)]
     for i, name in enumerate(labels):
@@ -457,6 +471,10 @@ def form(spec: ChartSpec) -> str:
     ):
         return "stacked"
     if timed:
+        if len(spec.series) == 1 and len(points) <= 4:
+            # A few periods: columns label every value. A thin line with only
+            # its last value labelled left most of a slide empty (live, 2026-10-09).
+            return "column"
         return "area" if len(spec.series) == 1 and len(points) >= 5 else "line"
     if max((len(p.label) for p in points), default=0) > 10 or len(points) > 6:
         return "bar"

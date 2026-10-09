@@ -45,6 +45,14 @@ STEER = (
     "1). Keep the reference's system and the words; move the visual mass and the open field "
     "somewhere else, and change the scale relation."
 )
+# Each language has one reference per shape for most shapes, so a deck with two
+# number slides reuses one (live deck, 2026-10-09: three alike in a row).
+REPEAT = (
+    "Slide {n} of this deck was already adapted from this reference. Keep its system and the "
+    "words, but make this slide clearly different from slide {n}: put the hero on another side "
+    "or above instead of beside, give the colour field to another block, and change the scale "
+    "relation between the figure and the headline."
+)
 IMAGE_CAP = 6  # images in one deck, at most (phase 39 -> 5)
 
 
@@ -143,8 +151,10 @@ async def build(
     appetite = lang.image.appetite if lang and image_model else 0.0
     images_left = min(IMAGE_CAP, max(1, round(appetite * len(plans)))) if appetite else 0
     used: set[str] = set()
+    first_use: dict[str, tuple[int, str]] = {}  # reference id -> (slide number, its variation)
+    repeat: dict[str, str] = {}  # slide id -> how to tell it apart from the earlier use
     last = ""
-    for plan in plans:
+    for n, plan in enumerate(plans, start=1):
         pair = (
             references.pick(
                 lang.id,
@@ -158,12 +168,17 @@ async def build(
         )
         refs[plan.id] = pair
         first = pair[0]
-        if first is not None:
-            used.add(first.id)
+        earlier = first_use.get(first.id) if first is not None else None
         image_on[plan.id] = bool(first and first.image != "none" and images_left > 0)
         images_left -= image_on[plan.id]
         options = [v for v in (first.variants if first else ()) if v != last]
-        variation[plan.id] = last = rng.choice(["", *options])
+        if earlier is not None:  # the only reference for its shape, used again
+            options = [v for v in options if v != earlier[1]] or options
+            repeat[plan.id] = REPEAT.format(n=earlier[0])
+        variation[plan.id] = last = rng.choice((options if earlier else []) or ["", *options])
+        if first is not None:
+            used.add(first.id)
+            first_use.setdefault(first.id, (n, variation[plan.id]))
     accepted: dict[str, Descriptors] = {}
     steered: set[str] = set()
     fields = {p.id: {f.name: f.text for f in p.fields} for p in plans}
@@ -262,6 +277,7 @@ async def build(
     async def compose_from(
         index: int, plan: SlidePlan, ref: Reference | None, var: str, steer: str = ""
     ) -> Result[Composed, ModelError]:
+        steer = steer or repeat.get(plan.id, "")
         async with gate:
             return await author.compose(
                 seam,

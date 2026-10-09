@@ -59,10 +59,11 @@ def run_interview(questions: list[interview.Question], ask: Ask) -> Answered:
         print(f"\n{q.question}")
         for n, s in enumerate(q.suggestions, start=1):
             print(f"  {n}. {s}")
-        reply = ask("  answer (1-3, your own words, Enter to skip, s to skip all): ").strip()
+        hint = "1-3, your own words" if q.suggestions else "in your own words"
+        reply = ask(f"  answer ({hint}, Enter to skip, s to skip all): ").strip()
         if reply.lower() == "s":
             break
-        if reply in ("1", "2", "3"):
+        if reply in ("1", "2", "3") and int(reply) <= len(q.suggestions):
             reply = q.suggestions[int(reply) - 1]
             if q.fills == "proof" and reply.lower() not in interview.NO_PROOF:
                 # A suggestion names a kind of proof; the deck needs the proof itself.

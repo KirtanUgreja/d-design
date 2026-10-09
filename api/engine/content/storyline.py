@@ -32,7 +32,7 @@ from engine.models import (
 )
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "storyline.v4"
+PROMPT_VERSION = "storyline.v5"  # v5: says what the product does, uses the numbers, varies
 SEND_FACTOR = 1.5  # a deck that is sent must explain itself
 
 FRAME = (
@@ -53,6 +53,18 @@ Rules:
   that stands alone ("Remote staff get back 72 minutes a day", never "Commuting"). One idea per
   slide: a headline that needs "and" is two slides.
 - kicker: one to three words naming the beat, or empty.
+- SAY WHAT IT IS: when the deck presents a product, company or service, the reader must learn
+  what it does. The solution, "what is new" and "how it works" slides name it, who it is for,
+  and two or three concrete features or steps as points (intent points or steps), taken from
+  the user's material and the facts about it. Never invent a feature; if the material does not
+  say what it does, claim only what it does say.
+- USE THE EVIDENCE: a slide about a problem, a cost, a market or a trend carries a number
+  whenever a fact holds one — "63% of vibe coders are not developers", never "most vibe coders
+  are not developers". Use the strongest facts; leave one out only if it does not serve the
+  argument.
+- VARY THE SLIDES: never the same intent on two slides in a row, and at most two "number"
+  slides in a deck — several figures together are a number-set or a chart. A slide with only a
+  headline (statement) is for one bold claim, at most once besides the cover and the ask.
 - points: at most 3, at most 10 words each. Many slides need none.
 - stat and stat_label: one figure and a label of at most 15 words, only on a slide whose job is
   that number.
@@ -67,7 +79,8 @@ Rules:
   in the same label order, and name the two moments in before_name and after_name. highlight
   is the one label the slide is about, or null. type is only a hint (bar, column, line,
   stacked): the drawing is chosen from the data. A single number that is the whole point is a
-  stat, not a chart. Its slide's intent is "chart". Otherwise chart is null.
+  stat, not a chart. Its slide's intent is "chart", and its stat and stat_label are the one
+  value from the chart the headline is about. Otherwise chart is null.
 - intent is one of: cover, statement, number, number-set, points, comparison, steps, timeline,
   chart, quote, team, case, section, ask.
 - Never promise material you were not given. A slide states its evidence or does not exist:
@@ -141,9 +154,16 @@ class Rewrites(BaseModel):
 
 def _facts_block(facts: list[Fact]) -> str:
     mine = [f for f in facts if f.source == "user"]
-    web = [f for f in facts if f.source == "cited"]
+    about = [f for f in facts if f.source == "cited" and f.value is None]
+    web = [f for f in facts if f.source == "cited" and f.value is not None]
     lines = ["The user's own facts (from their brief):"]
     lines += [f"- [{f.id}] {f.text}" for f in mine] or ["- none"]
+    if about:
+        lines += ["", f"What the product is, from the web. {FRAME}", "<about>"]
+        lines += [
+            f"- [{f.id}] {f.text} ({f.citation.publisher if f.citation else ''})" for f in about
+        ]
+        lines.append("</about>")
     lines += ["", f"Facts from the web, with their sources. {FRAME}", "<web_facts>"]
     lines += [
         f"- [{f.id}] {f.text} ({f.citation.publisher if f.citation else ''}"
@@ -155,12 +175,12 @@ def _facts_block(facts: list[Fact]) -> str:
 
 
 def _user_prompt(brief: Brief, facts: list[Fact]) -> str:
-    arc = " → ".join(ARCS[arc_for(brief.deck_type)])
+    arc = " → ".join(ARCS[arc_for(brief.deck_type, brief.prompt)])
     pasted = "\n".join(f"<pasted title={p.title!r}>\n{p.text}\n</pasted>" for p in brief.pasted)
     answers = "\n".join(f"<answer to={a.question!r}>\n{a.text}\n</answer>" for a in brief.answers)
     material = f"{FRAME}\n{pasted}\n{answers}" if (pasted or answers) else "None."
     return (
-        f"Deck type: {arc_for(brief.deck_type)} — arc: {arc}\n"
+        f"Deck type: {arc_for(brief.deck_type, brief.prompt)} — arc: {arc}\n"
         f"Slides: {brief.slide_count}\nDelivery: {brief.delivery}\nTone: {brief.tone}\n"
         f"Audience: {brief.audience or 'not stated'}\nThe ask: {brief.ask or 'not stated'}\n\n"
         f"Brief: {brief.prompt}\n\nThe user's material:\n{material}\n\n{_facts_block(facts)}"
@@ -233,6 +253,22 @@ def chart_spec(d: DraftChart, live: dict[str, Fact]) -> ChartSpec | None:
     )
 
 
+def chart_stat(chart: ChartSpec, live: dict[str, Fact]) -> list[PlanField]:
+    """A chart slide's figure when the draft gave none: the highlighted value
+    (else the latest), printed as the chart prints it, so it traces to the
+    same fact. Nothing when no fact states it."""
+    points = chart.series[-1].points
+    point = next((p for p in points if p.label == chart.highlight), points[-1])
+    token = charts.label(point.value, chart.unit, 2 if point.value != int(point.value) else 0)
+    fact = next((live[i] for i in chart.fact_ids if rules.sourced(token, [live[i]])), None)
+    if fact is None:
+        return []
+    return [
+        PlanField(name="stat", text=token, budget_words=3, fact_ids=[fact.id]),
+        PlanField(name="stat-label", text=f"{chart.title}, {point.label}", budget_words=15),
+    ]
+
+
 def names(brief: Brief) -> frozenset[str]:
     return rules.known_names(" ".join([brief.prompt, brief.ask] + [p.text for p in brief.pasted]))
 
@@ -300,6 +336,12 @@ def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, 
             fields = [f for f in fields if f.name != "source"]
             if credit:
                 fields.append(PlanField(name="source", text=credit, budget_words=8))
+            if not any(f.name == "stat" for f in fields):
+                # Every chart reference holds a figure beside the chart; left
+                # empty, the model fills the space with a folio (live, 2026-10-09).
+                for extra in chart_stat(chart, live):
+                    fields.append(extra)
+                    provenance[extra.name] = "WEB" if extra.fact_ids else "AI"
         plans.append(
             SlidePlan(
                 id=sid,

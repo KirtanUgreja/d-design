@@ -21,14 +21,15 @@ The v3 sample deck failed all three:
 
 ## Interview
 
-**The interview asks at most five questions, adapts to the brief, and is always skippable.** One model call writes all the questions, and the app shows them one at a time. Each question comes with three suggested answers written for this brief. The user can click one, edit it, or type their own. **Skip all** is always visible, because the interview improves the output and must never gate it ([../design/app.md](../design/app.md)).
+**The interview asks at most six questions, adapts to the brief, and is always skippable.** One model call writes all the questions, and the app shows them one at a time. Each question comes with three suggested answers written for this brief, except the product question, which only the speaker can answer. The user can click one, edit it, or type their own. **Skip all** is always visible, because the interview improves the output and must never gate it ([../design/app.md](../design/app.md)).
 
 | # | Asks | Fills | Skip when |
 |---|---|---|---|
+| 0 | What does the product do, for whom, and what are its two or three main features? No suggestions: a guess would put invented features on the slides (live deck, 2026-10-09: the deck never said what the product does) | `pasted` ("What it does") | The brief already says what it does, or names no product |
 | 1 | Who is in the room — investors, a buyer, a champion and their boss, a partner — and what do they already believe? | `audience` | The brief names the audience |
 | 2 | What should they do at the end? (the amount, the decision, the next meeting) | `ask` | The brief states the ask |
 | 3 | What is the one sentence they must remember? The suggestions are candidate governing thoughts | `governing_thought` seed | Never |
-| 4 | What proof do you have? Paste traction, revenue, customers, pilots, quotes. The suggestions include "none yet" and "search the web" | `pasted` → `Fact`s (user) | The pasted material already carries numbers. Ask for confirmation instead |
+| 4 | What proof do you have? Paste traction, revenue, customers, pilots, quotes. The suggestions include "none yet" and "search the web". The third names a kind of proof; picking it opens a box to paste it, and picked without pasting it is dropped, never kept as proof | `pasted` → `Fact`s (user) | The pasted material already carries numbers. Ask for confirmation instead |
 | 5 | How long do you have, and are you **presenting live or sending it**? | `minutes`, `delivery` | The brief covers them |
 
 Deck-type additions replace a skipped question and never add a sixth:
@@ -54,6 +55,8 @@ Deck-type additions replace a skipped question and never add a sixth:
 **When research runs:**
 - Research runs when `brief.research` is true, which is the default. It runs after the interview and before the storyline.
 - Queries come from the **arc's evidence needs**, not from the topic alone. A pitch needs problem cost, market size, why-now signals and the competitive landscape. A sales deck needs the cost of the status quo in the buyer's industry.
+- When the brief names a product or company, research also looks it up: what it does, for whom, its features, from its own site, docs or press. What it finds becomes cited `Fact`s with no number, under the same quote rule.
+- A deck left on **auto** takes its arc from the brief's words: "launch" is a launch, "investor update" an update, and so on; otherwise a pitch.
 - At most 30 results per deck through `openrouter:web_search`, and at most $0.25 of research per deck.
 
 **How a fact is extracted:**
@@ -62,7 +65,7 @@ Deck-type additions replace a skipped question and never add a sixth:
 |---|---|
 | **No quote, no fact.** A `Fact` stores the exact source passage containing its number. If no returned highlight contains the number verbatim, the fact is discarded | Quote-level verification is the cheapest guard against a model "remembering" a statistic |
 | Primary sources first: filings, government and statistical offices, research institutions, the company's own reports, reputable press. Reject content farms, undated pages and AI-written listicles | Our users present to people who check |
-| `as_of` is recorded. Anything older than 3 years is flagged, not dropped | "In 2019…" is fine if the slide says so |
+| `as_of` is the year the source was published or the data collected, never a forecast's target year ("2030"). Anything older than 3 years is flagged, not dropped | "In 2019…" is fine if the slide says so |
 | Conflicting numbers are both kept and flagged; the primary source wins by default | The user decides, and sees why |
 | Pasted material becomes `Fact`s with source `user`. The quote must be found verbatim in what the user pasted | The user's own numbers get the same traceability as the web's |
 | Search results and pasted material are wrapped as **quoted data** in every prompt | They are untrusted input ([engine.md](engine.md) → "Security of AI-written HTML") |

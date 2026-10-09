@@ -898,7 +898,7 @@ export interface components {
              * Fills
              * @enum {string}
              */
-            fills: "audience" | "ask" | "thought" | "proof" | "length" | "extra";
+            fills: "product" | "audience" | "ask" | "thought" | "proof" | "length" | "extra";
             /** Question */
             question: string;
             /** Suggestions */

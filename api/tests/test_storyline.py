@@ -136,3 +136,34 @@ def test_a_before_and_after_chart_needs_every_value_sourced() -> None:
     assert [s.name for s in spec.series] == ["Q2", "Q3"] and spec.highlight == "Activation"
     assert sorted(spec.fact_ids) == ["r1", "r2", "r3", "r4"]
     assert chart_spec(draft.model_copy(update={"before": [81, 40]}), facts) is None
+
+
+def test_a_chart_slide_gets_its_figure_from_the_chart() -> None:
+    from engine.content.storyline import DraftChart
+
+    market = Fact(
+        id="w6",
+        text="The market grows from USD 11.8B in 2025 to USD 16.13B in 2026 and USD 78.97B by 2031",
+        value="$78.97B",
+        source="cited",
+        status="approved",
+        citation=Citation(url="https://m.com", title="Mordor", publisher="Mordor", snippet="x"),
+    )
+    chart = DraftChart(
+        type="line",
+        title="AI code generation market",
+        unit="$B",
+        labels=["2025", "2026", "2031"],
+        values=[11.8, 16.13, 78.97],
+        highlight="2031",
+        fact_ids=["w6"],
+    )
+    draft = Draft(
+        governing_thought="g",
+        key_points=["a"],
+        slides=[_slide(intent="chart", headline="The market grows sixfold by 2031", chart=chart)],
+    )
+    story, _ = assemble(draft, BRIEF, [market])
+    fields = {f.name: f for f in story.slides[0].fields}
+    assert fields["stat"].text == "$78.97B" and fields["stat"].fact_ids == ["w6"]
+    assert fields["stat-label"].text == "AI code generation market, 2031"

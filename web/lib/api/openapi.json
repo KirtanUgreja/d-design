@@ -951,6 +951,7 @@
         "properties": {
           "fills": {
             "enum": [
+              "product",
               "audience",
               "ask",
               "thought",
@@ -970,7 +971,6 @@
               "type": "string"
             },
             "maxItems": 3,
-            "minItems": 3,
             "title": "Suggestions",
             "type": "array"
           }

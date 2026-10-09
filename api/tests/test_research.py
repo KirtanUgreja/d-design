@@ -79,3 +79,26 @@ def test_user_facts_are_the_brief_sentences_with_numbers() -> None:
         "ARR is $1.2M",
     ]
     assert {f.source for f in user_facts(brief)} == {"user"}
+
+
+def test_what_the_product_is_needs_a_returned_page_that_says_it() -> None:
+    from engine.content.research import About, verify_about
+
+    site = Found(
+        url="https://swarvani.ai",
+        title="Swarvani",
+        content="Swarvani turns a spoken idea into a product spec. Used by 40 teams.",
+    )
+    lines = [
+        About(
+            claim="Swarvani turns a spoken idea into a spec",
+            url="https://swarvani.ai/",
+            quote="Swarvani turns a spoken idea into a product spec.",
+        ),
+        About(claim="Used by 400 teams", url=site.url, quote="Used by 40 teams."),  # wrong number
+        About(claim="It writes code", url=site.url, quote="It writes code."),  # not on the page
+        About(claim="It is free", url="https://elsewhere.example", quote="free"),  # not returned
+    ]
+    [fact] = verify_about(lines, (site,))
+    assert (fact.id, fact.value, fact.source, fact.status) == ("a1", None, "cited", "approved")
+    assert fact.citation is not None and fact.citation.url == site.url
