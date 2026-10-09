@@ -222,6 +222,14 @@ def _check(name: str, value: list[Node], raw: str, important: bool) -> list[str]
         out.append(f"position: {text} is not allowed")
     if name == "z-index" and text.lstrip("-").isdigit() and int(text) > 20:
         out.append("z-index: above 20")
+    if name == "letter-spacing":
+        # Tighter than this and words touch at display sizes ("Lineargives",
+        # 2026-10-09); the theme's own --track-display is the tightest it goes.
+        for token in value:
+            if token.type == "dimension" and token.lower_unit == "em" and token.value < -0.03:
+                out.append("letter-spacing: tighter than -0.03em; words touch")
+            if token.type == "dimension" and token.lower_unit == "px" and token.value < -3:
+                out.append("letter-spacing: tighter than -3px; words touch")
     if name == "content" and any(t.type == "string" and t.value.strip() for t in value):
         out.append("content: text in CSS is not allowed; text lives in data-field nodes")
     return out

@@ -261,7 +261,7 @@ def draw(
         gutter=round(rng.uniform(20, 48)),
         rule=round(rng.uniform(2, 6)),
         radius=round(rng.uniform(4, 14)) if edge == "soft" else 0,
-        track=round(rng.uniform(-0.01, 0.01) if wide else rng.uniform(-0.035, 0.01), 3),
+        track=round(rng.uniform(-0.01, 0.01) if wide else rng.uniform(-0.025, 0.01), 3),
         texture=patterns.Params.draw(rng),
         mark=patterns.mark(words or deck_id, rng),
         motif_tile=motif_tile,

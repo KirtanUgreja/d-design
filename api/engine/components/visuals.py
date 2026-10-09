@@ -71,6 +71,41 @@ def _fit(words: str, width: float, size: float = FONT) -> str:
     return words if len(words) <= room else words[: room - 1].rstrip() + "…"
 
 
+def _wrap(words: str, width: float, size: float, max_lines: int = 2) -> list[str]:
+    """Words broken into at most ``max_lines`` lines that fit ``width`` at
+    ``size`` (about 0.52em a glyph); only the last line is cut, and only if it
+    must be (2026-10-09: "Spotify libr…" in a circle that had room for two)."""
+    room = max(4, int(width / (size * 0.52)))
+    lines: list[str] = []
+    for word in words.split():
+        if lines and len(lines[-1]) + 1 + len(word) <= room:
+            lines[-1] += " " + word
+        else:
+            lines.append(word)
+    if len(lines) > max_lines:
+        lines = [*lines[: max_lines - 1], _fit(" ".join(lines[max_lines - 1 :]), width, size)]
+    return lines
+
+
+def _block(
+    x: float,
+    cy: float,
+    words: str,
+    width: float,
+    size: float,
+    lines_max: int = 2,
+    **style: object,
+) -> str:
+    """A label of up to ``lines_max`` lines, centred on ``cy``."""
+    lines = _wrap(words, width, size, lines_max)
+    lead = size * 1.15
+    top = cy - lead * (len(lines) - 1) / 2 + size * 0.35
+    return "".join(
+        _text(x, top + n * lead, line, size=size, **style)  # type: ignore[arg-type]
+        for n, line in enumerate(lines)
+    )
+
+
 def _waveform(spec: VisualSpec) -> tuple[str, int, int]:
     """A voice: mirrored bars around a centre line, louder in the middle."""
     rng = _rng(spec)
@@ -96,9 +131,8 @@ def _rows(lines: list[str], x: float, y: float, width: float, pitch: float) -> l
         out.append(_rect(x, top, width, pitch - 18, SURFACE, 14))
         mark = ACCENT if i == 0 else RULE
         out.append(_rect(x + 22, top + (pitch - 18) / 2 - 20, 40, 40, mark, 10))
-        size = FONT * 1.25
-        label = _fit(words, width - 120, size)
-        out.append(_text(x + 86, top + (pitch - 18) / 2 + size * 0.35, label, size=size))
+        size = FONT * 1.1
+        out.append(_block(x + 86, top + (pitch - 18) / 2, words, width - 120, size))
     return out
 
 
@@ -229,9 +263,8 @@ def _hub(spec: VisualSpec) -> tuple[str, int, int]:
                 'stroke-linecap:round"/>'
             )
             out.append(_rect(x - bw / 2, y - 60, bw, 120, SURFACE, 20))
-            size = FONT * 1.2
-            label = _fit(words, bw - 30, size)
-            out.append(_text(x, y + size * 0.35, label, anchor="middle", size=size))
+            size = FONT * 1.1
+            out.append(_block(x, y, words, bw - 36, size, anchor="middle"))
     out.append(f'<circle cx="{cx:.0f}" cy="{cy:.0f}" r="{r + 26}" style="fill:{SURFACE}"/>')
     out.append(f'<circle cx="{cx:.0f}" cy="{cy:.0f}" r="{r}" style="fill:{ACCENT}"/>')
     size = FONT * 1.25
@@ -264,13 +297,11 @@ def _pipeline(spec: VisualSpec) -> tuple[str, int, int]:
         fill = ACCENT if core else INK if i == 0 else SURFACE
         tone = ON_ACCENT if core else GROUND if i == 0 else INK
         out.append(f'<circle cx="{x:.0f}" cy="{h / 2:.0f}" r="{r}" style="fill:{fill}"/>')
-        size = FONT * 1.4
-        label = _fit(words, r * 1.8, size)
+        size = FONT * 1.3
         out.append(
-            _text(
-                x, h / 2 + size * 0.35, label, fill=tone, size=size, anchor="middle", weight="bold"
-            )
+            _block(x, h / 2, words, r * 1.5, size, 3, fill=tone, anchor="middle", weight="bold")
         )
+
     return "".join(out), w, h
 
 
