@@ -239,18 +239,30 @@ def fallback(plan: SlidePlan, theme: Theme | None = None) -> Composed:
         )
         return Composed(html, css)
 
-    if component:  # the claim above, the chart or visual filling the rest
-        hsize = _step(head, ((40, "h2"),), "h3")
+    if component:  # the claim on the left, the chart or visual filling the right
+        dense = bool(rest) and bool(body)  # points and a body line: the claim steps down
+        hsize = "h2" if dense else _step(head, ((40, "h1"),), "h2")
+        cols = "6fr 6fr" if dense else "5fr 7fr"
+        stat = (f'<p class="st" data-field="stat">{by["stat"]}</p>' if "stat" in by else "") + (
+            f'<p class="lb" data-field="stat-label">{by["stat-label"]}</p>'
+            if "stat-label" in by
+            else ""
+        )
         html = (
             f'<section class="s"><div class="t">{kicker}'
-            f'<h1 class="h" data-field="headline">{head}</h1>{body}</div>'
-            f"{component}{source}</section>"
+            f'<h1 class="h" data-field="headline">{head}</h1>{body}{stat}'
+            f'<ul class="l">{items}</ul>{source}</div>{component}</section>'
         )
         css = (
-            ".s{display:grid;grid-template-rows:auto 1fr auto;gap:var(--s-5);"
-            "padding:var(--margin)}.t{display:grid;gap:var(--s-3);max-width:1400px}"
-            f".h{{{_DISPLAY};font-size:var(--t-{hsize});line-height:var(--lh-display)}}"
-            ".ch{min-height:0}" + base
+            f".s{{display:grid;grid-template-columns:{cols};gap:var(--s-6);"
+            "padding:var(--margin);align-items:center}"
+            ".t{display:grid;gap:var(--s-3);align-content:center}"
+            f".h{{{_DISPLAY};font-size:var(--t-{hsize});line-height:1.02}}"
+            f".st{{{_DISPLAY};font-size:var(--t-d3);line-height:var(--lh-display);"
+            "color:var(--c-ink)}.lb{font-size:var(--t-body)}"
+            ".l{display:grid}.l li{font-size:var(--t-body);padding:var(--s-2) 0;"
+            "border-top:var(--rule) solid var(--c-rule)}"
+            ".ch{height:820px;min-width:0}" + base
         )
         return Composed(html, css)
 

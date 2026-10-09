@@ -36,6 +36,7 @@ from lib.result import Err
 PARALLEL = 4  # slides designed at once
 MEASURE_PARALLEL = 3  # Chromium processes at once
 REPAIR_ROUNDS = 2
+RETRY_AFTER_S = 3.0  # a design call the gateway refused is tried once more after this
 
 Event = dict[str, object]
 OnEvent = Callable[[Event], None]
@@ -229,7 +230,9 @@ async def build(
         # Layer 3b: the designer.
         attempts[plan.id] = 1
         made = None
-        if affordable():
+        for tries in range(2):  # a gateway hiccup gets one more try, not the floor
+            if not affordable():
+                break
             async with gate:
                 made = await design.compose(
                     seam,
@@ -243,6 +246,9 @@ async def build(
                     concept=direction.concept,
                     image=image,
                 )
+            if not isinstance(made, Err) or made.error.kind != "transport" or tries:
+                break
+            await asyncio.sleep(RETRY_AFTER_S)
         if made is None or isinstance(made, Err):
             if made is not None:
                 refusals[plan.id] = f"{made.error.kind}: {made.error.detail[:300]}"

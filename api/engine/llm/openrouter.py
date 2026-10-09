@@ -141,6 +141,19 @@ class _ChatResponse(BaseModel):
 # --- helpers -----------------------------------------------------------------
 
 
+def _gateway_error(response: httpx.Response) -> str:
+    """The gateway's own error code and message, if the body carries one:
+    "402 Insufficient credits". Never the prompt or the answer."""
+    try:
+        body = response.json()
+    except (json.JSONDecodeError, ValueError):
+        return ""
+    error = body.get("error") if isinstance(body, dict) else None
+    if not isinstance(error, dict):
+        return ""
+    return f"{error.get('code', '')} {str(error.get('message', ''))[:120]}".strip()
+
+
 def strict_schema(schema: object) -> object:
     """Make a JSON Schema strict for providers that require it.
 
@@ -502,13 +515,17 @@ class Seam:
                 last = f"HTTP {response.status_code}"
             if retry < MAX_TRANSPORT_RETRIES:
                 await self.sleep(2.0 * (retry + 1))
+        if response is not None:
+            entry.http_status = response.status_code
+            entry.error_code = _gateway_error(response)
         if response is None or response.status_code != 200:
             status = last if response is None else f"HTTP {response.status_code}"
-            return fail("transport", f"model endpoint failed: {status}")
+            return fail("transport", f"model endpoint failed: {status} {entry.error_code}")
 
         try:
             data = _ChatResponse.model_validate(response.json())
         except (ValidationError, json.JSONDecodeError) as exc:
+            entry.error_code = entry.error_code or "shape"
             return fail("transport", f"unexpected response shape: {str(exc)[:300]}")
 
         usage = data.usage
@@ -531,6 +548,7 @@ class Seam:
             return fail("refused", "the model refused")
         images = tuple(i.image_url.url for i in choice.message.images if i.image_url.url)
         if not choice.message.content and not images:
+            entry.error_code = entry.error_code or f"empty:{choice.finish_reason or ''}"
             return fail("transport", "the answer was empty")
 
         citations = tuple(

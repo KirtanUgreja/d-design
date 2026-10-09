@@ -218,6 +218,10 @@ class LedgerEntry(BaseModel):
     attempt: int = 1
     ok: bool = True
     error_kind: str | None = None
+    # Why a call failed, without content: the HTTP status and the gateway's
+    # error code or a short reason ("empty", "shape").
+    http_status: int = 0
+    error_code: str = ""
 
 
 class Deck(BaseModel):
