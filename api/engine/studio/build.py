@@ -27,13 +27,13 @@ from engine.design import languages
 from engine.design.color import from_hex
 from engine.design.theme import Theme
 from engine.export.assemble import assemble
-from engine.llm.openrouter import Seam
+from engine.llm.openrouter import ModelError, Seam
 from engine.models import Slide, SlidePlan, SlideQA, Storyline
 from engine.qa import browser, metrics
 from engine.studio import design, direct, improve, review
-from engine.studio.direct import Direction
+from engine.studio.direct import Direction, SlideDirection
 from engine.studio.slide import Composed, Kept, frame, prefix
-from lib.result import Err
+from lib.result import Err, Result
 
 PARALLEL = 4  # slides designed at once
 MEASURE_PARALLEL = 3  # Chromium processes at once
@@ -234,6 +234,41 @@ async def build(
         composed[plan.id] = kept
         return await measure(plan)
 
+    async def designed(
+        index: int,
+        plan: SlidePlan,
+        d: SlideDirection | None,
+        shot: tuple[str, str, str] | None,
+        image: bool,
+        note: str = "",
+    ) -> Result[Composed, ModelError] | None:
+        """One designer call; a gateway hiccup gets one more try, not the floor."""
+        made: Result[Composed, ModelError] | None = None
+        for tries in range(2):
+            if not affordable():
+                break
+            async with gate:
+                made = await design.compose(
+                    seam,
+                    plan,
+                    d,
+                    prefix=head,
+                    model=model,
+                    position=index + 1,
+                    total=len(plans),
+                    thought=storyline.governing_thought + note,
+                    concept=direction.concept,
+                    image=image,
+                    pattern=plan.id in patterned,
+                    screenshot=(shot[2], shot[1]) if shot else None,
+                    title=storyline.title or title,
+                    logo_room=logo is not None and wants_logo(index),
+                )
+            if not isinstance(made, Err) or made.error.kind != "transport" or tries:
+                break
+            await asyncio.sleep(RETRY_AFTER_S)
+        return made
+
     async def make(index: int, plan: SlidePlan) -> None:
         if plan.id in resumed:  # finished before a restart: measured again, never paid twice
             composed[plan.id], origin[plan.id] = resumed[plan.id].composed, resumed[plan.id].origin
@@ -246,31 +281,9 @@ async def build(
         image = wants_picture(plan) or shot is not None
 
         # Layer 3b: the designer.
+        emit("slide_step", slide_id=plan.id, step="design")  # the watch page's live feed
         attempts[plan.id] = 1
-        made = None
-        for tries in range(2):  # a gateway hiccup gets one more try, not the floor
-            if not affordable():
-                break
-            async with gate:
-                made = await design.compose(
-                    seam,
-                    plan,
-                    d,
-                    prefix=head,
-                    model=model,
-                    position=index + 1,
-                    total=len(plans),
-                    thought=storyline.governing_thought,
-                    concept=direction.concept,
-                    image=image,
-                    pattern=plan.id in patterned,
-                    screenshot=(shot[2], shot[1]) if shot else None,
-                    title=storyline.title or title,
-                    logo_room=logo is not None and wants_logo(index),
-                )
-            if not isinstance(made, Err) or made.error.kind != "transport" or tries:
-                break
-            await asyncio.sleep(RETRY_AFTER_S)
+        made = await designed(index, plan, d, shot, image)
         if made is None or isinstance(made, Err):
             if made is not None:
                 refusals[plan.id] = f"{made.error.kind}: {made.error.detail[:300]}"
@@ -284,6 +297,7 @@ async def build(
         # Layer 4: the improver looks at the render and redesigns it; kept only
         # if QA measures it no worse.
         if improving and origin[plan.id] == "authored" and affordable():
+            emit("slide_step", slide_id=plan.id, step="improve")
             async with gate:
                 better = await improve.improve(
                     seam,
@@ -311,6 +325,7 @@ async def build(
         for _ in range(REPAIR_ROUNDS):
             if not broken(m) or origin[plan.id] == "fallback" or not affordable():
                 break
+            emit("slide_step", slide_id=plan.id, step="repair")
             async with gate:
                 fixed = await design.repair(
                     seam, plan, composed[plan.id], m.defects(), prefix=head, model=model
@@ -320,6 +335,30 @@ async def build(
                 break
             composed[plan.id], origin[plan.id] = fixed.value, "repaired"
             m = await measure(plan)
+        # The cover is the first thing anyone sees: before the code layout
+        # stands in for it, one fresh design, told what failed (owner,
+        # 2026-10-10: a code-built cover made a whole deck look old).
+        if index == 0 and broken(m) and origin[plan.id] != "fallback" and affordable():
+            failed = ", ".join(sorted({x.code for x in m.defects()}))
+            kept_c, kept_o = composed[plan.id], origin[plan.id]
+            emit("slide_step", slide_id=plan.id, step="design")
+            again_made = await designed(
+                index,
+                plan,
+                d,
+                shot,
+                image,
+                note=f" (Your last cover failed the browser check: {failed}. Keep it simpler.)",
+            )
+            attempts[plan.id] += 1
+            if again_made is not None and not isinstance(again_made, Err):
+                composed[plan.id], origin[plan.id] = again_made.value, "repaired"
+                fresh = await measure(plan)
+                if _errors(fresh) <= _errors(m):
+                    m = fresh
+                else:
+                    composed[plan.id], origin[plan.id] = kept_c, kept_o
+                    m = await measure(plan)
         if broken(m) and origin[plan.id] != "fallback":
             refusals[plan.id] = f"still defective: {sorted({x.code for x in m.defects()})}"
             kept_c, kept_o = composed[plan.id], origin[plan.id]

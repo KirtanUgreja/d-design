@@ -33,7 +33,10 @@ from engine.models import (
 )
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "storyline.v9"  # v9: figures, hub diagrams; v8: a short deck title
+MIN_SLIDES, MAX_SLIDES = 5, 15  # what the composer offers
+PROMPT_VERSION = (
+    "storyline.v10"  # v10: the person's own slide plan and outline changes win; v9: figures
+)
 SEND_FACTOR = 1.5  # a deck that is sent must explain itself
 MAX_VISUALS = 3  # drawn visuals per deck: the product's world, not every slide
 
@@ -53,7 +56,9 @@ Rules:
 - governing_thought: one sentence, at most 25 words — the deck's thesis. Every headline supports
   it. State it on slide 1 or 2 and again at the close.
 - Exactly the requested number of slides. Follow the arc's beats, adapted to the material; never
-  pad. The last slide is the ask: a verb, an object, and a date or an amount. A project deck
+  pad. If the brief or the material lays the deck out slide by slide, that plan wins over the arc:
+  keep its order and what each slide is about, and write it well.
+  The last slide is the ask: a verb, an object, and a date or an amount. A project deck
   (college, course or hackathon work) has no ask: it closes with the result in one line and
   thanks, and its tech stack slide uses the "stack" visual and its user flow the "flow".
 - headline: an ASSERTION of at most 12 words containing a verb, in sentence case — a full claim
@@ -212,7 +217,13 @@ def _facts_block(facts: list[Fact]) -> str:
     return "\n".join(lines)
 
 
-def _user_prompt(brief: Brief, facts: list[Fact], screens: dict[int, str] | None = None) -> str:
+def _user_prompt(
+    brief: Brief,
+    facts: list[Fact],
+    screens: dict[int, str] | None = None,
+    change: str = "",
+    current: Storyline | None = None,
+) -> str:
     arc = " → ".join(ARCS[arc_for(brief.deck_type, brief.prompt)])
     pasted = "\n".join(f"<pasted title={p.title!r}>\n{p.text}\n</pasted>" for p in brief.pasted)
     answers = "\n".join(f"<answer to={a.question!r}>\n{a.text}\n</answer>" for a in brief.answers)
@@ -232,6 +243,23 @@ def _user_prompt(brief: Brief, facts: list[Fact], screens: dict[int, str] | None
             if screens
             else ""
         )
+        + (_change_block(change, current) if change else "")
+    )
+
+
+def _change_block(change: str, current: Storyline | None) -> str:
+    """An outline the person asked to change: what they have now, and their
+    words, which win over the brief (owner, 2026-10-10)."""
+    now = "\n".join(
+        f"- {s.beat}: " + " / ".join(f.text for f in s.fields if f.name in ("headline", "body"))
+        for s in (current.slides if current else [])
+    )
+    return (
+        "\n\nTHE PERSON'S CURRENT OUTLINE (keep what their change does not touch):\n"
+        f"{now or '- none'}"
+        f"\n\nTHEIR CHANGE, which wins over the brief and the arc:\n<change>\n{change}\n</change>\n"
+        f"Return the whole outline again. If the change adds or removes slides, return that many "
+        f"slides ({MIN_SLIDES} to {MAX_SLIDES}) instead of the requested number."
     )
 
 
@@ -471,13 +499,16 @@ async def write(
     *,
     model: str,
     screens: dict[int, str] | None = None,
+    change: str = "",
+    current: Storyline | None = None,
 ) -> Result[Written, ModelError]:
-    """One call for the storyline, one more only if a rule fails."""
+    """One call for the storyline, one more only if a rule fails. ``change``
+    is the person's own words for an outline they already have (``current``)."""
     result = await seam.complete_json(
         "storyline",
         Draft,
         system=SYSTEM,
-        user=_user_prompt(brief, facts, screens),
+        user=_user_prompt(brief, facts, screens, change, current),
         model=model,
         prompt_version=PROMPT_VERSION,
         max_tokens=16000,  # reasoning comes out of it too; only what is written is billed
@@ -485,7 +516,9 @@ async def write(
     if isinstance(result, Err):
         return result
     draft = result.value
-    if len(draft.slides) != brief.slide_count:
+    if (change and not MIN_SLIDES <= len(draft.slides) <= MAX_SLIDES) or (
+        not change and len(draft.slides) != brief.slide_count
+    ):
         return err(
             ModelError(
                 "invalid", f"{len(draft.slides)} slides; the brief asks for {brief.slide_count}"

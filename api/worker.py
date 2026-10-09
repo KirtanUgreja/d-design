@@ -38,7 +38,7 @@ from engine import (
 )
 from engine.components import images as pictures
 from engine.components import logo as logos
-from engine.models import SlidePlan
+from engine.models import Pasted, SlidePlan
 from engine.qa.sanitize import sanitize
 from engine.studio import design as designer
 from engine.studio import preview
@@ -95,6 +95,16 @@ async def run(
             store.update(deck.id, status="interview", error="")
             store.append_event(deck.id, {"type": "questions_ready", "count": len(got.value)})
         elif job.kind == "outline":
+            # A change in words to an outline the person already has: kept in
+            # the brief, so research looks for it and a later rewrite keeps it.
+            change = json.loads(job.payload).get("change", "") if job.payload else ""
+            current = deck.storyline if change else None
+            if change:
+                asked = Pasted(title="Asked for in the outline", text=change)
+                deck = store.update(
+                    deck.id,
+                    brief=deck.brief.model_copy(update={"pasted": [*deck.brief.pasted, asked]}),
+                )
             store.update(deck.id, status="outline", error="")
             store.append_event(deck.id, {"type": "stage", "name": "outline", "state": "started"})
             facts = await research.research(
@@ -103,20 +113,47 @@ async def run(
             if isinstance(facts, Err):
                 _fail(store, deck, human(facts.error), facts.error.kind)
                 return
+            # What research found, shown while the storyline is written: a count
+            # and the publishers, never the facts themselves.
+            cited = [f for f in facts.value if f.citation is not None]
+            publishers = list(
+                dict.fromkeys(
+                    f.citation.publisher for f in cited if f.citation and f.citation.publisher
+                )
+            )
+            store.append_event(
+                deck.id,
+                {"type": "research_done", "sources": len(cited), "publishers": publishers[:6]},
+            )
             shots = {n: caption for n, (_, _, caption) in ready_screens(store, deck).items()}
             written = await storyline.write(
-                seam, deck.brief, facts.value, model=writing, screens=shots
+                seam,
+                deck.brief,
+                facts.value,
+                model=writing,
+                screens=shots,
+                change=change,
+                current=current,
             )
             if isinstance(written, Err):
+                if current is not None:  # the old outline is still good: kept, not lost
+                    store.update(deck.id, status="approve", error="")
+                    store.append_event(
+                        deck.id, {"type": "outline_refused", "message": human(written.error)}
+                    )
+                    return
                 _fail(store, deck, human(written.error), written.error.kind)
                 return
             story = written.value.story
+            if current is not None and deck.title:  # the name the person has, kept
+                story = story.model_copy(update={"title": deck.title})
             deck = store.update(
                 deck.id,
                 status="approve",
                 storyline=story,
                 facts=written.value.facts,
                 title=story.title or deck.title,
+                brief=deck.brief.model_copy(update={"slide_count": len(story.slides)}),
             )
             await _previews(store, with_language(store, deck))
             store.append_event(deck.id, {"type": "outline_ready"})

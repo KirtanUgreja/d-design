@@ -305,3 +305,60 @@ def test_screenshots_are_reencoded_by_the_worker_and_served(tmp_path: Path) -> N
     assert got.status_code == 200 and got.headers["content-type"] == "image/webp"
     gone = client.delete(f"/api/decks/{deck_id}/screens/1")
     assert [s["note"] != "" for s in gone.json()["deck"]["screens"]] == [True]
+
+
+@each_store
+def test_the_person_rewrites_and_removes_outline_slides(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
+    deck_id = _approved_deck(store, slides=7)
+    deck = store.read(deck_id)
+    assert deck.storyline is not None
+    s02 = deck.storyline.slides[1]
+    name = s02.fields[0].name
+    url = f"/api/decks/{deck_id}/outline"
+    got = client.patch(
+        url,
+        json={
+            "version": deck.version,
+            "words": {s02.id: {name: "Our own words"}},
+            "remove": ["s04"],
+        },
+    )
+    assert got.status_code == 200, got.text
+    story = store.read(deck_id).storyline
+    assert story is not None
+    plan = next(s for s in story.slides if s.id == s02.id)
+    field = next(f for f in plan.fields if f.name == name)
+    assert field.text == "Our own words" and field.fact_ids == [] and plan.provenance[name] == "YOU"
+    assert "s04" not in [s.id for s in story.slides] and len(story.slides) == 6
+    version = store.read(deck_id).version
+    cover = client.patch(url, json={"version": version, "remove": [story.slides[0].id]})
+    assert cover.status_code == 422
+    too_few = client.patch(url, json={"version": version, "remove": ["s02", "s03"]})
+    assert too_few.status_code == 422 and "at least" in too_few.json()["error"]
+
+
+@each_store
+def test_an_outline_change_in_words_goes_to_the_worker(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
+    deck_id = _approved_deck(store)
+    got = client.post(
+        f"/api/decks/{deck_id}/outline/ask", json={"instruction": "add a pricing slide"}
+    )
+    assert got.status_code == 200 and got.json()["deck"]["status"] == "outline"
+    [job] = store._jobs("queued")
+    assert job.kind == "outline" and json.loads(job.payload) == {"change": "add a pricing slide"}
+    again = client.post(f"/api/decks/{deck_id}/outline/ask", json={"instruction": "and more"})
+    assert again.status_code == 409  # one rewrite at a time
+
+
+@each_store
+def test_the_deck_name_is_the_persons_to_change(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
+    deck_id = _approved_deck(store)
+    got = client.put(f"/api/decks/{deck_id}/title", json={"title": "  Demo   Day "})
+    assert got.status_code == 200
+    deck = store.read(deck_id)
+    assert deck.title == "Demo Day" and deck.storyline is not None
+    assert deck.storyline.title == "Demo Day"  # the name the slides will carry
+    assert client.put(f"/api/decks/{deck_id}/title", json={"title": ""}).status_code == 422

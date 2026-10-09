@@ -255,6 +255,28 @@ export interface paths {
         patch: operations["edit_api_decks__deck_id__outline_patch"];
         trace?: never;
     };
+    "/api/decks/{deck_id}/outline/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask Outline
+         * @description The outline rewritten from the person's words: research runs again
+         *     for what they asked, and the outline they have is kept where the
+         *     change doesn't touch it (owner, 2026-10-10).
+         */
+        post: operations["ask_outline_api_decks__deck_id__outline_ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{deck_id}/recolour": {
         parameters: {
             query?: never;
@@ -532,6 +554,27 @@ export interface paths {
         /** Style Thumb */
         get: operations["style_thumb_api_decks__deck_id__style__name__get"];
         put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{deck_id}/title": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * Rename
+         * @description The deck's name, the person's to change at any point; before the
+         *     build it is also the name the slides carry.
+         */
+        put: operations["rename_api_decks__deck_id__title_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -978,8 +1021,16 @@ export interface components {
             };
             /** Order */
             order?: string[] | null;
+            /** Remove */
+            remove?: string[];
             /** Version */
             version: number;
+            /** Words */
+            words?: {
+                [key: string]: {
+                    [key: string]: string;
+                };
+            };
         };
         /** Pasted */
         Pasted: {
@@ -1184,6 +1235,11 @@ export interface components {
              * Title
              * @default
              */
+            title: string;
+        };
+        /** Title */
+        Title: {
+            /** Title */
             title: string;
         };
         /** ValidationError */
@@ -1774,6 +1830,43 @@ export interface operations {
             };
         };
     };
+    ask_outline_api_decks__deck_id__outline_ask_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskBody"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     recolour_api_decks__deck_id__recolour_post: {
         parameters: {
             query?: never;
@@ -2340,6 +2433,43 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_api_decks__deck_id__title_put: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Title"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {

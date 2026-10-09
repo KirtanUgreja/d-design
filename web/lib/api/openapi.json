@@ -922,9 +922,30 @@
             ],
             "title": "Order"
           },
+          "remove": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "title": "Remove",
+            "type": "array"
+          },
           "version": {
             "title": "Version",
             "type": "integer"
+          },
+          "words": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "maxLength": 600,
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "maxProperties": 25,
+            "title": "Words",
+            "type": "object"
           }
         },
         "required": [
@@ -1362,6 +1383,21 @@
           "slides"
         ],
         "title": "Storyline",
+        "type": "object"
+      },
+      "Title": {
+        "properties": {
+          "title": {
+            "maxLength": 60,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "Title",
         "type": "object"
       },
       "ValidationError": {
@@ -2374,6 +2410,70 @@
           }
         },
         "summary": "Edit"
+      }
+    },
+    "/api/decks/{deck_id}/outline/ask": {
+      "post": {
+        "description": "The outline rewritten from the person's words: research runs again\nfor what they asked, and the outline they have is kept where the\nchange doesn't touch it (owner, 2026-10-10).",
+        "operationId": "ask_outline_api_decks__deck_id__outline_ask_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask Outline"
       }
     },
     "/api/decks/{deck_id}/recolour": {
@@ -3406,6 +3506,70 @@
           }
         },
         "summary": "Style Thumb"
+      }
+    },
+    "/api/decks/{deck_id}/title": {
+      "put": {
+        "description": "The deck's name, the person's to change at any point; before the\nbuild it is also the name the slides carry.",
+        "operationId": "rename_api_decks__deck_id__title_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Title"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Rename"
       }
     },
     "/api/decks/{deck_id}/undo": {

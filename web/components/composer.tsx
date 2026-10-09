@@ -10,7 +10,6 @@ import { Chevron } from "@/components/chevron";
 import { Button } from "@/components/ui/button";
 import { api, type DeckKind, type DeckTone, type NewDeckOptions } from "@/lib/api/client";
 import { authClient } from "@/lib/auth-client";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 
 const KINDS: [DeckKind, string][] = [
   ["auto", "Any kind"],
@@ -86,22 +85,17 @@ const TYPE_LABEL: Record<string, string> = {
 export function Composer({ examples }: { examples: Example[] }) {
   const router = useRouter();
   const [text, setText] = useState("");
-  const [picked, setPicked] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [kind, setKind] = useState<DeckKind>("auto");
   const [tone, setTone] = useState<DeckTone>("confident");
   const [slides, setSlides] = useState(SLIDES.start);
   const label = useId();
-  const first = examples[0];
 
   const start = async () => {
-    // A recorded brief replays its recording; anything else is a real deck,
-    // built by the API and the worker (phase 27).
-    // Only a picked example (or an empty box) replays a recording: anything
-    // typed is a real deck, even if it reads like an example.
-    const target = picked ?? (text.trim() ? null : first?.id);
-    if (target) {
-      router.push(`/deck/${target}/outline`);
+    // Every start is a real deck, built by the API and the worker. An example
+    // chip only fills the box (the recorded runs are gone: owner, 2026-10-10).
+    if (!text.trim()) {
+      setNotice("Say what you're presenting first, or pick an example below.");
       return;
     }
     setNotice(null);
@@ -121,7 +115,7 @@ export function Composer({ examples }: { examples: Example[] }) {
       router.push(`/d/${made.value.id}`);
       return;
     }
-    setNotice(`${made.error} Until it is, pick one of the recorded briefs below.`);
+    setNotice(made.error);
   };
 
   // Back from sign-up or sign-in with a brief waiting: start it.
@@ -150,12 +144,17 @@ export function Composer({ examples }: { examples: Example[] }) {
         void start();
       }}
     >
-      <label
-        htmlFor={label}
-        className="text-center font-display text-[clamp(2.5rem,5.4vw,4.5rem)] leading-[1.04] tracking-[-0.025em] text-balance"
-      >
-        What are you <em>presenting</em>?
-      </label>
+      <div className="flex flex-col items-center gap-3 text-center">
+        <label
+          htmlFor={label}
+          className="font-display text-[clamp(2.25rem,4.6vw,3.5rem)] leading-[1.06] tracking-[-0.02em] text-balance"
+        >
+          What are you <em>presenting</em>?
+        </label>
+        <p className="max-w-[52ch] text-[15px] text-ink-2 sm:text-base">
+          Type a brief. Get a deck that looks designed, with every slide checked in a real browser and every number sourced.
+        </p>
+      </div>
       <div className="border border-ink bg-paper transition-colors focus-within:border-accent focus-within:ring-1 focus-within:ring-accent">
         <textarea
           id={label}
@@ -164,11 +163,10 @@ export function Composer({ examples }: { examples: Example[] }) {
           value={text}
           onChange={(e) => {
             setText(e.target.value);
-            setPicked(null);
             setNotice(null);
           }}
-          placeholder={first?.prompt ?? "Series A pitch for our CI tool, to seed-stage investors"}
-          className="block min-h-[9.5rem] w-full resize-none bg-transparent px-5 pt-5 pb-3 font-display text-[22px] leading-[1.35] outline-none placeholder:text-ink-2/60 focus-visible:outline-none sm:min-h-0 sm:px-6 sm:text-[26px]"
+          placeholder="Seed pitch for our CI tool, to early-stage investors. Add your numbers, your ask, anything slide by slide."
+          className="block min-h-[8.5rem] w-full resize-none bg-transparent px-5 pt-4 pb-3 text-[17px] leading-[1.55] outline-none placeholder:text-ink-2/55 focus-visible:outline-none sm:px-6"
         />
         <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-rule px-5 py-3 sm:px-6">
           <Choice label="Kind" value={kind} options={KINDS} onChange={setKind} />
@@ -185,31 +183,23 @@ export function Composer({ examples }: { examples: Example[] }) {
         </p>
       )}
       {examples.length > 0 && (
-        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-2">
-          <span className="text-[13px] text-ink-2">Try</span>
-          <ToggleGroup
-            type="single"
-            variant="outline"
-            spacing={2}
-            value={picked ?? ""}
-            onValueChange={(id) => {
-              const x = examples.find((e) => e.id === id);
-              setPicked(x ? x.id : null);
-              if (x) setText(x.prompt);
-            }}
-            className="flex-wrap justify-center"
-          >
-            {examples.map((x) => (
-              <ToggleGroupItem
-                key={x.id}
-                value={x.id}
-                className="h-auto gap-1.5 px-3 py-1.5 text-[13px] data-[state=on]:border-ink"
-              >
-                <span className="text-ink-2">{TYPE_LABEL[x.type] ?? "Deck"} ·</span>
-                <span>{x.short}</span>
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
+        <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2">
+          <span className="mr-1 text-[13px] text-ink-2">Try</span>
+          {examples.map((x) => (
+            <button
+              key={x.id}
+              type="button"
+              onClick={() => {
+                setText(x.prompt);
+                setNotice(null);
+                document.getElementById(label)?.focus();
+              }}
+              className="flex items-baseline gap-1.5 border border-rule px-3 py-1.5 text-[13px] transition-colors hover:border-ink"
+            >
+              <span className="text-ink-2">{TYPE_LABEL[x.type] ?? "Deck"} ·</span>
+              <span>{x.short}</span>
+            </button>
+          ))}
         </div>
       )}
     </form>

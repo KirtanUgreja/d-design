@@ -63,6 +63,12 @@ body {
   to { transform: translateX(300%); }
 }
 
+/* The home page's wall of slides: a track of two copies moves by one copy. */
+@keyframes drift {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 /* A slide settling into its slot: no bounce, gone under reduced motion. */
 @keyframes settle {
   from { opacity: 0; transform: translateY(6px); }

@@ -1,5 +1,6 @@
 // Better Auth, server side (phase 29, master plan A2). Email and password only:
-// no OAuth, no email verification, no reset. Its tables live in their own
+// no OAuth, no email verification. Password reset by email (owner, 2026-10-10)
+// when RESEND_API_KEY is set; without it the reset page says it isn't set up. Its tables live in their own
 // Postgres database (AUTH_DATABASE_URL), created by its CLI:
 //   pnpm dlx auth@1.7.7 migrate --config lib/auth.ts --yes
 // Python never reads these tables. It learns who you are from the JWT this
@@ -38,7 +39,16 @@ let purgeDecks: ((headers: Headers) => Promise<void>) | null = null;
 export const auth = betterAuth({
   baseURL: BASE_URL,
   database: new Pool({ connectionString: process.env.AUTH_DATABASE_URL, max: 5 }),
-  emailAndPassword: { enabled: true, autoSignIn: true, minPasswordLength: 10 },
+  emailAndPassword: {
+    enabled: true,
+    autoSignIn: true,
+    minPasswordLength: 10,
+    resetPasswordTokenExpiresIn: 60 * 30, // half an hour, single use
+    revokeSessionsOnPasswordReset: true, // a reset signs out every other device
+    sendResetPassword: async ({ user, url }) => {
+      await sendResetEmail(user.email, url);
+    },
+  },
   user: {
     deleteUser: {
       enabled: true,
@@ -82,6 +92,31 @@ export const auth = betterAuth({
     nextCookies(), // last, per the docs: lets server actions set the cookie
   ],
 });
+
+/** Whether this deployment can send a reset email. */
+export const canResetPassword = (): boolean => Boolean(process.env.RESEND_API_KEY);
+
+// Resend's HTTP API with fetch: no SDK for one POST. The link is a secret, so
+// it is never logged; a failure is logged without it. Better Auth answers
+// the request the same way whether or not the address has an account.
+async function sendResetEmail(to: string, url: string): Promise<void> {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) return;
+  const from = process.env.RESET_EMAIL_FROM ?? "d-design <onboarding@resend.dev>";
+  const html = `<p>Someone asked to reset the password for your d-design account.</p>
+<p><a href="${url}">Choose a new password</a> (the link works once, for 30 minutes).</p>
+<p>If it wasn't you, ignore this email; nothing changes.</p>`;
+  try {
+    const res = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: { authorization: `Bearer ${key}`, "content-type": "application/json" },
+      body: JSON.stringify({ from, to: [to], subject: "Reset your d-design password", html }),
+    });
+    if (!res.ok) console.error(`reset email: Resend answered ${res.status}`);
+  } catch {
+    console.error("reset email: Resend unreachable");
+  }
+}
 
 async function mint(headers: Headers): Promise<string | null> {
   const session = await auth.api.getSession({ headers });

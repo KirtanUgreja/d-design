@@ -75,6 +75,8 @@ def test_broken_designs_fall_to_the_code_layout_and_pass(tmp_path: Path) -> None
     transport = Studio(broken=True)
     built = _build(tmp_path, transport, _story(3))
     assert transport.calls.count("repair") == 3 * studio.REPAIR_ROUNDS
+    # Three first designs, and one fresh design for the cover before its floor.
+    assert transport.calls.count("compose") == 3 + 1
     assert {s.origin for s in built.slides} == {"fallback"}
     assert all(s.qa.status == "passed" for s in built.slides), [
         (s.id, [d.code for d in s.qa.errors]) for s in built.slides

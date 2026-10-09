@@ -40,6 +40,8 @@ Five screens. If a week goes into a settings page while the generation watch is 
 
 **A prompt box first, the interview second. Not a chat, and not a form.**
 
+> **2026-10-10 (owner):** the prompt is set at 17px in the interface face. Competitors measured that day: Gamma 12.8px, Pitch 16px, presentations.ai 16px; 16px is the floor that stops iOS zooming on focus. The example chips only fill the box; the recorded runs of the old engine are off the home page. Under the composer, a slowly drifting wall of real slides from the owner's best-rated decks (`web/public/showcase/`), then three proofs drawn as pieces of the product.
+
 ```
 ┌─────────────────────────────────────────┐
 │  What are you presenting?               │
@@ -66,6 +68,8 @@ No templates and no starting-point gallery. "No templates" is still the position
 ## 2. The interview and the outline gate
 
 One screen, two halves: the interview on the left, and on the right the storyline it produces, updating as answers arrive.
+
+> **2026-10-10 (owner):** the outline is the person's to change. Any slide's words can be edited in place (they become YOU, and no fact of ours stands behind them), a middle slide can be removed (five stay at least), and **Change the outline** takes an instruction in words: research runs again and the outline is rewritten, keeping what the change does not touch, with more or fewer slides if asked. The deck's name can be renamed at any point. The style card shows the style's name, idea, palette and type; its slide thumbnails are gone, because the code-built layout drew every style as the same old slide.
 
 ```
 ┌──────────────────┬──────────────────────────┐
@@ -110,6 +114,8 @@ The interview answers and the approved outline are saved with the deck, so a fai
 ## 4. The generation watch
 
 One to three minutes, and it is what someone describes to a colleague afterwards. Still the highest-leverage motion design in the product.
+
+> **2026-10-10 (owner: "everything is empty, it feels long"):** the wait shows the work (the labor illusion, Buell and Norton 2011). The outline wait is a list of the outline job's real steps, with what research found ("Found 9 sources: IDC, …") from a `research_done` event. The build shows a live feed of `slide_step` events (designing, redesigning after a look, repairing), a left-to-right sweep on the slides being worked on, and the time so far with an estimate once a slide is done.
 
 **The slides themselves, at size, arriving in place.** The backend emits a slide only once it has been generated, sanitized, rendered and measured ([../v4/engine.md](../v4/engine.md) → "Generation jobs and events"). There is nothing partial to hide behind a progress bar.
 

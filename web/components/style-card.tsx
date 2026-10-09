@@ -1,8 +1,10 @@
 "use client";
 
 // The deck's style, seen before the build (docs/v4/plan/39-design-reset.md § 6):
-// one generated style with three slides in the deck's own words, and Another
-// style to draw a new one. Never a menu of looks (owner, 2026-10-05).
+// one generated style, its colours and type, and Another style to draw a new
+// one. Never a menu of looks (owner, 2026-10-05). No slide thumbnails: they
+// were drawn by the code-built layout and showed every style as the same old
+// slide (owner, 2026-10-10); the designed slides come from the build.
 import { useEffect, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +21,7 @@ export function StyleCard({ deckId, drawn = "" }: { deckId: string; drawn?: stri
   const [busy, setBusy] = useState(false);
   const [version, setVersion] = useState(0);
 
-  // Poll until the worker has drawn the thumbnails; a new version restarts it.
+  // Fetch the card once the worker has made it; a new version fetches again.
   useEffect(() => {
     let live = true;
     const poll = async () => {
@@ -28,7 +30,7 @@ export function StyleCard({ deckId, drawn = "" }: { deckId: string; drawn?: stri
         if (!live) return;
         if (got.ok) {
           setCard(got.value);
-          if (got.value.previews.length > 0) return;
+          return;
         }
         await new Promise((r) => setTimeout(r, POLL_MS));
       }
@@ -57,7 +59,6 @@ export function StyleCard({ deckId, drawn = "" }: { deckId: string; drawn?: stri
     setVersion((v) => v + 1);
   };
 
-  const thumbs = card?.previews ?? [];
   return (
     <section aria-labelledby="style-title" className="flex flex-col gap-4">
       <div className="flex items-baseline justify-between gap-4">
@@ -72,38 +73,31 @@ export function StyleCard({ deckId, drawn = "" }: { deckId: string; drawn?: stri
         </h2>
         {card && <p className="mt-1 text-sm leading-snug text-ink-2">{card.idea}</p>}
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        {thumbs.length > 0
-          ? thumbs.map((name, i) => (
-              // eslint-disable-next-line @next/next/no-img-element -- a same-origin screenshot from our API
-              <img
-                key={name}
-                src={api.styleThumb(deckId, name, version)}
-                alt={i === 0 ? "Your cover in this style" : "A slide of your deck in this style"}
-                className={`aspect-video w-full border border-rule bg-paper-2 object-cover ${i === 0 ? "col-span-2" : ""}`}
-              />
-            ))
-          : [0, 1, 2].map((n) => <Skeleton key={n} className={`aspect-video w-full ${n === 0 ? "col-span-2" : ""}`} />)}
-      </div>
-      {card && (
-        <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 border-t border-rule pt-3 text-[13px]">
-          <dt className="text-ink-2">Type</dt>
-          <dd className="truncate">
-            {card.display} · {card.text}
-          </dd>
-          <dt className="text-ink-2">Colour</dt>
-          <dd className="flex items-center gap-1.5" aria-label="Palette">
+      {card ? (
+        <>
+          <div className="flex h-24 overflow-hidden border border-rule" aria-label="Palette">
             {Object.entries(card.colors).map(([role, hex]) => (
-              <span key={role} title={role} className="size-4 rounded-full border border-rule" style={{ backgroundColor: hex }} />
+              <span key={role} title={role} className="flex-1" style={{ backgroundColor: hex }} />
             ))}
-          </dd>
-          {card.imageStyle && (
-            <>
-              <dt className="text-ink-2">Images</dt>
-              <dd className="leading-snug">{card.imageStyle}</dd>
-            </>
-          )}
-        </dl>
+          </div>
+          <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-1.5 border-t border-rule pt-3 text-[13px]">
+            <dt className="text-ink-2">Type</dt>
+            <dd className="truncate">
+              {card.display} · {card.text}
+            </dd>
+            {card.imageStyle && (
+              <>
+                <dt className="text-ink-2">Images</dt>
+                <dd className="leading-snug">{card.imageStyle}</dd>
+              </>
+            )}
+          </dl>
+          <p className="text-[13px] leading-snug text-ink-2">
+            Each slide is designed one by one in the build, in this style. Nothing is drawn from a template.
+          </p>
+        </>
+      ) : (
+        <Skeleton className="h-24 w-full" />
       )}
       {problem && <p className="text-sm text-destructive">{problem}</p>}
     </section>

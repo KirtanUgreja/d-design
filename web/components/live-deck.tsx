@@ -15,15 +15,11 @@ import { BrandColours } from "@/components/brand-colours";
 import { LogoPicker } from "@/components/logo-picker";
 import { ScreensPicker } from "@/components/screens-picker";
 import { StyleCard } from "@/components/style-card";
+import { Feed, Working, clock, liveSteps, useElapsed } from "@/components/working";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { api, parseEvent, type LiveDeck as Deck, type LiveEvent, type Notice } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
-
-const WAITING: Partial<Record<Deck["status"], string>> = {
-  brief: "Reading your brief and writing a few questions…",
-  outline: "Finding sources and writing your outline…",
-};
 
 // ~30 lines instead of EventSource, which cannot send the token phase 29 needs.
 async function follow(id: string, after: number, onEvent: (e: LiveEvent) => void, signal: AbortSignal) {
@@ -52,6 +48,8 @@ export function LiveDeck({ id }: { id: string }) {
   const [problem, setProblem] = useState<string | null>(null);
   const [ready, setReady] = useState<Record<string, string>>({}); // slide id -> status
   const [notice, setNotice] = useState<Notice | null>(null); // the editor's last outcome
+  const [outlineNote, setOutlineNote] = useState<string | null>(null); // a rewrite that could not be made
+  const [work, setWork] = useState<LiveEvent[]>([]); // the work made visible while waiting
   const seen = useRef(0);
 
   const refresh = useCallback(async () => {
@@ -72,6 +70,9 @@ export function LiveDeck({ id }: { id: string }) {
             seen.current,
             (e) => {
               seen.current = e.seq;
+              if (["stage", "slide_step", "slide_ready", "research_done"].includes(e.type)) {
+                setWork((w) => [...w.slice(-80), e]);
+              }
               if (e.type === "slide_ready" && e.slideId) {
                 const sid = e.slideId;
                 setReady((m) => ({ ...m, [sid]: e.status ?? "passed" }));
@@ -79,13 +80,16 @@ export function LiveDeck({ id }: { id: string }) {
               if (e.type === "proposal_ready" && e.slideId) {
                 setNotice({ text: "Your change is ready. Compare it, then keep it or not.", seq: e.seq, proposal: e.slideId });
               }
+              if (e.type === "outline_refused") {
+                setOutlineNote(`${e.message ?? "That change could not be made."} Your outline is as it was.`);
+              }
               if (e.type === "edit_done" || e.type === "edit_refused") {
                 const text = e.type === "edit_refused" ? (e.message ?? "That change was not made.") : "Saved and checked.";
                 setNotice({ text, seq: e.seq });
               }
               // Anything the worker saved bumps the deck's version: read it again, or the
               // next save sends a stale one and is refused (a logo upload did, 2026-10-09).
-              const saves = ["questions_ready", "outline_ready", "logo_ready", "style_ready", "done", "error", "stage"];
+              const saves = ["questions_ready", "outline_ready", "outline_refused", "logo_ready", "style_ready", "done", "error", "stage"];
               if ([...saves, "edit_done", "edit_refused"].includes(e.type)) {
                 void refresh();
               }
@@ -106,12 +110,14 @@ export function LiveDeck({ id }: { id: string }) {
   if (problem && !deck) return <Problem text={problem} />;
   if (!deck) return <Waiting text="Opening your deck…" />;
 
-  const wait = WAITING[deck.status];
-  if (wait) {
+  if (deck.status === "brief" || deck.status === "outline") {
+    // Only what this run of the outline found: a rewrite starts its own.
+    const start = work.findLastIndex((e) => e.type === "stage" && e.name === "outline" && e.state === "started");
+    const research = work.slice(start + 1).findLast((e) => e.type === "research_done") ?? null;
     return (
       <>
         <DeckHeader deck={deck} />
-        <Waiting text={wait} />
+        <Working key={`${deck.status}-${start}`} status={deck.status} research={research} />
       </>
     );
   }
@@ -144,10 +150,29 @@ export function LiveDeck({ id }: { id: string }) {
   if (deck.status === "approve") {
     return (
       <>
-        <DeckHeader deck={deck} />
+        <DeckHeader deck={deck} onRename={setDeck} />
         <OutlineGate
+          key={deck.version}
           deck={{ ...deck, questions: [] }}
           thesis={false}
+          notice={outlineNote}
+          onSave={async (edit, decided: Decisions, order: string[]) => {
+            const decisions = Object.fromEntries(
+              Object.entries(decided).map(([k, v]) => [k, v === "cut" ? ("rejected" as const) : ("approved" as const)]),
+            );
+            const kept = order.filter((o) => !(edit.remove ?? []).includes(o));
+            const saved = await api.editOutline(deck.id, deck.version, { ...edit, order: kept, decisions });
+            if (!saved.ok) return saved.error;
+            setDeck(saved.value);
+            return null;
+          }}
+          onRewrite={async (instruction: string) => {
+            setOutlineNote(null);
+            const sent = await api.rewriteOutline(deck.id, instruction);
+            if (!sent.ok) return sent.error;
+            setDeck(sent.value);
+            return null;
+          }}
           style={
             <>
               <StyleCard deckId={deck.id} drawn={deck.brand.join(",")} />
@@ -176,8 +201,14 @@ export function LiveDeck({ id }: { id: string }) {
       </>
     );
   }
-  return <Building deck={deck} ready={ready} notice={notice} onChange={refresh} />;
+  return <Building deck={deck} ready={ready} notice={notice} onChange={refresh} work={work} />;
 }
+
+const STEP_LABEL: Record<string, string> = {
+  design: "Designing…",
+  improve: "Redesigning after a look…",
+  repair: "Repairing…",
+};
 
 // The path a deck takes, with where this one stands (docs/v4/ui-research.md ->
 // goal gradient). Real states only.
@@ -198,11 +229,13 @@ function DeckHeader({
   actions,
   line,
   compact = false,
+  onRename,
 }: {
   deck: Deck;
   actions?: React.ReactNode;
   line?: React.ReactNode;
   compact?: boolean; // the editor needs the room: one line of title, no status
+  onRename?: (renamed: Deck) => void; // the name is the person's to change
 }) {
   const at = stepOf(deck);
   return (
@@ -232,14 +265,7 @@ function DeckHeader({
               ))}
             </ol>
           </div>
-          <h1
-            className={cn(
-              "mt-3 max-w-4xl font-display leading-[1.15] tracking-[-0.015em] text-balance",
-              compact ? "truncate text-[20px]" : "line-clamp-3 text-[24px] sm:text-[30px]",
-            )}
-          >
-            {deck.title || deck.thesis || deck.prompt || "Your deck"}
-          </h1>
+          <DeckTitle deck={deck} compact={compact} onRename={onRename} />
           {deck.title && deck.thesis && !compact && (
             <p className="mt-1.5 max-w-3xl text-[15px] leading-snug text-ink-2">{deck.thesis}</p>
           )}
@@ -251,6 +277,79 @@ function DeckHeader({
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
+    </div>
+  );
+}
+
+function DeckTitle({ deck, compact, onRename }: { deck: Deck; compact: boolean; onRename?: (d: Deck) => void }) {
+  const shown = deck.title || deck.thesis || deck.prompt || "Your deck";
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(deck.title);
+  const [problem, setProblem] = useState<string | null>(null);
+  const size = compact ? "text-[20px]" : "text-[24px] sm:text-[30px]";
+  const save = async () => {
+    const next = name.trim();
+    if (!next || next === deck.title) return setEditing(false);
+    const done = await api.rename(deck.id, next);
+    if (!done.ok) return setProblem(done.error);
+    setProblem(null);
+    setEditing(false);
+    onRename?.(done.value);
+  };
+  if (editing && onRename) {
+    return (
+      <form
+        className="mt-3 flex max-w-2xl items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void save();
+        }}
+      >
+        <label htmlFor="deck-name" className="sr-only">
+          Deck name
+        </label>
+        <input
+          id="deck-name"
+          autoFocus
+          value={name}
+          maxLength={60}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Escape" && setEditing(false)}
+          className={cn("min-w-0 flex-1 border-b border-ink bg-transparent font-display leading-tight outline-none", size)}
+        />
+        <Button type="submit" size="sm">
+          Save
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
+          Cancel
+        </Button>
+        {problem && <span className="text-[13px] text-flag">{problem}</span>}
+      </form>
+    );
+  }
+  return (
+    <div className="group mt-3 flex max-w-4xl items-baseline gap-3">
+      <h1
+        className={cn(
+          "min-w-0 font-display leading-[1.15] tracking-[-0.015em] text-balance",
+          compact ? "truncate" : "line-clamp-3",
+          size,
+        )}
+      >
+        {shown}
+      </h1>
+      {onRename && (
+        <button
+          type="button"
+          onClick={() => {
+            setName(deck.title || shown);
+            setEditing(true);
+          }}
+          className="shrink-0 text-[13px] text-ink-2 underline-offset-4 opacity-70 transition-opacity group-hover:opacity-100 hover:text-ink hover:underline"
+        >
+          Rename
+        </button>
+      )}
     </div>
   );
 }
@@ -401,12 +500,16 @@ function Building({
   ready,
   notice,
   onChange,
+  work,
 }: {
   deck: Deck;
   ready: Record<string, string>;
   notice: Notice | null;
   onChange: () => void;
+  work: LiveEvent[];
 }) {
+  const elapsed = useElapsed();
+  const steps = liveSteps(work);
   const [editing, setEditing] = useState<string | null>(null); // the slide the editor opens on
   // Finished slides come from the deck as well as the stream, so a reload or a
   // resumed build shows what is already done.
@@ -457,14 +560,27 @@ function Building({
     ? `${total} slides, every one checked in a browser. Present opens it with your notes; the download is the slides only.`
     : stopped
       ? `Stopped with ${count} of ${total} slides done. Continue picks up where it stopped, without paying for them again.`
-      : `Composing your deck — ${count} of ${total} done. You can leave this page; nothing is lost.`;
+      : `Designing your deck: ${count} of ${total} done · ${clock(elapsed)}. ${
+          count > 0 && count < total ? `About ${Math.max(1, Math.round(((elapsed / count) * (total - count)) / 60))} min left.` : "Usually 3 to 5 minutes."
+        } You can leave this page; nothing is lost.`;
 
   return (
     <>
-      <DeckHeader deck={deck} actions={actions} line={line} compact={editing !== null && finished} />
+      <DeckHeader
+        deck={deck}
+        actions={actions}
+        line={line}
+        compact={editing !== null && finished}
+        onRename={() => void onChange()}
+      />
       {!finished && (
         <div aria-hidden="true" className="h-0.5 bg-rule">
           <div className="h-0.5 bg-ink transition-[width] duration-500" style={{ width: `${(count / Math.max(total, 1)) * 100}%` }} />
+        </div>
+      )}
+      {!finished && !stopped && (
+        <div className="mx-auto max-w-[1440px] px-4 pt-6 sm:px-8">
+          <Feed events={work} outline={deck.outline} />
         </div>
       )}
       {editing !== null && finished ? (
@@ -493,7 +609,7 @@ function Building({
                   : "Needs attention"
                 : stopped
                   ? "Not started"
-                  : "Composing…";
+                  : (STEP_LABEL[steps[plan.id] ?? ""] ?? "Waiting its turn");
               return (
                 <li key={plan.id}>
                   {status ? (
@@ -507,8 +623,20 @@ function Building({
                       <SlideThumb src={api.thumb(deck.id, plan.id, deck.version)} alt={`Slide ${i + 1}: ${headline}`} />
                     </button>
                   ) : (
-                    <div className="flex aspect-video flex-col justify-end border border-dashed border-rule bg-paper-2/60 p-4">
-                      <p className="line-clamp-3 font-display text-base leading-snug text-ink-2">{headline}</p>
+                    <div
+                      className={cn(
+                        "relative flex aspect-video flex-col justify-end overflow-hidden border border-dashed border-rule bg-paper-2/60 p-4",
+                        steps[plan.id] && "border-solid border-ink/40",
+                      )}
+                    >
+                      {steps[plan.id] && !stopped && (
+                        // Left to right reads as faster than a pulse (uxdesign.cc, skeleton study).
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-y-0 left-0 w-1/3 animate-[sweep_1.8s_ease-in-out_infinite] bg-paper/45"
+                        />
+                      )}
+                      <p className="relative line-clamp-3 font-display text-base leading-snug text-ink-2">{headline}</p>
                     </div>
                   )}
                   <Placard

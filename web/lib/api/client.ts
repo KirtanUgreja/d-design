@@ -214,6 +214,21 @@ export const api = {
     call(`/api/decks/${id}/interview`, { method: "POST", body: JSON.stringify({ answers, skip }) }),
   decide: (id: string, version: number, decisions: Record<string, "approved" | "rejected">, order?: string[]) =>
     call(`/api/decks/${id}/outline`, { method: "PATCH", body: JSON.stringify({ version, decisions, order }) }),
+  // The person's own words for an outline's fields, and slides to drop, saved
+  // with the order and decisions made so far.
+  editOutline: (
+    id: string,
+    version: number,
+    edit: {
+      words?: Record<string, Record<string, string>>;
+      remove?: string[];
+      order?: string[];
+      decisions?: Record<string, "approved" | "rejected">;
+    },
+  ) => call(`/api/decks/${id}/outline`, { method: "PATCH", body: JSON.stringify({ version, ...edit }) }),
+  rewriteOutline: (id: string, instruction: string) =>
+    call(`/api/decks/${id}/outline/ask`, { method: "POST", body: JSON.stringify({ instruction }) }),
+  rename: (id: string, title: string) => call(`/api/decks/${id}/title`, { method: "PUT", body: JSON.stringify({ title }) }),
   build: (id: string) => call(`/api/decks/${id}/build`, { method: "POST" }),
   retry: (id: string) => call(`/api/decks/${id}/retry`, { method: "POST" }),
   abort: (id: string) => call(`/api/decks/${id}/build/abort`, { method: "POST" }),
@@ -252,6 +267,14 @@ export interface LiveEvent {
   slideId: string | null;
   status: string | null;
   message: string | null;
+  // The work made visible while waiting (2026-10-10): a slide's step, a
+  // stage's name and state, and what research found.
+  step: string | null;
+  name: string | null;
+  state: string | null;
+  origin: string | null;
+  sources: number | null;
+  publishers: string[];
 }
 
 export function parseEvent(raw: string): LiveEvent | null {
@@ -268,5 +291,11 @@ export function parseEvent(raw: string): LiveEvent | null {
     slideId: typeof v.slide_id === "string" ? v.slide_id : null,
     status: typeof v.status === "string" ? v.status : null,
     message: typeof v.message === "string" ? v.message : null,
+    step: typeof v.step === "string" ? v.step : null,
+    name: typeof v.name === "string" ? v.name : null,
+    state: typeof v.state === "string" ? v.state : null,
+    origin: typeof v.origin === "string" ? v.origin : null,
+    sources: typeof v.sources === "number" ? v.sources : null,
+    publishers: list(v.publishers).filter((x): x is string => typeof x === "string").slice(0, 6),
   };
 }

@@ -36,6 +36,7 @@ from store.tenant import AnyStore, Tenant, open_store
 
 FINAL = {"ready", "error", "aborted"}
 MAX_SCREENS = 6
+MIN_SLIDES = 5  # what the composer offers; an outline keeps at least this many
 POLL_S = 0.4
 
 
@@ -59,6 +60,15 @@ class OutlineEdit(BaseModel):
     version: int
     order: list[str] | None = None  # slide ids, the cover and the ask stay at the ends
     decisions: dict[str, Literal["approved", "rejected"]] = Field(default_factory=dict)
+    # The person's own words for a slide's fields: slide id -> field -> text.
+    words: dict[str, dict[str, Annotated[str, Field(min_length=1, max_length=600)]]] = Field(
+        default_factory=dict, max_length=25
+    )
+    remove: list[str] = Field(default_factory=list, max_length=20)  # slide ids to drop
+
+
+class Title(BaseModel):
+    title: str = Field(min_length=1, max_length=60)
 
 
 class FieldText(BaseModel):
@@ -261,6 +271,43 @@ def create_app(
         if deck.status != "approve" or deck.storyline is None:
             return _problem(409, "The outline can't be edited right now.")
         story = deck.storyline
+        if body.remove:
+            ends = {story.slides[0].id, story.slides[-1].id}
+            if ends & set(body.remove):
+                return _problem(422, "The cover and the last slide stay.")
+            kept = [s for s in story.slides if s.id not in body.remove]
+            if len(kept) < MIN_SLIDES:
+                return _problem(422, f"A deck keeps at least {MIN_SLIDES} slides.")
+            story = story.model_copy(update={"slides": kept})
+        if body.words:
+            by_id = {s.id: s for s in story.slides}
+            if any(i not in by_id for i in body.words):
+                return _problem(422, "That slide isn't in this outline.")
+            slides = []
+            for plan in story.slides:
+                given = {k: v.strip() for k, v in body.words.get(plan.id, {}).items() if v.strip()}
+                if not given:
+                    slides.append(plan)
+                    continue
+                names = {f.name for f in plan.fields}
+                if not set(given) <= names:
+                    return _problem(422, "That field isn't on this slide.")
+                slides.append(
+                    plan.model_copy(
+                        update={
+                            "fields": [
+                                # their words, so no fact of ours stands behind them any more
+                                f.model_copy(update={"text": given[f.name], "fact_ids": []})
+                                if f.name in given
+                                else f
+                                for f in plan.fields
+                            ],
+                            # Words the person wrote are theirs (shown as YOU).
+                            "provenance": {**plan.provenance, **{n: "YOU" for n in given}},
+                        }
+                    )
+                )
+            story = story.model_copy(update={"slides": slides})
         if body.order is not None:
             ids = [s.id for s in story.slides]
             if (
@@ -280,6 +327,39 @@ def create_app(
         )
         if not isinstance(saved, Ok):
             return _problem(409, "Someone else changed this outline. Reload to see it.")
+        return out(t, t.read(deck_id))
+
+    @api.post("/api/decks/{deck_id}/outline/ask", response_model=None)
+    def ask_outline(t: Me, deck_id: str, body: AskBody) -> DeckOut | JSONResponse:
+        """The outline rewritten from the person's words: research runs again
+        for what they asked, and the outline they have is kept where the
+        change doesn't touch it (owner, 2026-10-10)."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        if no := capped(t):
+            return no
+        deck = t.read(deck_id)
+        if deck.status != "approve" or deck.storyline is None:
+            return _problem(409, "The outline can't be changed right now.")
+        t.update(deck_id, status="outline", error="")
+        t.enqueue("outline", deck_id, json.dumps({"change": body.instruction.strip()}))
+        return out(t, t.read(deck_id))
+
+    @api.put("/api/decks/{deck_id}/title", response_model=None)
+    def rename(t: Me, deck_id: str, body: Title) -> DeckOut | JSONResponse:
+        """The deck's name, the person's to change at any point; before the
+        build it is also the name the slides carry."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        name = " ".join(body.title.split())
+        if not name:
+            return _problem(422, "Give the deck a name.")
+        deck = t.read(deck_id)
+        story = deck.storyline
+        if story is not None and deck.status == "approve":
+            t.update(deck_id, title=name, storyline=story.model_copy(update={"title": name}))
+        else:
+            t.update(deck_id, title=name)
         return out(t, t.read(deck_id))
 
     @api.post("/api/decks/{deck_id}/build", response_model=None)

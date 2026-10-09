@@ -29,6 +29,9 @@ export type Decisions = Record<string, "approved" | "cut">;
 export function OutlineGate({
   deck,
   onApprove,
+  onSave,
+  onRewrite,
+  notice = null,
   style,
   thesis = true,
 }: {
@@ -38,6 +41,12 @@ export function OutlineGate({
   // Live decks save the decisions and start the build; recordings replay.
   // Resolves to what went wrong, or null once the build has started.
   onApprove?: (decided: Decisions, order: string[]) => Promise<string | null>;
+  // Live decks: the person's words for a slide, or slides dropped, saved with
+  // the order and decisions so far; and the outline rewritten from their words.
+  onSave?: (edit: { words?: Record<string, Record<string, string>>; remove?: string[] }, decided: Decisions, order: string[]) => Promise<string | null>;
+  onRewrite?: (instruction: string) => Promise<string | null>;
+  // What the last rewrite said, if it could not be made.
+  notice?: string | null;
   // Off when the page's own header already carries the thesis.
   thesis?: boolean;
 }) {
@@ -81,6 +90,15 @@ export function OutlineGate({
     }
   };
   const interviewing = asked < deck.questions.length;
+  const [saveProblem, setSaveProblem] = useState<string | null>(null);
+  const save = onSave
+    ? async (edit: { words?: Record<string, Record<string, string>>; remove?: string[] }) => {
+        setSaveProblem(null);
+        const problem = await onSave(edit, decided, slides.map((s) => s.id));
+        if (problem) setSaveProblem(problem);
+        return problem;
+      }
+    : undefined;
 
   return (
     <main className="mx-auto grid max-w-[1440px] gap-10 px-4 py-8 sm:px-8 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-16 lg:py-10">
@@ -101,10 +119,16 @@ export function OutlineGate({
           </h2>
         )}
         <p className="mt-3 max-w-2xl text-[13px] text-ink-2">
-          Move slides, or open a source to read where a line came from. Lines without a mark were written by the AI;{" "}
-          <span className="font-medium text-ink">YOU</span> is from your brief,{" "}
+          Move, edit or remove slides, or open a source to read where a line came from. Lines without a mark were written by
+          the AI; <span className="font-medium text-ink">YOU</span> is yours,{" "}
           <span className="font-medium text-ink">WEB</span> from a cited source.
         </p>
+        {onRewrite && <Rewrite onRewrite={onRewrite} notice={notice} />}
+        {saveProblem && (
+          <p role="status" className="mt-4 border-l-2 border-flag pl-3 text-sm">
+            {saveProblem}
+          </p>
+        )}
         <ol className="mt-6 border-t border-rule">
           {slides.map((s, i) => (
             <SlideCard
@@ -116,6 +140,8 @@ export function OutlineGate({
               decided={decided}
               onDecide={(id, d) => setDecided((m) => ({ ...m, [id]: d }))}
               onMove={(to) => move(i, to)}
+              onSave={save && ((words) => save({ words: { [s.id]: words } }))}
+              onRemove={save && slides.length > 5 ? () => save({ remove: [s.id] }) : undefined}
             />
           ))}
         </ol>
@@ -140,7 +166,7 @@ export function OutlineGate({
               ? failed
               : pending.length > 0
               ? `${pending.length} number${pending.length > 1 ? "s" : ""} without a source. Keep or cut ${pending.length > 1 ? "them" : "it"} first.`
-              : "Nothing is generated until you approve. The deck takes about two minutes, and you can watch it arrive."}
+              : "Nothing is generated until you approve. The deck takes 3 to 5 minutes, and you can watch it arrive."}
           </p>
         </div>
       </aside>
@@ -233,6 +259,8 @@ function SlideCard({
   decided,
   onDecide,
   onMove,
+  onSave,
+  onRemove,
 }: {
   plan: Plan;
   index: number;
@@ -241,7 +269,11 @@ function SlideCard({
   decided: Record<string, "approved" | "cut">;
   onDecide: (factId: string, d: "approved" | "cut") => void;
   onMove: (to: number) => void;
+  onSave?: (words: Record<string, string>) => Promise<string | null>;
+  onRemove?: () => Promise<string | null>;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [busy, setBusy] = useState(false);
   const headline = plan.fields.find((f) => f.name === "headline");
   const rest = plan.fields.filter((f) => f.name !== "headline" && f.name !== "source");
   const fixed = index === 0 || index === total - 1;
@@ -259,6 +291,17 @@ function SlideCard({
           {plan.beat}
           {plan.hasChart ? " · chart" : ""}
         </p>
+        {editing && onSave ? (
+          <EditSlide
+            plan={plan}
+            onCancel={() => setEditing(false)}
+            onSave={async (words) => {
+              const problem = await onSave(words);
+              if (!problem) setEditing(false);
+            }}
+          />
+        ) : (
+        <>
         {headline && (
           <p className="text-[17px] leading-snug font-medium text-ink">
             {headline.text} <Chip plan={plan} name="headline" facts={facts} factIds={headline.factIds} />
@@ -281,6 +324,8 @@ function SlideCard({
             ))}
           </ul>
         )}
+        </>
+        )}
         {unsourced.map((f) => (
           <Alert key={f.id} variant="destructive" className="mt-1">
             <AlertTitle>{f.value} has no source</AlertTitle>
@@ -297,7 +342,7 @@ function SlideCard({
       </div>
       <div className="flex flex-col items-end gap-1 pt-3">
         {fixed ? (
-          <span className="placard">{index === 0 ? "Cover" : "The ask"}</span>
+          <span className="placard">{index === 0 ? "Cover" : "The close"}</span>
         ) : (
           <>
             <Button variant="ghost" size="icon-sm" aria-label={`Move slide ${index + 1} up`} onClick={() => onMove(index - 1)}>
@@ -307,6 +352,25 @@ function SlideCard({
               ↓
             </Button>
           </>
+        )}
+        {onSave && !editing && (
+          <Button variant="link" size="sm" className="h-auto px-0 text-ink-2 hover:text-ink" onClick={() => setEditing(true)}>
+            Edit
+          </Button>
+        )}
+        {onRemove && !fixed && !editing && (
+          <Button
+            variant="link"
+            size="sm"
+            className="h-auto px-0 text-ink-2 hover:text-flag"
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void onRemove().finally(() => setBusy(false));
+            }}
+          >
+            {busy ? "Removing…" : "Remove"}
+          </Button>
         )}
       </div>
     </li>
@@ -367,5 +431,116 @@ function Chip({
       </TooltipTrigger>
       <TooltipContent>{CHIP[kind]}</TooltipContent>
     </Tooltip>
+  );
+}
+
+// Field names as a person reads them.
+function fieldLabel(name: string): string {
+  if (name === "headline") return "Headline";
+  if (name === "kicker") return "Label above";
+  if (name === "body") return "Body";
+  if (/^figure-\d+-label$/.test(name) || name === "stat_label") return "What the number means";
+  if (/^figure-\d+$/.test(name) || name === "stat") return "Number";
+  if (/^point/.test(name)) return "Point";
+  return name.replace(/[-_]/g, " ").replace(/^./, (c) => c.toUpperCase());
+}
+
+function EditSlide({
+  plan,
+  onSave,
+  onCancel,
+}: {
+  plan: Plan;
+  onSave: (words: Record<string, string>) => Promise<void>;
+  onCancel: () => void;
+}) {
+  const editable = plan.fields.filter((f) => f.name !== "source");
+  const [words, setWords] = useState<Record<string, string>>(Object.fromEntries(editable.map((f) => [f.name, f.text])));
+  const [saving, setSaving] = useState(false);
+  const changed = Object.fromEntries(
+    editable.filter((f) => (words[f.name] ?? "").trim() && words[f.name] !== f.text).map((f) => [f.name, words[f.name] ?? ""]),
+  );
+  return (
+    <form
+      className="mt-1 flex flex-col gap-3"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (Object.keys(changed).length === 0) return onCancel();
+        setSaving(true);
+        void onSave(changed).finally(() => setSaving(false));
+      }}
+    >
+      {editable.map((f) => (
+        <label key={f.name} className="flex flex-col gap-1">
+          <span className="text-[12px] text-ink-2">{fieldLabel(f.name)}</span>
+          <textarea
+            value={words[f.name] ?? ""}
+            rows={f.name === "headline" || f.text.length < 60 ? 1 : 3}
+            maxLength={600}
+            onChange={(e) => setWords((w) => ({ ...w, [f.name]: e.target.value }))}
+            className={cn(
+              "w-full resize-y border border-rule bg-paper px-3 py-2 text-[15px] leading-snug outline-none focus:border-ink",
+              f.name === "headline" && "font-medium",
+            )}
+          />
+        </label>
+      ))}
+      <div className="flex items-center gap-3">
+        <Button type="submit" size="sm" disabled={saving}>
+          {saving ? "Saving…" : "Save words"}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" onClick={onCancel}>
+          Cancel
+        </Button>
+        <span className="text-[12px] text-ink-2">Your words are marked YOU and used as written.</span>
+      </div>
+    </form>
+  );
+}
+
+function Rewrite({ onRewrite, notice }: { onRewrite: (instruction: string) => Promise<string | null>; notice: string | null }) {
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  return (
+    <form
+      className="mt-5 border border-rule bg-paper-2/40 p-4"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (text.trim().length < 3) return;
+        setBusy(true);
+        setProblem(null);
+        void onRewrite(text.trim()).then((p) => {
+          setProblem(p);
+          setBusy(false);
+        });
+      }}
+    >
+      <label htmlFor="rewrite" className="text-[14px] font-medium">
+        Change the outline
+      </label>
+      <p className="mt-0.5 text-[13px] text-ink-2">
+        Say what you want. It searches again where it needs to and rewrites the outline, keeping what you didn&apos;t ask to change.
+      </p>
+      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+        <textarea
+          id="rewrite"
+          rows={2}
+          maxLength={300}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder="Add a slide on pricing after the demo · merge slides 3 and 4 · make it 8 slides"
+          className="min-w-0 flex-1 resize-none border border-rule bg-paper px-3 py-2 text-[15px] leading-snug outline-none focus:border-ink"
+        />
+        <Button type="submit" disabled={busy || text.trim().length < 3}>
+          {busy ? "Sending…" : "Rewrite the outline"}
+        </Button>
+      </div>
+      {(problem ?? notice) && (
+        <p role="status" className="mt-2 text-[13px] text-flag">
+          {problem ?? notice}
+        </p>
+      )}
+    </form>
   );
 }

@@ -177,3 +177,23 @@ def test_the_deck_title_is_a_name_not_a_sentence() -> None:
 
     assert short_title("Swarvani") == "Swarvani"
     assert short_title("Brewly Q3 investor update for the board.") == "Brewly Q3 investor"
+
+
+def test_an_outline_change_carries_the_current_outline_and_lifts_the_count() -> None:
+    from engine.models import Storyline
+    from engine.studio.outline import MAX_SLIDES, MIN_SLIDES, _user_prompt
+
+    story = Storyline(
+        title="Tessel",
+        governing_thought="Tessel 2 works offline.",
+        deck_type="launch",
+        audience="press",
+        ask="Upgrade today",
+        key_points=["a", "b", "c"],
+        slides=[],
+    )
+    plain = _user_prompt(BRIEF, [])
+    asked = _user_prompt(BRIEF, [], change="add a pricing slide", current=story)
+    assert "THEIR CHANGE" not in plain
+    assert "<change>\nadd a pricing slide\n</change>" in asked
+    assert f"({MIN_SLIDES} to {MAX_SLIDES})" in asked
