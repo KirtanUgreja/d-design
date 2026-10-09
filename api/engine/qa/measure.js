@@ -106,6 +106,19 @@
       rects.push({ name, el, r, layer: !!el.closest("[data-layer]") });
       boxes.push({ field: name, l: ink.l, t: ink.t, r: ink.r, b: ink.b, color: rgb(cs.color).slice(0, 3), size, lines: lines.length, chars: norm(el.textContent).length, contrast: c });
     }
+    // E1 for our components: a chart's or a visual's own words must be on the
+    // canvas (a bled chart cut "$225.4B" in half, 2026-10-09).
+    for (const comp of root.querySelectorAll("dd-chart, dd-visual")) {
+      const name = comp.tagName === "DD-CHART" ? "chart" : "visual";
+      for (const t of comp.querySelectorAll("text")) {
+        const q = rel(t.getBoundingClientRect());
+        if (q.r - q.l < 1) continue;
+        if (q.l < 40 || q.r > 1880 || q.t < 20 || q.b > 1060) {
+          add("E1", name, `label at ${Math.round(q.l)},${Math.round(q.t)}-${Math.round(q.r)},${Math.round(q.b)}`, "its words inside the canvas: no bleed");
+          break;
+        }
+      }
+    }
     // E3 collisions between fields
     for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
       const a = rects[i], b = rects[j];

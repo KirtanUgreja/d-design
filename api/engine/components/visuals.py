@@ -159,50 +159,49 @@ def _chat(spec: VisualSpec) -> tuple[str, int, int]:
 
 
 def _flow(spec: VisualSpec) -> tuple[str, int, int]:
-    """Steps: nodes in a row joined by arrows; the last node in the accent."""
+    """Steps, top to bottom, joined by arrows; the last in the accent. A
+    column, so each step's words get the full width (side by side, four
+    steps were cut to "Listen…", 2026-10-09)."""
     lines = (spec.lines or ["", "", ""])[:4]
-    n = len(lines)
-    w, h = 1400, 420
-    gap = 90
-    node = (w - gap * (n - 1)) / n
+    w, row, gap = 1000, 150, 56
+    size = FONT * 1.4
     out = []
     for i, words in enumerate(lines):
-        x = i * (node + gap)
-        last = i == n - 1
-        out.append(
-            _rect(x, 60, node, h - 120, ACCENT if last else GROUND, 22, stroke="" if last else INK)
-        )
+        y = i * (row + gap)
+        last = i == len(lines) - 1
+        tone = ON_ACCENT if last else INK
+        out.append(_rect(0, y, w, row, ACCENT if last else GROUND, 22, stroke="" if last else INK))
         out.append(
             _text(
-                x + 32,
-                60 + 64,
+                48,
+                y + row / 2 + size * 0.35,
                 f"{i + 1:02d}",
                 fill=ON_ACCENT if last else QUIET,
-                size=FONT * 0.8,
+                size=size,
                 face="label",
             )
         )
-        label = _fit(words, node - 64, FONT * 1.5)
         out.append(
             _text(
-                x + 32,
-                h - 60 - 44,
-                label,
-                fill=ON_ACCENT if last else INK,
-                size=FONT * 1.5,
+                170,
+                y + row / 2 + size * 0.35,
+                _fit(words, w - 220, size),
+                fill=tone,
+                size=size,
                 weight="bold",
             )
         )
         if not last:
-            ax, ay = x + node + 14, h / 2
+            ax, ay = 100, y + row + 8
             out.append(
-                f'<rect x="{ax:.0f}" y="{ay - 2:.0f}" width="{gap - 40}" height="4" '
+                f'<rect x="{ax - 2}" y="{ay:.0f}" width="4" height="{gap - 26}" '
                 f'style="fill:{INK}"/>'
             )
             out.append(
-                f'<polygon points="{ax + gap - 40:.0f},{ay - 14:.0f} {ax + gap - 22:.0f},'
-                f'{ay:.0f} {ax + gap - 40:.0f},{ay + 14:.0f}" style="fill:{INK}"/>'
+                f'<polygon points="{ax - 14},{ay + gap - 30:.0f} {ax + 14},'
+                f'{ay + gap - 30:.0f} {ax},{ay + gap - 14:.0f}" style="fill:{INK}"/>'
             )
+    h = len(lines) * row + (len(lines) - 1) * gap
     return "".join(out), w, h
 
 

@@ -44,7 +44,9 @@ IMAGE_VERSION = "image.v1"
 MAX_IMAGE_B64 = 16_000_000  # ~12 MB decoded: far above any real slide image
 # Transport retries for 429 and 5xx only. Bounded for the same reason.
 MAX_TRANSPORT_RETRIES = 2
-RETRYABLE = frozenset({429, 500, 502, 503, 504})
+# 402 too: on a low balance the gateway refuses a call while others are in
+# flight, and it clears when they finish (2026-10-09).
+RETRYABLE = frozenset({402, 429, 500, 502, 503, 504})
 
 ReasoningEffort = Literal["minimal", "low", "medium", "high"]
 FailKind = Literal["transport", "truncated", "refused"]

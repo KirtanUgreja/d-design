@@ -296,6 +296,22 @@ def fallback(plan: SlidePlan, theme: Theme | None = None) -> Composed:
         )
         return Composed(html, css)
 
+    if body and not rest:  # a claim and its line: poster scale on the accent field
+        hsize = _step(head, ((40, "d3"), (70, "h1")), "h2")
+        html = (
+            f'<section class="s">{kicker or "<span></span>"}<div class="m">'
+            f'<h1 class="h" data-field="headline">{head}</h1>{body}</div>{source}</section>'
+        )
+        css = (
+            ".s{display:grid;grid-template-rows:auto 1fr auto;gap:var(--s-4);"
+            "padding:var(--margin);background-color:var(--c-accent);color:var(--c-on-accent)}"
+            ".m{align-self:end;display:grid;gap:var(--s-5);max-width:1500px}"
+            f".h{{{_DISPLAY};font-size:var(--t-{hsize});line-height:var(--lh-display);"
+            "letter-spacing:-0.015em}"
+            ".s .k,.s .src,.s .b{color:var(--c-on-accent)}" + base
+        )
+        return Composed(html, css)
+
     if rest or body:  # a ruled list beside the headline
         hsize = _step(head, ((30, "h1"),), "h2")
         cols = "5fr 7fr" if hsize == "h1" else "7fr 5fr"

@@ -359,7 +359,11 @@ def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, 
             fields = [f for f in fields if f.name != "source"]
             if credit:
                 fields.append(PlanField(name="source", text=credit, budget_words=8))
-            if not any(f.name == "stat" for f in fields):
+            if charts.form(chart) == "pair":
+                # Two values are drawn as two big figures and their change: a
+                # stat beside them says the same number twice (2026-10-09).
+                fields = [f for f in fields if f.name not in ("stat", "stat-label")]
+            elif not any(f.name == "stat" for f in fields):
                 # Every chart reference holds a figure beside the chart; left
                 # empty, the model fills the space with a folio (live, 2026-10-09).
                 for extra in chart_stat(chart, live):
@@ -369,6 +373,10 @@ def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, 
         if d.visual != "none" and chart is None and drawn < MAX_VISUALS:
             visual = VisualSpec(kind=d.visual, lines=visual_lines(d.visual_lines))
             drawn += 1
+        if (chart or visual) and any(f.name == "body" for f in fields):
+            # The picture carries the detail: a body line and points beside it
+            # made a wall of text (2026-10-09). Points go; the body stays.
+            fields = [f for f in fields if not f.name.startswith("point-")]
         plans.append(
             SlidePlan(
                 id=sid,

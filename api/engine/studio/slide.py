@@ -62,10 +62,12 @@ HTML
 - Attributes: class, data-field, data-deco, data-bleed, and the component attributes below.
 
 OUR COMPONENTS — empty boxes our code fills after you; size and place them with CSS:
-- <dd-chart class="…"></dd-chart>: the slide's chart, when it has one. At least 900x480px.
+- <dd-chart class="…"></dd-chart>: the slide's chart, when it has one. At least 900x480px,
+  fully on the canvas: a chart's labels are measured, so it never bleeds.
 - <dd-visual class="…"></dd-visual>: a drawn picture of the product (waveform, phone, browser,
   chat, flow), when the slide has one. It is the HERO: big (720x520px or more; a phone at
-  least 420x680px), often bleeding off an edge.
+  least 420x680px). Only a waveform may bleed off an edge; a phone, browser, chat or flow
+  has words in it and stays fully on the canvas.
 - <dd-image aspect="3:2|2:3|1:1|16:9|4:5" class="…"></dd-image>: the slide's picture, when it
   has one. Size its box to its aspect. Text never sits on it; text near it sits on a solid field.
 - <dd-texture kind="…" tone="accent|ink|surface" class="…"></dd-texture>: a flat field or a
