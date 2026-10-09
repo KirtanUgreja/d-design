@@ -81,7 +81,10 @@ export function LiveDeck({ id }: { id: string }) {
                 const text = e.type === "edit_refused" ? (e.message ?? "That change was not made.") : "Saved and checked.";
                 setNotice({ text, seq: e.seq });
               }
-              if (["questions_ready", "outline_ready", "done", "error", "stage", "edit_done", "edit_refused"].includes(e.type)) {
+              // Anything the worker saved bumps the deck's version: read it again, or the
+              // next save sends a stale one and is refused (a logo upload did, 2026-10-09).
+              const saves = ["questions_ready", "outline_ready", "logo_ready", "style_ready", "done", "error", "stage"];
+              if ([...saves, "edit_done", "edit_refused"].includes(e.type)) {
                 void refresh();
               }
             },
@@ -150,11 +153,17 @@ export function LiveDeck({ id }: { id: string }) {
             const decisions = Object.fromEntries(
               Object.entries(decided).map(([k, v]) => [k, v === "cut" ? ("rejected" as const) : ("approved" as const)]),
             );
-            const saved = await api.decide(deck.id, deck.version, decisions, order);
-            if (!saved.ok) return setProblem(saved.error);
+            let saved = await api.decide(deck.id, deck.version, decisions, order);
+            if (!saved.ok) {
+              // The deck may have moved on since this page read it: read it, try once more.
+              const fresh = await api.read(deck.id);
+              if (fresh.ok) saved = await api.decide(deck.id, fresh.value.version, decisions, order);
+            }
+            if (!saved.ok) return saved.error;
             const started = await api.build(deck.id);
-            if (!started.ok) return setProblem(started.error);
+            if (!started.ok) return started.error;
             setDeck(started.value.status === "approve" ? { ...started.value, status: "building" } : started.value);
+            return null;
           }}
         />
       </>

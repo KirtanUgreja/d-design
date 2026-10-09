@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import type { Recording } from "@/lib/fixtures";
 import type { Fact, Plan, Provenance } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 const CHIP: Record<Provenance, string> = {
   YOU: "From your brief",
@@ -35,7 +36,8 @@ export function OutlineGate({
   // The live deck's style card (phase 39); recordings have none.
   style?: React.ReactNode;
   // Live decks save the decisions and start the build; recordings replay.
-  onApprove?: (decided: Decisions, order: string[]) => void;
+  // Resolves to what went wrong, or null once the build has started.
+  onApprove?: (decided: Decisions, order: string[]) => Promise<string | null>;
   // Off when the page's own header already carries the thesis.
   thesis?: boolean;
 }) {
@@ -63,13 +65,21 @@ export function OutlineGate({
     });
   };
 
-  const approve = () =>
-    onApprove
-      ? onApprove(
-          decided,
-          slides.map((s) => s.id),
-        )
-      : router.push(`/deck/${deck.id}/watch`);
+  const [starting, setStarting] = useState(false);
+  const [failed, setFailed] = useState<string | null>(null);
+  const approve = async () => {
+    if (!onApprove) return router.push(`/deck/${deck.id}/watch`);
+    setStarting(true);
+    setFailed(null);
+    const problem = await onApprove(
+      decided,
+      slides.map((s) => s.id),
+    );
+    if (problem) {
+      setFailed(problem);
+      setStarting(false);
+    }
+  };
   const interviewing = asked < deck.questions.length;
 
   return (
@@ -122,11 +132,13 @@ export function OutlineGate({
           (style ?? <InterviewDone />)
         )}
         <div className="flex flex-col gap-3 border-t border-ink pt-5">
-          <Button size="lg" className="w-full" disabled={pending.length > 0} onClick={approve}>
-            Approve outline
+          <Button size="lg" className="w-full" disabled={pending.length > 0 || starting} onClick={() => void approve()}>
+            {starting ? "Starting your deck…" : "Approve outline"}
           </Button>
-          <p className="text-[13px] leading-snug text-ink-2" aria-live="polite">
-            {pending.length > 0
+          <p className={cn("text-[13px] leading-snug", failed ? "text-flag" : "text-ink-2")} aria-live="polite">
+            {failed
+              ? failed
+              : pending.length > 0
               ? `${pending.length} number${pending.length > 1 ? "s" : ""} without a source. Keep or cut ${pending.length > 1 ? "them" : "it"} first.`
               : "Nothing is generated until you approve. The deck takes about two minutes, and you can watch it arrive."}
           </p>
