@@ -14,6 +14,7 @@
 | **Style** | One of **8 visual languages**, then a generated palette (built around **your brand colour** if you give one) and a type pairing. Three thumbnails of *your* slides show it before you pay for a build | `api/engine/design/`, `api/library/languages/` |
 | **3. Art director → designer** | One call plans every slide's composition for the whole deck (hero, field, crop, scale), so no two neighbours look alike. Then a designer writes each slide in real HTML, CSS and flat SVG, inside the deck's tokens. No templates, no reference library | `api/engine/studio/direct.py`, `design.py` |
 | **4. Improver** | A creative director **looks at a screenshot of each rendered slide**, critiques it and redesigns it to be bolder. The redesign is kept only if QA measures it no worse | `api/engine/studio/improve.py` |
+| **5. Deck review** | The whole deck on one sheet, judged as a piece: rhythm, look-alikes, the tells of AI-made slides. The two weakest slides go back to the improver with a note | `api/engine/studio/review.py` |
 | **Check** | Every slide is rendered in Chromium and measured: overflow, collisions, contrast (WCAG + APCA), type size, empty blocks. A defect gets two targeted repairs, then a code-built layout, then a visible flag. Nothing broken ships silently | `api/engine/qa/`, `api/engine/studio/build.py` |
 | Edit → export | Edit text, reorder, recolour, fit, undo; present, send (one offline file, zero network requests) or PDF | `api/worker.py`, `api/engine/export/` |
 

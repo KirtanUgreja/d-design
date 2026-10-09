@@ -100,6 +100,22 @@ READABILITY (measured after you; a failure is sent back)
 """
 
 
+# What makes a slide read as AI-made, from designers' teardowns and Gamma 5's
+# own fix for "AI smell" (docs/v4/design-engine.md -> The studio, research of
+# 2026-10-09). The art director, the designer and the critic all check it.
+AI_TELLS = """THE TELLS OF AN AI-MADE SLIDE — never do these:
+- three (or four) equal boxes or cards side by side; dashboard-style metric tiles
+- a coloured bar or rule beside every text block; decoration that could be deleted with no loss
+- every slide the same weight, the same margins, the same structure with only the words changed
+- everything centred; small text floating in a big empty field
+- an italic serif word as a flourish in every headline; a pale cream ground by default
+- icons or clip art standing in for an idea; a generic picture that could sit in any deck
+- a number in a box with a label under it, repeated slide after slide
+What a designer does instead: ONE dominant element per slide that the eye lands on first, the rest
+clearly demoted; a rhythm across the deck (a bold opener, denser middle, an open close); real
+evidence (the product, the data) instead of decoration; whitespace that is one deliberate field."""
+
+
 def fields_text(plan: SlidePlan) -> str:
     return "\n".join(f'- {f.name}: "{f.text}"' for f in plan.fields)
 
@@ -145,4 +161,4 @@ def parser(
 
 def prefix(theme: Theme) -> str:
     """The stable, cacheable start of every design call for one deck."""
-    return f"{CONTRACT}\nTHEME TOKENS\n{theme.describe()}\n"
+    return f"{CONTRACT}\n{AI_TELLS}\n\nTHEME TOKENS\n{theme.describe()}\n"

@@ -58,6 +58,7 @@ def _job(body: dict[str, object]) -> tuple[str, str]:
         ("You are the art director", "direct"),
         ("You are the creative director", "improve"),
         ("You repair one slide", "repair"),
+        ("You are the design director", "review"),
     )
     job = next((name for opening, name in openings if opening in system), "compose")
     return job, user
@@ -120,6 +121,10 @@ class Studio:
                 ],
             }
             return _ok(jsonlib.dumps(plan))
+        if job == "review":
+            ids = re.findall(r"s\d\d", user.split("Ids in order:")[-1])
+            redo = [{"id": ids[1], "note": "make the headline the hero"}] if len(ids) > 1 else []
+            return _ok(jsonlib.dumps({"verdict": "close", "redo": redo}))
         answer = _slide(user, off_canvas=self.broken)
         if job == "improve":
             answer = "```critique\n- bigger\n```\n" + answer

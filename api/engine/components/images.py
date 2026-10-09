@@ -45,16 +45,21 @@ def prompt(plan: SlidePlan, style: str, accent: str, *, deck: str = "") -> str:
     by = {f.name: f.text for f in plan.fields}
     subject = by.get("headline", "")
     detail = "; ".join(v for k, v in sorted(by.items()) if k.startswith("point-"))
+    # Illustration, not photography: AI photos give themselves away (hands,
+    # light, implausible detail); Gamma 5 moved to illustration for the same
+    # reason (research of 2026-10-09).
     return (
-        f"A photograph or illustration for a presentation slide. Style: {style}.\n"
+        "A flat editorial illustration for a presentation slide: bold simple shapes, a "
+        f"limited palette built on {accent} with deep neutrals, no gradients, no glow, no "
+        f"3D render, no photograph. Mood: {style}.\n"
         # The idea, never its words: a headline given as the subject came back
         # lettered into the picture (live deck, 2026-10-09).
         f"Picture the idea behind this line, without writing any of its words: {subject}"
         + (f" ({detail})" if detail else "")
         + "\n"
         + (f"The presentation is about: {deck}\n" if deck else "")
-        + f"Colour mood: restrained, with touches near {accent}. One clear subject, generous "
-        "negative space, editorial quality, nothing generic or stock-like.\n" + NO_TEXT
+        + "One clear subject, generous negative space, the quality of a magazine "
+        "illustration, nothing generic or stock-like.\n" + NO_TEXT
     )
 
 

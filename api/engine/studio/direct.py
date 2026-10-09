@@ -17,7 +17,7 @@ from engine.llm.openrouter import ModelError, Seam
 from engine.models import SlidePlan, Storyline
 from lib.result import Err, Result, ok
 
-PROMPT_VERSION = "direct.v1"
+PROMPT_VERSION = "direct.v2"  # v2: rhythm, one idea, the AI tells
 IMAGE_CAP = 3  # pictures in one deck: where a picture says something, not as filler
 
 Hero = Literal["headline", "number", "chart", "visual", "image", "diagram", "quote", "list"]
@@ -42,6 +42,10 @@ Plan the whole deck at once. For EVERY slide give:
   the rest go, and what makes THIS slide unlike its neighbours.
 
 Rules of the rhythm:
+- The deck has a shape: a bold opener (the cover and the problem land hard), a denser middle
+  where the evidence and the product live, and an open, confident close.
+- One idea per slide, and at most one number as the hero: several figures are a chart or
+  several slides, never a row of tiles.
 - No two slides in a row share a layout idea, a hero or a ground. At least two slides sit on
   an accent or ink field. The cover and the ask are the two strongest slides.
 - Scale contrast is the tool: a hero 4 to 8 times the size of the body text.
@@ -122,6 +126,7 @@ async def direct(
         prefix=prefix,
         prompt_version=PROMPT_VERSION,
         max_tokens=16000,
+        reasoning="medium",  # one call for the whole deck: worth the thought
     )
     if isinstance(got, Err):
         return got

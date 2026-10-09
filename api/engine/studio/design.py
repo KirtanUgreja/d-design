@@ -15,7 +15,7 @@ from engine.studio.direct import SlideDirection
 from engine.studio.slide import PAIRS, Composed, fields_text, parser
 from lib.result import Err, Result, ok
 
-PROMPT_VERSION = "design.v1"
+PROMPT_VERSION = "design.v2"  # v2: checks the AI tells
 # Hidden reasoning is billed out of max_tokens; a ceiling costs nothing unused.
 MAX_TOKENS = 32000
 

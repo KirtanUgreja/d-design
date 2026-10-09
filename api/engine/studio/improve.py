@@ -17,7 +17,7 @@ from engine.studio.direct import SlideDirection
 from engine.studio.slide import Composed, fields_text, parser
 from lib.result import Err, Result, ok
 
-PROMPT_VERSION = "improve.v1"
+PROMPT_VERSION = "improve.v2"  # v2: names the AI tells it sees
 SHOT_WIDTH = 1280  # what the critic sees: enough for layout, a third of the tokens
 
 SYSTEM = """You are the creative director. A designer made this slide; you see it rendered
@@ -26,7 +26,7 @@ portfolio. Not "fine". Not a template.
 
 First, a critique of at most five short lines: what is weak in hierarchy (is there one clear
 hero?), scale contrast, use of the canvas (dead space, cramped areas, things floating),
-alignment, boldness, and whether it looks like its neighbours or a template.
+alignment, boldness, and every one of THE TELLS OF AN AI-MADE SLIDE you can see in it.
 
 Then REDESIGN it: return the complete html and css of the better slide. Make the changes the
 critique calls for — usually bigger and bolder, fewer competing elements, a stronger grid, a
@@ -58,6 +58,7 @@ async def improve(
     prefix: str,
     model: str,
     neighbours: str = "",
+    note: str = "",
 ) -> Result[tuple[Composed, str], ModelError]:
     """The redesign and its critique. ``screenshot`` is a data URL (shot())."""
     measured = "\n".join(
@@ -65,7 +66,8 @@ async def improve(
         for d in defects[:12]
     )
     user = (
-        (f"The art director's plan for it: {direction.idea}\n\n" if direction else "")
+        (f"The design director sent this slide back: {note}\n\n" if note else "")
+        + (f"The art director's plan for it: {direction.idea}\n\n" if direction else "")
         + (f"Its neighbours in the deck: {neighbours}\n\n" if neighbours else "")
         + (f"Measured defects to fix:\n{measured}\n\n" if measured else "")
         + f"Fields (text must stay unchanged):\n{fields_text(plan)}\n\n"

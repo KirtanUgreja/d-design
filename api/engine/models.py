@@ -23,6 +23,7 @@ Stage = Literal[
     "direction",  # the art director (studio, 2026-10-09); retired once on 2026-10-08
     "compose",
     "improve",  # the critic that looks at a rendered slide and redesigns it
+    "review",  # the deck review: the whole deck on one sheet, two slides sent back
     "repair",
     "revise",
     "image",

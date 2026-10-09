@@ -257,6 +257,7 @@ class Seam:
         max_tokens: int = 8000,
         reasoning: ReasoningEffort | None = None,
         slide_id: str | None = None,
+        images: tuple[str, ...] = (),
     ) -> Result[T, ModelError]:
         """One call, validated against ``schema``, with one repair."""
 
@@ -286,6 +287,7 @@ class Seam:
             reasoning=reasoning,
             slide_id=slide_id,
             extra={"response_format": response_format},
+            images=images,
         )
 
     async def complete_text[T](

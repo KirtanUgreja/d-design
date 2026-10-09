@@ -44,7 +44,9 @@ def test_four_layers_direct_once_then_design_and_improve_each_slide(tmp_path: Pa
     transport = Studio()
     built = _build(tmp_path, transport, _story(4))
     assert transport.calls[0] == "direct" and transport.calls.count("direct") == 1
-    assert transport.calls.count("compose") == 4 and transport.calls.count("improve") == 4
+    assert transport.calls.count("compose") == 4
+    assert transport.calls.count("review") == 1  # layer 5: the whole deck, once
+    assert transport.calls.count("improve") == 4 + 1  # each slide, then the one sent back
     assert {s.origin for s in built.slides} == {"improved"} and built.improved == 4
     assert all(s.qa.status == "passed" for s in built.slides)
     assert "<section" in built.html and "<section" in built.send

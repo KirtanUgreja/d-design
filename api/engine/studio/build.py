@@ -28,7 +28,7 @@ from engine.export.assemble import assemble
 from engine.llm.openrouter import Seam
 from engine.models import Slide, SlidePlan, SlideQA, Storyline
 from engine.qa import browser, metrics
-from engine.studio import design, direct, improve
+from engine.studio import design, direct, improve, review
 from engine.studio.direct import Direction
 from engine.studio.slide import Composed, Kept, frame, prefix
 from lib.result import Err
@@ -339,6 +339,56 @@ async def build(
         await make(0, plans[0])
     await asyncio.gather(*(make(i, p) for i, p in enumerate(plans) if i > 0))
     emit("stage", name="compose", state="done")
+
+    # Layer 5: the deck review sees every slide at once and sends back at most
+    # two, each redone by the improver with its note; kept only if no worse.
+    if (
+        improving
+        and affordable()
+        and len(measured) >= 3
+        and any(p.id not in resumed for p in plans)
+    ):
+        emit("stage", name="review", state="started")
+        order = [p for p in plans if p.id in measured]
+        shots = [(p.id, Path(shots_dir) / f"{p.id}.png") for p in order]
+        verdict = await review.review(
+            seam, shots, prefix=head, model=model, thought=storyline.governing_thought
+        )
+        if not isinstance(verdict, Err):
+            for redo in verdict.value.redo:
+                plan = next(p for p in order if p.id == redo.id)
+                # ponytail: a slide that already carries the logo or its picture is
+                # left as it is: the redo is written from the code, which the sanitizer
+                # strips of both. Upgrade: review before placing them.
+                placed = "<dd-logo" in composed[plan.id].html or "<img" in composed[plan.id].html
+                if plan.id in resumed or placed or not affordable():
+                    continue
+                before = measured[plan.id]
+                better = await improve.improve(
+                    seam,
+                    plan,
+                    composed[plan.id],
+                    improve.shot(Path(shots_dir) / f"{plan.id}.png"),
+                    before.defects(),
+                    direction.of(plan.id),
+                    prefix=head,
+                    model=model,
+                    note=redo.note,
+                )
+                attempts[plan.id] += 1
+                if isinstance(better, Err):
+                    continue
+                kept_c, composed[plan.id] = composed[plan.id], better.value[0]
+                again = await measure(plan)
+                if _errors(again) <= _errors(before) and not broken(again):
+                    measured[plan.id], origin[plan.id] = again, "improved"
+                    improved.add(plan.id)
+                    if on_final is not None:
+                        on_final(plan.id, Kept(composed[plan.id], origin[plan.id]))
+                else:
+                    composed[plan.id] = kept_c
+                    measured[plan.id] = await measure(plan)  # its screenshot back on disk
+        emit("stage", name="review", state="done")
 
     plans = [p for p in plans if p.id in measured]  # an abort keeps only what is done
     rhythm = metrics.deck_warnings(
