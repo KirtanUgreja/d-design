@@ -1,6 +1,6 @@
 # The web service: the only public one. Next.js and Better Auth; it reaches
 # the API over Railway's private network (API_ORIGIN).
-FROM node:22-slim
+FROM public.ecr.aws/docker/library/node:22-slim
 RUN corepack enable
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
