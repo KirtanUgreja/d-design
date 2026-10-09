@@ -19,7 +19,7 @@ from engine.models import SlidePlan, Storyline
 from lib.result import Err, Result, ok
 
 PROMPT_VERSION = "direct.v3"  # v3: alternation; v2: rhythm, one idea, the AI tells
-IMAGE_CAP = 3  # pictures in one deck: where a picture says something, not as filler
+IMAGE_CAP = 4  # pictures in one deck, at most: where a picture says something, not filler
 
 Hero = Literal["headline", "number", "chart", "visual", "image", "diagram", "quote", "list"]
 Ground = Literal["ground", "accent", "ink", "surface"]
@@ -143,13 +143,27 @@ def rhythm(slides: list[SlideDirection]) -> list[SlideDirection]:
 
 
 async def direct(
-    seam: Seam, story: Storyline, theme: Theme, *, model: str, prefix: str
+    seam: Seam,
+    story: Storyline,
+    theme: Theme,
+    *,
+    model: str,
+    prefix: str,
+    pictures: int = IMAGE_CAP,
 ) -> Result[Direction, ModelError]:
+    """``pictures`` is how many slides this look wants a picture on (its
+    language's appetite); 0 when the deck has no image model."""
+    want = (
+        f"\n\nThis look wants a picture on {pictures} slides: the cover first, then where a "
+        "picture says what words cannot. Mark exactly those with image true."
+        if pictures
+        else "\n\nThis deck has no pictures: image is false everywhere."
+    )
     got = await seam.complete_json(
         "direction",
         Direction,
         system=SYSTEM,
-        user=f"{_outline(story)}\n\nPlan every slide, by id, in order.",
+        user=f"{_outline(story)}\n\nPlan every slide, by id, in order.{want}",
         model=model,
         prefix=prefix,
         prompt_version=PROMPT_VERSION,
@@ -166,7 +180,7 @@ async def direct(
     for s in plan.slides:
         p = by.get(s.id)
         wants = s.image and p is not None and p.chart is None and p.visual is None
-        wants = wants and pictured < IMAGE_CAP
+        wants = wants and pictured < min(pictures, IMAGE_CAP)
         pictured += wants
         slides.append(s.model_copy(update={"image": wants}))
     return ok(plan.model_copy(update={"slides": rhythm(slides)}))

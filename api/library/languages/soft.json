@@ -2,7 +2,7 @@
   "id": "soft",
   "name": "Soft",
   "idea": "Cream and one deep colour, rounded cards and pill labels, friendly type: a warm consumer-brand deck.",
-  "brief": "A warm consumer brand's investor deck (owner's references, 2026-10-09). Slides alternate between a pale cream ground and a deep, dark field of the deck's colour. Corners are soft (var(--radius) on every card and image). Each slide names its section in a small pill tag at the top left, and carries the deck's name and the page in a pill at the top right. Headlines in a friendly grotesk, sentence case, large and tight. Numbers live in rounded cards on a soft surface, never in a row of equal ones: one large card and smaller ones, or a figure with a thin rounded progress bar. The product appears on a phone (a drawn visual) leaning into the slide. A giant soft brand motif (the deck's own letter, a single fat curved line, a circle) crops off one edge at low contrast behind the content. Comparisons are a clean grid with the product's column on its own rounded surface. Generous padding, nothing cramped.",
+  "brief": "A warm consumer brand's investor deck (owner's references, 2026-10-09). The deck lives on a pale cream ground; a deep, dark field of the deck's colour is the contrast, on the cover or the ask and one or two slides between, never most of them. Corners are soft (var(--radius) on every card and image). Each slide names its section in a small pill tag at the top left, and carries the deck's name and the page in a pill at the top right. Headlines in a friendly grotesk, sentence case, large and tight. Numbers live in rounded cards on a soft surface, never in a row of equal ones: one large card and smaller ones, or a figure with a thin rounded progress bar. The product appears on a phone (a drawn visual) leaning into the slide. A giant soft brand motif (the deck's own letter, a single fat curved line, a circle) crops off one edge at low contrast behind the content. Comparisons are a clean grid with the product's column on its own rounded surface. Generous padding, nothing cramped.",
   "never": [
     "sharp corners",
     "all-caps headlines",
@@ -21,7 +21,7 @@
   "edges": [
     "soft"
   ],
-  "dark": 0.45,
+  "dark": 0.15,
   "split": 0.35,
   "density": [
     "balanced",

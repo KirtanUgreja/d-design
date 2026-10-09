@@ -23,12 +23,12 @@ PAIRS = [
 ]
 
 
-def test_ten_languages_load() -> None:
+def test_twelve_languages_load() -> None:
     ids = [lang.id for lang in all_languages()]
     assert ids == sorted(
         [
             *("swiss", "editorial", "poster", "cinematic", "journal", "minimal", "bauhaus"),
-            *("humanist", "studio", "soft"),
+            *("humanist", "studio", "soft", "frame", "bright"),
         ]
     )
     assert all(lang.allowed_pairings for lang in all_languages())
@@ -76,7 +76,7 @@ def test_a_thousand_seeds_stay_inside_their_language() -> None:
             failures.append((seed, "the brief is not in the guidance"))
     assert failures == []
     assert set(drawn) == {lang.id for lang in all_languages()}
-    assert min(drawn.values()) >= 40  # roughly balanced over ten languages, with priors
+    assert min(drawn.values()) >= 30  # roughly balanced over twelve languages, with priors
 
 
 def test_usage_balances_the_draw() -> None:

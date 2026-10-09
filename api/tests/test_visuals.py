@@ -11,7 +11,7 @@ from engine.components import visuals
 from engine.models import Brief, VisualSpec
 from engine.studio.outline import Draft, DraftSlide, assemble, visual_lines
 
-KINDS = ["waveform", "phone", "browser", "chat", "flow"]
+KINDS = ["waveform", "phone", "browser", "chat", "flow", "hub", "pipeline"]
 
 
 @pytest.mark.parametrize("kind", KINDS)

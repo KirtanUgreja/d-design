@@ -1,0 +1,59 @@
+{
+  "id": "frame",
+  "name": "Frame",
+  "idea": "Each slide a rounded panel inside a thick dark frame, a tab with the deck's name, big capitals with an italic serif word, packed bento tiles.",
+  "brief": "An agency's project-proposal deck (the owner's references, 2026-10-09). Every slide is a large rounded panel (var(--radius) or more) in --c-ground set about 36px inside a thick frame of --c-ink, which is the slide's own ground. The frame's top-left carries a tab with the deck's name in the label face; a small pill in the frame's top right names the section. Headlines are big grotesk CAPITALS with one or two words set in the text face's italic serif, in lower case ('DRIVE the CHANGE', 'MADE for EVERYONE'). The content is packed into rounded tiles of UNEQUAL sizes: one carries the big figure, some sit on --c-accent, some on --c-ink with ground text; bracketed labels like '[ 01 ]' and thin rules order them. Pictures are surreal 3D renders of one small natural object, set in a rounded tile. Dense with real information, never cluttered: every tile carries a fact.",
+  "never": [
+    "sharp corners",
+    "one idea floating in empty space",
+    "photographs of people",
+    "more than one accent"
+  ],
+  "kinds": [],
+  "pairings": [
+    "archivo-newsreader",
+    "bricolage-literata"
+  ],
+  "grids": [
+    "modular",
+    "asymmetric"
+  ],
+  "edges": [
+    "soft"
+  ],
+  "dark": 0.0,
+  "split": 0.1,
+  "density": [
+    "dense",
+    "balanced"
+  ],
+  "ratio": [
+    1.3,
+    1.45
+  ],
+  "texture": "never",
+  "shapes": false,
+  "image": {
+    "appetite": 0.35,
+    "styles": [
+      "surreal 3D render of a single small natural object (a mossy stone, a sprouting seed, a crystal) on a plain soft background, studio light, high detail",
+      "miniature 3D diorama of a tiny landscape on a floating clump of moss, soft studio light, plain background"
+    ]
+  },
+  "tones": [
+    "bold",
+    "confident",
+    "warm"
+  ],
+  "deck_types": [
+    "pitch",
+    "partnership",
+    "sales",
+    "launch"
+  ],
+  "finishes": [
+    "none",
+    "fine"
+  ],
+  "glow": false
+}

@@ -129,14 +129,14 @@ class ImageSpec(BaseModel):
     role: Literal["hero", "bleed", "inset"] = "hero"
 
 
-VisualKind = Literal["waveform", "phone", "browser", "chat", "flow"]
+VisualKind = Literal["waveform", "phone", "browser", "chat", "flow", "hub", "pipeline"]
 
 
 class VisualSpec(BaseModel):
     """A picture of the product's world, drawn by code (components/visuals.py)."""
 
     kind: VisualKind
-    lines: list[str] = Field(default_factory=list, max_length=4)  # short, no numbers
+    lines: list[str] = Field(default_factory=list, max_length=6)  # short, no numbers
 
 
 class SlidePlan(BaseModel):

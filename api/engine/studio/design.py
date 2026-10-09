@@ -55,6 +55,7 @@ async def compose(
     image: bool,
     pattern: bool = True,
     logo_room: bool = False,
+    title: str = "",
 ) -> Result[Composed, ModelError]:
     idea = (
         f"Hero: {direction.hero}. Main field: {direction.ground}.\n{direction.idea}"
@@ -67,6 +68,7 @@ async def compose(
         + f"This slide's job: {plan.intent} ({plan.beat}).\n\n"
         f"YOUR ART DIRECTOR'S PLAN FOR THIS SLIDE\n{idea}\n\n"
         f"Fields:\n{fields_text(plan)}\n"
+        + chrome(plan, title, position, total)
         + (
             "\nThis slide has a picture: place one <dd-image aspect=…> where the plan says."
             if image
@@ -115,6 +117,21 @@ async def compose(
         slide_id=plan.id,
     )
     return got if isinstance(got, Err) else ok(got.value[0])
+
+
+def chrome(plan: SlidePlan, title: str, position: int, total: int) -> str:
+    """The only corner labels a slide may carry: true ones (2026-10-09: a deck
+    invented "STUDIO EDITION")."""
+    kicker = next((f.text for f in plan.fields if f.name == "kicker"), "")
+    labels = [f"the deck's name '{title}'"] if title else []
+    labels.append(f"the page '{position:02d} — {total:02d}'")
+    labels += [f"the section '{kicker}'"] if kicker else []
+    return (
+        "\nEditorial chrome, if this look uses it, may say only: " + ", ".join(labels) + ".\n"
+        "Headline: set one to three key words apart, as a designer would: in the accent, in "
+        "an italic, or with the other words a step quieter (two-tone). Not every slide the same "
+        "way.\n"
+    )
 
 
 async def repair(

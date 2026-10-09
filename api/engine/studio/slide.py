@@ -123,6 +123,8 @@ AI_TELLS = """THE TELLS OF AN AI-MADE SLIDE — never do these:
 - a number in a box with a label under it, repeated slide after slide
 - a kicker or label that says the headline again in other words; the same label style on
   every slide whatever it says
+- a progress bar, ring, meter or dot row that does not draw a real number from the fields;
+  invented chrome ("STUDIO EDITION", "SECTION 01") that is not the deck's name, page or section
 What a designer does instead: ONE dominant element per slide that the eye lands on first, the rest
 clearly demoted; a rhythm across the deck (a bold opener, denser middle, an open close); real
 evidence (the product, the data) instead of decoration; whitespace that is one deliberate field."""

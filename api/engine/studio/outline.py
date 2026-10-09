@@ -33,7 +33,7 @@ from engine.models import (
 )
 from lib.result import Err, Result, err, ok
 
-PROMPT_VERSION = "storyline.v8"  # v8: a short deck title; v7: a body line per slide
+PROMPT_VERSION = "storyline.v9"  # v9: figures, hub diagrams; v8: a short deck title
 SEND_FACTOR = 1.5  # a deck that is sent must explain itself
 MAX_VISUALS = 3  # drawn visuals per deck: the product's world, not every slide
 
@@ -74,6 +74,10 @@ Rules:
   reading alone: the how, the why, or what it means. Most slides have one; the cover, a big
   number or the ask may not.
 - points: at most 3, at most 10 words each. Many slides need none.
+- figures: up to 4 MORE numbers that back the slide's claim, each {value, label} with a label
+  of at most 8 words, each stated in the facts. They become a grid of data cards, so use them
+  wherever the facts hold several numbers about one claim (problem, market, traction,
+  business model). A slide with figures is information-rich; most decks need three or four.
 - stat and stat_label: one figure and a label of at most 15 words, only on a slide whose job is
   that number.
 - NUMBERS: use only numbers stated in the facts below, and list the ids of the facts a slide uses
@@ -92,7 +96,9 @@ Rules:
 - visual: a picture of the product's world that our code draws, on at most THREE slides that
   show the product itself (the cover, the solution, how it works, a demo): "waveform" for
   voice, audio or a call; "phone" or "browser" for an app's screen; "chat" for a conversation
-  with the product; "flow" for steps or a pipeline. visual_lines: up to four short lines (at
+  with the product; "flow" for steps; "hub" for the product at the centre of its parts or
+  partners (first line the product, then up to five parts); "pipeline" for input, core and
+  output (exactly three lines). visual_lines: up to six short lines (at
   most 6 words, no numbers) it shows — the screen's rows, the chat's messages (the user's
   first), or the flow's steps. They show what the product really does; never invent a
   feature. Never on a chart slide. Otherwise visual is "none" and visual_lines is empty.
@@ -131,6 +137,11 @@ class DraftChart(BaseModel):
     fact_ids: list[str]
 
 
+class Figure(BaseModel):
+    value: str
+    label: str
+
+
 class DraftSlide(BaseModel):
     beat: str
     intent: str
@@ -140,9 +151,12 @@ class DraftSlide(BaseModel):
     points: list[str]
     stat: str
     stat_label: str
+    figures: list[Figure] = Field(default_factory=list)
     fact_ids: list[str]
     chart: DraftChart | None = None
-    visual: Literal["none", "waveform", "phone", "browser", "chat", "flow"] = "none"
+    visual: Literal["none", "waveform", "phone", "browser", "chat", "flow", "hub", "pipeline"] = (
+        "none"
+    )
     visual_lines: list[str] = Field(default_factory=list)
 
 
@@ -221,8 +235,12 @@ def _source_line(facts: list[Fact]) -> str:
             label = f"{name}, {f.as_of}" if f.as_of else name
         else:
             continue
-        if label and label not in seen:
-            seen.append(label)
+        # One publisher once, whatever it was called: "PMI, 2014" beside
+        # "PMI Pulse of the Profession, 2014" said it twice (2026-10-09).
+        key = label.lower()
+        if not label or any(key in s.lower() or s.lower() in key for s in seen):
+            continue
+        seen.append(label)
     return "; ".join(seen[:2])
 
 
@@ -278,10 +296,10 @@ def short_title(title: str) -> str:
 
 
 def visual_lines(lines: list[str]) -> list[str]:
-    """A visual's words: at most four lines of at most six words, and none
+    """A visual's words: at most six lines of at most six words, and none
     with a number, since a drawn picture carries no source line."""
     kept = [" ".join(t.split()[:6]) for t in lines if t.strip() and not rules.numbers(t)]
-    return kept[:4]
+    return kept[:6]
 
 
 def chart_stat(chart: ChartSpec, live: dict[str, Fact]) -> list[PlanField]:
@@ -319,6 +337,8 @@ def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, 
         texts += [(f"point-{n}", t, 10) for n, t in enumerate(d.points[:3], start=1)]
         if d.stat:
             texts += [("stat", d.stat, 3), ("stat-label", d.stat_label, 15)]
+        for n, fig in enumerate([f for f in d.figures if f.value.strip()][:4], start=1):
+            texts += [(f"figure-{n}", fig.value, 3), (f"figure-{n}-label", fig.label, 8)]
         fields: list[PlanField] = []
         provenance: dict[str, Provenance] = {}
         used: list[Fact] = []

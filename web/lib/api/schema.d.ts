@@ -1092,7 +1092,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "waveform" | "phone" | "browser" | "chat" | "flow";
+            kind: "waveform" | "phone" | "browser" | "chat" | "flow" | "hub" | "pipeline";
             /** Lines */
             lines?: string[];
         };

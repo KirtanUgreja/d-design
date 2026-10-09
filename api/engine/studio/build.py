@@ -23,6 +23,7 @@ from typing import Literal
 from engine.components import charts
 from engine.components import images as pictures
 from engine.components import logo as logos
+from engine.design import languages
 from engine.design.color import from_hex
 from engine.design.theme import Theme
 from engine.export.assemble import assemble
@@ -133,7 +134,10 @@ async def build(
     emit("stage", name="direction", state="started")
     direction: Direction = direct.plain(plans)
     if any(p.id not in resumed for p in plans) and affordable():
-        got = await direct.direct(seam, storyline, theme, model=model, prefix=head)
+        lang = languages.get(theme.language) if theme.language else None
+        appetite = lang.image.appetite if lang else 0.3
+        wanted = max(1, round(appetite * len(plans))) if image_model else 0
+        got = await direct.direct(seam, storyline, theme, model=model, prefix=head, pictures=wanted)
         if not isinstance(got, Err):
             direction = got.value
         else:
@@ -257,6 +261,7 @@ async def build(
                     concept=direction.concept,
                     image=image,
                     pattern=plan.id in patterned,
+                    title=storyline.title or title,
                     logo_room=logo is not None and wants_logo(index),
                 )
             if not isinstance(made, Err) or made.error.kind != "transport" or tries:

@@ -205,12 +205,83 @@ def _flow(spec: VisualSpec) -> tuple[str, int, int]:
     return "".join(out), w, h
 
 
+def _hub(spec: VisualSpec) -> tuple[str, int, int]:
+    """The product at the centre, its parts around it, joined by curves: the
+    first line is the hub, the rest (up to five) the spokes (Orbitoshift's
+    flow diagram, the owner's reference, 2026-10-09)."""
+    w, h, r, bw = 1500, 900, 175, 340
+    cx, cy = w / 2, h / 2
+    lines = spec.lines or ["", "", "", ""]
+    centre, spokes = lines[0], lines[1:6]
+    left = spokes[: (len(spokes) + 1) // 2]
+    right = spokes[len(left) :]
+    out = []
+    for side, group in ((-1, left), (1, right)):
+        for k, words in enumerate(group):
+            y = h * (k + 1) / (len(group) + 1)
+            x = bw / 2 + 20 if side < 0 else w - bw / 2 - 20
+            start = x - side * bw / 2
+            end_x, end_y = cx + side * r * 0.92, cy + (y - cy) * 0.4
+            mid = (start + end_x) / 2
+            out.append(
+                f'<path d="M{start:.0f},{y:.0f} C{mid:.0f},{y:.0f} {mid:.0f},{end_y:.0f} '
+                f'{end_x:.0f},{end_y:.0f}" style="fill:none;stroke:{ACCENT};stroke-width:10;'
+                'stroke-linecap:round"/>'
+            )
+            out.append(_rect(x - bw / 2, y - 60, bw, 120, SURFACE, 20))
+            size = FONT * 1.2
+            label = _fit(words, bw - 30, size)
+            out.append(_text(x, y + size * 0.35, label, anchor="middle", size=size))
+    out.append(f'<circle cx="{cx:.0f}" cy="{cy:.0f}" r="{r + 26}" style="fill:{SURFACE}"/>')
+    out.append(f'<circle cx="{cx:.0f}" cy="{cy:.0f}" r="{r}" style="fill:{ACCENT}"/>')
+    size = FONT * 1.25
+    out.append(
+        _text(
+            cx,
+            cy + size * 0.35,
+            _fit(centre, r * 1.8, size),
+            fill=ON_ACCENT,
+            size=size,
+            anchor="middle",
+            weight="bold",
+        )
+    )
+    return "".join(out), w, h
+
+
+def _pipeline(spec: VisualSpec) -> tuple[str, int, int]:
+    """Input, core and output as three circles on one line; the core in the
+    accent (NovaThode's architecture diagram, the owner's reference, 2026-10-09)."""
+    lines = (spec.lines or ["", "", ""])[:3]
+    w, h, r = 1500, 520, 190
+    xs = [r + 20 + i * (w - 2 * r - 40) / max(len(lines) - 1, 1) for i in range(len(lines))]
+    out = [
+        f'<rect x="{xs[0]:.0f}" y="{h / 2 - 2:.0f}" width="{xs[-1] - xs[0]:.0f}" height="4" '
+        f'style="fill:{RULE}"/>'
+    ]
+    for i, (x, words) in enumerate(zip(xs, lines, strict=True)):
+        core = len(lines) == 3 and i == 1
+        fill = ACCENT if core else INK if i == 0 else SURFACE
+        tone = ON_ACCENT if core else GROUND if i == 0 else INK
+        out.append(f'<circle cx="{x:.0f}" cy="{h / 2:.0f}" r="{r}" style="fill:{fill}"/>')
+        size = FONT * 1.4
+        label = _fit(words, r * 1.8, size)
+        out.append(
+            _text(
+                x, h / 2 + size * 0.35, label, fill=tone, size=size, anchor="middle", weight="bold"
+            )
+        )
+    return "".join(out), w, h
+
+
 _DRAW = {
     "waveform": _waveform,
     "phone": _phone,
     "browser": _browser,
     "chat": _chat,
     "flow": _flow,
+    "hub": _hub,
+    "pipeline": _pipeline,
 }
 
 
@@ -222,6 +293,8 @@ def describe(spec: VisualSpec) -> str:
         "browser": "A web app in a browser",
         "chat": "A conversation",
         "flow": "Steps in order",
+        "hub": "A hub and the parts around it",
+        "pipeline": "Input, core and output",
     }[spec.kind]
     return what + (": " + "; ".join(spec.lines) if spec.lines else "")
 

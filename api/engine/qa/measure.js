@@ -11,7 +11,7 @@
   };
   const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
   const opaque = (c) => { const v = rgb(c); return v.length < 4 || v[3] > 0; };
-  const SMALL = /^(kicker|source|stat-label|label|caption|folio)/;
+  const SMALL = /^(kicker|source|stat-label|label|caption|folio)|-label$/;
   const out = {};
 
   for (const host of document.querySelectorAll(".dd-slide")) {
