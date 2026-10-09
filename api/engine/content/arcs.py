@@ -55,6 +55,21 @@ ARCS: dict[str, tuple[str, ...]] = {
         "the plan",
         "the ask",
     ),
+    # A college, course or hackathon project (owner, 2026-10-09).
+    "project": (
+        "title and team",
+        "problem statement",
+        "objectives",
+        "existing solutions and their gaps",
+        "proposed solution",
+        "architecture",
+        "tech stack",
+        "user flow",
+        "demo",
+        "results",
+        "future scope",
+        "thank you",
+    ),
 }
 
 # What an outside source can prove for each deck type. The user's own numbers
@@ -78,6 +93,11 @@ EVIDENCE: dict[str, tuple[str, ...]] = {
     ),
     "investor_update": ("market conditions relevant to the period", SERIES),
     "partnership": ("the size of the shared opportunity", "the partner's market position", SERIES),
+    "project": (
+        "how common or costly the problem is for the people the project serves",
+        "the existing tools or approaches and where they fall short",
+        SERIES,
+    ),
 }
 
 
@@ -87,6 +107,14 @@ _NAMED = (
     (
         "investor_update",
         re.compile(r"\b(investor|board|monthly|quarterly) update|\bQ[1-4]\b", re.I),
+    ),
+    (
+        "project",
+        re.compile(
+            r"\b(college|university|semester|final.year|capstone|hackathon|academic|"
+            r"course project|mini project|major project|my project|our project|viva)\b",
+            re.I,
+        ),
     ),
     ("launch", re.compile(r"\blaunch", re.I)),
     ("sales", re.compile(r"\b(sales|prospect|customer pitch|proposal)\b", re.I)),

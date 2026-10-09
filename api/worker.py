@@ -38,6 +38,7 @@ from engine import (
 )
 from engine.components import images as pictures
 from engine.components import logo as logos
+from engine.models import SlidePlan
 from engine.qa.sanitize import sanitize
 from engine.studio import design as designer
 from engine.studio import preview
@@ -102,7 +103,10 @@ async def run(
             if isinstance(facts, Err):
                 _fail(store, deck, human(facts.error), facts.error.kind)
                 return
-            written = await storyline.write(seam, deck.brief, facts.value, model=writing)
+            shots = {n: caption for n, (_, _, caption) in ready_screens(store, deck).items()}
+            written = await storyline.write(
+                seam, deck.brief, facts.value, model=writing, screens=shots
+            )
             if isinstance(written, Err):
                 _fail(store, deck, human(written.error), written.error.kind)
                 return
@@ -118,6 +122,8 @@ async def run(
             store.append_event(deck.id, {"type": "outline_ready"})
         elif job.kind == "logo":
             await _logo(store, deck)
+        elif job.kind == "screens":
+            _screens(store, deck)
         elif job.kind == "style":
             await _previews(store, deck)
             store.append_event(deck.id, {"type": "style_ready"})
@@ -125,6 +131,8 @@ async def run(
             op = ops.OP.validate_json(job.payload)
             if isinstance(op, ops.Ask):
                 await _ask(store, deck, op, seam, model=design)
+            elif isinstance(op, ops.AskDeck):
+                await _ask_deck(store, deck, op, seam, model=design)
             else:
                 await _edit(store, deck, op)
         else:
@@ -188,6 +196,7 @@ async def _build(
         image_model=image_model,
         logo=await _clean_logo(store, deck),
         logo_on=deck.logo if deck.logo != "none" else "ends",
+        screens=ready_screens(store, deck),
     )
     for stray in slides_dir.glob("qa*.html"):
         stray.unlink()
@@ -219,6 +228,36 @@ async def _logo(store: AnyStore, deck: Deck) -> None:
     store.save_export(deck.id, LOGO_CLEAN, made.value.png)
     store.update(deck.id, logo_note="", logo_colour=made.value.colour or "")
     store.append_event(deck.id, {"type": "logo_ready", "colour": made.value.colour or ""})
+
+
+def _screens(store: AnyStore, deck: Deck) -> None:
+    """The person's screenshots: each re-encoded here, never trusted as
+    uploaded, or refused in words."""
+    screens = list(deck.screens)
+    for n, screen in enumerate(screens, start=1):
+        if screen.ready or screen.note:
+            continue
+        raw = store.export(deck.id, f"screen-{n}.bin")
+        made = pictures.clean(raw) if raw is not None else None
+        if made is None or isinstance(made, Err):
+            why = made.error if made is not None else "the file is missing"
+            screens[n - 1] = screen.model_copy(update={"note": f"That file can't be used: {why}."})
+            continue
+        webp, aspect = made.value
+        store.save_export(deck.id, f"screen-{n}.webp", webp)
+        screens[n - 1] = screen.model_copy(update={"ready": True, "aspect": aspect})
+    store.update(deck.id, screens=screens)
+    store.append_event(deck.id, {"type": "screens_ready"})
+
+
+def ready_screens(store: AnyStore, deck: Deck) -> dict[int, tuple[str, str, str]]:
+    """n -> (data URL, aspect, caption) for the screenshots ready to show."""
+    out: dict[int, tuple[str, str, str]] = {}
+    for n, screen in enumerate(deck.screens, start=1):
+        data = store.export(deck.id, f"screen-{n}.webp") if screen.ready else None
+        if data is not None:
+            out[n] = (pictures.data_url(data), screen.aspect, screen.caption)
+    return out
 
 
 async def _clean_logo(store: AnyStore, deck: Deck) -> logos.Logo | None:
@@ -313,6 +352,89 @@ async def _ask(store: AnyStore, deck: Deck, op: ops.Ask, seam: Seam, *, model: s
     store.append_event(deck.id, {"type": "proposal_ready", "slide_id": plan.id})
 
 
+async def _ask_deck(
+    store: AnyStore, deck: Deck, op: ops.AskDeck, seam: Seam, *, model: str
+) -> None:
+    """Every slide redesigned with one instruction, four at a time; a slide
+    whose redesign fails QA keeps its old design. One version, so one undo
+    returns the whole deck."""
+    story = deck.storyline
+    if story is None or deck.status != "ready":
+        store.append_event(deck.id, {"type": "edit_refused", "message": "The deck isn't ready."})
+        return
+    if STYLE_ASK.search(op.instruction):
+        store.append_event(deck.id, {"type": "edit_refused", "message": STYLE_REFUSAL})
+        return
+    theme = theme_of(deck)
+    head = prefix(theme)
+    kept = store.kept(deck.id)
+    plans = [p for p in story.slides if p.id in kept]
+    gate = asyncio.Semaphore(4)
+
+    async def one(plan: SlidePlan) -> tuple[str, Kept] | None:
+        slide = kept[plan.id]
+        picture = pictures.picture_of(slide.composed.html)
+        current = Composed(pictures.strip(slide.composed.html), slide.composed.css)
+        async with gate:
+            made = await designer.revise(
+                seam, plan, current, op.instruction, prefix=head, model=model
+            )
+        if isinstance(made, Err):
+            return None
+        html = pictures.fill(made.value.html, picture) if picture else made.value.html
+        return plan.id, Kept(Composed(html, made.value.css), "edited")
+
+    proposals = {
+        sid: k for got in await asyncio.gather(*(one(p) for p in plans)) if got for sid, k in [got]
+    }
+    slides_dir = store.slides_dir(deck.id)
+    checked = await pipeline.remeasure(
+        theme,
+        [p for p in plans if p.id in proposals],
+        proposals,
+        work_file=str(slides_dir / "qa-askdeck.html"),
+        shots_dir=str(slides_dir / "askdeck"),
+    )
+    (slides_dir / "qa-askdeck.html").unlink(missing_ok=True)
+    taken = [sid for sid, s in checked.items() if s.qa.status == "passed"]
+    if not taken:
+        store.append_event(
+            deck.id,
+            {
+                "type": "edit_refused",
+                "message": "No slide could take that change. Try a smaller one.",
+            },
+        )
+        return
+    for sid in taken:
+        kept[sid] = proposals[sid]
+        store.save_kept(deck.id, sid, kept[sid])
+    fresh = await pipeline.remeasure(
+        theme,
+        [p for p in plans if p.id in taken],
+        kept,
+        work_file=str(slides_dir / "qa-edit.html"),
+        shots_dir=str(slides_dir),
+    )
+    (slides_dir / "qa-edit.html").unlink(missing_ok=True)
+    old = {s.id: s for s in deck.slides}
+    slides = [fresh.get(p.id) or old[p.id] for p in story.slides if p.id in old or p.id in fresh]
+    present, send = pipeline.export(theme, list(story.slides), kept, deck.title)
+    store.save_export(deck.id, "export-present.html", present)
+    store.save_export(deck.id, "export-send.html", send)
+    store.save_export(deck.id, "export.pdf", await pdf.render(send))
+    store.update(deck.id, slides=slides)
+    store.snapshot(deck.id, ops.LABEL[op.kind])
+    store.append_event(
+        deck.id,
+        {
+            "type": "edit_done",
+            "label": f"{ops.LABEL[op.kind]}: {len(taken)} of {len(plans)} slides",
+            "flagged": [],
+        },
+    )
+
+
 async def _edit(store: AnyStore, deck: Deck, op: ops.Op) -> None:
     """One editor operation, no model: change, run QA again on what it
     touched, re-export, and record a version. A slide the change breaks is
@@ -384,7 +506,7 @@ async def _edit(store: AnyStore, deck: Deck, op: ops.Op) -> None:
         html = pictures.fill(clean.value, picture) if picture else clean.value
         kept[op.slide] = Kept(Composed(html, str(parsed["css"])), "edited")
         touched = [op.slide]
-    elif isinstance(op, ops.Ask):  # handled by _ask; never reaches here
+    elif isinstance(op, (ops.Ask, ops.AskDeck)):  # handled by _ask / _ask_deck
         return
     else:  # Fit
         if op.slide not in by:

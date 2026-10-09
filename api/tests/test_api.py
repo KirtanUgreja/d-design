@@ -285,3 +285,23 @@ def test_a_stopped_deck_is_tried_again_from_the_step_that_failed(tmp_path: Path,
     first = store.create(files.load("pitch-devtools").brief, owner_id=LOCAL_USER)
     store.update(first.id, status="error", error="x")
     assert client.post(f"/api/decks/{first.id}/retry").json()["deck"]["status"] == "brief"
+
+
+def test_screenshots_are_reencoded_by_the_worker_and_served(tmp_path: Path) -> None:
+    client, store = _client(tmp_path)
+    deck_id = _approved_deck(store, slides=5)
+    put = client.post(
+        f"/api/decks/{deck_id}/screens", json={"data": _png_logo(), "caption": "Home screen"}
+    )
+    assert put.status_code == 200 and put.json()["deck"]["screens"][0]["ready"] is False
+    assert client.get(f"/api/decks/{deck_id}/screens/1.webp").status_code == 404  # not yet
+    bad = base64.b64encode(b"not an image at all").decode()
+    client.post(f"/api/decks/{deck_id}/screens", json={"data": bad})
+    assert _run_worker(store, Studio())
+    screens = store.read(deck_id).screens
+    assert screens[0].ready and screens[0].aspect in ("16:9", "3:2")
+    assert not screens[1].ready and "can't be used" in screens[1].note
+    got = client.get(f"/api/decks/{deck_id}/screens/1.webp")
+    assert got.status_code == 200 and got.headers["content-type"] == "image/webp"
+    gone = client.delete(f"/api/decks/{deck_id}/screens/1")
+    assert [s["note"] != "" for s in gone.json()["deck"]["screens"]] == [True]

@@ -27,7 +27,7 @@ import ops
 import settings
 from auth import Verifier
 from engine import Brief, Deck, Question, interview
-from engine.models import Brand
+from engine.models import Brand, Screen
 from engine.studio import preview
 from lib.result import Ok
 from looks import preview_names, theme_of, with_language
@@ -35,14 +35,15 @@ from store.files import Avatar, History, User
 from store.tenant import AnyStore, Tenant, open_store
 
 FINAL = {"ready", "error", "aborted"}
+MAX_SCREENS = 6
 POLL_S = 0.4
 
 
 class CreateDeck(BaseModel):
     prompt: str = Field(min_length=3, max_length=4000)
-    deck_type: Literal["pitch", "sales", "launch", "investor_update", "partnership", "auto"] = (
-        "auto"
-    )
+    deck_type: Literal[
+        "pitch", "sales", "launch", "investor_update", "partnership", "project", "auto"
+    ] = "auto"
     tone: Literal["plain", "confident", "warm", "bold"] = "confident"
     audience: str = Field(default="", max_length=300)
     ask: str = Field(default="", max_length=300)
@@ -75,6 +76,14 @@ class LogoUpload(BaseModel):
 
     data: str = Field(min_length=8, max_length=2_800_000)  # ~2 MB of file
     placement: Literal["cover", "ends", "all"] = "ends"
+
+
+class ScreenUpload(BaseModel):
+    """A screenshot or demo image, as base64 in JSON: kept as received; only
+    the worker decodes it (hostile by default, like the logo)."""
+
+    data: str = Field(min_length=8, max_length=2_800_000)  # ~2 MB of file
+    caption: str = Field(default="", max_length=120)
 
 
 class BrandColours(BaseModel):
@@ -437,6 +446,56 @@ def create_app(
         t.enqueue("style", deck_id)
         return out(t, t.read(deck_id))
 
+    # --- the person's screenshots (2026-10-09): up to six, set before the build ---
+
+    @api.post("/api/decks/{deck_id}/screens", response_model=None)
+    def add_screen(t: Me, deck_id: str, body: ScreenUpload) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if deck.status not in ("brief", "interview", "outline", "approve"):
+            return _problem(409, "Add screenshots before the build starts.")
+        if len(deck.screens) >= MAX_SCREENS:
+            return _problem(409, f"A deck takes {MAX_SCREENS} screenshots at most.")
+        try:
+            raw = base64.b64decode(body.data, validate=True)
+        except ValueError:
+            return _problem(422, "That isn't a file we can read.")
+        if len(raw) > 2_000_000:
+            return _problem(413, "A screenshot is at most 2 MB.")
+        n = len(deck.screens) + 1
+        t.save_export(deck_id, f"screen-{n}.bin", raw)
+        t.update(deck_id, screens=[*deck.screens, Screen(caption=body.caption.strip())])
+        t.enqueue("screens", deck_id)
+        return out(t, t.read(deck_id))
+
+    @api.delete("/api/decks/{deck_id}/screens/{n}", response_model=None)
+    def remove_screen(t: Me, deck_id: str, n: int) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if not 1 <= n <= len(deck.screens):
+            return _problem(404, "There is no such screenshot.")
+        if deck.status not in ("brief", "interview", "outline", "approve"):
+            return _problem(409, "Screenshots can change until the build starts.")
+        for i in range(n, len(deck.screens)):  # the later ones move down a place
+            for ext in ("bin", "webp"):
+                data = t.export(deck_id, f"screen-{i + 1}.{ext}")
+                if data is not None:
+                    t.save_export(deck_id, f"screen-{i}.{ext}", data)
+        t.update(deck_id, screens=[s for i, s in enumerate(deck.screens, 1) if i != n])
+        return out(t, t.read(deck_id))
+
+    @api.get("/api/decks/{deck_id}/screens/{n}.webp", response_model=None)
+    def screen_image(t: Me, deck_id: str, n: int) -> Response | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        screens = t.read(deck_id).screens
+        data = t.export(deck_id, f"screen-{n}.webp") if 1 <= n <= len(screens) else None
+        if data is None or not screens[n - 1].ready:
+            return _problem(404, "That screenshot is still being checked.")
+        return Response(data, media_type="image/webp")
+
     # --- the logo (phase 38): per deck, set before the build ---
 
     @api.put("/api/decks/{deck_id}/logo", response_model=None)
@@ -509,6 +568,15 @@ def create_app(
         if no := capped(t):
             return no
         return queue(t, deck_id, ops.Ask(slide=slide_id, instruction=body.instruction))
+
+    @api.post("/api/decks/{deck_id}/ask", response_model=None)
+    def ask_deck(t: Me, deck_id: str, body: AskBody) -> DeckOut | JSONResponse:
+        """A change in words for every slide, applied where it passes QA."""
+        if no := editable(t, deck_id):
+            return no
+        if no := capped(t):
+            return no
+        return queue(t, deck_id, ops.AskDeck(instruction=body.instruction))
 
     @api.get("/api/decks/{deck_id}/slides/{slide_id}/proposal.png", response_model=None)
     def proposal(t: Me, deck_id: str, slide_id: str) -> Response | JSONResponse:

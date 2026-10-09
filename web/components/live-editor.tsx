@@ -249,6 +249,8 @@ export function LiveEditor({
             </div>
           </TabsContent>
           <TabsContent value="deck" className="flex flex-col gap-6">
+            <DeckAsk busy={!!busy} onAsk={(text) => void run("Changing every slide", () => api.askDeck(deck.id, text))} />
+            <Separator />
             <div className="flex flex-col gap-2">
               <p className="placard">Colours</p>
               <p className="text-sm text-ink-2">
@@ -287,6 +289,41 @@ export function LiveEditor({
           </TabsContent>
         </Tabs>
       </aside>
+    </div>
+  );
+}
+
+// One instruction for every slide (owner, 2026-10-09): each slide is redesigned
+// with it and kept where it still passes QA; one undo returns the whole deck.
+function DeckAsk({ busy, onAsk }: { busy: boolean; onAsk: (text: string) => void }) {
+  const [text, setText] = useState("");
+  const ideas = ["Bigger, bolder headlines", "More breathing room", "Make the numbers the hero"];
+  return (
+    <div className="flex flex-col gap-2">
+      <p className="placard">Ask for the whole deck</p>
+      <p className="text-sm text-ink-2">
+        Every slide is redesigned with your instruction. Layout, scale and emphasis change; your words and colours stay. A
+        slide that can&apos;t take it keeps its design, and Undo returns the whole deck.
+      </p>
+      <textarea
+        aria-label="Your instruction for every slide"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        rows={2}
+        maxLength={300}
+        placeholder="e.g. bigger headlines and more space around the numbers"
+        className="resize-y border border-rule bg-transparent px-3 py-2 text-sm outline-none placeholder:text-ink-2/70 focus:border-ink"
+      />
+      <div className="flex flex-wrap gap-1.5">
+        {ideas.map((i) => (
+          <Button key={i} type="button" variant="outline" size="sm" className="h-auto py-1 text-[12px]" onClick={() => setText(i)}>
+            {i}
+          </Button>
+        ))}
+      </div>
+      <Button className="self-start" disabled={busy || text.trim().length < 3} onClick={() => onAsk(text.trim())}>
+        {busy ? "Working on every slide…" : "Apply to every slide"}
+      </Button>
     </div>
   );
 }

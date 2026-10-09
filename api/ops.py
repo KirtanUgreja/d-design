@@ -44,6 +44,15 @@ class Ask(BaseModel):
     instruction: str = Field(min_length=3, max_length=300)
 
 
+class AskDeck(BaseModel):
+    """A change in words for every slide ("bigger headlines, more air"):
+    each slide redesigned with it, kept where QA passes, one step to undo
+    (owner, 2026-10-09: an edit for the whole deck)."""
+
+    kind: Literal["askdeck"] = "askdeck"
+    instruction: str = Field(min_length=3, max_length=300)
+
+
 class Accept(BaseModel):
     """Apply the slide's waiting proposal."""
 
@@ -51,7 +60,7 @@ class Accept(BaseModel):
     slide: str = Field(pattern=r"^\w+$")
 
 
-AnyOp = TextEdit | Reorder | Delete | Recolour | Fit | Ask | Accept
+AnyOp = TextEdit | Reorder | Delete | Recolour | Fit | Ask | AskDeck | Accept
 Op = Annotated[AnyOp, Field(discriminator="kind")]
 OP: TypeAdapter[AnyOp] = TypeAdapter(Op)
 
@@ -63,4 +72,5 @@ LABEL = {
     "fit": "Fitted a slide",
     "ask": "Asked for a change",
     "accept": "Changed a slide by request",
+    "askdeck": "Changed the whole deck by request",
 }

@@ -39,6 +39,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/decks/{deck_id}/ask": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Ask Deck
+         * @description A change in words for every slide, applied where it passes QA.
+         */
+        post: operations["ask_deck_api_decks__deck_id__ask_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/decks/{deck_id}/brand": {
         parameters: {
             query?: never;
@@ -301,6 +321,57 @@ export interface paths {
          *     person gave (the brief, the answers, the outline) is asked for twice.
          */
         post: operations["retry_api_decks__deck_id__retry_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{deck_id}/screens": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Screen */
+        post: operations["add_screen_api_decks__deck_id__screens_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{deck_id}/screens/{n}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Screen */
+        delete: operations["remove_screen_api_decks__deck_id__screens__n__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/decks/{deck_id}/screens/{n}.webp": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Screen Image */
+        get: operations["screen_image_api_decks__deck_id__screens__n__webp_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -591,7 +662,7 @@ export interface components {
              * @default auto
              * @enum {string}
              */
-            deck_type: "pitch" | "sales" | "launch" | "investor_update" | "partnership" | "auto";
+            deck_type: "pitch" | "sales" | "launch" | "investor_update" | "partnership" | "project" | "auto";
             /**
              * Delivery
              * @default live
@@ -699,7 +770,7 @@ export interface components {
              * @default auto
              * @enum {string}
              */
-            deck_type: "pitch" | "sales" | "launch" | "investor_update" | "partnership" | "auto";
+            deck_type: "pitch" | "sales" | "launch" | "investor_update" | "partnership" | "project" | "auto";
             /** Prompt */
             prompt: string;
             /**
@@ -769,6 +840,8 @@ export interface components {
              * @default 1
              */
             schema_version: number;
+            /** Screens */
+            screens?: components["schemas"]["Screen"][];
             /** Slides */
             slides?: components["schemas"]["Slide"][];
             /**
@@ -938,6 +1011,47 @@ export interface components {
             /** Suggestions */
             suggestions: string[];
         };
+        /**
+         * Screen
+         * @description One of the person's own screenshots or demo images (owner, 2026-10-09:
+         *     a college project deck shows the real product).
+         */
+        Screen: {
+            /**
+             * Aspect
+             * @default 16:9
+             */
+            aspect: string;
+            /**
+             * Caption
+             * @default
+             */
+            caption: string;
+            /**
+             * Note
+             * @default
+             */
+            note: string;
+            /**
+             * Ready
+             * @default false
+             */
+            ready: boolean;
+        };
+        /**
+         * ScreenUpload
+         * @description A screenshot or demo image, as base64 in JSON: kept as received; only
+         *     the worker decodes it (hostile by default, like the logo).
+         */
+        ScreenUpload: {
+            /**
+             * Caption
+             * @default
+             */
+            caption: string;
+            /** Data */
+            data: string;
+        };
         /** Slide */
         Slide: {
             /** Assets */
@@ -1018,6 +1132,8 @@ export interface components {
             provenance?: {
                 [key: string]: "YOU" | "AI" | "WEB";
             };
+            /** Screenshot */
+            screenshot?: number | null;
             visual?: components["schemas"]["VisualSpec"] | null;
         };
         /** SlideQA */
@@ -1057,7 +1173,7 @@ export interface components {
              * Deck Type
              * @enum {string}
              */
-            deck_type: "pitch" | "sales" | "launch" | "investor_update" | "partnership" | "auto";
+            deck_type: "pitch" | "sales" | "launch" | "investor_update" | "partnership" | "project" | "auto";
             /** Governing Thought */
             governing_thought: string;
             /** Key Points */
@@ -1092,7 +1208,7 @@ export interface components {
              * Kind
              * @enum {string}
              */
-            kind: "waveform" | "phone" | "browser" | "chat" | "flow" | "hub" | "pipeline";
+            kind: "waveform" | "phone" | "browser" | "chat" | "flow" | "hub" | "pipeline" | "stack";
             /** Lines */
             lines?: string[];
         };
@@ -1183,6 +1299,43 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    ask_deck_api_decks__deck_id__ask_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AskBody"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1732,6 +1885,111 @@ export interface operations {
             };
             path: {
                 deck_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_screen_api_decks__deck_id__screens_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ScreenUpload"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_screen_api_decks__deck_id__screens__n__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+                n: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    screen_image_api_decks__deck_id__screens__n__webp_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+                n: number;
             };
             cookie?: never;
         };

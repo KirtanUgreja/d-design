@@ -196,8 +196,9 @@ def _flow(spec: VisualSpec) -> tuple[str, int, int]:
     """Steps, top to bottom, joined by arrows; the last in the accent. A
     column, so each step's words get the full width (side by side, four
     steps were cut to "Listen…", 2026-10-09)."""
-    lines = (spec.lines or ["", "", ""])[:4]
-    w, row, gap = 1000, 150, 56
+    lines = (spec.lines or ["", "", ""])[:6]
+    row, gap = (150, 56) if len(lines) <= 4 else (118, 40)
+    w = 1000
     size = FONT * 1.4
     out = []
     for i, words in enumerate(lines):
@@ -237,6 +238,48 @@ def _flow(spec: VisualSpec) -> tuple[str, int, int]:
             )
     h = len(lines) * row + (len(lines) - 1) * gap
     return "".join(out), w, h
+
+
+def _stack(spec: VisualSpec) -> tuple[str, int, int]:
+    """A tech stack as layers, top (what the user touches) to bottom (data):
+    each line "Layer: tools", the layer in the label face, the tools large
+    (a project deck's tech stack slide, owner, 2026-10-09)."""
+    lines = (spec.lines or ["", "", ""])[:6]
+    w, gap = 1300, 22
+    row = 150 if len(lines) <= 4 else 118
+    out = []
+    for i, line in enumerate(lines):
+        layer, _, tools = line.partition(":")
+        if not tools:
+            layer, tools = "", line
+        y = i * (row + gap)
+        top = i == 0
+        out.append(_rect(0, y, w, row, ACCENT if top else SURFACE, 18))
+        tone = ON_ACCENT if top else INK
+        if layer:
+            out.append(
+                _text(
+                    40,
+                    y + row / 2 + FONT * 0.3,
+                    layer.strip().upper(),
+                    fill=tone,
+                    size=FONT * 0.9,
+                    face="label",
+                )
+            )
+        size = FONT * 1.35
+        out.append(
+            _block(
+                380 if layer else 40,
+                y + row / 2,
+                tools.strip(),
+                w - 420,
+                size,
+                fill=tone,
+                weight="bold",
+            )
+        )
+    return "".join(out), w, len(lines) * (row + gap) - gap
 
 
 def _hub(spec: VisualSpec) -> tuple[str, int, int]:
@@ -312,6 +355,7 @@ _DRAW = {
     "chat": _chat,
     "flow": _flow,
     "hub": _hub,
+    "stack": _stack,
     "pipeline": _pipeline,
 }
 
@@ -325,6 +369,7 @@ def describe(spec: VisualSpec) -> str:
         "chat": "A conversation",
         "flow": "Steps in order",
         "hub": "A hub and the parts around it",
+        "stack": "A tech stack, layer by layer",
         "pipeline": "Input, core and output",
     }[spec.kind]
     return what + (": " + "; ".join(spec.lines) if spec.lines else "")

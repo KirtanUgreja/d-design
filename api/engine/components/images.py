@@ -107,6 +107,27 @@ def treat(raw: bytes, aspect: str, tones: tuple[str, str, str] | None = None) ->
     return ok(out.getvalue())
 
 
+def clean(raw: bytes) -> Result[tuple[bytes, str], str]:
+    """A person's own screenshot, decoded under the pixel cap and re-encoded
+    as webp with no metadata, uncropped, with the standard aspect nearest its
+    own. Hostile bytes never reach a slide: only this re-encode does."""
+    try:
+        with Image.open(io.BytesIO(raw)) as probe:
+            if probe.format not in FORMATS:
+                return err(f"not an image we accept: {probe.format}")
+            if probe.width * probe.height > MAX_PIXELS:
+                return err("the image is too large")
+            image = probe.convert("RGB")
+    except (OSError, ValueError, Image.DecompressionBombError) as e:
+        return err(f"unreadable image: {type(e).__name__}")
+    ratio = image.width / max(image.height, 1)
+    aspect = min(ASPECTS, key=lambda a: abs(ASPECTS[a] - ratio))
+    image.thumbnail((MAX_SIDE, MAX_SIDE))
+    out = io.BytesIO()
+    image.save(out, "WEBP", quality=QUALITY)
+    return ok((out.getvalue(), aspect))
+
+
 def data_url(webp: bytes) -> str:
     return "data:image/webp;base64," + base64.b64encode(webp).decode()
 

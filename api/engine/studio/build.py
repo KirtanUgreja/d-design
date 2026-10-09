@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import dataclasses
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
@@ -77,6 +77,7 @@ async def build(
     stop: Callable[[], bool] | None = None,
     image_model: str = "",
     improving: bool = True,
+    screens: Mapping[int, tuple[str, str, str]] | None = None,
 ) -> Built:
     started = time.monotonic()
     head = prefix(theme)
@@ -88,7 +89,8 @@ async def build(
             "\nThe person's own logo is placed on the slides by our code: never use the "
             'dd-texture kind "mark".\n'
         )
-    plans = list(storyline.slides)
+    own = dict(screens or {})  # n -> (data URL, aspect, caption): the person's own images
+    plans = _place_screens(list(storyline.slides), own)
     fields = {p.id: {f.name: f.text for f in p.fields} for p in plans}
     gate = asyncio.Semaphore(PARALLEL)
     browsers = asyncio.Semaphore(MEASURE_PARALLEL)
@@ -218,11 +220,11 @@ async def build(
         treated = pictures.treat(made.value, aspect, tones)
         return "" if isinstance(treated, Err) else pictures.data_url(treated.value)
 
-    async def with_picture(plan: SlidePlan, m: browser.Measured) -> browser.Measured:
+    async def with_picture(plan: SlidePlan, m: browser.Measured, own: str = "") -> browser.Measured:
         kept = composed[plan.id]
         if "<dd-image" not in kept.html:
             return m
-        url = await picture(plan, pictures.aspect_of(kept.html))
+        url = own or await picture(plan, pictures.aspect_of(kept.html))
         if not url:
             return m
         composed[plan.id] = Composed(pictures.fill(kept.html, url), kept.css)
@@ -240,7 +242,8 @@ async def build(
         if stopped():  # aborted before this slide began: nothing made, nothing kept
             return
         d = direction.of(plan.id)
-        image = wants_picture(plan)
+        shot = own.get(plan.screenshot) if plan.screenshot else None
+        image = wants_picture(plan) or shot is not None
 
         # Layer 3b: the designer.
         attempts[plan.id] = 1
@@ -261,6 +264,7 @@ async def build(
                     concept=direction.concept,
                     image=image,
                     pattern=plan.id in patterned,
+                    screenshot=(shot[2], shot[1]) if shot else None,
                     title=storyline.title or title,
                     logo_room=logo is not None and wants_logo(index),
                 )
@@ -330,7 +334,7 @@ async def build(
         if logo is not None and not broken(m) and wants_logo(index):
             m = await with_logo(index, plan, m, logo)
         if image and not broken(m):
-            m = await with_picture(plan, m)
+            m = await with_picture(plan, m, shot[0] if shot else "")
         finish(index, plan, m)  # whatever is still broken is flagged, never hidden
 
     def finish(index: int, plan: SlidePlan, m: browser.Measured, *, persist: bool = True) -> None:
@@ -437,6 +441,27 @@ async def build(
     return Built(
         slides, html, send, time.monotonic() - started, len(first_clean), len(improved), refusals
     )
+
+
+# Beats where a screenshot the outline did not place belongs (one uploaded
+# after the outline was written).
+_SHOW = ("demo", "product", "how it works", "user flow", "solution", "what is new")
+
+
+def _place_screens(
+    plans: list[SlidePlan], shots: Mapping[int, tuple[str, str, str]]
+) -> list[SlidePlan]:
+    """Every ready screenshot on a slide: the outline's choice first, then the
+    rest in order on the slides whose beat shows the product."""
+    placed = {p.screenshot for p in plans if p.screenshot}
+    waiting = [n for n in sorted(shots) if n not in placed]
+    out = []
+    for p in plans:
+        free = p.screenshot is None and p.chart is None
+        if waiting and free and any(b in p.beat.lower() for b in _SHOW):
+            p = p.model_copy(update={"screenshot": waiting.pop(0), "visual": None})
+        out.append(p)
+    return out
 
 
 def _slide(

@@ -56,6 +56,7 @@ async def compose(
     pattern: bool = True,
     logo_room: bool = False,
     title: str = "",
+    screenshot: tuple[str, str] | None = None,
 ) -> Result[Composed, ModelError]:
     idea = (
         f"Hero: {direction.hero}. Main field: {direction.ground}.\n{direction.idea}"
@@ -70,7 +71,11 @@ async def compose(
         f"Fields:\n{fields_text(plan)}\n"
         + chrome(plan, title, position, total)
         + (
-            "\nThis slide has a picture: place one <dd-image aspect=…> where the plan says."
+            f"\nThis slide shows the person's own screenshot ({screenshot[0] or 'the product'})."
+            f' Place one <dd-image aspect="{screenshot[1]}"> as the main content, large, framed '
+            "like a product shot: on a surface field or with var(--radius), never under text."
+            if screenshot
+            else "\nThis slide has a picture: place one <dd-image aspect=…> where the plan says."
             if image
             else "\nThis slide has no picture."
         )

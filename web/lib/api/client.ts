@@ -33,6 +33,7 @@ export interface LiveDeck {
   logoNote: string;
   logoColour: string; // the logo's main colour, offered as the brand colour
   brand: string[]; // the user's brand colours, as #rrggbb; empty = generated
+  screens: { caption: string; ready: boolean; note: string }[]; // the person's own screenshots
 }
 
 type Obj = Record<string, unknown>;
@@ -94,6 +95,9 @@ function parseDeck(raw: unknown): LiveDeck | null {
     logoNote: text(d.logo_note),
     logoColour: HEX.test(text(d.logo_colour)) ? text(d.logo_colour) : "",
     brand: (isObj(d.brief.brand) ? list(d.brief.brand.colors) : []).map(text).filter((c) => HEX.test(c)),
+    screens: list(d.screens)
+      .filter(isObj)
+      .map((s) => ({ caption: text(s.caption), ready: s.ready === true, note: text(s.note) })),
   };
 }
 
@@ -181,7 +185,7 @@ async function styleCard(path: string): Promise<Result<StyleCard>> {
 
 // What the composer may say about a new deck besides its brief; the API
 // fills in its own defaults for anything left out.
-export type DeckKind = "auto" | "pitch" | "sales" | "launch" | "investor_update" | "partnership";
+export type DeckKind = "auto" | "pitch" | "sales" | "launch" | "investor_update" | "partnership" | "project";
 export type DeckTone = "plain" | "confident" | "warm" | "bold";
 export interface NewDeckOptions {
   kind?: DeckKind;
@@ -223,10 +227,16 @@ export const api = {
   uploadLogo: (id: string, data: string) =>
     call(`/api/decks/${id}/logo`, { method: "PUT", body: JSON.stringify({ data, placement: "ends" }) }),
   removeLogo: (id: string) => call(`/api/decks/${id}/logo`, { method: "DELETE" }),
+  addScreen: (id: string, data: string, caption: string) =>
+    call(`/api/decks/${id}/screens`, { method: "POST", body: JSON.stringify({ data, caption }) }),
+  removeScreen: (id: string, n: number) => call(`/api/decks/${id}/screens/${n}`, { method: "DELETE" }),
+  screenUrl: (id: string, n: number, v: number) => `/api/decks/${id}/screens/${n}.webp?v=${v}`,
   logoUrl: (id: string, version: number) => `/api/decks/${id}/logo.png?v=${version}`,
   ask: (id: string, slide: string, instruction: string) =>
     call(`/api/decks/${id}/slides/${slide}/ask`, { method: "POST", body: JSON.stringify({ instruction }) }),
   accept: (id: string, slide: string) => call(`/api/decks/${id}/slides/${slide}/accept`, { method: "POST" }),
+  askDeck: (id: string, instruction: string) =>
+    call(`/api/decks/${id}/ask`, { method: "POST", body: JSON.stringify({ instruction }) }),
   proposalThumb: (id: string, slide: string, seq: number) => `/api/decks/${id}/slides/${slide}/proposal.png?v=${seq}`,
   fit: (id: string, slide: string) => call(`/api/decks/${id}/slides/${slide}/fit`, { method: "POST" }),
   history: (id: string) => history(`/api/decks/${id}/history`),

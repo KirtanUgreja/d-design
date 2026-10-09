@@ -47,7 +47,8 @@
   ],
   "deck_types": [
     "pitch",
-    "launch"
+    "launch",
+    "project"
   ],
   "finishes": [
     "none"

@@ -181,6 +181,7 @@
               "launch",
               "investor_update",
               "partnership",
+              "project",
               "auto"
             ],
             "title": "Deck Type",
@@ -414,6 +415,7 @@
               "launch",
               "investor_update",
               "partnership",
+              "project",
               "auto"
             ],
             "title": "Deck Type",
@@ -527,6 +529,14 @@
             "default": 1,
             "title": "Schema Version",
             "type": "integer"
+          },
+          "screens": {
+            "items": {
+              "$ref": "#/components/schemas/Screen"
+            },
+            "maxItems": 6,
+            "title": "Screens",
+            "type": "array"
           },
           "slides": {
             "items": {
@@ -1007,6 +1017,55 @@
         "title": "Question",
         "type": "object"
       },
+      "Screen": {
+        "description": "One of the person's own screenshots or demo images (owner, 2026-10-09:\na college project deck shows the real product).",
+        "properties": {
+          "aspect": {
+            "default": "16:9",
+            "title": "Aspect",
+            "type": "string"
+          },
+          "caption": {
+            "default": "",
+            "title": "Caption",
+            "type": "string"
+          },
+          "note": {
+            "default": "",
+            "title": "Note",
+            "type": "string"
+          },
+          "ready": {
+            "default": false,
+            "title": "Ready",
+            "type": "boolean"
+          }
+        },
+        "title": "Screen",
+        "type": "object"
+      },
+      "ScreenUpload": {
+        "description": "A screenshot or demo image, as base64 in JSON: kept as received; only\nthe worker decodes it (hostile by default, like the logo).",
+        "properties": {
+          "caption": {
+            "default": "",
+            "maxLength": 120,
+            "title": "Caption",
+            "type": "string"
+          },
+          "data": {
+            "maxLength": 2800000,
+            "minLength": 8,
+            "title": "Data",
+            "type": "string"
+          }
+        },
+        "required": [
+          "data"
+        ],
+        "title": "ScreenUpload",
+        "type": "object"
+      },
       "Slide": {
         "properties": {
           "assets": {
@@ -1167,6 +1226,17 @@
             "title": "Provenance",
             "type": "object"
           },
+          "screenshot": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Screenshot"
+          },
           "visual": {
             "anyOf": [
               {
@@ -1251,6 +1321,7 @@
               "launch",
               "investor_update",
               "partnership",
+              "project",
               "auto"
             ],
             "title": "Deck Type",
@@ -1344,7 +1415,8 @@
               "chat",
               "flow",
               "hub",
-              "pipeline"
+              "pipeline",
+              "stack"
             ],
             "title": "Kind",
             "type": "string"
@@ -1527,6 +1599,70 @@
           }
         },
         "summary": "Read"
+      }
+    },
+    "/api/decks/{deck_id}/ask": {
+      "post": {
+        "description": "A change in words for every slide, applied where it passes QA.",
+        "operationId": "ask_deck_api_decks__deck_id__ask_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AskBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ask Deck"
       }
     },
     "/api/decks/{deck_id}/brand": {
@@ -2461,6 +2597,193 @@
           }
         },
         "summary": "Retry"
+      }
+    },
+    "/api/decks/{deck_id}/screens": {
+      "post": {
+        "operationId": "add_screen_api_decks__deck_id__screens_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScreenUpload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Screen"
+      }
+    },
+    "/api/decks/{deck_id}/screens/{n}": {
+      "delete": {
+        "operationId": "remove_screen_api_decks__deck_id__screens__n__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "n",
+            "required": true,
+            "schema": {
+              "title": "N",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Screen"
+      }
+    },
+    "/api/decks/{deck_id}/screens/{n}.webp": {
+      "get": {
+        "operationId": "screen_image_api_decks__deck_id__screens__n__webp_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deck_id",
+            "required": true,
+            "schema": {
+              "title": "Deck Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "n",
+            "required": true,
+            "schema": {
+              "title": "N",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "authorization",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Screen Image"
       }
     },
     "/api/decks/{deck_id}/slides/{slide_id}": {

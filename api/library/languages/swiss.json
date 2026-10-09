@@ -45,7 +45,8 @@
   ],
   "deck_types": [
     "investor_update",
-    "sales"
+    "sales",
+    "project"
   ],
   "finishes": [
     "none"

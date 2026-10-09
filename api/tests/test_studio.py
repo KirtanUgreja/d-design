@@ -177,3 +177,18 @@ def test_the_review_scores_ride_on_an_event(tmp_path: Path) -> None:
     scores = review["scores"]
     assert isinstance(scores, dict)
     assert set(scores) == {"consistency", "hierarchy", "detail", "readability", "innovation"}
+
+
+def test_the_persons_screenshot_is_placed_not_generated(tmp_path: Path) -> None:
+    from engine.components import images
+
+    story = _story(3)
+    plans = [story.slides[0], story.slides[1].model_copy(update={"screenshot": 1}), story.slides[2]]
+    story = story.model_copy(update={"slides": plans})
+    url = images.data_url(b"webp-bytes")
+    transport = Studio()
+    built = _build(
+        tmp_path, transport, story, image_model="img", screens={1: (url, "16:9", "Home")}
+    )
+    assert url in built.slides[1].html
+    assert transport.calls.count("image") <= 1  # only the art director's own pick, if any

@@ -11,7 +11,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-DeckType = Literal["pitch", "sales", "launch", "investor_update", "partnership", "auto"]
+DeckType = Literal["pitch", "sales", "launch", "investor_update", "partnership", "project", "auto"]
 Delivery = Literal["live", "send"]
 Tone = Literal["plain", "confident", "warm", "bold"]
 Provenance = Literal["YOU", "AI", "WEB"]
@@ -129,7 +129,7 @@ class ImageSpec(BaseModel):
     role: Literal["hero", "bleed", "inset"] = "hero"
 
 
-VisualKind = Literal["waveform", "phone", "browser", "chat", "flow", "hub", "pipeline"]
+VisualKind = Literal["waveform", "phone", "browser", "chat", "flow", "hub", "pipeline", "stack"]
 
 
 class VisualSpec(BaseModel):
@@ -137,6 +137,16 @@ class VisualSpec(BaseModel):
 
     kind: VisualKind
     lines: list[str] = Field(default_factory=list, max_length=6)  # short, no numbers
+
+
+class Screen(BaseModel):
+    """One of the person's own screenshots or demo images (owner, 2026-10-09:
+    a college project deck shows the real product)."""
+
+    caption: str = ""
+    ready: bool = False  # re-encoded by the worker; never shown before
+    aspect: str = "16:9"  # the nearest standard aspect, set by the worker
+    note: str = ""  # why it could not be used
 
 
 class SlidePlan(BaseModel):
@@ -149,6 +159,7 @@ class SlidePlan(BaseModel):
     chart: ChartSpec | None = None
     image: ImageSpec | None = None
     visual: VisualSpec | None = None
+    screenshot: int | None = None  # 1-based: the person's screenshot this slide shows
     # Set by the planner: the deck's mark on its ends, a texture on about one
     # slide in three, and nothing on the rest (design-engine.md -> rhythm).
     ornament: Literal["none", "texture", "mark"] = "none"
@@ -246,6 +257,7 @@ class Deck(BaseModel):
     logo: Literal["none", "cover", "ends", "all"] = "none"
     logo_note: str = ""
     logo_colour: str = ""  # the logo's main colour: offered as the brand colour, never applied
+    screens: list[Screen] = Field(default_factory=list, max_length=6)
     brief: Brief
     facts: list[Fact] = Field(default_factory=list)
     storyline: Storyline | None = None

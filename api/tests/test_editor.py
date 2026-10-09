@@ -186,3 +186,21 @@ def test_asking_one_slide_for_a_colour_is_refused_without_a_model(
     assert "no change waiting" in str(
         [e for e in store.events(deck_id) if e["type"] == "edit_refused"][-1]["message"]
     )
+
+
+@each_store
+def test_one_ask_for_the_whole_deck_is_one_version(tmp_path: Path, kind: str) -> None:
+    client, store, deck_id = _built(tmp_path, kind)
+    before = len(store.history(deck_id).labels)
+    got = client.post(f"/api/decks/{deck_id}/ask", json={"instruction": "more breathing room"})
+    assert got.status_code == 200
+    _work(store)
+    done = [e for e in store.events(deck_id) if e["type"] == "edit_done"][-1]
+    assert str(done["label"]).startswith("Changed the whole deck by request")
+    assert {s.origin for s in store.read(deck_id).slides} == {"edited"}
+    assert len(store.history(deck_id).labels) == before + 1  # one undo returns the deck
+    refused = client.post(f"/api/decks/{deck_id}/ask", json={"instruction": "make it blue"})
+    assert refused.status_code == 200
+    _work(store)
+    last = store.events(deck_id)[-1]
+    assert last["type"] == "edit_refused"  # colour comes from the look, not an ask

@@ -19,6 +19,7 @@ const KINDS: [DeckKind, string][] = [
   ["launch", "Launch"],
   ["investor_update", "Investor update"],
   ["partnership", "Partnership"],
+  ["project", "Project (college)"],
 ];
 const TONES: [DeckTone, string][] = [
   ["confident", "Confident"],
@@ -78,6 +79,7 @@ const TYPE_LABEL: Record<string, string> = {
   launch: "Launch",
   investor_update: "Investor update",
   partnership: "Partnership",
+  project: "Project",
   auto: "Pitch",
 };
 

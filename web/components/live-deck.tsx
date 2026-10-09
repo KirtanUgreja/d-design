@@ -13,6 +13,7 @@ import { OutlineGate, type Decisions } from "@/components/outline-gate";
 import { SlideThumb } from "@/components/slide-thumb";
 import { BrandColours } from "@/components/brand-colours";
 import { LogoPicker } from "@/components/logo-picker";
+import { ScreensPicker } from "@/components/screens-picker";
 import { StyleCard } from "@/components/style-card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -134,6 +135,9 @@ export function LiveDeck({ id }: { id: string }) {
       <>
         <DeckHeader deck={deck} />
         <Questions deck={deck} onDone={refresh} />
+        <div className="mx-auto max-w-2xl px-4 pb-16 sm:px-8">
+          <ScreensPicker deck={deck} onChange={refresh} />
+        </div>
       </>
     );
   }
@@ -148,6 +152,7 @@ export function LiveDeck({ id }: { id: string }) {
             <>
               <StyleCard deckId={deck.id} drawn={deck.brand.join(",")} />
               <BrandColours deck={deck} onChange={refresh} />
+              <ScreensPicker deck={deck} onChange={refresh} />
               <LogoPicker deck={deck} onChange={refresh} />
             </>
           }

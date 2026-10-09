@@ -53,7 +53,9 @@ Rules:
 - governing_thought: one sentence, at most 25 words — the deck's thesis. Every headline supports
   it. State it on slide 1 or 2 and again at the close.
 - Exactly the requested number of slides. Follow the arc's beats, adapted to the material; never
-  pad. The last slide is the ask: a verb, an object, and a date or an amount.
+  pad. The last slide is the ask: a verb, an object, and a date or an amount. A project deck
+  (college, course or hackathon work) has no ask: it closes with the result in one line and
+  thanks, and its tech stack slide uses the "stack" visual and its user flow the "flow".
 - headline: an ASSERTION of at most 12 words containing a verb, in sentence case — a full claim
   that stands alone ("Remote staff get back 72 minutes a day", never "Commuting"). One idea per
   slide: a headline that needs "and" is two slides.
@@ -98,7 +100,9 @@ Rules:
   voice, audio or a call; "phone" or "browser" for an app's screen; "chat" for a conversation
   with the product; "flow" for steps; "hub" for the product at the centre of its parts or
   partners (first line the product, then up to five parts); "pipeline" for input, core and
-  output (exactly three lines). visual_lines: up to six short lines (at
+  output (exactly three lines); "stack" for a tech stack, one layer per line as "Layer:
+  tools" ("Frontend: Next.js, Tailwind"), top layer first. A flow may run to six steps (a user
+  flow). visual_lines: up to six short lines (at
   most 6 words, no numbers) it shows — the screen's rows, the chat's messages (the user's
   first), or the flow's steps. They show what the product really does; never invent a
   feature. Never on a chart slide. Otherwise visual is "none" and visual_lines is empty.
@@ -154,10 +158,11 @@ class DraftSlide(BaseModel):
     figures: list[Figure] = Field(default_factory=list)
     fact_ids: list[str]
     chart: DraftChart | None = None
-    visual: Literal["none", "waveform", "phone", "browser", "chat", "flow", "hub", "pipeline"] = (
-        "none"
-    )
+    visual: Literal[
+        "none", "waveform", "phone", "browser", "chat", "flow", "hub", "pipeline", "stack"
+    ] = "none"
     visual_lines: list[str] = Field(default_factory=list)
+    screenshot: int = 0  # the number of one of the person's screenshots, or 0
 
 
 class Draft(BaseModel):
@@ -207,7 +212,7 @@ def _facts_block(facts: list[Fact]) -> str:
     return "\n".join(lines)
 
 
-def _user_prompt(brief: Brief, facts: list[Fact]) -> str:
+def _user_prompt(brief: Brief, facts: list[Fact], screens: dict[int, str] | None = None) -> str:
     arc = " → ".join(ARCS[arc_for(brief.deck_type, brief.prompt)])
     pasted = "\n".join(f"<pasted title={p.title!r}>\n{p.text}\n</pasted>" for p in brief.pasted)
     answers = "\n".join(f"<answer to={a.question!r}>\n{a.text}\n</answer>" for a in brief.answers)
@@ -217,6 +222,16 @@ def _user_prompt(brief: Brief, facts: list[Fact]) -> str:
         f"Slides: {brief.slide_count}\nDelivery: {brief.delivery}\nTone: {brief.tone}\n"
         f"Audience: {brief.audience or 'not stated'}\nThe ask: {brief.ask or 'not stated'}\n\n"
         f"Brief: {brief.prompt}\n\nThe user's material:\n{material}\n\n{_facts_block(facts)}"
+        + (
+            "\n\nThe person's own screenshots, to show on demo, product or user-flow slides "
+            "(screenshot is its number; each at most once):\n"
+            + "\n".join(
+                f"- [{n}] {caption or 'a screenshot of the product'}"
+                for n, caption in screens.items()
+            )
+            if screens
+            else ""
+        )
     )
 
 
@@ -322,7 +337,9 @@ def names(brief: Brief) -> frozenset[str]:
     return rules.known_names(" ".join([brief.prompt, brief.ask] + [p.text for p in brief.pasted]))
 
 
-def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, list[Fact]]:
+def assemble(
+    draft: Draft, brief: Brief, facts: list[Fact], screens: frozenset[int] = frozenset()
+) -> tuple[Storyline, list[Fact]]:
     """Turn a draft into plans. Pure. Returns the storyline and the full fact
     list, including a proposed illustrative Fact for every unsourced number."""
     live = {f.id: f for f in facts if f.status != "rejected"}
@@ -330,6 +347,7 @@ def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, 
     out_facts = list(facts)
     plans: list[SlidePlan] = []
     drawn = 0  # slides with a drawn visual
+    shown: set[int] = set()  # the person's screenshots already placed
     for index, d in enumerate(draft.slides, start=1):
         sid = f"s{index:02d}"
         offered = [live[i] for i in d.fact_ids if i in live]
@@ -406,6 +424,10 @@ def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, 
             # The picture carries the detail: a body line and points beside it
             # made a wall of text (2026-10-09). Points go; the body stays.
             fields = [f for f in fields if not f.name.startswith("point-")]
+        screenshot = d.screenshot if d.screenshot in screens - shown and chart is None else None
+        if screenshot is not None:
+            shown.add(screenshot)
+            visual = None  # the real product beats a drawing of it
         plans.append(
             SlidePlan(
                 id=sid,
@@ -414,6 +436,7 @@ def assemble(draft: Draft, brief: Brief, facts: list[Fact]) -> tuple[Storyline, 
                 fields=fields,
                 chart=chart,
                 visual=visual,
+                screenshot=screenshot,
                 provenance=provenance,
             )
         )
@@ -442,14 +465,19 @@ def _apply(story: Storyline, fixes: list[Rewrite]) -> None:
 
 
 async def write(
-    seam: Seam, brief: Brief, facts: list[Fact], *, model: str
+    seam: Seam,
+    brief: Brief,
+    facts: list[Fact],
+    *,
+    model: str,
+    screens: dict[int, str] | None = None,
 ) -> Result[Written, ModelError]:
     """One call for the storyline, one more only if a rule fails."""
     result = await seam.complete_json(
         "storyline",
         Draft,
         system=SYSTEM,
-        user=_user_prompt(brief, facts),
+        user=_user_prompt(brief, facts, screens),
         model=model,
         prompt_version=PROMPT_VERSION,
         max_tokens=16000,  # reasoning comes out of it too; only what is written is billed
@@ -463,7 +491,7 @@ async def write(
                 "invalid", f"{len(draft.slides)} slides; the brief asks for {brief.slide_count}"
             )
         )
-    story, all_facts = assemble(draft, brief, facts)
+    story, all_facts = assemble(draft, brief, facts, frozenset(screens or {}))
     wording = {"topic_label", "banned", "meta", "emoji"}
     before = rules.check(story, all_facts, names(brief))
     issues = [i for i in before if i.kind in wording]

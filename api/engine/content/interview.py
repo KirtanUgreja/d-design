@@ -39,7 +39,8 @@ each with exactly three suggested answers written for THIS brief, except where s
 5. length — how many minutes, and presenting live or sending it?
 
 Skip a question the brief already answers, and use the freed place for one deck-type question
-(fills "extra"): an investor update asks for the period and KPIs; sales asks for the buyer's
+(fills "extra"): a project (college, course or hackathon work) asks for the tech stack and the
+team members and guide; an investor update asks for the period and KPIs; sales asks for the buyer's
 words for their pain; a launch asks for the availability date. Never ask about brand colours.
 Suggestions are short (at most 15 words) and never invent a specific number."""
 
