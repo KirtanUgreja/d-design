@@ -226,3 +226,19 @@ def test_a_spent_budget_refuses_the_repair_too() -> None:
     result = asyncio.run(seam.complete_json("smoke", Thing, system="s", user="u", model="m"))
     assert isinstance(result, Err) and result.error.kind == "budget"
     assert len(transport.bodies) == 1  # the first call went out; the repair did not
+
+
+def test_a_pinned_model_runs_only_on_its_provider() -> None:
+    stub = StubTransport([_reply('{"name": "a", "count": 1}'), _reply('{"name": "b", "count": 2}')])
+    seam = Seam(
+        api_key="k",
+        transport=stub,
+        sleep=_no_sleep,
+        providers={"anthropic/claude-haiku-5.5": "amazon-bedrock"},
+    )
+    for model in ("anthropic/claude-haiku-5.5", "anthropic/claude-sonnet-5.5"):
+        got = asyncio.run(seam.complete_json("interview", Thing, system="s", user="u", model=model))
+        assert isinstance(got, Ok)
+    pinned, free = stub.bodies
+    assert pinned["provider"] == {"only": ["amazon-bedrock"], "allow_fallbacks": False}
+    assert "provider" not in free

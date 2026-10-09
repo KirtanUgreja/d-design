@@ -77,13 +77,15 @@ async def run(
     design: str,
     budget_usd: float,
     image: str = "",
+    cheap: str = "",
 ) -> None:
-    """Do one job. Every outcome is written to the deck and its event log."""
+    """Do one job. Every outcome is written to the deck and its event log.
+    ``cheap`` writes the interview and the notes; empty = ``writing``."""
     deck = store.read(job.deck_id)
     seam = make_seam(deck.id)
     try:
         if job.kind == "interview":
-            got = await interview.questions(seam, deck.brief, model=writing)
+            got = await interview.questions(seam, deck.brief, model=cheap or writing)
             if isinstance(got, Err):
                 _fail(store, deck, human(got.error), got.error.kind)
                 return
@@ -125,7 +127,7 @@ async def run(
                 deck,
                 seam,
                 design=design,
-                writing=writing,
+                notes_model=cheap or writing,
                 budget_usd=budget_usd,
                 image_model=image,
             )
@@ -139,7 +141,7 @@ async def _build(
     seam: Seam,
     *,
     design: str,
-    writing: str,
+    notes_model: str,
     budget_usd: float,
     image_model: str = "",
 ) -> None:
@@ -150,7 +152,7 @@ async def _build(
     store.clear_abort(deck.id)
     store.update(deck.id, status="building", error="")
     if not any(s.notes for s in story.slides):  # notes once; a resumed build reuses them
-        with_notes = await notes.write(seam, story, model=writing)
+        with_notes = await notes.write(seam, story, model=notes_model)
         if not isinstance(with_notes, Err):
             story = with_notes.value
             store.update(deck.id, storyline=story)
@@ -437,6 +439,7 @@ async def once(
     design: str,
     budget_usd: float,
     image: str = "",
+    cheap: str = "",
 ) -> bool:
     """Claim and do one job; False when the queue is empty."""
     store.requeue_stale()
@@ -452,6 +455,7 @@ async def once(
             design=design,
             budget_usd=budget_usd,
             image=image,
+            cheap=cheap,
         )
     )
     await asyncio.gather(work, _beating(store, job, work))
@@ -468,11 +472,14 @@ def main() -> int:
             did = asyncio.run(
                 once(
                     store,
-                    make_seam=lambda deck_id: Seam(api_key=cfg.openrouter_api_key, deck_id=deck_id),
+                    make_seam=lambda deck_id: Seam(
+                        api_key=cfg.openrouter_api_key, providers=cfg.providers, deck_id=deck_id
+                    ),
                     writing=cfg.model_writing,
                     design=cfg.model_design,
                     budget_usd=cfg.deck_budget_usd,
                     image=cfg.model_image,
+                    cheap=cfg.model_cheap,
                 )
             )
         except Exception as e:

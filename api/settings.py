@@ -36,7 +36,13 @@ class Settings:
     # of 2026-09-30; the one-shot baseline was made on claude-opus-5.5.
     model_writing: str = "anthropic/claude-sonnet-5.5"
     model_design: str = "deepseek/deepseek-v4.1-flash"
-    model_cheap: str = "anthropic/claude-haiku-4.5"
+    # The interview and speaker notes (2026-10-09): Haiku 5.5 is a twentieth of
+    # Sonnet's price; research and the storyline stay on model_writing.
+    model_cheap: str = "anthropic/claude-haiku-5.5"
+    # MODEL_PROVIDERS: "model=provider,…" pins a model to one OpenRouter provider,
+    # no fallback. Haiku runs on Amazon Bedrock through the owner's own AWS key
+    # (OpenRouter BYOK), so AWS bills it.
+    model_providers: str = "anthropic/claude-haiku-5.5=amazon-bedrock"
     # Slide images (phase 39). Chosen on test day from three candidates; ""
     # turns images off and every image slot stays a quiet field.
     model_image: str = "google/gemini-3.1-flash-lite-image"
@@ -48,6 +54,12 @@ class Settings:
     # Neon `app` (pooled); set = the SQL store (store/tenant.py -> open_store).
     database_url: str = ""
 
+    @property
+    def providers(self) -> dict[str, str]:
+        """MODEL_PROVIDERS parsed: model -> the one provider it may run on."""
+        pairs = (part.split("=", 1) for part in self.model_providers.split(",") if "=" in part)
+        return {model.strip(): provider.strip() for model, provider in pairs}
+
 
 def load() -> Settings:
     _load_dotenv(REPO_ROOT / ".env")
@@ -56,6 +68,7 @@ def load() -> Settings:
         model_writing=os.environ.get("MODEL_WRITING", Settings.model_writing),
         model_design=os.environ.get("MODEL_DESIGN", Settings.model_design),
         model_cheap=os.environ.get("MODEL_CHEAP", Settings.model_cheap),
+        model_providers=os.environ.get("MODEL_PROVIDERS", Settings.model_providers),
         model_image=os.environ.get("MODEL_IMAGE", Settings.model_image),
         daily_cap_usd=float(os.environ.get("DAILY_CAP_USD", str(Settings.daily_cap_usd))),
         auth_url=os.environ.get("BETTER_AUTH_URL", "").rstrip("/"),

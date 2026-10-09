@@ -65,8 +65,8 @@ def _ids(which: str) -> list[str]:
     return list(files.SMOKE) if which == "smoke" else files.brief_ids()
 
 
-def _seam(cfg: settings.Settings) -> Seam:
-    return Seam(api_key=cfg.openrouter_api_key)
+def _seam(cfg: settings.Settings, deck_id: str = "") -> Seam:
+    return Seam(api_key=cfg.openrouter_api_key, providers=cfg.providers, deck_id=deck_id)
 
 
 async def _smoke(cfg: settings.Settings) -> int:
@@ -171,7 +171,7 @@ async def _build(cfg: settings.Settings, args: argparse.Namespace) -> int:
             theme = themes[index % len(themes)]
         else:
             theme = _generated(item.brief, nonce=repeat, usage=lang_usage)
-        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{args.run}-{label}-{name}")
+        seam = _seam(cfg, f"{args.run}-{label}-{name}")
         built = await pipeline.build(
             seam,
             item.outline,
@@ -301,7 +301,7 @@ async def _record(cfg: settings.Settings, brief_id: str, outlines: str, prompt: 
         words = [w for w in re.findall(r"[a-z0-9]+", prompt.lower()) if w not in filler]
         slug = "-".join(words[:4]) or "deck"
         brief = Brief(id=slug, prompt=prompt)
-        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"record-{slug}")
+        seam = _seam(cfg, f"record-{slug}")
         made = await content.make(seam, brief, model=cfg.model_writing, year=_year(), ask=None)
         if isinstance(made, str):
             print(made)
@@ -312,7 +312,7 @@ async def _record(cfg: settings.Settings, brief_id: str, outlines: str, prompt: 
         story, facts = content.load(
             files.BENCH / "runs" / outlines / "content" / f"{brief_id}.json"
         )
-        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"record-{brief_id}")
+        seam = _seam(cfg, f"record-{brief_id}")
     out = await record.record(
         seam, brief, story, facts, writing=cfg.model_writing, design=cfg.model_design
     )
@@ -402,7 +402,7 @@ def _year() -> int:
 
 
 async def _outline(cfg: settings.Settings, brief_id: str, run: str) -> int:
-    seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{run}-{brief_id}")
+    seam = _seam(cfg, f"{run}-{brief_id}")
     made = await content.make(
         seam, files.load(brief_id).brief, model=cfg.model_writing, year=_year(), ask=input
     )
@@ -423,7 +423,7 @@ async def _content(cfg: settings.Settings, run: str, which: str) -> int:
     for brief_id in _ids(which):
         brief = files.load(brief_id).brief
         out = root / f"{brief_id}.json"
-        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{run}-{brief_id}")
+        seam = _seam(cfg, f"{run}-{brief_id}")
         if out.exists():
             story, _ = content.load(out)
             row = json.loads(out.read_text())["row"]
@@ -469,7 +469,7 @@ async def _injection(cfg: settings.Settings, run: str) -> int:
     leaked = 0
     for path in sorted((files.BENCH / "injection").glob("*.json")):
         case = content.Case.model_validate_json(path.read_text())
-        seam = Seam(api_key=cfg.openrouter_api_key, deck_id=f"{run}-{case.id}")
+        seam = _seam(cfg, f"{run}-{case.id}")
         found = await content.injection(seam, case, model=cfg.model_writing)
         files.append_ledger(files.BENCH / "runs" / "ledger.jsonl", seam.ledger)
         if isinstance(found, str):

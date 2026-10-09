@@ -24,7 +24,7 @@ import base64
 import json
 import re
 import time
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Literal, Protocol
@@ -222,6 +222,8 @@ class Seam:
     # Asked before every call, retries and repairs included. Anything that
     # grants fails closed: a guard that raises refuses the call (rule 10).
     allow: Callable[[], bool] | None = None
+    # model -> the one provider it may run on (settings.MODEL_PROVIDERS).
+    providers: Mapping[str, str] = field(default_factory=dict)
 
     @property
     def spent_usd(self) -> float:
@@ -393,6 +395,10 @@ class Seam:
         }
         if reasoning is not None:
             body["reasoning"] = {"effort": reasoning}
+        if model in self.providers:
+            # Pinned, no fallback: a call billed to the owner's own key never
+            # silently moves to OpenRouter's credit.
+            body["provider"] = {"only": [self.providers[model]], "allow_fallbacks": False}
         if self.deck_id:
             body["session_id"] = self.deck_id
 

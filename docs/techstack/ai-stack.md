@@ -40,6 +40,12 @@ Read from OpenRouter's model list and from live calls through `api/engine/llm/op
 
 These are the defaults in `api/settings.py` until the phase-22 bake-off pins the winners.
 
+**Changed 2026-10-09: the interview and speaker notes run on `anthropic/claude-haiku-5.5`** ($0.10 / $0.50 per M), on **Amazon Bedrock through the owner's own AWS key** (OpenRouter BYOK). Research and the storyline stay on Sonnet 5.5, because the outline is where quality shows.
+- `MODEL_PROVIDERS` (`model=provider,…`, default `anthropic/claude-haiku-5.5=amazon-bedrock`) pins a model to one provider with `allow_fallbacks: false`, so a call never moves to another provider on its own.
+- The Bedrock route does not list strict `json_schema` output. The interview's schema still came back valid on the first try. A reply that fails validation gets the seam's one repair.
+- Measured: one interview call, 981 tokens in and 958 out (467 of them reasoning), cost $0.00058 in 8.1 s. The same call on Sonnet cost about $0.012.
+- The bill goes to AWS only once the AWS key is added in OpenRouter → Settings → Integrations (BYOK). Without the key (or with its "always use this key" switch off, where OpenRouter offers one), the call runs on OpenRouter's own Bedrock account and bills OpenRouter credit.
+
 - **Cost comes back on the response.** With `usage: {include: true}` the reply's `usage.cost` is the dollar cost of the call; the ledger records it. A smoke call (177 tokens in, 9 out, Haiku) cost $0.00022.
 - **Strict `json_schema` output works on the Claude models** through OpenRouter: 12 of 12 outline calls parsed first time.
 - **One frozen outline costs about $0.01–0.025** on Sonnet 5.5.
