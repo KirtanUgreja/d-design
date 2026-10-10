@@ -64,10 +64,10 @@ const body = (req: IncomingMessage): Promise<unknown> =>
     req.on("end", () => resolve(raw ? JSON.parse(raw) : null));
   });
 
-let server: Server;
+let server: Server | undefined;
 
 test.beforeAll(async () => {
-  server = createServer(async (req, res) => {
+  const stubServer = createServer(async (req, res) => {
     const send = (status: number, data?: unknown) => {
       res.writeHead(status, { "content-type": "application/json" });
       res.end(data === undefined ? "" : JSON.stringify(data));
@@ -105,11 +105,14 @@ test.beforeAll(async () => {
     }
     return send(404, { error: "Not found." });
   });
-  await new Promise<void>((resolve) => server.listen(STUB_PORT, "127.0.0.1", resolve));
+  await new Promise<void>((resolve) => stubServer.listen(STUB_PORT, "127.0.0.1", resolve));
+  server = stubServer;
 });
 
+// A worker whose tests were all skipped never ran beforeAll.
 test.afterAll(async () => {
-  await new Promise<void>((resolve) => server.close(() => resolve()));
+  const running = server;
+  if (running) await new Promise<void>((resolve) => running.close(() => resolve()));
 });
 
 // ---- helpers -----------------------------------------------------------------
@@ -173,7 +176,8 @@ test("sign up, the app, the avatar, sign out, sign in, delete", async ({ page })
   await page.getByRole("button", { name: "Shuffle" }).click();
   await expect(page.locator("main [data-avatar-seed]").first()).not.toHaveAttribute("data-avatar-seed", first, SLOW);
   await expect(img).not.toHaveAttribute("src", before ?? "");
-  await expect(page.getByRole("status")).toHaveText("Saved", SLOW);
+  // Scoped: the password section has a status line of its own.
+  await expect(page.getByRole("region", { name: "Your details" }).getByRole("status")).toHaveText("Saved", SLOW);
   const shuffled = await avatarSeed(page);
   expect(stub.calls).toContain("PATCH /api/me");
 

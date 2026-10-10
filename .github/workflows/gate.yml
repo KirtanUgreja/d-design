@@ -32,6 +32,18 @@ jobs:
 
   web:
     runs-on: ubuntu-latest
+    # e2e/auth.spec.ts runs a real Better Auth; developers point it at an
+    # auth_test database in web/.env.local, CI at this throwaway container.
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+          POSTGRES_DB: auth_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      AUTH_DATABASE_URL: postgres://postgres@localhost:5432/auth_test
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -46,6 +58,11 @@ jobs:
         run: cd web && pnpm install --frozen-lockfile
       - name: lint and types
         run: cd web && pnpm exec eslint . && pnpm exec tsc --noEmit
+      - name: auth secret
+        # Made per run, so no secret-shaped string lives in the repo.
+        run: echo "BETTER_AUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: auth tables
+        run: cd web && pnpm dlx auth@1.7.7 migrate --config lib/auth.ts --yes
       - name: browsers
         run: cd web && pnpm exec playwright install --with-deps chromium firefox webkit
       - name: end to end, on recorded runs
