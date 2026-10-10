@@ -4,7 +4,7 @@ Every operational choice, what it beat, and what it cost. The rejected option ma
 
 ## 2026-09-26 — v4
 
-An audit of the v1–v3 build ([../findings.md](../findings.md) → "Measured 2026-09-26") found that every generated deck was a bold heading and one line of text on a flat background. The causes were architectural rather than cosmetic, so seven decisions were reversed on the same day, and a planning review then refined how they are built ([../v4/spec.md](../v4/spec.md)). Each row names what it cost, because a reversal without its cost gets reversed again.
+An audit of the v1–v3 build (../findings.md → "Measured 2026-09-26") found that every generated deck was a bold heading and one line of text on a flat background. The causes were architectural rather than cosmetic, so seven decisions were reversed on the same day, and a planning review then refined how they are built ([../v4/spec.md](../v4/spec.md)). Each row names what it cost, because a reversal without its cost gets reversed again.
 
 | # | Decision | Chosen | Over | Because | Costs |
 |---|---|---|---|---|---|
@@ -45,7 +45,7 @@ Rows marked **Superseded 2026-09-26** name what replaced them. The v3 reasoning 
 |---|---|---|---|
 | **Artefact (2026-08-13)** | **A downloadable single-file `.html` deck that runs offline** — `connect-src 'none'`, fonts embedded | A served/published page (the old artefact) | The product re-decided from the vision up: the file is the artefact. **Still holds in v4**, and v4 makes the "fonts embedded" half true |
 | **Slide authoring (2026-09-26)** | **The model writes HTML + scoped CSS within theme tokens** | A JSON form rendered by one stylesheet | See v4 row 1 |
-| **Design system (2026-08-13, revised 2026-09-26)** | **A seeded generator makes one look per deck (revised 2026-10-05: no three-look choice), and code computes the theme. No model call** | Three fixed art directions (08-13); a 31-row lookup table picked by `sum(ord(title)) % 31` (v3) | Diversity is architecture, not prompting ([../findings.md](../findings.md) → Model behaviour). v3's "registry" was 13 palettes and font names that never loaded |
+| **Design system (2026-08-13, revised 2026-09-26)** | **A seeded generator makes one look per deck (revised 2026-10-05: no three-look choice), and code computes the theme. No model call** | Three fixed art directions (08-13); a 31-row lookup table picked by `sum(ord(title)) % 31` (v3) | Diversity is architecture, not prompting (../findings.md → Model behaviour). v3's "registry" was 13 palettes and font names that never loaded |
 | **Canvas (2026-09-26)** | **Fixed 1920×1080, scaled** | Fluid slides | See v4 row 3 |
 | **QA (2026-09-26)** | **Render in Playwright → measure DOM + pixels → targeted repair (≤2) → fallback → visible flag** | A vision-model critic, one revision (v2) | AeSlides (arXiv 2604.22840) beat VLM reflection with measurable metrics, and found reflection counterproductive. v3's critic ran only in the CLI, on hand-supplied screenshots |
 | **Facts (2026-09-26)** | **`openrouter:web_search` + pasted material → `Fact` ledger** | No facts | See v4 row 4 |

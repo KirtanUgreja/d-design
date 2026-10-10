@@ -17,7 +17,7 @@ They must not merge. The moment our own chrome is styled by a generated deck's t
 
 **Our own surfaces are the first proof of the central claim.** The product says AI-generated experiences can be genuinely beautiful. Anyone who lands on a generic SaaS marketing page has already been told the opposite, before reading a word.
 
-And the counterweight, from [../findings.md](../findings.md) → "The category": **appeal has to be aimed.** Tome was beautiful, reached millions, and died at ~$4M ARR because the people it attracted would not pay. The goal is not maximum appeal. It is *irresistible to a founder pitching on Thursday*, and mildly intimidating to everyone else. The first users are founders and salespeople ([../v4/spec.md](../v4/spec.md) → Locked decisions → First users).
+And the counterweight, from ../findings.md → "The category": **appeal has to be aimed.** Tome was beautiful, reached millions, and died at ~$4M ARR because the people it attracted would not pay. The goal is not maximum appeal. It is *irresistible to a founder pitching on Thursday*, and mildly intimidating to everyone else. The first users are founders and salespeople ([../v4/spec.md](../v4/spec.md) → Locked decisions → First users).
 
 Both of those are argued in [principles.md](principles.md).
 
@@ -35,7 +35,7 @@ Both of those are argued in [principles.md](principles.md).
 
 ## Version gating
 
-**Updated 2026-09-26 for v4.** Product design follows the same discipline as [../security/README.md](../security/README.md): designed early, built when a phase needs it. v4 builds the engine first (phases 21–26) and the app after it (27–28); accounts and deployment are phase 29 ([../v4/plan/README.md](../v4/plan/README.md)). The parts that are expensive to retrofit are decided now.
+**Updated 2026-09-26 for v4.** Product design follows the same discipline as [../security/README.md](../security/README.md): designed early, built when a phase needs it. v4 builds the engine first (phases 21–26) and the app after it (27–28); accounts and deployment are phase 29 (../v4/plan/README.md). The parts that are expensive to retrofit are decided now.
 
 | Surface | Designed | Built |
 |---|---|---|
@@ -46,7 +46,7 @@ Both of those are argued in [principles.md](principles.md).
 | Empty, error, and refusal states | Now | Phases 27–28 — the AI refuses and something has to be on screen |
 | Signup, auth, account, budget-cap states | Now | Phase 29 |
 | Marketing site, pricing page | Now ([website.md](website.md)) | After phase 29, when there is a URL to give someone |
-| Gallery, showcase, "made with" badge, hosted URL | Now | Skipped in v4 — needs published work and a hosted URL ([../v4/plan/29-accounts-deploy.md](../v4/plan/29-accounts-deploy.md) → Skipped) |
+| Gallery, showcase, "made with" badge, hosted URL | Now | Skipped in v4 — needs published work and a hosted URL (../v4/plan/29-accounts-deploy.md → Skipped) |
 
 ## What this directory obligates elsewhere
 
@@ -60,7 +60,7 @@ Design decisions that turned into requirements in other documents. Listed here s
 | The banned-pattern list governs generated slides | [../v4/design-engine.md](../v4/design-engine.md) → "Slide lint" |
 | The export carries a machine-readable AI marker; a badge, if one ever exists, is separate and removable | [../v4/spec.md](../v4/spec.md) → Locked decisions → Export |
 | Our chrome's display face is never a deck display face | [../v4/design-engine.md](../v4/design-engine.md) → "Registry", [brand.md](brand.md) |
-| The marketing hero is a real exported deck, not a canned template | [website.md](website.md), [../v4/plan/26-player-export.md](../v4/plan/26-player-export.md) |
+| The marketing hero is a real exported deck, not a canned template | [website.md](website.md), ../v4/plan/26-player-export.md |
 | Showcase requires written per-artifact release after the customer's launch | [../security/tenancy-and-data.md](../security/tenancy-and-data.md) |
 | Marketing analytics is self-hosted, so it adds no subprocessor | [../security/third-parties.md](../security/third-parties.md) |
 
@@ -85,4 +85,4 @@ Design decisions that turned into requirements in other documents. Listed here s
 | [../v4/design-engine.md](../v4/design-engine.md) | The *other* design system: the looks and the slides |
 | [../techstack/frontend.md](../techstack/frontend.md) | shadcn/ui, Tailwind-on-chrome-only, and the cold 90% |
 | [../coderules/performance.md](../coderules/performance.md) | The cold-90% rule this directory applies to *design attention*, not just code |
-| [../findings.md](../findings.md) | The category evidence, and the platform fact behind the AI-disclosure obligation (EU AI Act Art. 50) |
+| ../findings.md | The category evidence, and the platform fact behind the AI-disclosure obligation (EU AI Act Art. 50) |

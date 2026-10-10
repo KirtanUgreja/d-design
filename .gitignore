@@ -2,10 +2,11 @@
 notes.txt
 skills-lock.json
 
-# .claude/ is personal except settings.json, which is the shared project config
-# (hooks that enforce the rules in AGENTS.md). Keep that one tracked.
-.claude/*
-!.claude/settings.json
+# Personal agent config and tool output
+.claude/
+.commandcode/
+brag-output*/
+extra/
 
 # Python
 .venv/
@@ -15,9 +16,12 @@ __pycache__/
 .ruff_cache/
 .pytest_cache/
 
-# Node (web/ returns in phase 27)
+# Node
 node_modules/
 web/.next/
+web/test-results/
+web/playwright-report/
+*.tsbuildinfo
 
 # Bench runs: screenshots, walls, ledgers. The summary row in
 # bench/results.md is what gets committed (docs/v4/bench.md).
@@ -27,7 +31,6 @@ bench/runs/
 .env
 .env.local
 
-.commandcode
 
 # One-shot baseline screenshots: regenerated from the committed .html files
 # by `cli baseline`.
@@ -35,3 +38,9 @@ bench/baselines/oneshot/*/
 
 # The file store (store/files.py): decks, events, jobs. Never committed.
 data/
+
+# Internal planning: phase plans, findings, weekly reports. Kept locally, not published.
+docs/v4/plan/
+docs/findings.md
+docs/versions.md
+reports/

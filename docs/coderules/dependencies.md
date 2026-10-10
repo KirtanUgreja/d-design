@@ -8,7 +8,7 @@ Not a ban — a speed bump. The cost of a dependency is not install time; it is 
 
 ## v4 — read this before the lists below
 
-> **2026-09-26.** v4 ([../v4/spec.md](../v4/spec.md)) deletes `render/`, the upload worker, `web/` as it stood, and most of `api/`'s features. Phase 21 ([../v4/plan/21-reset.md](../v4/plan/21-reset.md)) removed each ledger row in the same commit that removed the package. **The baseline tables below still list the v3 stack** and are trimmed as phases 27 and 29 re-decide each row.
+> **2026-09-26.** v4 ([../v4/spec.md](../v4/spec.md)) deletes `render/`, the upload worker, `web/` as it stood, and most of `api/`'s features. Phase 21 (../v4/plan/21-reset.md) removed each ledger row in the same commit that removed the package. **The baseline tables below still list the v3 stack** and are trimmed as phases 27 and 29 re-decide each row.
 
 **Removed in phase 21 (2026-09-30):** `web/`, `render/` and `worker/` with every package they installed; and from `api`, SQLAlchemy, asyncpg, Alembic, FastAPI and uvicorn. FastAPI and uvicorn return in phase 27, the database packages in phase 29, each with a fresh row.
 

@@ -8,8 +8,8 @@
 
 | | |
 |---|---|
-| **Type and layout carry identity; colour belongs to the brand** | [../findings.md](../findings.md) → "Measured in this codebase". v3 had font names that never loaded |
-| **Code owns the system; the model composes inside it** | The sampler and the whole theme are code. The model writes only slide compositions. The checks are code. Diversity is architecture, not prompting ([../findings.md](../findings.md) → Model behaviour) |
+| **Type and layout carry identity; colour belongs to the brand** | ../findings.md → "Measured in this codebase". v3 had font names that never loaded |
+| **Code owns the system; the model composes inside it** | The sampler and the whole theme are code. The model writes only slide compositions. The checks are code. Diversity is architecture, not prompting (../findings.md → Model behaviour) |
 | **The "AI look" is layout mechanics, not colour** | Card grids, icon rows, rounded boxes and centred stacks are what read as AI-made. They are countered structurally: radius and shadow are theme tokens, there are no icons, and QA counts card grids and centred slides |
 | **Texture, never gradient** | Colour changes through halftone, hatch, grain, rules and blocks, in 2–4 discrete steps. No gradients, neon, blur or glow. A hard offset shadow with zero blur is fine ([../design/principles.md](../design/principles.md) §5) |
 | **Scale contrast is the cheapest way to look designed** | A large jump from display type to text type, including a "mega" step. v3 had one type scale and ranked importance by opacity |
@@ -51,7 +51,7 @@ The model is the one generative identities follow (MIT Media Lab's 2011 identity
 
 `sample()` still returns three far-apart looks, for the internal tile wall only.
 
-**Next: [plan/36-independent-design.md](plan/36-independent-design.md)** removes the remaining finite parts — the exemplars in the prompt, the archetype names, the palette strategies and motif kinds — in favour of per-slide composition targets, a novelty archive and variable fonts.
+**Next: plan/36-independent-design.md** removes the remaining finite parts — the exemplars in the prompt, the archetype names, the palette strategies and motif kinds — in favour of per-slide composition targets, a novelty archive and variable fonts.
 
 **Measured adjustments (2026-10-01).** Running every exemplar under 50 sampled themes broke 55 times before these rules; each fixes a cause, not a threshold:
 

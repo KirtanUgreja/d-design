@@ -168,7 +168,7 @@ The event models are registered in OpenAPI explicitly, because FastAPI leaves ou
 |---|---|
 | Transport | `httpx.AsyncClient`, timeouts per stage, bounded backoff on 429/5xx. The v3 seam was synchronous, which ruled out parallel slides |
 | `complete_json(schema, …)` | A strict `json_schema` response format, then one Pydantic parse. On failure, **one repair per call**, carrying the real previous answer and the validation error. v3 counted repairs per seam instance (one per deck), sent back `""`, and crashed on an unbound `raw` (`complete.py:200-217`) |
-| `complete_text(parse, …)` | For slide HTML. The model answers in fenced `html` and `css` blocks and we parse them. HTML escaped inside JSON strings wastes tokens and breaks, and format constraints reduce diversity ([../findings.md](../findings.md) → Model behaviour) |
+| `complete_text(parse, …)` | For slide HTML. The model answers in fenced `html` and `css` blocks and we parse them. HTML escaped inside JSON strings wastes tokens and breaks, and format constraints reduce diversity (../findings.md → Model behaviour) |
 | `finish_reason` | `length` or a refusal is a typed failure, never parsed |
 | Reasoning | `reasoning.effort` is set per stage with a generous `max_tokens`, because reasoning tokens are billed out of `max_tokens` ([../techstack/ai-stack.md](../techstack/ai-stack.md)) |
 | Web search | `openrouter:web_search` in `tools`, with the engine pinned (exa or parallel, never `native`, so results do not change with the model). Citations come back as `url_citation` annotations (`url`, `title`, `content`) and become `Fact`s in `research.py` |

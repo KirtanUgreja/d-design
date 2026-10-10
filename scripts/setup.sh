@@ -26,7 +26,15 @@ fi
 step 'python dependencies (api)'
 uv sync --project api --quiet
 
-step 'chromium (the bench wall, and QA from phase 22)'
+step 'web dependencies'
+if command -v pnpm >/dev/null 2>&1; then
+  (cd web && pnpm install --frozen-lockfile --silent)
+  echo '  web ready'
+else
+  echo '  pnpm MISSING (corepack enable, or npm i -g pnpm) — the web app will not start until it is installed'
+fi
+
+step 'chromium (the bench wall, and QA)'
 (cd api && uv run playwright install chromium >/dev/null)
 echo '  chromium ready'
 

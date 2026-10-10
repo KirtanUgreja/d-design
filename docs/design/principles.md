@@ -8,7 +8,7 @@
 
 The product claims AI-generated experiences can be genuinely beautiful. **Our own surfaces are the first sample of that claim anyone sees.** A visitor who lands on a stock SaaS page has already been shown the counter-argument before reading the headline.
 
-This is not vanity. It is the same reason [../v4/spec.md](../v4/spec.md) makes Risk 1 the top risk: if the decks do not look designed, the pipeline is worthless. v1–v3 proved it the hard way ([../findings.md](../findings.md) → "Measured 2026-09-26"). Our front door is the second instance of that same risk.
+This is not vanity. It is the same reason [../v4/spec.md](../v4/spec.md) makes Risk 1 the top risk: if the decks do not look designed, the pipeline is worthless. v1–v3 proved it the hard way (../findings.md → "Measured 2026-09-26"). Our front door is the second instance of that same risk.
 
 **Forces:** design attention on the site is not overhead to be minimized. It is the demo.
 **Prevents:** shipping a Tailwind template that quietly disproves the thesis.
@@ -63,7 +63,7 @@ The editor surrounds output that is supposed to be the most beautiful thing on t
 
 Near-monochrome UI. One accent, used almost nowhere. The canvas supplies all the colour in the room.
 
-**Forces:** the editor's palette is decided *against* the looks, not independently of them, and re-checked when the registry grows ([../v4/plan/23-design-system.md](../v4/plan/23-design-system.md)).
+**Forces:** the editor's palette is decided *against* the looks, not independently of them, and re-checked when the registry grows (../v4/plan/23-design-system.md).
 **Prevents:** an editor that looks fine empty and terrible in use.
 
 ---
@@ -119,13 +119,13 @@ The rest remain judgement, which is why a human scores the bench wall at every p
 
 ## 6. Show the artifact, not the app
 
-Linear and Vercel sell tools, so their pages show product UI. **Our differentiator is not the tool, it is what comes out of it.** [../findings.md](../findings.md) → "The category" records that the gap against Gamma is *creative ceiling*, not speed — and a screenshot of an editor cannot show a ceiling.
+Linear and Vercel sell tools, so their pages show product UI. **Our differentiator is not the tool, it is what comes out of it.** ../findings.md → "The category" records that the gap against Gamma is *creative ceiling*, not speed — and a screenshot of an editor cannot show a ceiling.
 
 So the hero is the output: a real, exported **deck**, in the page, advancing and animating exactly as a room would see it. Not a picture of one.
 
 **Changed 2026-08-13.** This read *"scrolling and animating exactly as a recipient would see it"* — the drift showing up in our own marketing. The artefact advances now (slide mode, never scroll), and the hero should let a visitor click through it — which is a better hero anyway, because clicking is the product's actual gesture and scrolling was everyone's.
 
-We can do this cheaply for a reason baked into the architecture: the exported deck is **one self-contained HTML file with a small player script and zero network requests** ([../v4/plan/26-player-export.md](../v4/plan/26-player-export.md)), so embedding real work costs approximately nothing per visitor.
+We can do this cheaply for a reason baked into the architecture: the exported deck is **one self-contained HTML file with a small player script and zero network requests** (../v4/plan/26-player-export.md), so embedding real work costs approximately nothing per visitor.
 
 **Forces:** the marketing site depends on the engine's output being genuinely good — which is the correct dependency, and an honest one.
 **Prevents:** selling a UI, which is what every competitor's page already does.
@@ -142,7 +142,7 @@ The lazy answer is also the better demo:
 |---|---|
 | **Exported examples** | Real decks, real files, static. Zero marginal cost, infinite scale |
 | **A recorded generation** | The event log of a real run ([../v4/engine.md](../v4/engine.md) → "Generation jobs and events"), captured once and replayed client-side. It looks *identical* to a live generation because it is the same event stream, and it costs one run ever |
-| **A real generation** | Behind signup, metered, budget-capped, kill-switchable ([../v4/plan/29-accounts-deploy.md](../v4/plan/29-accounts-deploy.md)) |
+| **A real generation** | Behind signup, metered, budget-capped, kill-switchable (../v4/plan/29-accounts-deploy.md) |
 
 The recorded replay is the interesting one. It is honest — those slides really were generated — it never fails on stage, and it is the closest thing to letting someone feel the product before they own an account.
 
@@ -179,7 +179,7 @@ It also solves principle 5 for free. Going dark-and-atmospheric on our own site 
 
 ## 10. Nothing on our surfaces may be a claim the product can't back
 
-Every number, badge, logo, and superlative maps to something shipped and verified. No customer logos before customers. No "10,000 teams". No before/after that we staged. EU AI Act Article 50 makes some of this a legal obligation rather than a taste one ([../findings.md](../findings.md) → Platform) — AI-generated content carries disclosure duties, and that is a design constraint on the deck *and* on the page that markets it.
+Every number, badge, logo, and superlative maps to something shipped and verified. No customer logos before customers. No "10,000 teams". No before/after that we staged. EU AI Act Article 50 makes some of this a legal obligation rather than a taste one (../findings.md → Platform) — AI-generated content carries disclosure duties, and that is a design constraint on the deck *and* on the page that markets it.
 
 The competitive claim in particular has to be demonstrated, never asserted: "Gamma's output looks like Gamma" is a sentence anyone can write. Two live decks side by side is an argument.
 
@@ -190,7 +190,7 @@ The competitive claim in particular has to be demonstrated, never asserted: "Gam
 
 ## 11. Version discipline applies to design too
 
-Design early, build when a version needs it — the same rule [../security/README.md](../security/README.md) uses. v4 builds the engine, then the app, and only then accounts and deployment ([../v4/plan/README.md](../v4/plan/README.md)), so a marketing site built before phase 29 is a site with no product behind it and no URL to put it on.
+Design early, build when a version needs it — the same rule [../security/README.md](../security/README.md) uses. v4 builds the engine, then the app, and only then accounts and deployment (../v4/plan/README.md), so a marketing site built before phase 29 is a site with no product behind it and no URL to put it on.
 
 But the parts that are expensive to retrofit get decided now anyway, for the same reason CSS logical properties do: name, vocabulary, voice, and the app chrome's palette all leak into hundreds of strings and components, and changing them later is an audit rather than an edit.
 

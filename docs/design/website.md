@@ -24,9 +24,9 @@ Not a screenshot, not a mockup, not a tilted browser frame with fake traffic lig
 
 **Changed 2026-08-13 with the vision re-decide.** The hero is a **real exported deck** — the single-file `.html`, presented as it would be in a room. It advances, and the visitor advances it — which is a stronger hero than a scroll, because clicking through a deck is the product's own gesture and a visitor who clicks twice has already used the product. Autoplay stays banned (principle 5); the deck sits on slide one until someone moves it.
 
-**Why this is affordable:** the exported deck is one self-contained HTML file with a small player script and zero network requests ([../v4/plan/26-player-export.md](../v4/plan/26-player-export.md)). Embedding real work costs approximately nothing per visitor and scales to any amount of traffic. The most convincing asset we have is also the cheapest one we own.
+**Why this is affordable:** the exported deck is one self-contained HTML file with a small player script and zero network requests (../v4/plan/26-player-export.md). Embedding real work costs approximately nothing per visitor and scales to any amount of traffic. The most convincing asset we have is also the cheapest one we own.
 
-**Why it is the right proof:** the gap against Gamma is *creative ceiling*, not speed ([../findings.md](../findings.md) → "The category"), and a screenshot of an editor cannot show a ceiling. Principle 6 in [principles.md](principles.md).
+**Why it is the right proof:** the gap against Gamma is *creative ceiling*, not speed (../findings.md → "The category"), and a screenshot of an editor cannot show a ceiling. Principle 6 in [principles.md](principles.md).
 
 Supporting decisions:
 
@@ -60,7 +60,7 @@ The alternatives were considered and are worse:
 | A video of a generation | Compresses badly, ages, and cannot be opened in a real browser tab |
 | Third-party demo tooling | A guided tour of a design product is an admission that the product cannot demonstrate itself |
 
-**The editable deck is off the table for now** ([questions.md](questions.md), #78). **Changed 2026-09-26:** in v4 a text edit is saved by the backend and the slide is re-measured in a browser ([../v4/plan/28-editor.md](../v4/plan/28-editor.md)), so an anonymous edit is no longer free. Revisit only with the same caps a live generation would need. It is the second-page experience, not the hero, because it leads with the editor and the output is the argument.
+**The editable deck is off the table for now** ([questions.md](questions.md), #78). **Changed 2026-09-26:** in v4 a text edit is saved by the backend and the slide is re-measured in a browser (../v4/plan/28-editor.md), so an anonymous edit is no longer free. Revisit only with the same caps a live generation would need. It is the second-page experience, not the hero, because it leads with the editor and the output is the argument.
 
 ---
 
@@ -91,7 +91,7 @@ Eight, total. A larger site before there are customers is a site maintaining its
 |---|---|
 | Home | Above |
 | Showcase | Below |
-| One comparison page | Honest about where we lose. Gamma, Canva, and Beautiful.ai are the deck-tool comparison set ([../findings.md](../findings.md) → "The category"), and saying so flatters the buyer and happens to be true |
+| One comparison page | Honest about where we lose. Gamma, Canva, and Beautiful.ai are the deck-tool comparison set (../findings.md → "The category"), and saying so flatters the buyer and happens to be true |
 | Pricing | Below |
 | Docs | Small |
 | Changelog | Instead of a blog. Nothing to say yet is not a content strategy problem |
@@ -121,7 +121,7 @@ Every piece is commercial work: pitches, sales decks, launches. No travel decks,
 
 **The paywall is on the hosted URL, not generating.**
 
-> **Open since 2026-09-26.** v4 has no hosted URL, no tiers and no billing: all three are Skipped with triggers in [../v4/plan/29-accounts-deploy.md](../v4/plan/29-accounts-deploy.md), and a deck now costs roughly $1.5–3.5 to generate ([../v4/spec.md](../v4/spec.md) → Bets), which makes free generation a larger bet than it was. Everything below is the design intent carried over from v3. It gets re-decided when the hosted URL's trigger fires, not before.
+> **Open since 2026-09-26.** v4 has no hosted URL, no tiers and no billing: all three are Skipped with triggers in ../v4/plan/29-accounts-deploy.md, and a deck now costs roughly $1.5–3.5 to generate ([../v4/spec.md](../v4/spec.md) → Bets), which makes free generation a larger bet than it was. Everything below is the design intent carried over from v3. It gets re-decided when the hosted URL's trigger fires, not before.
 
 Let people generate and see the quality; charge when they need the URL or the team. This inverts the usual AI-product paywall on purpose: quality is our entire argument, and putting our argument behind a credit card is backwards. It also matches where the value actually lands — the deliverable is a deck they can present and a file they can send, and the URL is the convenience.
 
@@ -140,7 +140,7 @@ Let people generate and see the quality; charge when they need the URL or the te
 
 The *numbers* stay deferred until cost per deck is measured ([../v4/bench.md](../v4/bench.md) → "Budgets"). The page shape does not depend on them.
 
-**Cost exposure, named:** free generation means we pay for output that never converts. That is the deliberate trade, and it is bounded by what phase 29 builds — a per-user daily budget cap, rate limits, and the kill switch ([../v4/plan/29-accounts-deploy.md](../v4/plan/29-accounts-deploy.md)). Watch cost per exported deck as the health metric; if it climbs, the cap moves, not the paywall.
+**Cost exposure, named:** free generation means we pay for output that never converts. That is the deliberate trade, and it is bounded by what phase 29 builds — a per-user daily budget cap, rate limits, and the kill switch (../v4/plan/29-accounts-deploy.md). Watch cost per exported deck as the health metric; if it climbs, the cap moves, not the paywall.
 
 **And a security consequence, because this pricing shape names its own weak spot.** A free tier that generates and a paid gate on the URL is *exactly* the state machine [../security/adversarial-ai.md](../security/adversarial-ai.md) lists as the class most likely to actually get you — "the state machine that allows publish-before-payment." It has no scanner and no pattern. The defense is that the entitlement check is boring, in one place, at the data layer, and fails closed. A pricing page is a specification for an attacker as much as for a buyer.
 
@@ -159,7 +159,7 @@ The *numbers* stay deferred until cost per deck is measured ([../v4/bench.md](..
 
 ### The badge and the AI disclosure are one design problem
 
-The AI Act (in force 2 Aug 2026) requires a **machine-readable** marking of AI-generated content, and Article 50 also expects a **human-visible** disclosure, given clearly at first exposure — two layers, not one ([../findings.md](../findings.md) → Platform). v4 ships the machine-readable marker in every export ([../v4/spec.md](../v4/spec.md) → Locked decisions → Export); the visible mark is designed here.
+The AI Act (in force 2 Aug 2026) requires a **machine-readable** marking of AI-generated content, and Article 50 also expects a **human-visible** disclosure, given clearly at first exposure — two layers, not one (../findings.md → Platform). v4 ships the machine-readable marker in every export ([../v4/spec.md](../v4/spec.md) → Locked decisions → Export); the visible mark is designed here.
 
 So a hosted deck is due a "made with ⟨product⟩" badge *and* an AI-content disclosure, and designing them separately produces two small pieces of legal-looking furniture in the corner of somebody's launch page. Design them as **one mark**: provenance is what both are actually saying.
 

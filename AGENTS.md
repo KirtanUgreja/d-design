@@ -1,8 +1,6 @@
 # d-design
 
-> **Sprint to submission: `docs/v4/plan/master-plan.md`** — build day 2026-10-09 (no model credit), test day 2026-10-10, submit by 2026-10-10. Read it first.
->
-> **The plan is `docs/v4/`, decided 2026-09-26.** Status is in `docs/v4/plan/README.md`. The v3 code is gone (tag `v3-final`); `api/` holds the v4 engine skeleton and `web/` returns in phase 27.
+> **The design is `docs/v4/`, decided 2026-09-26.** Maintainers keep phase plans in `docs/v4/plan/`, which is gitignored; contributors work from GitHub issues. Start with `docs/code-guide.md` and `CONTRIBUTING.md`.
 
 ## What the product is
 
@@ -13,7 +11,7 @@ An AI presentation maker whose edge over Gamma is **design**. A founder or sales
 - **Every number traces to the user or a cited source**, or is flagged.
 - **Python backend (FastAPI) owns the engine, data and export. The Next.js frontend is UI only.**
 
-**Reversed on 2026-09-26:** "the AI never writes styling". It capped the output at five visual variables (`docs/findings.md` → "Measured 2026-09-26").
+**Reversed on 2026-09-26:** "the AI never writes styling". It capped the output at five visual variables.
 
 ## Commands that work today
 
@@ -42,7 +40,7 @@ Paths are **pointers, not imports** — read the file when the task touches it. 
 
 | Task touches | Read first |
 |---|---|
-| **What to build next** | `docs/v4/plan/README.md`, then the phase file |
+| **What to build next** | GitHub issues; maintainers: `docs/v4/plan/README.md` (local only) |
 | Why a decision was made | `docs/v4/spec.md` |
 | Where a module goes, the data model, events, the model seam | `docs/v4/engine.md` |
 | Slide HTML, the lint, QA metrics, themes, exemplars | `docs/v4/design-engine.md` |
@@ -53,7 +51,7 @@ Paths are **pointers, not imports** — read the file when the task touches it. 
 | User input, model-written HTML, CSP, tokens | `docs/security/README.md` |
 | Models, prompts, caching, web search | `docs/techstack/ai-stack.md` |
 | Our own app's screens and look | `docs/design/app.md`, `docs/design/brand.md` |
-| "Do we already know this?" | `docs/findings.md` |
+| "Do we already know this?" | `docs/findings.md` (local only) |
 
 ## The non-negotiables
 

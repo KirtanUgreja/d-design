@@ -30,7 +30,7 @@ It is cheap to prevent at authoring time and expensive to discover afterwards, s
 - **Different ground.** If ours is warm paper, the editorial looks' paper is cool or bright white, or the reverse. Not both warm
 - **Different accent behaviour.** Ours appears twice on a screen. A look is allowed to be much louder, and here it should be
 
-**The test:** put any look's deck in the editor canvas with our chrome around it. If a stranger cannot tell which pixels are the product and which are the artifact, one of the two has to move — and it is the wall that moves, because the look is the thing we sell. Run it at the phase-23 wall, when the registry first reaches full size ([../v4/plan/23-design-system.md](../v4/plan/23-design-system.md)).
+**The test:** put any look's deck in the editor canvas with our chrome around it. If a stranger cannot tell which pixels are the product and which are the artifact, one of the two has to move — and it is the wall that moves, because the look is the thing we sell. Run it at the phase-23 wall, when the registry first reaches full size (../v4/plan/23-design-system.md).
 
 ---
 
@@ -42,7 +42,7 @@ It is cheap to prevent at authoring time and expensive to discover afterwards, s
 
 | Rule | Why |
 |---|---|
-| The name survives being said next to Gamma, Canva, Framer | The comparison set is deck tools and design tools ([../findings.md](../findings.md) → "The category"). "Deck", "slides", "present" are fine as descriptors, but the *name* should not be one of them |
+| The name survives being said next to Gamma, Canva, Framer | The comparison set is deck tools and design tools (../findings.md → "The category"). "Deck", "slides", "present" are fine as descriptors, but the *name* should not be one of them |
 | No `AI`, no `.ai` | Everyone has it, it says nothing, and it dates the product to this exact wave |
 | No `-ify`, `-ly`, `-r`, invented compound | These read as 2014 and they signal "built fast" — the same tell as a violet gradient |
 | One word, pronounceable, spellable on a phone call | A founder says this name out loud to an investor |
@@ -73,7 +73,7 @@ Domains unverified — treat these as prompts for the direction, not a shortlist
 
 ### What the name blocks
 
-Nothing in the build. But settle it before the app is built ([../v4/plan/27-app-create-flow.md](../v4/plan/27-app-create-flow.md)), because the composer and the interview are the first place user-facing strings accumulate, and renaming across a UI is exactly the audit this section exists to avoid.
+Nothing in the build. But settle it before the app is built (../v4/plan/27-app-create-flow.md), because the composer and the interview are the first place user-facing strings accumulate, and renaming across a UI is exactly the audit this section exists to avoid.
 
 ---
 

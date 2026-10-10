@@ -1,6 +1,6 @@
 # v4 — UI research: attention, motivation, trust
 
-> What the user side of the product should do to the person using it, and the evidence for each choice. Written 2026-10-05 while the engine waits on a credit top-up. [../design/app.md](../design/app.md) already specifies the screens; this document adds **why people will stay, trust it and come back**, and the line we will not cross to get there. It feeds phases 30–35 ([plan/README.md](plan/README.md)).
+> What the user side of the product should do to the person using it, and the evidence for each choice. Written 2026-10-05 while the engine waits on a credit top-up. [../design/app.md](../design/app.md) already specifies the screens; this document adds **why people will stay, trust it and come back**, and the line we will not cross to get there. It feeds phases 30–35 (plan/README.md).
 
 ---
 

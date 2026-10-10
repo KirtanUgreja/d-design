@@ -15,7 +15,7 @@ The v3 sample deck failed all three:
 - Its titles were topic labels ("Visual Data Representation", "Conclusion and Future Outlook").
 - Its chart was `{"Growth": 85}`.
 - Its body copy was a stage direction ("Prominent statistics will illustrate growth…").
-- Its call to action pointed at `https://example.com` ([../findings.md](../findings.md) → "Measured 2026-09-26").
+- Its call to action pointed at `https://example.com` (../findings.md → "Measured 2026-09-26").
 
 ---
 
@@ -96,7 +96,7 @@ One call writes the whole storyline. Speaker notes are a second call after appro
 
 ## Arcs
 
-Five deck types ship first. The rest are Skipped with a trigger in [plan/24-content-engine.md](plan/24-content-engine.md).
+Five deck types ship first. The rest are Skipped with a trigger in plan/24-content-engine.md.
 
 | Deck type | Arc | Typical length |
 |---|---|---|

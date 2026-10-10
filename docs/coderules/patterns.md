@@ -10,7 +10,7 @@ The first three protect the *product*: the deck's visual coherence, the edit/exp
 
 **Model-written CSS may reference the theme for colour and type, and nothing else. Layout is free.**
 
-*Replaces "the no-styling invariant" (2026-09-26). That rule gave the model a JSON form with no field for a visual value, and one stylesheet drew every slide. It capped decks at about five visual variables ([../findings.md](../findings.md)).*
+*Replaces "the no-styling invariant" (2026-09-26). That rule gave the model a JSON form with no field for a visual value, and one stylesheet drew every slide. It capped decks at about five visual variables (../findings.md).*
 
 | The model may write | The model may not write |
 |---|---|

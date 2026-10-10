@@ -58,7 +58,7 @@ If you want a type the generated file does not give you, the Pydantic model or t
 
 ### Why there is no Zod-for-the-deck any more
 
-v3 generated a validator so the editor could revalidate a patched block tree offline, without a round trip. v4's editor works differently ([../v4/plan/28-editor.md](../v4/plan/28-editor.md)):
+v3 generated a validator so the editor could revalidate a patched block tree offline, without a round trip. v4's editor works differently (../v4/plan/28-editor.md):
 - Text is edited in place inside the slide's own document.
 - The change goes to the API, which re-runs QA.
 - The checks that matter (sanitize, lint, measure) run where the browser that measures them runs.

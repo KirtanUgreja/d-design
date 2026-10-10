@@ -6,7 +6,7 @@ The rules above only hold if something enforces them. Three things do: a pre-com
 
 ## The pre-commit gate
 
-> **Rewritten 2026-09-26 for v4**, and built in phase 21 ([../v4/plan/21-reset.md](../v4/plan/21-reset.md)).
+> **Rewritten 2026-09-26 for v4**, and built in phase 21 (../v4/plan/21-reset.md).
 
 Run before a commit lands. A commit that fails any step does not land. `scripts/hooks/pre-commit` runs all of it.
 
@@ -47,7 +47,7 @@ The lint config carries the rules that are mechanical:
 | ~~`no-restricted-syntax` on TS `enum`~~ | | Retired — `erasableSyntaxOnly` makes it a compiler error |
 | ~~no `mode` prop / `process.env` in `renderer/`~~ | | Retired 2026-09-26 — there is no TypeScript renderer |
 
-**Retired with v3:** `scripts/checks/invariants.sh`. Much of it policed code that was deleted, and one check let through the exact defect it was written for ([../findings.md](../findings.md)). The rules above replace the parts still worth having.
+**Retired with v3:** `scripts/checks/invariants.sh`. Much of it policed code that was deleted, and one check let through the exact defect it was written for (../findings.md). The rules above replace the parts still worth having.
 
 CI runs the same gate plus the browser tests and the dependency-advisory check, so a bypass of the local hook is caught on push.
 
@@ -78,7 +78,7 @@ The pipeline's quality has no type system behind it. v3 tried to gate it in CI w
 | **The bench** — real model calls on the briefs in repo-root `bench/`, content evals, cost and time per deck | The 3-deck smoke set during a phase; all 12 at a phase exit | **Not a merge gate** |
 | **The human wall** — the owner scores every bench deck 1–5 | Every phase exit | **Gates the phase exit, never a merge** |
 
-**A probabilistic judge must never block a merge.** It will fail on a good change eventually, and the first override turns the gate into decoration. **A phase, though, does not close on green checks alone**: automated gates cannot see design ([../findings.md](../findings.md) → Process).
+**A probabilistic judge must never block a merge.** It will fail on a good change eventually, and the first override turns the gate into decoration. **A phase, though, does not close on green checks alone**: automated gates cannot see design (../findings.md → Process).
 
 **Prompts are code.** They live in the repo as versioned files, and a prompt change is a behaviour change with a bench result attached ([../techstack/ai-stack.md](../techstack/ai-stack.md)).
 

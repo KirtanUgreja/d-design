@@ -33,8 +33,8 @@ The v4 re-decide ([../v4/spec.md](../v4/spec.md)) settled or overtook the questi
 | 181–191, 196 | Answered: filmstrip left, scaled 16:9 canvas, Slide / Notes / Design tabs. The canvas scales uniformly, the instruction box lives in the Slide tab, undo is one snapshot per operation | [app.md](app.md) → §5 |
 | 197–204 | Rewritten. Still no picker and no HTML/CSS authoring. Slide-level changes are requests; look-level changes are the Design tab. "Emphasis" is no longer a schema field | [app.md](app.md) → "The colour picker that does not exist" |
 | 207, 208, 214 | Answered: two export flavours. **Present** carries speaker notes; **send** and its PDF do not | [app.md](app.md) → §6 |
-| 215 | Reversed: version history is built, labelled, one version per operation | [../v4/plan/28-editor.md](../v4/plan/28-editor.md) |
-| 209–213, 216–218, 89, 102–105, 117, 118 | Not in v4. There is no hosted URL; sharing means sending the file | [../v4/plan/29-accounts-deploy.md](../v4/plan/29-accounts-deploy.md) → Skipped |
+| 215 | Reversed: version history is built, labelled, one version per operation | ../v4/plan/28-editor.md |
+| 209–213, 216–218, 89, 102–105, 117, 118 | Not in v4. There is no hosted URL; sharing means sending the file | ../v4/plan/29-accounts-deploy.md → Skipped |
 | 107–116 | Open again. v4 has no tiers or billing, and per-deck cost changed the trade | [website.md](website.md) → "Pricing" |
 | 123 | Overtaken: a managed auth provider, chosen at phase 29 | [../v4/spec.md](../v4/spec.md) → Locked decisions → Auth |
 | 219–230 | Answered, with new rows for a flagged slide, a broken edit and a dropped connection | [app.md](app.md) → "The states nobody designs" |
@@ -413,7 +413,7 @@ Principle 8. The most important ten questions in this document, because this is 
 | 212 | Custom domain? | v3, top self-serve tier |
 | 213 | Unpublish? | v3. Instant, and it really removes the URL |
 | 214 | Re-export after edits? | Explicit. A downloaded file never changes under you; a new generation is a new file |
-| 215 | Version history? | **Reversed in v4 → [../v4/plan/28-editor.md](../v4/plan/28-editor.md):** built, one labelled version per operation |
+| 215 | Version history? | **Reversed in v4 → ../v4/plan/28-editor.md:** built, one labelled version per operation |
 | 216 | Slack and LinkedIn preview quality? | v3, when the URL exists. Treat as a launch requirement — a bad unfurl on the buyer's own share is a product failure |
 | 217 | QR code for in-person? | Cheap, and marketers at events will use it. Low priority, high delight |
 | 218 | Analytics summary? | v3, if a beacon can exist without breaking the zero-network guarantee. It is a thing we sell, not a thing we bolt on |

@@ -5,7 +5,7 @@
 > - **Every deck gets its own generated look; the user never picks a style** (owner, 2026-10-05).
 > - The app is a UI over a Python backend that owns the engine, the data and the export.
 >
-> The create flow is built in [../v4/plan/27-app-create-flow.md](../v4/plan/27-app-create-flow.md); the editor, present and export in [../v4/plan/28-editor.md](../v4/plan/28-editor.md).
+> The create flow is built in ../v4/plan/27-app-create-flow.md; the editor, present and export in ../v4/plan/28-editor.md.
 
 ---
 
@@ -59,7 +59,7 @@ Five screens. If a week goes into a settings page while the generation watch is 
 | **Pasted material** | Notes, numbers, a customer quote, a metrics table. It is text, it needs no fetch, and what it states becomes `YOU`-provenance facts ([../v4/content.md](../v4/content.md) → "Research and the Fact ledger") |
 | **Slide count, audience, tone** | Three compact controls on the prompt's edge, each with a default. Never a form above the prompt |
 | **Recent decks** | Thumbnails of the real slides. The second session opens their work, not a dashboard |
-| **A URL the user types is never fetched** | Research runs through the model gateway's search tool. Importing a URL or a PDF is Skipped until users ask ([../v4/plan/24-content-engine.md](../v4/plan/24-content-engine.md)) — **do not build the affordance now**, because an import button that explains why it is disabled is worse than no button |
+| **A URL the user types is never fetched** | Research runs through the model gateway's search tool. Importing a URL or a PDF is Skipped until users ask (../v4/plan/24-content-engine.md) — **do not build the affordance now**, because an import button that explains why it is disabled is worse than no button |
 
 No templates and no starting-point gallery. "No templates" is still the positioning; a template picker contradicts the homepage.
 
@@ -173,7 +173,7 @@ The export reveal is the moment that gets screenshotted into Slack. It offers tw
 | | |
 |---|---|
 | **Present** | Opens the **present** export itself, not a preview component. It carries the speaker notes, which the presenter popup shows beside the current and next slide. Copy in the shape of: *"For you: your notes are inside"* |
-| **Download to send** | The **send** export: one self-contained `.html` file with **no speaker notes in it**, so emailing the deck never leaks them. Copy in the shape of: *"For them: the slides only"*. Large and prominent, with the deck behind it. It runs offline, anywhere, with zero network requests ([../v4/plan/26-player-export.md](../v4/plan/26-player-export.md)) |
+| **Download to send** | The **send** export: one self-contained `.html` file with **no speaker notes in it**, so emailing the deck never leaks them. Copy in the shape of: *"For them: the slides only"*. Large and prominent, with the deck behind it. It runs offline, anywhere, with zero network requests (../v4/plan/26-player-export.md) |
 | **PDF** | A quieter third option, printed from the send export: one slide per page, no notes |
 | **Slides are byte-identical in both** | Only the notes differ. What you present is what you send ([../v4/spec.md](../v4/spec.md) → Locked decisions → Presenting) |
 | **Flagged slides are named before download** | A slide still marked "needs attention" is listed, with a link back to it. Never a silent broken slide in a file someone is about to send |
@@ -182,7 +182,7 @@ The export reveal is the moment that gets screenshotted into Slack. It offers tw
 
 **Decks carry no links and no icons in v4.** A URL on a slide is plain text, and the file has nothing clickable that leaves it.
 
-v4 has no hosted URL: sharing means sending the file ([../v4/plan/29-accounts-deploy.md](../v4/plan/29-accounts-deploy.md) → Skipped, with its trigger). The export carries a machine-readable AI marker ([../v4/spec.md](../v4/spec.md) → Locked decisions → Export). How that marker meets a "made with" badge is covered in [website.md](website.md) → "The badge and the AI disclosure are one design problem".
+v4 has no hosted URL: sharing means sending the file (../v4/plan/29-accounts-deploy.md → Skipped, with its trigger). The export carries a machine-readable AI marker ([../v4/spec.md](../v4/spec.md) → Locked decisions → Export). How that marker meets a "made with" badge is covered in [website.md](website.md) → "The badge and the AI disclosure are one design problem".
 
 ---
 
@@ -303,8 +303,8 @@ Artefact accessibility is not this document's problem. The engine measures contr
 | [../v4/ui-research.md](../v4/ui-research.md) | The evidence behind the attention, motivation and trust choices, and the ethics line; phases 30–35 |
 | [brand.md](brand.md) | The palette the chrome is built from, and the check against the canvas |
 | [website.md](website.md) | What happened before "Start" |
-| [../v4/plan/27-app-create-flow.md](../v4/plan/27-app-create-flow.md) | Where the composer, the interview + outline gate and the watch are built |
-| [../v4/plan/28-editor.md](../v4/plan/28-editor.md) | Where the editor, present and the export dialog are built |
-| [../v4/plan/26-player-export.md](../v4/plan/26-player-export.md) | The two export flavours and the presenter view |
+| ../v4/plan/27-app-create-flow.md | Where the composer, the interview + outline gate and the watch are built |
+| ../v4/plan/28-editor.md | Where the editor, present and the export dialog are built |
+| ../v4/plan/26-player-export.md | The two export flavours and the presenter view |
 | [../v4/engine.md](../v4/engine.md) | What the app receives: slide documents, QA screenshots, generation events |
 | [../v4/content.md](../v4/content.md) | The interview questions, provenance, and the rules the outline cards are held to |

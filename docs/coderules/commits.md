@@ -68,7 +68,7 @@ If this repository ever has more than one human committer, revisit this — trai
 
 ## Branches
 
-One branch per phase, named `phase-NN-slug` after the phase file in [../v4/plan/README.md](../v4/plan/README.md). v4 continues the numbering (2026-09-26):
+One branch per phase, named `phase-NN-slug` after the phase file in ../v4/plan/README.md. v4 continues the numbering (2026-09-26):
 
 ```
 phase-21-reset            phase-24-content-engine     phase-27-app-create-flow

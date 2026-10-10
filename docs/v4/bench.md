@@ -1,6 +1,6 @@
 # v4 — the bench
 
-> How we know a deck is good: 12 briefs, the baselines every run is compared against, a wall a human scores, and what each run records. Automated gates cannot see design ([../findings.md](../findings.md) → Process), so the wall is the gate at every phase exit.
+> How we know a deck is good: 12 briefs, the baselines every run is compared against, a wall a human scores, and what each run records. Automated gates cannot see design (../findings.md → Process), so the wall is the gate at every phase exit.
 
 ---
 

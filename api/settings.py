@@ -63,13 +63,18 @@ class Settings:
         return {model.strip(): provider.strip() for model, provider in pairs}
 
 
+def _model(role: str, pinned: str) -> str:
+    """MODEL_<ROLE> if set, else MODEL (one model for every text role), else the pin."""
+    return os.environ.get(f"MODEL_{role}") or os.environ.get("MODEL") or pinned
+
+
 def load() -> Settings:
     _load_dotenv(REPO_ROOT / ".env")
     return Settings(
         openrouter_api_key=os.environ.get("OPENROUTER_API_KEY", ""),
-        model_writing=os.environ.get("MODEL_WRITING", Settings.model_writing),
-        model_design=os.environ.get("MODEL_DESIGN", Settings.model_design),
-        model_cheap=os.environ.get("MODEL_CHEAP", Settings.model_cheap),
+        model_writing=_model("WRITING", Settings.model_writing),
+        model_design=_model("DESIGN", Settings.model_design),
+        model_cheap=_model("CHEAP", Settings.model_cheap),
         model_providers=os.environ.get("MODEL_PROVIDERS", Settings.model_providers),
         model_image=os.environ.get("MODEL_IMAGE", Settings.model_image),
         daily_cap_usd=float(os.environ.get("DAILY_CAP_USD", str(Settings.daily_cap_usd))),

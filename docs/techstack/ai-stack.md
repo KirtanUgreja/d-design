@@ -22,7 +22,7 @@ Which models, chosen how, measured with what — and why there is no agent frame
 | **Repair** | The same slide again, with its measured defects | Text | Design. The bake-off decides whether a cheaper model is enough |
 | **Images** | One image per slot the plan asked for | Image route | Image model, chosen by the phase-25 bake-off |
 
-**Concrete ids are picked by the phase-22 bake-off**, two or three top models on the 3-brief smoke set, ranked by wall score, then dollars, then seconds. Candidates to **verify at phase start**, because every name here is stale on arrival: the current top Claude, GPT and Gemini models on OpenRouter. The measured starting point from v3 (2026-09-24): `anthropic/claude-sonnet-4.5` passed a cross-field layout task 4/4 where `openai/gpt-4o` passed 3/4 and `gpt-4o-mini` 0/3 ([../findings.md](../findings.md)).
+**Concrete ids are picked by the phase-22 bake-off**, two or three top models on the 3-brief smoke set, ranked by wall score, then dollars, then seconds. Candidates to **verify at phase start**, because every name here is stale on arrival: the current top Claude, GPT and Gemini models on OpenRouter. The measured starting point from v3 (2026-09-24): `anthropic/claude-sonnet-4.5` passed a cross-field layout task 4/4 where `openai/gpt-4o` passed 3/4 and `gpt-4o-mini` 0/3 (../findings.md).
 
 **Model ids are pinned.** A stage's setting names an exact id, never an alias that a provider can repoint. A pin is what makes a bench score mean the same thing next week.
 

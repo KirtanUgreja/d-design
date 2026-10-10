@@ -57,7 +57,7 @@ v4 gives the engine, the data and the export to the backend alone. The frontend 
 
 **The process that faces the internet holds nothing worth stealing.** The API never calls a model or a browser and never holds the OpenRouter key. The worker does all three and accepts no inbound connection. v3 had the same idea in its fetch worker; v4 applies it to the one secret and the one browser it actually has.
 
-**The artefact is still the file.** One self-contained `.html` per deck, with `connect-src 'none'` and fonts and images embedded. It comes in two flavours, **present** (with speaker notes) and **send** (without), so emailing a deck never leaks the notes ([frontend.md](frontend.md) → "The exported deck"). That has been the decision since 2026-08-13, and v4 is what makes it true: v3's exporter shipped system font stacks and no `@font-face` at all ([../findings.md](../findings.md)).
+**The artefact is still the file.** One self-contained `.html` per deck, with `connect-src 'none'` and fonts and images embedded. It comes in two flavours, **present** (with speaker notes) and **send** (without), so emailing a deck never leaks the notes ([frontend.md](frontend.md) → "The exported deck"). That has been the decision since 2026-08-13, and v4 is what makes it true: v3's exporter shipped system font stacks and no `@font-face` at all (../findings.md).
 
 ## The stack
 
