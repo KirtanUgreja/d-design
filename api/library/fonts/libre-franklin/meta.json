@@ -1,0 +1,27 @@
+{
+  "family": "Libre Franklin",
+  "role": "sans",
+  "weights": [
+    400,
+    600
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.53,
+      "cap": 0.742,
+      "descender": 0.175,
+      "width": 0.47,
+      "leading": 0.92
+    },
+    "600": {
+      "x_height": 0.53,
+      "cap": 0.742,
+      "descender": 0.175,
+      "width": 0.479,
+      "leading": 0.92
+    }
+  }
+}

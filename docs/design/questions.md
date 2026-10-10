@@ -12,6 +12,39 @@ Defaults are opinionated on purpose. A question with no recommendation is a ques
 
 ---
 
+## What v4 answered (2026-09-26)
+
+The v4 re-decide ([../v4/spec.md](../v4/spec.md)) settled or overtook the questions below. The rows further down keep their original wording; where this table and a row disagree, **this table and the linked document win**. Rows that cite `v1/`, `v2/` or `v3/` paths point at documents that no longer exist.
+
+| Questions | What v4 decided | Where |
+|---|---|---|
+| §2 preamble, 21, 29 | The first users are founders and salespeople, not marketers. Five deck types | [../v4/spec.md](../v4/spec.md) → Locked decisions → First users |
+| 7, 71, 99, 195 | "Design family" is now a **look**: sampled per deck, generated per deck since 2026-10-05 (no picking), changed in the Design tab | [app.md](app.md) → "Pick a look"; [../v4/design-engine.md](../v4/design-engine.md) → "Sampler" |
+| 23 | Superseded. The model now composes each slide's HTML; colour and type come only from the look's tokens. The public line is *the AI designs every slide inside one design system* | [../v4/spec.md](../v4/spec.md) → Locked decisions → Token rule |
+| 20, 134, 135, 194 | Brand colours are asked for after the first deck exists, in the Design tab. Never in the interview | [app.md](app.md) → "First run" |
+| 78 | Reversed. An edit is saved and re-measured by the backend, so an anonymous editable demo is no longer free | [website.md](website.md) → "Watch it build" |
+| 138, 176, 270, 272 | The watch is one to three minutes, not forty seconds; first slides within ~90 seconds of approval | [../v4/spec.md](../v4/spec.md) → Risks |
+| 141 (§7 preamble) | A deck costs roughly $1.5–3.5, not $0.20–0.40 (estimate until phase 22 measures it) | [../v4/bench.md](../v4/bench.md) → "Budgets" |
+| 145–149, 153 | Answered: a composer, then one model call writing ≤5 questions with suggested answers, shown one at a time, skippable; one asks whether the deck is presented live or sent | [app.md](app.md) → §1–2; [../v4/content.md](../v4/content.md) → "Interview" |
+| 150 (both), 166 | Answered: YOU / AI / WEB chips, source popovers, unsourced numbers flagged. No accounts until phase 29 | [app.md](app.md) → §2 |
+| 151, 152 | Nothing is fetched and nothing is uploaded in v4; a URL on a slide is plain text. Research runs through the model gateway's search | [../v4/content.md](../v4/content.md) → "Research and the Fact ledger" |
+| 159–167 | Answered as defaulted, plus inline edit and regenerate on the cards | [app.md](app.md) → §2 |
+| 169–179 | Answered. Changes: slides arrive already measured; an unfixable slide arrives flagged "needs attention"; a separate worker runs the job, so a reload reconnects without gaps | [app.md](app.md) → §4 |
+| 181–191, 196 | Answered: filmstrip left, scaled 16:9 canvas, Slide / Notes / Design tabs. The canvas scales uniformly, the instruction box lives in the Slide tab, undo is one snapshot per operation | [app.md](app.md) → §5 |
+| 197–204 | Rewritten. Still no picker and no HTML/CSS authoring. Slide-level changes are requests; look-level changes are the Design tab. "Emphasis" is no longer a schema field | [app.md](app.md) → "The colour picker that does not exist" |
+| 207, 208, 214 | Answered: two export flavours. **Present** carries speaker notes; **send** and its PDF do not | [app.md](app.md) → §6 |
+| 215 | Reversed: version history is built, labelled, one version per operation | ../v4/plan/28-editor.md |
+| 209–213, 216–218, 89, 102–105, 117, 118 | Not in v4. There is no hosted URL; sharing means sending the file | ../v4/plan/29-accounts-deploy.md → Skipped |
+| 107–116 | Open again. v4 has no tiers or billing, and per-deck cost changed the trade | [website.md](website.md) → "Pricing" |
+| 123 | Overtaken: a managed auth provider, chosen at phase 29 | [../v4/spec.md](../v4/spec.md) → Locked decisions → Auth |
+| 219–230 | Answered, with new rows for a flagged slide, a broken edit and a dropped connection | [app.md](app.md) → "The states nobody designs" |
+| 250 | Artefact accessibility (contrast, minimum type size) is measured by the engine | [../v4/design-engine.md](../v4/design-engine.md) → "QA metrics" |
+| 256 | The hero is one HTML file, typically under 3 MB. Not React plus Motion | [website.md](website.md) → "Weight and instrumentation" |
+| 259 | v4 ships the machine-readable marker in every export; the visible mark is still ours to design | [../v4/spec.md](../v4/spec.md) → Locked decisions → Export |
+| 276 | Still never bend the engine for our own website | [principles.md](principles.md) → "The dogfood ladder" |
+
+---
+
 ## §1 Name and vocabulary
 
 The one section that must be settled in v1, because it leaks into every string, route, and doc ([principles.md](principles.md), principle 11).
@@ -49,7 +82,7 @@ Constrained by `v1/spec.md` — the wedge is locked (a marketer with a launch in
 | 20 | Do we promise on-brand output? | Yes, prominently. Marketers cannot ship off-brand (`v1/spec.md`) |
 | 21 | Does the headline name a job or a deadline? | Yes. "Launch in three weeks" is a better qualifier than any form field |
 | 22 | Do we say "no templates"? | Yes. Sharpest two words we have |
-| 23 | Do we explain publicly that the AI never writes styling? | Yes, as a feature — *the AI writes the story, a design system does the styling*. It is why the output does not look generated |
+| 23 | Do we explain publicly that the AI never writes styling? | **Superseded in v4 → [../v4/spec.md](../v4/spec.md) (Token rule).** Was: Yes, as a feature — *the AI writes the story, a design system does the styling*. It is why the output does not look generated |
 | 24 | Do we publish a point-of-view essay? | One, at v3 launch. It is how designers hear about this without being sold to |
 
 ---
@@ -147,7 +180,7 @@ Principle 7. The constraint that makes this section interesting: a real generati
 | 75 | Do we label it a recording? | Yes, plainly. Principle 10, and the label costs nothing because the scenes are genuinely generated |
 | 76 | Anonymous live generation, ever? | No through v3. Revisit only with a hard per-IP cap, a kill switch, and a bill alarm |
 | 77 | A playground with pre-baked briefs? | Yes at v3 — pick one of three briefs, watch its recorded run. Three recordings, zero marginal cost |
-| 78 ★ | Can a visitor edit the demo deck without an account? | **Yes (v2).** Editor edits are local patches with no model call (`docs/v2/plan/12-editor.md`). Letting someone change real copy on a real deck, in the browser, for free, is the strongest thing we can offer and it costs nothing |
+| 78 ★ | Can a visitor edit the demo deck without an account? | **Reversed in v4 → [website.md](website.md).** Was: **Yes (v2).** Editor edits are local patches with no model call (`docs/v2/plan/12-editor.md`). Letting someone change real copy on a real deck, in the browser, for free, is the strongest thing we can offer and it costs nothing |
 | 79 | Does the free demo include an AI edit? | No. That is a model call. Show a recorded one |
 | 80 | Do we demo the outline gate? | Yes. It is the trust feature, and no competitor has one |
 | 81 | Do we demo the generation watch? | Yes, quietly — it is the wow moment |
@@ -266,7 +299,7 @@ The app's front door (`docs/v1/plan/02-interview.md`). Import is deferred, so v1
 
 | # | Question | Default |
 |---|---|---|
-| 145 ★ | Prompt box, guided Q&A, or a form? | Prompt box first, then a **short structured interview** — not a chat. Chat implies memory and invites off-task use |
+| 145 ★ | Prompt box, guided Q&A, or a form? | **Answered in v4 → [app.md](app.md) §1–2.** Prompt box first, then a **short structured interview** — not a chat. Chat implies memory and invites off-task use |
 | 146 | How many questions does the AI ask? | Three to five, with visible progress. Never open-ended, never more than five |
 | 147 | Can you skip straight to generate? | Yes, always. The interview improves output; it must not gate it |
 | 148 | Does it look like a chat UI? | No. Bubbles set chat expectations we will not meet, and a chat log is not an interview |
@@ -309,7 +342,7 @@ Principle 3 names this the highest-leverage motion design in the app. It is fort
 
 | # | Question | Default |
 |---|---|---|
-| 169 ★ | What is on screen while it builds? | **The slides themselves, full size, appearing in place as they arrive.** Not a progress bar next to a spinner. The SSE stream already delivers whole validated slides ([../techstack/frontend.md](../techstack/frontend.md)) |
+| 169 ★ | What is on screen while it builds? | **Answered in v4 → [app.md](app.md) §4.** **The slides themselves, full size, appearing in place as they arrive.** Not a progress bar next to a spinner. The SSE stream already delivers whole validated slides ([../techstack/frontend.md](../techstack/frontend.md)) |
 | 170 | Is the outline visible ahead of the build? | Yes, ghosted. Watching known slots fill is dramatically better than watching an unknown list grow |
 | 171 | How does each slide arrive? | With the deck's own design-family motion, not chrome animation. The reveal you watch is the reveal your audience gets. A slide with an image arrives with its image |
 | 172 | Do we surface repairs? | No. The `repair` event is instrumentation (`docs/v1/spec.md`). Showing users a self-correction is honesty nobody asked for and it undermines the moment |
@@ -355,7 +388,7 @@ Principle 8. The most important ten questions in this document, because this is 
 
 | # | Question | Default |
 |---|---|---|
-| 197 ★ | What happens when a user goes looking for styling controls? | They get a designed, positive answer **at the moment of reaching** — inline, once, in the panel where they expected the control. Not a docs page, not a tooltip, not a tour |
+| 197 ★ | What happens when a user goes looking for styling controls? | **Answered in v4 → [app.md](app.md), "The colour picker that does not exist".** They get a designed, positive answer **at the moment of reaching** — inline, once, in the panel where they expected the control. Not a docs page, not a tooltip, not a tour |
 | 198 | What is the copy? | Something in the shape of *"Type, colour and spacing come from the design family, so this cannot go off-brand. Change the family, not the pixel."* Needs your voice |
 | 199 | What replaces the picker? | Four visible affordances: design family, emphasis level, brand kit, reroll. They must look more powerful than what they replace, because they are |
 | 200 | Do we teach "emphasis" as the replacement vocabulary? | Yes. It is intent, it is in the schema, and it is the concept that makes the constraint learnable |
@@ -373,14 +406,14 @@ Principle 8. The most important ten questions in this document, because this is 
 | # | Question | Default |
 |---|---|---|
 | 207 | Is the export moment designed? | Yes. It is one of the three hot surfaces, and it is what gets screenshotted into Slack |
-| 208 | What does the reveal show? | The **download** — one self-contained `.html` file — large and prominent, with the deck preview behind it. One click to download, one to present, one to send. The hosted URL is v3 |
+| 208 | What does the reveal show? | **Answered in v4 → [app.md](app.md) §6** (two flavours: present with notes, send without). Was: The **download** — one self-contained `.html` file — large and prominent, with the deck preview behind it. One click to download, one to present, one to send. The hosted URL is v3 |
 | 209 | OG image for hosted decks? | Auto-screenshot (v3). Playwright is already in the stack ([../techstack/frontend.md](../techstack/frontend.md)) |
 | 210 | Password protection? | v3. Launch material is under embargo more often than not |
 | 211 | Embed dialog? | v3, with the hosted URL. One snippet, copy button, nothing configurable |
 | 212 | Custom domain? | v3, top self-serve tier |
 | 213 | Unpublish? | v3. Instant, and it really removes the URL |
 | 214 | Re-export after edits? | Explicit. A downloaded file never changes under you; a new generation is a new file |
-| 215 | Version history? | Not in v1 (`v2/plan/12-editor.md`). Undo is per-session |
+| 215 | Version history? | **Reversed in v4 → ../v4/plan/28-editor.md:** built, one labelled version per operation |
 | 216 | Slack and LinkedIn preview quality? | v3, when the URL exists. Treat as a launch requirement — a bad unfurl on the buyer's own share is a product failure |
 | 217 | QR code for in-person? | Cheap, and marketers at events will use it. Low priority, high delight |
 | 218 | Analytics summary? | v3, if a beacon can exist without breaking the zero-network guarantee. It is a thing we sell, not a thing we bolt on |

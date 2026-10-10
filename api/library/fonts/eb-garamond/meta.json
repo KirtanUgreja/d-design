@@ -1,0 +1,54 @@
+{
+  "family": "EB Garamond",
+  "role": "serif",
+  "weights": [
+    400,
+    600
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "axes": {
+    "wght": [
+      400,
+      800
+    ]
+  },
+  "metrics": {
+    "400": {
+      "x_height": 0.405,
+      "cap": 0.694,
+      "descender": 0.29,
+      "width": 0.391,
+      "leading": 0.99
+    },
+    "500": {
+      "x_height": 0.412,
+      "cap": 0.696,
+      "descender": 0.29,
+      "width": 0.404,
+      "leading": 0.99
+    },
+    "600": {
+      "x_height": 0.418,
+      "cap": 0.697,
+      "descender": 0.289,
+      "width": 0.417,
+      "leading": 0.99
+    },
+    "700": {
+      "x_height": 0.425,
+      "cap": 0.699,
+      "descender": 0.289,
+      "width": 0.43,
+      "leading": 0.99
+    },
+    "800": {
+      "x_height": 0.429,
+      "cap": 0.7,
+      "descender": 0.289,
+      "width": 0.438,
+      "leading": 0.99
+    }
+  }
+}

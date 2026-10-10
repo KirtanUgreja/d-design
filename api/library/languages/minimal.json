@@ -1,0 +1,58 @@
+{
+  "active": false,
+  "id": "minimal",
+  "name": "Quiet minimal",
+  "idea": "One statement in a vast field and one object: calm, expensive, quiet.",
+  "brief": "Quiet minimalism. One statement or one number per slide, placed with intent in a vast empty field (often off-centre, low or to one side). At most two blocks of content on any slide. Light hierarchy: the headline is large but light-weighted relative to the field; the text is small and spaced. An image, when present, is a single object on a plain ground, given room. Silence is the design: no rules, no frames, no texture.",
+  "never": [
+    "more than two blocks",
+    "rules and frames",
+    "texture",
+    "dense lists"
+  ],
+  "kinds": [
+    "grotesk",
+    "wide",
+    "serif"
+  ],
+  "pairings": [],
+  "grids": [
+    "poster",
+    "asymmetric"
+  ],
+  "edges": [
+    "sharp",
+    "soft"
+  ],
+  "dark": 0.25,
+  "split": 0.0,
+  "density": [
+    "airy"
+  ],
+  "ratio": [
+    1.25,
+    1.38
+  ],
+  "texture": "never",
+  "shapes": false,
+  "image": {
+    "appetite": 0.4,
+    "styles": [
+      "studio product photography, single object, plain seamless backdrop, soft light",
+      "soft 3D render of a single object on a plain ground"
+    ]
+  },
+  "tones": [
+    "plain",
+    "warm"
+  ],
+  "deck_types": [
+    "pitch",
+    "launch",
+    "project"
+  ],
+  "finishes": [
+    "none"
+  ],
+  "glow": false
+}

@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=1920">
+<title>Northwind Studio — Rebrand Proposal</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Helvetica Neue",Helvetica,Arial,sans-serif;
+    --serif:Georgia,"Iowan Old Style","Times New Roman",Times,serif;
+    --ink:#0B1B2B;
+    --amber:#E3B15C;
+    --amber-dark:#A9761F;
+    --green:#2E6B5E;
+    --slate:#6B7A88;
+  }
+  html,body{background:#0a0a0a;}
+  body{font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+
+  /* ---------- slide shell ---------- */
+  .slide{
+    width:1920px;height:1080px;margin:0 auto;position:relative;overflow:hidden;
+  }
+  .inner{
+    width:100%;height:100%;position:relative;overflow:hidden;
+    display:flex;flex-direction:column;padding:80px 100px 64px;
+  }
+  .inner.dark{
+    --text:#F4F1EB;--muted:#8FA0B0;--hair:rgba(244,241,235,.16);
+    --accent:#E3B15C;--bg:#0B1B2B;
+    background:#0B1B2B;color:#F4F1EB;
+  }
+  .inner.light{
+    --text:#0B1B2B;--muted:#5A6B7A;--hair:rgba(11,27,43,.16);
+    --accent:#A9761F;--bg:#F7F4EF;
+    background:#F7F4EF;color:#0B1B2B;
+  }
+  .inner > *{position:relative;z-index:1;}
+  .inner > .deco{position:absolute;z-index:0;pointer-events:none;}
+
+  .grid{inset:0;background-image:repeating-linear-gradient(90deg,rgba(244,241,235,.05) 0 1px,transparent 1px 240px);}
+  .glow{width:1500px;height:1500px;right:-460px;top:-560px;border-radius:50%;
+    background:radial-gradient(circle,rgba(227,177,92,.20) 0%,rgba(227,177,92,0) 62%);}
+  .ring{width:920px;height:920px;right:-180px;bottom:-420px;border-radius:50%;
+    border:1px solid rgba(244,241,235,.10);}
+  .ring.two{width:1320px;height:1320px;right:-380px;bottom:-620px;border-color:rgba(244,241,235,.06);}
+
+  /* ---------- shared type ---------- */
+  .eyebrow{font-size:14px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:var(--accent);}
+  .s-head{display:flex;justify-content:space-between;align-items:center;
+    padding-bottom:22px;border-bottom:1px solid var(--hair);margin-bottom:56px;}
+  .num{font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);}
+  .h2{font-family:var(--serif);font-weight:400;font-size:84px;line-height:1.06;
+    letter-spacing:-.028em;max-width:1520px;}
+  .big-p{font-size:30px;line-height:1.5;color:var(--muted);max-width:1180px;}
+
+  /* ---------- 01 cover ---------- */
+  .cover-top{display:flex;justify-content:space-between;align-items:center;}
+  .wm{font-size:20px;font-weight:700;letter-spacing:.2em;text-transform:uppercase;color:#F4F1EB;}
+  .wm em{font-style:normal;font-weight:300;color:#8FA0B0;}
+  .cov-tag{font-size:13px;letter-spacing:.24em;text-transform:uppercase;color:#8FA0B0;}
+  .cover-body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:38px;}
+  h1{font-family:var(--serif);font-weight:400;font-size:124px;line-height:1;letter-spacing:-.035em;}
+  .cover-lede{font-size:27px;line-height:1.55;color:#8FA0B0;max-width:850px;}
+  .cover-foot{display:flex;border-top:1px solid rgba(244,241,235,.16);padding-top:34px;}
+  .cf{flex:1;}
+  .cf-k{display:block;font-size:12px;letter-spacing:.22em;text-transform:uppercase;color:#8FA0B0;margin-bottom:12px;}
+  .cf-v{font-size:19px;color:#F4F1EB;}
+
+  /* ---------- 02 stats ---------- */
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:64px;margin-top:auto;}
+  .stat{padding-top:28px;border-top:2px solid var(--accent);}
+  .stat-n{font-size:92px;font-weight:700;letter-spacing:-.04em;line-height:1;color:var(--accent);}
+  .stat-n i{font-style:normal;font-size:46px;font-weight:600;margin-left:2px;}
+  .stat-l{margin-top:22px;font-size:19px;line-height:1.5;color:var(--muted);max-width:430px;}
+
+  /* ---------- 03 findings ---------- */
+  .findings{display:grid;grid-template-columns:repeat(3,1fr);gap:70px;margin-top:64px;}
+  .finding{border-top:1px solid var(--hair);padding-top:30px;}
+  .f-num{font-size:13px;letter-spacing:.24em;color:var(--accent);font-weight:600;margin-bottom:22px;}
+  .finding h3{font-family:var(--serif);font-weight:400;font-size:34px;line-height:1.15;
+    letter-spacing:-.015em;margin-bottom:20px;}
+  .finding p{font-size:18px;line-height:1.68;color:var(--muted);}
+  .quote-band{margin-top:auto;border-top:1px solid var(--hair);padding-top:42px;}
+  .quote-band p{border-left:3px solid var(--accent);padding-left:34px;max-width:1180px;
+    font-family:var(--serif);font-style:italic;font-size:38px;line-height:1.36;letter-spacing:-.012em;}
+
+  /* ---------- 04 idea ---------- */
+  .idea{display:grid;grid-template-columns:1.32fr 1fr;gap:96px;align-items:center;flex:1;padding-top:26px;}
+  .idea h2{font-family:var(--serif);font-weight:400;font-size:128px;line-height:.98;
+    letter-spacing:-.038em;margin-bottom:34px;}
+  .navy-card{background:#0B1B2B;color:#F4F1EB;border-radius:6px;padding:48px 46px;}
+  .navy-card .k{font-size:12px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;
+    color:#E3B15C;margin-bottom:24px;}
+  .navy-card p{font-size:22px;line-height:1.6;color:#D8DEE4;}
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:64px;margin-top:46px;}
+  .pillar{border-top:1px solid var(--hair);padding-top:26px;}
+  .pill-k{font-size:13px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:16px;}
+  .pillar p{font-size:19px;line-height:1.55;color:var(--muted);}
+
+  /* ---------- 05 panels ---------- */
+  .panels{display:grid;grid-template-columns:repeat(4,1fr);gap:26px;flex:1;margin-top:50px;min-height:0;}
+  .panel{background:rgba(244,241,235,.045);border:1px solid rgba(244,241,235,.12);
+    border-radius:8px;padding:32px;display:flex;flex-direction:column;min-height:0;}
+  .panel-body{flex:1;display:flex;flex-direction:column;min-height:0;}
+  .panel-body.center{align-items:center;justify-content:center;gap:26px;}
+  .panel-cap{border-top:1px solid rgba(244,241,235,.14);padding-top:16px;margin-top:22px;
+    display:flex;justify-content:space-between;font-size:12px;letter-spacing:.14em;
+    text-transform:uppercase;color:#8FA0B0;}
+  .panel-cap b{color:#F4F1EB;font-weight:600;}
+
+  .mark{width:100px;height:100px;background:#F7F4EF;border-radius:28px;position:relative;}
+  .mark::after{content:"";position:absolute;left:27px;top:30px;width:46px;height:46px;
+    background:#E3B15C;border-radius:23px 23px 5px 5px;}
+  .lockup{font-family:var(--serif);font-size:34px;letter-spacing:.34em;color:#F4F1EB;
+    text-indent:.34em;}
+  .lockup-sub{font-size:10px;letter-spacing:.44em;text-transform:uppercase;color:#8FA0B0;
+    text-indent:.44em;margin-top:10px;}
+
+  .pal{display:flex;flex-direction:column;justify-content:center;height:100%;}
+  .pal-row{display:flex;align-items:center;gap:16px;padding:11px 0;
+    border-bottom:1px solid rgba(244,241,235,.10);}
+  .pal-row:last-child{border-bottom:none;}
+  .sw{width:34px;height:34px;border-radius:8px;flex:none;box-shadow:inset 0 0 0 1px rgba(244,241,235,.18);}
+  .sw-n{flex:1;font-size:16px;color:#F4F1EB;}
+  .sw-h{font-size:12px;letter-spacing:.06em;color:#8FA0B0;}
+
+  .type-a{font-family:var(--serif);font-size:132px;line-height:1;color:#F4F1EB;
+    letter-spacing:-.03em;margin-bottom:auto;}
+  .tm-r{display:flex;justify-content:space-between;padding:12px 0;
+    border-top:1px solid rgba(244,241,235,.10);font-size:14px;}
+  .tm-r span:first-child{color:#F4F1EB;}
+  .tm-r span:last-child{color:#8FA0B0;}
+
+  .phone{width:200px;height:322px;background:#06121F;border:1px solid rgba(244,241,235,.18);
+    border-radius:24px;padding:14px;display:flex;flex-direction:column;gap:12px;}
+  .ph-head{display:flex;justify-content:space-between;align-items:center;}
+  .ph-mark{width:22px;height:22px;border-radius:7px;background:#F7F4EF;position:relative;}
+  .ph-mark::after{content:"";position:absolute;left:6px;top:7px;width:10px;height:10px;
+    background:#E3B15C;border-radius:5px 5px 2px 2px;}
+  .ph-pill{width:34px;height:6px;border-radius:3px;background:rgba(244,241,235,.22);}
+  .ph-card{background:#F7F4EF;border-radius:12px;padding:14px;color:#0B1B2B;}
+  .ph-k{font-size:9px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:#8494A3;}
+  .ph-v{font-size:22px;font-weight:700;letter-spacing:-.02em;margin:6px 0 12px;}
+  .ph-bar{height:6px;border-radius:3px;background:rgba(11,27,43,.1);margin-top:7px;overflow:hidden;}
+  .ph-bar span{display:block;height:100%;border-radius:3px;background:#0B1B2B;}
+  .ph-bar.alt span{background:#2E6B5E;}
+  .ph-list{display:flex;flex-direction:column;gap:8px;margin-top:auto;}
+  .ph-item{height:26px;border-radius:8px;background:rgba(244,241,235,.08);}
+
+  /* ---------- 06 gantt ---------- */
+  .gantt{margin-top:14px;}
+  .g-row{display:grid;grid-template-columns:430px 1fr;align-items:center;height:78px;
+    border-top:1px solid var(--hair);}
+  .g-row.head{height:auto;border-top:none;padding-bottom:18px;align-items:end;}
+  .g-label{display:flex;align-items:baseline;gap:16px;font-size:19px;color:var(--text);}
+  .g-n{font-size:13px;font-weight:700;letter-spacing:.14em;color:var(--accent);}
+  .g-track{position:relative;height:100%;
+    background-image:repeating-linear-gradient(90deg,var(--hair) 0 1px,transparent 1px 20%);}
+  .months{display:grid;grid-template-columns:repeat(5,1fr);height:auto;}
+  .months span{border-left:1px solid var(--hair);padding-left:16px;font-size:12px;
+    letter-spacing:.18em;text-transform:uppercase;color:var(--muted);}
+  .months span:first-child{border-left:none;padding-left:0;}
+  .bar{position:absolute;top:19px;height:40px;border-radius:4px;background:#0B1B2B;
+    color:#F4F1EB;display:flex;align-items:center;padding:0 16px 0 18px;
+    border-left:4px solid var(--accent);font-size:15px;font-weight:600;letter-spacing:.01em;}
+  .notes{display:grid;grid-template-columns:repeat(3,1fr);gap:64px;margin-top:auto;
+    border-top:1px solid var(--hair);padding-top:30px;}
+  .note{font-size:17px;line-height:1.55;color:var(--muted);}
+  .note b{display:block;color:var(--text);font-weight:600;font-size:16px;margin-bottom:8px;
+    letter-spacing:.01em;}
+
+  /* ---------- 07 investment ---------- */
+  .inv{display:grid;grid-template-columns:0.82fr 1.18fr;gap:80px;flex:1;padding-top:34px;}
+  .inv-card{background:#0B1B2B;color:#F4F1EB;border-radius:8px;padding:52px 48px;
+    display:flex;flex-direction:column;}
+  .ic-k{font-size:12px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;
+    color:#E3B15C;margin-bottom:26px;}
+  .ic-v{font-size:96px;font-weight:700;letter-spacing:-.045em;line-height:1;color:#E3B15C;}
+  .ic-sub{margin-top:18px;font-size:17px;color:#8FA0B0;line-height:1.5;}
+  .ic-terms{margin-top:auto;border-top:1px solid rgba(244,241,235,.16);padding-top:26px;
+    display:flex;flex-direction:column;gap:16px;}
+  .term{display:flex;justify-content:space-between;align-items:baseline;font-size:17px;}
+  .term b{font-size:22px;font-weight:700;color:#F4F1EB;}
+  .term span{color:#8FA0B0;}
+
+  .tbl{display:flex;flex-direction:column;justify-content:center;}
+  .tbl-row{display:grid;grid-template-columns:1fr 220px 190px;gap:20px;align-items:baseline;
+    padding:19px 0;border-bottom:1px solid var(--hair);font-size:19px;}
+  .tbl-row .ph{color:var(--muted);font-size:15px;letter-spacing:.06em;text-transform:uppercase;}
+  .tbl-row .amt{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;}
+  .tbl-row.total{border-bottom:none;border-top:2px solid var(--text);margin-top:8px;padding-top:22px;}
+  .tbl-row.total .amt{font-size:26px;color:var(--accent);}
+  .tbl-row.total .nm{font-size:21px;font-weight:600;}
+  .inv-foot{display:grid;grid-template-columns:1fr 1fr;gap:80px;margin-top:40px;
+    border-top:1px solid var(--hair);padding-top:28px;}
+  .if-col h4{font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:12px;}
+  .if-col p{font-size:16px;line-height:1.55;color:var(--muted);}
+
+  /* ---------- 08 close ---------- */
+  .close-lede{font-size:25px;line-height:1.55;color:var(--muted);max-width:1050px;margin-top:26px;}
+  .proof{display:grid;grid-template-columns:repeat(3,1fr);gap:64px;margin-top:66px;}
+  .pf{padding-top:28px;border-top:2px solid var(--accent);}
+  .pf-n{font-size:84px;font-weight:700;letter-spacing:-.045em;line-height:1;color:var(--accent);}
+  .pf p{margin-top:20px;font-size:18px;line-height:1.6;color:var(--muted);max-width:420px;}
+  .close-band{margin-top:auto;border-top:1px solid var(--hair);padding-top:46px;
+    display:grid;grid-template-columns:1.05fr 1fr;gap:110px;align-items:end;}
+  .cb-k{font-size:12px;font-weight:600;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:24px;}
+  .steps{list-style:none;display:flex;flex-direction:column;gap:16px;}
+  .steps li{display:flex;gap:18px;font-size:18px;line-height:1.5;color:#C9D2DA;}
+  .steps li b{color:#E3B15C;font-weight:700;font-variant-numeric:tabular-nums;}
+  .closing{font-family:var(--serif);font-size:52px;line-height:1.14;letter-spacing:-.028em;
+    color:#F4F1EB;margin-bottom:28px;}
+  .contact{display:flex;gap:44px;font-size:15px;color:#8FA0B0;letter-spacing:.04em;
+    border-top:1px solid rgba(244,241,235,.16);padding-top:22px;}
+</style>
+</head>
+<body>
+
+<!-- ================= 01 · COVER ================= -->
+<section class="slide">
+  <div class="inner dark">
+    <div class="deco glow"></div>
+    <div class="deco ring"></div>
+    <div class="deco ring two"></div>
+    <div class="deco grid"></div>
+
+    <div class="cover-top">
+      <div class="wm">Northwind<em> Studio</em></div>
+      <div class="cov-tag">Brand &amp; Digital Identity</div>
+    </div>
+
+    <div class="cover-body">
+      <div class="eyebrow">A proposal for the Office of the CEO &amp; CMO</div>
+      <h1>A brand as strong<br>as your balance sheet.</h1>
+      <p class="cover-lede">A five-month repositioning and identity programme for a 140-year-old regional bank — built to be chosen by the customers it already deserves.</p>
+    </div>
+
+    <div class="cover-foot">
+      <div class="cf"><span class="cf-k">Engagement</span><span class="cf-v">5 months</span></div>
+      <div class="cf"><span class="cf-k">Investment</span><span class="cf-v">$380,000 fixed</span></div>
+      <div class="cf"><span class="cf-k">Prepared by</span><span class="cf-v">Northwind Studio</span></div>
+      <div class="cf"><span class="cf-k">Status</span><span class="cf-v">Confidential · 2025</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 · WHERE YOU STAND ================= -->
+<section class="slide">
+  <div class="inner light">
+    <div class="s-head">
+      <span class="eyebrow">Where you stand</span>
+      <span class="num">01 / 06</span>
+    </div>
+
+    <h2 class="h2">Regional banks are winning<br>on trust — and losing on relevance.</h2>
+
+    <p class="big-p" style="margin-top:56px;">Your customers don't doubt you. They simply don't think about you. Trust is the hardest thing for a bank to earn and the easiest thing to overlook — particularly when every competitor in your tier has spent a decade claiming the same ground.</p>
+
+    <div class="stat-row">
+      <div class="stat">
+        <div class="stat-n">71<i>%</i></div>
+        <div class="stat-l">of new account decisions now begin on a screen, not in a lobby.</div>
+      </div>
+      <div class="stat">
+        <div class="stat-n">62<i>%</i></div>
+        <div class="stat-l">of regional banks in your tier are visually interchangeable with one another.</div>
+      </div>
+      <div class="stat">
+        <div class="stat-n">8<i>s</i></div>
+        <div class="stat-l">is the average time a prospect gives a bank's homepage before deciding to stay or leave.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 03 · DIAGNOSIS ================= -->
+<section class="slide">
+  <div class="inner dark">
+    <div class="deco grid"></div>
+    <div class="s-head">
+      <span class="eyebrow">The diagnosis</span>
+      <span class="num">02 / 06</span>
+    </div>
+
+    <h2 class="h2">Your reputation is 140 years old.<br>Your brand looks like everyone else's.</h2>
+
+    <div class="findings">
+      <div class="finding">
+        <div class="f-num">01</div>
+        <h3>Undifferentiated at a glance</h3>
+        <p>Put your identity beside four competitors and it is the hardest to recall. The wordmark, palette and branch system have not meaningfully moved since 2009 — and neither has the impression they leave.</p>
+      </div>
+      <div class="finding">
+        <div class="f-num">02</div>
+        <h3>Fragmented in the field</h3>
+        <p>Eleven customer-facing properties, three wordmark variants and no shared voice. Every project has rebuilt the brand from scratch, so the sum of the parts is smaller than the whole.</p>
+      </div>
+      <div class="finding">
+        <div class="f-num">03</div>
+        <h3>Invisible to the next customer</h3>
+        <p>Prospects under forty describe the bank as "solid" and "old". The qualities that make you safe are precisely the ones that make you forgettable in a feed.</p>
+      </div>
+    </div>
+
+    <div class="quote-band">
+      <p>“The problem isn't trust. It's that trust isn't visible until someone walks through the door.”</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 04 · THE IDEA ================= -->
+<section class="slide">
+  <div class="inner light">
+    <div class="s-head">
+      <span class="eyebrow">The idea</span>
+      <span class="num">03 / 06</span>
+    </div>
+
+    <div class="idea">
+      <div>
+        <h2>Steady<br>is a strategy.</h2>
+        <p class="big-p">Every regional bank claims "local" and "trusted". Neither is a differentiator any more. Reliability — proven, visible and unmistakably modern — is. We make steady feel like momentum, not history.</p>
+      </div>
+      <div class="navy-card">
+        <div class="k">Positioning</div>
+        <p>For people and businesses who need a bank that will still be there, we are the steady choice — built to move at the speed of today.</p>
+      </div>
+    </div>
+
+    <div class="pillars">
+      <div class="pillar">
+        <div class="pill-k">Rooted</div>
+        <p>140 years of local capital, told as a competitive advantage rather than a history lesson.</p>
+      </div>
+      <div class="pillar">
+        <div class="pill-k">Responsive</div>
+        <p>A digital-first experience that answers in seconds — the modern face of a patient institution.</p>
+      </div>
+      <div class="pillar">
+        <div class="pill-k">Unmistakable</div>
+        <p>A system distinct enough to be recognised in a screenshot with the logo cropped out. That is the test we build to.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 05 · THE DIRECTION ================= -->
+<section class="slide">
+  <div class="inner dark">
+    <div class="deco grid"></div>
+    <div class="s-head">
+      <span class="eyebrow">The direction</span>
+      <span class="num">04 / 06</span>
+    </div>
+
+    <h2 class="h2">A system you can see<br>from across the street.</h2>
+
+    <div class="panels">
+
+      <div class="panel">
+        <div class="panel-body center">
+          <div class="mark"></div>
+          <div style="text-align:center;">
+            <div class="lockup">BANK</div>
+            <div class="lockup-sub">Est. 1885</div>
+          </div>
+        </div>
+        <div class="panel-cap"><b>Identity</b><span>Marks &amp; lockups</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-body">
+          <div class="pal">
+            <div class="pal-row"><span class="sw" style="background:#0B1B2B;"></span><span class="sw-n">Bedrock</span><span class="sw-h">#0B1B2B</span></div>
+            <div class="pal-row"><span class="sw" style="background:#F7F4EF;"></span><span class="sw-n">Paper</span><span class="sw-h">#F7F4EF</span></div>
+            <div class="pal-row"><span class="sw" style="background:#E3B15C;"></span><span class="sw-n">Signal</span><span class="sw-h">#E3B15C</span></div>
+            <div class="pal-row"><span class="sw" style="background:#2E6B5E;"></span><span class="sw-n">Ledger</span><span class="sw-h">#2E6B5E</span></div>
+            <div class="pal-row"><span class="sw" style="background:#6B7A88;"></span><span class="sw-n">Slate</span><span class="sw-h">#6B7A88</span></div>
+          </div>
+        </div>
+        <div class="panel-cap"><b>Palette</b><span>Five tokens</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-body">
+          <div class="type-a">Aa</div>
+          <div>
+            <div class="tm-r"><span>Display</span><span>Georgia / 400</span></div>
+            <div class="tm-r"><span>Interface</span><span>System sans / 400–700</span></div>
+            <div class="tm-r"><span>Numerals</span><span>Tabular, balanced</span></div>
+          </div>
+        </div>
+        <div class="panel-cap"><b>Typography</b><span>Two voices, one tone</span></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-body center">
+          <div class="phone">
+            <div class="ph-head">
+              <div class="ph-mark"></div>
+              <div class="ph-pill"></div>
+            </div>
+            <div class="ph-card">
+              <div class="ph-k">Total balance</div>
+              <div class="ph-v">$48,210</div>
+              <div class="ph-bar"><span style="width:68%"></span></div>
+              <div class="ph-bar alt"><span style="width:34%"></span></div>
+            </div>
+            <div class="ph-list">
+              <div class="ph-item"></div>
+              <div class="ph-item"></div>
+              <div class="ph-item"></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel-cap"><b>Digital</b><span>Mobile, first screen</span></div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ================= 06 · THE PLAN ================= -->
+<section class="slide">
+  <div class="inner light">
+    <div class="s-head">
+      <span class="eyebrow">The plan</span>
+      <span class="num">05 / 06</span>
+    </div>
+
+    <h2 class="h2">Five months. Five phases. One launch.</h2>
+
+    <div class="gantt">
+      <div class="g-row head">
+        <div class="g-label" style="font-size:13px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);">Phase</div>
+        <div class="months">
+          <span>Month 1</span><span>Month 2</span><span>Month 3</span><span>Month 4</span><span>Month 5</span>
+        </div>
+      </div>
+
+      <div class="g-row">
+        <div class="g-label"><span class="g-n">01</span> Discovery &amp; audit</div>
+        <div class="g-track"><div class="bar" style="left:1%;width:19%;">Discovery</div></div>
+      </div>
+
+      <div class="g-row">
+        <div class="g-label"><span class="g-n">02</span> Strategy &amp; positioning</div>
+        <div class="g-track"><div class="bar" style="left:16%;width:26%;">Strategy</div></div>
+      </div>
+
+      <div class="g-row">
+        <div class="g-label"><span class="g-n">03</span> Identity system</div>
+        <div class="g-track"><div class="bar" style="left:38%;width:24%;">Identity</div></div>
+      </div>
+
+      <div class="g-row">
+        <div class="g-label"><span class="g-n">04</span> Digital experience</div>
+        <div class="g-track"><div class="bar" style="left:58%;width:26%;">Digital</div></div>
+      </div>
+
+      <div class="g-row">
+        <div class="g-label"><span class="g-n">05</span> Rollout &amp; governance</div>
+        <div class="g-track"><div class="bar" style="left:78%;width:21%;">Rollout</div></div>
+      </div>
+    </div>
+
+    <div class="notes">
+      <div class="note"><b>Weekly working session</b>Wednesdays, 60 minutes, your marketing team plus two of ours.</div>
+      <div class="note"><b>Fortnightly executive review</b>CEO and CMO at every phase gate, with a written decision memo.</div>
+      <div class="note"><b>Fixed scope, fixed fee</b>No change-order surprises. If we under-scoped, that is our risk, not yours.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 07 · INVESTMENT ================= -->
+<section class="slide">
+  <div class="inner light">
+    <div class="s-head">
+      <span class="eyebrow">Investment</span>
+      <span class="num">06 / 06</span>
+    </div>
+
+    <h2 class="h2">One team. Five months. $380,000.</h2>
+
+    <div class="inv">
+      <div class="inv-card">
+        <div class="ic-k">Total engagement</div>
+        <div class="ic-v">$380,000</div>
+        <div class="ic-sub">Fixed fee · all agency work included<br>No hourly billing, no scope creep.</div>
+        <div class="ic-terms">
+          <div class="term"><b>30%</b><span>On signature</span></div>
+          <div class="term"><b>40%</b><span>At the Month 3 gate</span></div>
+          <div class="term"><b>30%</b><span>On final delivery</span></div>
+        </div>
+      </div>
+
+      <div class="tbl">
+        <div class="tbl-row">
+          <span class="nm">Strategy, audit &amp; positioning</span>
+          <span class="ph">Phase 1–2</span>
+          <span class="amt">$72,000</span>
+        </div>
+        <div class="tbl-row">
+          <span class="nm">Identity system &amp; brand guidelines</span>
+          <span class="ph">Phase 3</span>
+          <span class="amt">$98,000</span>
+        </div>
+        <div class="tbl-row">
+          <span class="nm">Digital experience design — web &amp; app</span>
+          <span class="ph">Phase 4</span>
+          <span class="amt">$118,000</span>
+        </div>
+        <div class="tbl-row">
+          <span class="nm">Rollout toolkits &amp; brand governance</span>
+          <span class="ph">Phase 5</span>
+          <span class="amt">$62,000</span>
+        </div>
+        <div class="tbl-row">
+          <span class="nm">Third-party costs — type, imagery, icons</span>
+          <span class="ph">Throughout</span>
+          <span class="amt">$30,000</span>
+        </div>
+        <div class="tbl-row total">
+          <span class="nm">Total</span>
+          <span class="ph">5 months</span>
+          <span class="amt">$380,000</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="inv-foot">
+      <div class="if-col">
+        <h4>Included</h4>
+        <p>Everything above, plus a 90-page brand guideline, a Figma component library for your product team, and twelve months of asset support after launch.</p>
+      </div>
+      <div class="if-col">
+        <h4>Not included</h4>
+        <p>Media buying, production photography beyond art direction, and the CMS build. We will scope those with your vendors — or introduce ours at cost.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 08 · CLOSE ================= -->
+<section class="slide">
+  <div class="inner dark">
+    <div class="deco glow"></div>
+    <div class="deco grid"></div>
+    <div class="s-head">
+      <span class="eyebrow">Why Northwind</span>
+      <span class="num">Next steps</span>
+    </div>
+
+    <h2 class="h2">Why Northwind.</h2>
+
+    <p class="close-lede">Six years of bank rebrands. Fourteen of them. One way of working: senior people, fixed scope, measurable outcomes.</p>
+
+    <div class="proof">
+      <div class="pf">
+        <div class="pf-n">14</div>
+        <p>financial-services brands repositioned since 2019 — from community banks to $40B regionals.</p>
+      </div>
+      <div class="pf">
+        <div class="pf-n">6</div>
+        <p>senior practitioners on your account. No handoffs, no juniors, no outsourced strategy.</p>
+      </div>
+      <div class="pf">
+        <div class="pf-n">24%</div>
+        <p>average lift in unaided brand recall within twelve months, across our last four financial engagements.</p>
+      </div>
+    </div>
+
+    <div class="close-band">
+      <div>
+        <div class="cb-k">Next steps</div>
+        <ol class="steps">
+          <li><b>01</b><span>A 30-minute working session with your marketing leads — this week.</span></li>
+          <li><b>02</b><span>A scoping memo and final statement of work — within five business days.</span></li>
+          <li><b>03</b><span>Kickoff — within three weeks of signature.</span></li>
+        </ol>
+      </div>
+      <div>
+        <p class="closing">Steady is a strategy.<br>Let's put it to work.</p>
+        <div class="contact">
+          <span>hello@northwind.studio</span>
+          <span>northwind.studio</span>
+          <span>+1 415 555 0148</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

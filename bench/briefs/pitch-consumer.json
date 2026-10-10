@@ -1,0 +1,300 @@
+{
+  "brief": {
+    "id": "pitch-consumer",
+    "prompt": "Seed pitch for Potluck, an app that lets neighbours share home-cooked meals at cost.",
+    "deck_type": "pitch",
+    "audience": "Consumer seed investors",
+    "ask": "Raise $2.5M seed",
+    "brand": {
+      "name": "Potluck",
+      "colors": [
+        "#e4572e"
+      ]
+    }
+  },
+  "outline": {
+    "governing_thought": "Potluck turns the meals neighbours already cook into a trusted, at-cost local network, and $2.5M seed funds proving it works city by city.",
+    "deck_type": "pitch",
+    "audience": "Consumer seed investors",
+    "ask": "Raise $2.5M seed",
+    "key_points": [
+      "Home cooks make more food than they eat",
+      "Neighbours want real meals without cost or hassle",
+      "Potluck matches them at cost with built-in trust",
+      "Neighbourhood density drives retention and growth",
+      "Seed funds launch cities and prove repeatable playbook"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "Cover",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Potluck brings neighbours together over home-cooked meals",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Seed pitch",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "Problem",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Weeknight dinner is expensive, lonely, and mostly takeout",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The problem",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "Hidden supply",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Your neighbours already cook more than they can eat",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The overlooked resource",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "Solution",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Potluck lets neighbours share home-cooked meals at cost",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The product",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Cooks post a portion they have extra",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Neighbours claim and pick up nearby",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Payment covers ingredients, nothing more",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "How it works",
+        "intent": "steps",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "A shared dinner takes three taps from craving to doorstep",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "How it works",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Browse meals cooked on your street",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Reserve a portion and pay at cost",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Pick up, eat, and thank the cook",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "Trust",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Verified neighbours and clear allergen labels make sharing feel safe",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Safety and trust",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Address-verified members only",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Allergen and ingredient details on every meal",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Ratings after each pickup",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "Why now",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Rising food costs make at-cost home cooking newly appealing",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Why now",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s08",
+        "beat": "Model",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Potluck earns a small service fee on every shared meal",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Business model",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Cooks recover ingredient costs, not profit",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Small fee on each transaction",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Density lowers cost to serve",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s09",
+        "beat": "Growth",
+        "intent": "steps",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "We win one neighbourhood at a time, then repeat the playbook",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Go to market",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Seed street by street with local hosts",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Reach density where repeat orders happen",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Expand to adjacent neighbourhoods and cities",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s10",
+        "beat": "Ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Help us raise $2.5M to launch Potluck city by city",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The ask",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Launch first neighbourhoods and prove retention",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Build trust and safety tooling",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Document the repeatable city playbook",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "$2.5M",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "Seed round",
+            "budget_words": 15
+          }
+        ]
+      }
+    ]
+  }
+}

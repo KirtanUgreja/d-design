@@ -1,0 +1,231 @@
+{
+  "brief": {
+    "id": "sales-agency",
+    "prompt": "Sales deck for Northwind Studio, a brand and web agency, pitching a rebrand to a regional bank.",
+    "deck_type": "sales",
+    "audience": "The bank's CMO and CEO",
+    "ask": "Win a 5-month rebrand engagement worth $380k",
+    "slide_count": 8
+  },
+  "outline": {
+    "governing_thought": "A rebrand that makes your bank look as trustworthy and modern as it truly is will win customers and strengthen loyalty, and Northwind can deliver it.",
+    "deck_type": "sales",
+    "audience": "The bank's CMO and CEO",
+    "ask": "Win a 5-month rebrand engagement worth $380k",
+    "key_points": [
+      "The bank's strength is not yet visible in its brand",
+      "Digital rivals are shaping customer expectations",
+      "A rebrand must change perception and behavior, not just the logo",
+      "Northwind's process ties brand, web and branch experience together",
+      "The engagement runs five months from kickoff to launch"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "Open",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "A rebrand can make your bank look as strong as it is",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Northwind Studio",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "Tension",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Your bank is stronger than it appears to new customers",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The gap",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "Context",
+        "intent": "comparison",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Digital-first rivals are setting the standard your customers expect",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The market",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "National banks look modern and effortless",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Regional banks hold trust but look dated",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Customers judge you in seconds online",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "Insight",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "A rebrand must change how people feel, not just the logo",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Our view",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "Solution",
+        "intent": "steps",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "We move from customer research to launch without losing your team",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Our approach",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Listen to customers and staff",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Define a position only you can own",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Build identity, web and branch experience",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "Proof of value",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "You get one brand system your branches and app share",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "What you get",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Positioning and messaging your teams can use",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Visual identity built for digital first",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "A new website that reflects the brand",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "Plan",
+        "intent": "timeline",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Five months take you from kickoff to public launch",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The plan",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Discover and position the brand",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Design identity and build the website",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Launch and equip every team",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s08",
+        "beat": "Ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Choose Northwind to lead your five-month rebrand",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Next step",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Five-month engagement, $380k investment",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Approve scope and set the kickoff date",
+            "budget_words": 10
+          }
+        ]
+      }
+    ]
+  }
+}

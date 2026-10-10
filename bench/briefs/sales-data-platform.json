@@ -1,0 +1,300 @@
+{
+  "brief": {
+    "id": "sales-data-platform",
+    "prompt": "Sales deck for Strata, an enterprise data platform, to a Fortune 500 retailer's data team.",
+    "pasted": [
+      {
+        "title": "Proof",
+        "text": "Replaces a typical 6-month integration with 3 weeks. Reference customer: a 900-store grocer cut data-pipeline incidents from 41 to 6 per quarter and retired 3 legacy ETL tools, saving $1.8M a year. 99.95% uptime SLA. Deploys in the customer's own cloud account."
+      }
+    ],
+    "deck_type": "sales",
+    "audience": "The Chief Data Officer and her head of platform",
+    "ask": "Book a 6-week proof of concept on the loyalty dataset",
+    "research": false
+  },
+  "outline": {
+    "governing_thought": "Strata replaces six-month integrations with three weeks, so a six-week proof of concept on your loyalty dataset will show the result in your own cloud.",
+    "deck_type": "sales",
+    "audience": "The Chief Data Officer and her head of platform",
+    "ask": "Book a 6-week proof of concept on the loyalty dataset",
+    "key_points": [
+      "Integration drops from 6 months to 3 weeks",
+      "A 900-store grocer cut incidents from 41 to 6 per quarter",
+      "Retiring 3 legacy ETL tools saved $1.8M a year",
+      "Strata runs in your own cloud account with a 99.95% uptime SLA"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "Open",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Strata replaces six-month integrations with three weeks",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Strata for your data platform team",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "Problem",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Slow integrations keep your data team behind the business",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The drag",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "Speed",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Strata cuts a typical integration from 6 months to 3 weeks",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Time to value",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "3 weeks",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "replaces a typical 6-month integration",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Strata proof material",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "Fit",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Strata deploys inside your own cloud account",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Deployment",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Your data stays in your environment",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Your security controls stay in force",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Your platform team keeps ownership",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "Proof",
+        "intent": "case",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "A 900-store grocer cut pipeline incidents from 41 to 6",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Reference customer",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Measured per quarter",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "A retailer at store-network scale",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "41 to 6",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "pipeline incidents per quarter",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Strata reference customer, 900-store grocer",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "Savings",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Retiring three legacy ETL tools saved the grocer $1.8M yearly",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Cost",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "$1.8M",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "saved per year after retiring 3 legacy ETL tools",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Strata reference customer, 900-store grocer",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "Reliability",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "A 99.95% uptime SLA backs your pipelines",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Commitment",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "99.95%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "uptime SLA",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Strata proof material",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s08",
+        "beat": "Test",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Your loyalty dataset is the right place to test this",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Where to prove it",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s09",
+        "beat": "Plan",
+        "intent": "steps",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Six weeks will show whether Strata fits your platform",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Proof of concept",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Connect the loyalty sources in your cloud",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Run live pipelines against your current baseline",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Review incidents and effort with your platform team",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s10",
+        "beat": "Ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Book a 6-week proof of concept on the loyalty dataset",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Next step",
+            "budget_words": 4
+          }
+        ]
+      }
+    ]
+  }
+}

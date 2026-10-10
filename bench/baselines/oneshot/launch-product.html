@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tessel 2 — Launch Deck</title>
+<style>
+  :root{
+    --bg:#070A0F;
+    --surface:#10151E;
+    --surface2:#151B26;
+    --line:rgba(255,255,255,.10);
+    --text:#EDEFF5;
+    --body:#C3CAD8;
+    --muted:#8A93A6;
+    --accent:#FF5C39;
+    --accent2:#4FE0B0;
+    --accent3:#7C8BFF;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+    --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{background:#04060A}
+  body{font-family:var(--sans);-webkit-font-smoothing:antialiased;font-feature-settings:"tnum" 1}
+  .deck{display:flex;flex-direction:column;align-items:flex-start}
+
+  .slide{
+    position:relative;width:1920px;height:1080px;overflow:hidden;
+    background:var(--bg);color:var(--text);
+    padding:80px 120px;display:flex;flex-direction:column;
+    border-bottom:1px solid rgba(255,255,255,.07);
+  }
+
+  /* ---------- shared background decoration ---------- */
+  .bg-grid{position:absolute;inset:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+    background-size:80px 80px;
+    -webkit-mask-image:radial-gradient(ellipse 65% 65% at 28% 30%,#000 0%,transparent 100%);
+    mask-image:radial-gradient(ellipse 65% 65% at 28% 30%,#000 0%,transparent 100%);
+  }
+  .glow{position:absolute;border-radius:50%;pointer-events:none;filter:blur(150px)}
+  .glow-a{width:900px;height:900px;left:-260px;top:-320px;background:rgba(255,92,57,.20)}
+  .glow-b{width:800px;height:800px;right:-200px;bottom:-340px;background:rgba(79,224,176,.14)}
+  .glow-c{width:700px;height:700px;right:120px;top:-260px;background:rgba(124,139,255,.13)}
+
+  /* ---------- shared components ---------- */
+  .shead{display:flex;justify-content:space-between;align-items:baseline;
+    padding-bottom:26px;border-bottom:1px solid var(--line);margin-bottom:56px}
+  .kicker{font-family:var(--mono);font-size:19px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent)}
+  .num{font-family:var(--mono);font-size:19px;letter-spacing:.14em;color:var(--muted)}
+
+  h2{font-size:84px;line-height:1.04;letter-spacing:-.035em;font-weight:700}
+  .lede{font-size:27px;line-height:1.5;color:var(--muted);max-width:1240px;margin-top:26px}
+
+  .bullets{list-style:none;display:flex;flex-direction:column;gap:20px;margin-top:44px}
+  .bullets li{position:relative;padding-left:36px;font-size:21px;line-height:1.45;color:var(--body)}
+  .bullets li::before{content:"";position:absolute;left:0;top:10px;width:11px;height:11px;border-radius:3px;background:var(--accent)}
+  .bullets.teal li::before{background:var(--accent2)}
+  .bullets.violet li::before{background:var(--accent3)}
+
+  .split{display:grid;grid-template-columns:720px 1fr;gap:84px;flex:1;align-items:start}
+
+  /* ================= SLIDE 1 ================= */
+  .s-title{justify-content:space-between}
+  .t-top{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2}
+  .brand{display:flex;align-items:center;gap:16px}
+  .brand-mark{width:44px;height:44px;border-radius:12px;background:var(--accent);color:#0B0E14;
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:24px;letter-spacing:-.02em}
+  .brand-name{font-size:26px;font-weight:600;letter-spacing:-.01em}
+  .t-meta{font-family:var(--mono);font-size:18px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+
+  .t-main{display:flex;align-items:center;gap:100px;flex:1;position:relative;z-index:2;padding-bottom:20px}
+  .t-left{flex:1}
+  .pill{display:inline-flex;align-items:center;gap:12px;font-family:var(--mono);font-size:17px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--accent);
+    background:rgba(255,92,57,.09);border:1px solid rgba(255,92,57,.35);
+    padding:11px 20px;border-radius:100px}
+  .pill-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--accent)}
+  h1{font-size:196px;line-height:.9;letter-spacing:-.055em;font-weight:800;display:flex;align-items:flex-start;margin-top:40px}
+  .h1-num{font-size:100px;color:var(--accent);line-height:1;margin-top:20px;margin-left:10px;font-weight:800;letter-spacing:-.03em}
+  .t-sub{font-size:30px;line-height:1.45;color:var(--body);margin-top:34px}
+  .chips{display:flex;gap:14px;margin-top:46px}
+  .chip{font-family:var(--mono);font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+    border:1px solid var(--line);background:rgba(255,255,255,.03);padding:12px 20px;border-radius:100px}
+
+  .t-right{width:620px;flex:0 0 620px}
+  .mock{background:linear-gradient(180deg,#141A26,#0D1119);border:1px solid rgba(255,255,255,.13);
+    border-radius:24px;overflow:hidden;box-shadow:0 50px 120px rgba(0,0,0,.65)}
+  .mock-top{display:flex;align-items:center;gap:10px;padding:22px 26px;border-bottom:1px solid var(--line)}
+  .dot{width:13px;height:13px;border-radius:50%;background:#2A3341}
+  .mock-name{margin-left:14px;font-family:var(--mono);font-size:17px;letter-spacing:.06em;color:var(--muted)}
+  .mock-body{padding:40px 36px 34px}
+  .note-title{font-size:30px;font-weight:600;letter-spacing:-.02em;margin-bottom:28px}
+  .nline{height:13px;border-radius:7px;background:rgba(255,255,255,.13);margin-bottom:19px}
+  .mock-status{display:flex;align-items:center;gap:14px;padding:20px 28px;border-top:1px solid rgba(79,224,176,.22);
+    background:rgba(79,224,176,.07);font-family:var(--mono);font-size:16px;letter-spacing:.05em;color:var(--accent2)}
+  .sdot{width:10px;height:10px;border-radius:50%;background:var(--accent2);box-shadow:0 0 14px var(--accent2)}
+
+  .t-foot{display:flex;justify-content:space-between;align-items:center;position:relative;z-index:2;
+    border-top:1px solid var(--line);padding-top:28px;font-family:var(--mono);font-size:17px;
+    letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+
+  /* ================= SLIDE 2 ================= */
+  .cards3{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:auto}
+  .card{background:linear-gradient(180deg,#121826,#0D121B);border:1px solid var(--line);
+    border-radius:22px;padding:46px 42px;min-height:326px;display:flex;flex-direction:column}
+  .cnum{font-family:var(--mono);font-size:17px;letter-spacing:.18em;color:var(--accent);margin-bottom:auto}
+  .card h3{font-size:32px;font-weight:600;letter-spacing:-.02em;margin:34px 0 16px}
+  .card p{font-size:20px;line-height:1.55;color:var(--muted)}
+
+  /* ================= SLIDE 3 ================= */
+  .stack{display:flex;flex-direction:column;gap:18px}
+  .srow{display:flex;align-items:center;gap:26px;background:var(--surface);border:1px solid var(--line);
+    border-radius:18px;padding:26px 30px}
+  .stag{font-family:var(--mono);font-size:14px;letter-spacing:.14em;text-transform:uppercase;
+    padding:9px 15px;border-radius:100px;white-space:nowrap;flex:0 0 auto}
+  .ok{color:var(--accent2);background:rgba(79,224,176,.10);border:1px solid rgba(79,224,176,.32)}
+  .opt{color:var(--accent3);background:rgba(124,139,255,.10);border:1px solid rgba(124,139,255,.32)}
+  .off{color:var(--muted);background:rgba(255,255,255,.04);border:1px solid var(--line)}
+  .srow h4{font-size:25px;font-weight:600;letter-spacing:-.01em;margin-bottom:7px}
+  .srow p{font-size:18px;line-height:1.45;color:var(--muted)}
+  .airplane{margin-top:26px;display:flex;align-items:center;gap:18px;border:1px dashed rgba(255,92,57,.45);
+    border-radius:18px;padding:22px 28px;background:rgba(255,92,57,.05)}
+  .airplane .glyph{font-size:30px;color:var(--accent);line-height:1}
+  .airplane p{font-size:20px;color:var(--body)}
+  .airplane b{color:var(--text);font-weight:600}
+
+  /* ================= SLIDE 4 ================= */
+  .mesh{width:780px;height:560px;display:block}
+  .compare{display:flex;flex-direction:column;gap:14px;margin-top:44px}
+  .crow{display:flex;align-items:center;gap:22px;border-radius:16px;padding:22px 26px;border:1px solid var(--line);background:var(--surface)}
+  .crow.good{border-color:rgba(79,224,176,.32);background:rgba(79,224,176,.06)}
+  .crow.bad{border-color:rgba(255,92,57,.25);background:rgba(255,92,57,.05)}
+  .ctag{font-family:var(--mono);font-size:15px;letter-spacing:.14em;text-transform:uppercase;flex:0 0 120px}
+  .crow.good .ctag{color:var(--accent2)}
+  .crow.bad .ctag{color:var(--accent)}
+  .ctext{font-size:20px;color:var(--body)}
+  .ctext s{color:var(--muted);text-decoration-color:var(--accent)}
+  .diag-note{margin-top:26px;font-size:18px;line-height:1.5;color:var(--muted);max-width:760px}
+
+  /* ================= SLIDE 5 ================= */
+  .crypt{display:flex;flex-direction:column;gap:12px;width:700px}
+  .cbox{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:26px 30px}
+  .cbox.cipher{border-color:rgba(124,139,255,.35);background:rgba(124,139,255,.07)}
+  .clabel{font-family:var(--mono);font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:14px}
+  .cbox.cipher .clabel{color:var(--accent3)}
+  .ctext2{font-size:21px;line-height:1.4;color:var(--text)}
+  .ctext2.mono{font-family:var(--mono);font-size:20px;letter-spacing:.08em;color:var(--accent3);word-spacing:6px}
+  .carrow{display:flex;align-items:center;gap:14px;padding-left:34px;font-family:var(--mono);
+    font-size:15px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+  .carrow span{color:var(--accent3);font-size:19px;line-height:1}
+
+  /* ================= SLIDE 6 ================= */
+  .grid6{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:1fr 1fr;gap:28px;margin-top:auto}
+  .tile{background:linear-gradient(180deg,#121826,#0D121B);border:1px solid var(--line);
+    border-radius:22px;padding:40px 38px;display:flex;flex-direction:column}
+  .glyph2{width:58px;height:58px;border-radius:16px;background:rgba(255,92,57,.10);
+    border:1px solid rgba(255,92,57,.28);color:var(--accent);display:flex;align-items:center;
+    justify-content:center;font-size:26px;line-height:1}
+  .tile:nth-child(2) .glyph2,.tile:nth-child(5) .glyph2{color:var(--accent2);background:rgba(79,224,176,.10);border-color:rgba(79,224,176,.28)}
+  .tile:nth-child(3) .glyph2,.tile:nth-child(6) .glyph2{color:var(--accent3);background:rgba(124,139,255,.10);border-color:rgba(124,139,255,.28)}
+  .tile h3{font-size:27px;font-weight:600;letter-spacing:-.015em;margin:26px 0 14px}
+  .tile p{font-size:19px;line-height:1.5;color:var(--muted)}
+
+  /* ================= SLIDE 7 ================= */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:auto}
+  .step{background:linear-gradient(180deg,#121826,#0D121B);border:1px solid var(--line);
+    border-radius:22px;padding:44px 40px;position:relative;overflow:hidden}
+  .stepnum{font-family:var(--mono);font-size:60px;font-weight:700;line-height:1;color:rgba(255,255,255,.10);letter-spacing:-.03em}
+  .step h3{font-size:29px;font-weight:600;letter-spacing:-.02em;margin:22px 0 14px}
+  .step p{font-size:19px;line-height:1.55;color:var(--muted)}
+  .panel{display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-top:34px;
+    border:1px solid var(--line);border-radius:20px;background:var(--surface);overflow:hidden}
+  .pitem{padding:32px 38px;border-right:1px solid var(--line)}
+  .pitem:last-child{border-right:none}
+  .plabel{font-family:var(--mono);font-size:14px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:12px}
+  .pval{font-size:22px;line-height:1.4;color:var(--text)}
+  .pval em{font-style:normal;color:var(--accent2)}
+
+  /* ================= SLIDE 8 ================= */
+  .s-final{justify-content:space-between}
+  .fin-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:60px;margin-top:16px}
+  .fin-hero h2{font-size:104px}
+  .fin-hero h2 span{color:var(--accent)}
+  .fin-note{font-family:var(--mono);font-size:18px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--muted);text-align:right;line-height:1.7}
+  .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:70px}
+  .col{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:42px 40px;min-height:340px}
+  .col .kicker{font-size:15px;letter-spacing:.18em;display:block;margin-bottom:30px}
+  .col.violet .kicker{color:var(--accent3)}
+  .col.teal .kicker{color:var(--accent2)}
+  .col h4{font-size:30px;font-weight:600;letter-spacing:-.02em;line-height:1.25;margin-bottom:20px}
+  .col p{font-size:19px;line-height:1.6;color:var(--muted)}
+  .col p + p{margin-top:14px}
+  .col b{color:var(--text);font-weight:600}
+  .fin-foot{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);
+    padding-top:28px;font-family:var(--mono);font-size:17px;letter-spacing:.1em;color:var(--muted);text-transform:uppercase}
+  .fin-foot .accent{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- ================= 1 · TITLE ================= -->
+  <section class="slide s-title">
+    <div class="bg-grid"></div>
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+
+    <div class="t-top">
+      <div class="brand"><span class="brand-mark">T</span><span class="brand-name">Tessel</span></div>
+      <div class="t-meta">Launch event · 12 March 2025 · Berlin</div>
+    </div>
+
+    <div class="t-main">
+      <div class="t-left">
+        <span class="pill"><i class="pill-dot"></i>Version 2.0 — shipping today</span>
+        <h1>Tessel<span class="h1-num">2</span></h1>
+        <p class="t-sub">Notes that never ask the internet for permission.<br>Fully offline. Synced device to device.</p>
+        <div class="chips">
+          <span class="chip">Offline-first</span>
+          <span class="chip">Peer-to-peer</span>
+          <span class="chip">End-to-end encrypted</span>
+        </div>
+      </div>
+
+      <div class="t-right">
+        <div class="mock">
+          <div class="mock-top">
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="mock-name">Field notes</span>
+          </div>
+          <div class="mock-body">
+            <div class="note-title">Iceland · Day 3</div>
+            <div class="nline" style="width:94%"></div>
+            <div class="nline" style="width:80%"></div>
+            <div class="nline" style="width:88%"></div>
+            <div class="nline" style="width:62%"></div>
+            <div class="nline" style="width:74%;margin-bottom:0"></div>
+          </div>
+          <div class="mock-status">
+            <span class="sdot"></span>OFFLINE · 12 CHANGES SAVED TO THIS DEVICE
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="t-foot">
+      <span>tessel.app/2</span>
+      <span>Press kit → tessel.app/press</span>
+    </div>
+  </section>
+
+  <!-- ================= 2 · THE PROBLEM ================= -->
+  <section class="slide">
+    <div class="bg-grid"></div>
+    <div class="glow glow-c"></div>
+
+    <div class="shead">
+      <span class="kicker">The problem</span>
+      <span class="num">02 / 08</span>
+    </div>
+
+    <h2>Every notes app made<br>the same silent bet.</h2>
+    <p class="lede">That the network would always be there. In tunnels, on flights, in basements, factories and
+      mountain huts, it isn’t — and your notes paid the price.</p>
+
+    <div class="cards3">
+      <div class="card">
+        <div class="cnum">01 — DEAD ZONES</div>
+        <h3>No signal, no notes</h3>
+        <p>Tessel 1 could refuse to open a notebook that was already sitting on your own disk. A spinner is not an interface.</p>
+      </div>
+      <div class="card">
+        <div class="cnum">02 — ROUND TRIPS</div>
+        <h3>Every keystroke, a request</h3>
+        <p>A save only counted once it had visited our servers. Our uptime quietly became your typing speed.</p>
+      </div>
+      <div class="card">
+        <div class="cnum">03 — SYNC ANXIETY</div>
+        <h3>“Did it save?”</h3>
+        <p>Three years running, the most common subject line in our support inbox. You shouldn’t have to ask.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 3 · OFFLINE FIRST ================= -->
+  <section class="slide">
+    <div class="bg-grid"></div>
+    <div class="glow glow-b"></div>
+
+    <div class="shead">
+      <span class="kicker">Offline-first</span>
+      <span class="num">03 / 08</span>
+    </div>
+
+    <div class="split">
+      <div>
+        <h2>Notes that write<br>to disk first.</h2>
+        <p class="lede">Tessel 2 inverts the order of operations. The local file is the source of truth; the network
+          is an optimisation that happens when it happens.</p>
+        <ul class="bullets">
+          <li>Full editing, notebooks, tags and search with the radio switched off.</li>
+          <li>Instant local index — results in under 30 ms across 100,000 notes.</li>
+          <li>Conflicts merge deterministically. Nothing is ever silently overwritten.</li>
+          <li>No “connecting…” state. There is nothing to connect to.</li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="stack">
+          <div class="srow">
+            <span class="stag ok">Always on</span>
+            <div><h4>Local vault</h4><p>Every note is a file on your disk. Read, write, search, rename — no round trip.</p></div>
+          </div>
+          <div class="srow">
+            <span class="stag ok">Always on</span>
+            <div><h4>Merge engine</h4><p>Edits land in an append-only log with deterministic CRDT semantics.</p></div>
+          </div>
+          <div class="srow">
+            <span class="stag opt">If available</span>
+            <div><h4>Transport</h4><p>Peer-to-peer over LAN or the open internet. Relay only when P2P can’t connect.</p></div>
+          </div>
+          <div class="srow">
+            <span class="stag off">Off the path</span>
+            <div><h4>Tessel infrastructure</h4><p>Not required to read, write or sync. Downtime is now a non-event.</p></div>
+          </div>
+        </div>
+
+        <div class="airplane">
+          <span class="glyph">✈</span>
+          <p>Shipped on a 12-hour flight with Wi-Fi off. <b>Nobody noticed.</b></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 4 · PEER TO PEER ================= -->
+  <section class="slide">
+    <div class="bg-grid"></div>
+    <div class="glow glow-b"></div>
+
+    <div class="shead">
+      <span class="kicker">Peer-to-peer sync</span>
+      <span class="num">04 / 08</span>
+    </div>
+
+    <div class="split">
+      <div>
+        <h2>Sync without<br>the middleman.</h2>
+        <p class="lede">Your devices talk to each other directly — across the room or across the world.</p>
+
+        <div class="compare">
+          <div class="crow bad">
+            <span class="ctag">Tessel 1</span>
+            <span class="ctext">your device → <s>our servers</s> → your other device</span>
+          </div>
+          <div class="crow good">
+            <span class="ctag">Tessel 2</span>
+            <span class="ctext">your device ↔ your other device</span>
+          </div>
+        </div>
+
+        <ul class="bullets teal">
+          <li>Devices discover each other on the local network and connect directly over WebRTC.</li>
+          <li>CRDT merge means every device converges on the same document, order-independent.</li>
+          <li>A relay forwards encrypted packets when P2P fails. It cannot read them.</li>
+          <li>Sync keeps working if our servers are down. Which they were, once. Sorry.</li>
+        </ul>
+      </div>
+
+      <div>
+        <svg class="mesh" viewBox="0 0 780 560" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <g stroke="#4FE0B0" stroke-width="2" stroke-dasharray="7 9" opacity="0.55" fill="none">
+            <line x1="145" y1="140" x2="635" y2="110"/>
+            <line x1="145" y1="140" x2="145" y2="400"/>
+            <line x1="145" y1="400" x2="635" y2="420"/>
+            <line x1="635" y1="110" x2="635" y2="420"/>
+            <line x1="145" y1="140" x2="635" y2="420"/>
+            <line x1="145" y1="400" x2="635" y2="110"/>
+          </g>
+
+          <g>
+            <rect x="40" y="80" width="210" height="120" rx="18" fill="#121826" stroke="rgba(255,255,255,0.12)"/>
+            <text x="145" y="132" text-anchor="middle" fill="#EDEFF5" font-family="system-ui,sans-serif" font-size="25" font-weight="600">MacBook</text>
+            <text x="145" y="162" text-anchor="middle" fill="#8A93A6" font-family="ui-monospace,monospace" font-size="14" letter-spacing="1">vault · 4,210 notes</text>
+          </g>
+          <g>
+            <rect x="530" y="50" width="210" height="120" rx="18" fill="#121826" stroke="rgba(255,255,255,0.12)"/>
+            <text x="635" y="102" text-anchor="middle" fill="#EDEFF5" font-family="system-ui,sans-serif" font-size="25" font-weight="600">iPhone</text>
+            <text x="635" y="132" text-anchor="middle" fill="#8A93A6" font-family="ui-monospace,monospace" font-size="14" letter-spacing="1">vault · 4,210 notes</text>
+          </g>
+          <g>
+            <rect x="40" y="340" width="210" height="120" rx="18" fill="#121826" stroke="rgba(255,255,255,0.12)"/>
+            <text x="145" y="392" text-anchor="middle" fill="#EDEFF5" font-family="system-ui,sans-serif" font-size="25" font-weight="600">iPad</text>
+            <text x="145" y="422" text-anchor="middle" fill="#8A93A6" font-family="ui-monospace,monospace" font-size="14" letter-spacing="1">vault · 4,210 notes</text>
+          </g>
+          <g>
+            <rect x="530" y="360" width="210" height="120" rx="18" fill="#101A18" stroke="rgba(79,224,176,0.35)"/>
+            <text x="635" y="412" text-anchor="middle" fill="#EDEFF5" font-family="system-ui,sans-serif" font-size="25" font-weight="600">Studio Mac</text>
+            <text x="635" y="442" text-anchor="middle" fill="#4FE0B0" font-family="ui-monospace,monospace" font-size="14" letter-spacing="1">paired · read-only</text>
+          </g>
+
+          <text x="390" y="538" text-anchor="middle" fill="#8A93A6" font-family="ui-monospace,monospace" font-size="15" letter-spacing="2">DIRECT · ENCRYPTED · NO ACCOUNT REQUIRED</text>
+        </svg>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 5 · SECURITY ================= -->
+  <section class="slide">
+    <div class="bg-grid"></div>
+    <div class="glow glow-c"></div>
+
+    <div class="shead">
+      <span class="kicker">Privacy &amp; security</span>
+      <span class="num">05 / 08</span>
+    </div>
+
+    <div class="split">
+      <div>
+        <h2>Encrypted before it<br>ever leaves the device.</h2>
+        <p class="lede">Peer-to-peer removes the server from the middle. Encryption makes sure that even when a
+          relay is used, there is nothing there to read.</p>
+        <ul class="bullets violet">
+          <li>Per-vault keys, generated on device, sealed with XChaCha20-Poly1305.</li>
+          <li>Keys never leave your devices. We cannot read your notes and cannot reset your keys.</li>
+          <li>Pairing by QR code with a short authentication string you verify by eye.</li>
+          <li>Open-source crypto core; independent third-party audit completed February 2025.</li>
+        </ul>
+      </div>
+
+      <div class="crypt">
+        <div class="cbox">
+          <div class="clabel">Your device — plaintext</div>
+          <div class="ctext2">“Iceland · Day 3 — the light at 4pm was the whole reason we came.”</div>
+        </div>
+        <div class="carrow"><span>↓</span> encrypted locally · per-device key</div>
+        <div class="cbox cipher">
+          <div class="clabel">In transit — what anyone else sees</div>
+          <div class="ctext2 mono">9F4C 1A77 B0E2 44D9 … C81D 03AF</div>
+        </div>
+        <div class="carrow"><span>↓</span> relayed, never decrypted</div>
+        <div class="cbox">
+          <div class="clabel">Their device — plaintext</div>
+          <div class="ctext2">“Iceland · Day 3 — the light at 4pm was the whole reason we came.”</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 6 · WHAT'S NEW ================= -->
+  <section class="slide">
+    <div class="bg-grid"></div>
+    <div class="glow glow-a"></div>
+
+    <div class="shead">
+      <span class="kicker">What’s new in 2.0</span>
+      <span class="num">06 / 08</span>
+    </div>
+
+    <h2>Six things you get on day one.</h2>
+
+    <div class="grid6">
+      <div class="tile">
+        <div class="glyph2">✈</div>
+        <h3>Offline vault</h3>
+        <p>Every notebook, every search, every edit — with the radio switched off and the laptop lid shut.</p>
+      </div>
+      <div class="tile">
+        <div class="glyph2">⇄</div>
+        <h3>Peer-to-peer sync</h3>
+        <p>Devices find each other and exchange changes directly. Same room or different continents.</p>
+      </div>
+      <div class="tile">
+        <div class="glyph2">⌕</div>
+        <h3>Instant search</h3>
+        <p>A local index built on your machine. Under 30 ms across 100,000 notes, no server involved.</p>
+      </div>
+      <div class="tile">
+        <div class="glyph2">⟲</div>
+        <h3>Version history</h3>
+        <p>Thirty days of local snapshots for every note. Recover anything without leaving the app.</p>
+      </div>
+      <div class="tile">
+        <div class="glyph2">⚑</div>
+        <h3>Shared notebooks</h3>
+        <p>Invite a device, not an account. Per-notebook permissions, revocable at any time.</p>
+      </div>
+      <div class="tile">
+        <div class="glyph2">⤓</div>
+        <h3>One-click import</h3>
+        <p>Bring everything from Tessel 1, Markdown folders, Evernote exports and Apple Notes.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 7 · UPGRADE ================= -->
+  <section class="slide">
+    <div class="bg-grid"></div>
+    <div class="glow glow-b"></div>
+
+    <div class="shead">
+      <span class="kicker">For existing customers</span>
+      <span class="num">07 / 08</span>
+    </div>
+
+    <h2>Upgrading is a non-event.<br>That’s the point.</h2>
+    <p class="lede">No migration wizard, no export, no re-importing ten years of notebooks. Your vault upgrades
+      in place, on your machine, offline.</p>
+
+    <div class="steps">
+      <div class="step">
+        <div class="stepnum">01</div>
+        <h3>Update the app</h3>
+        <p>App Store, Play Store or direct download. Your vault stays exactly where it is — same folder, same files, same notebooks.</p>
+      </div>
+      <div class="step">
+        <div class="stepnum">02</div>
+        <h3>Local re-index</h3>
+        <p>A one-time background pass, roughly 20 seconds per 10,000 notes. Runs offline. You can keep writing while it works.</p>
+      </div>
+      <div class="step">
+        <div class="stepnum">03</div>
+        <h3>Turn on P2P sync</h3>
+        <p>Pair your devices with a QR code. The first sync is device to device — your notes never touch our infrastructure.</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="pitem">
+        <span class="plabel">Existing subscribers</span>
+        <span class="pval"><em>Same price, permanently.</em> Your plan rolls forward and your rate is locked.</span>
+      </div>
+      <div class="pitem">
+        <span class="plabel">One-time licence holders</span>
+        <span class="pval">Free upgrade to Pro for twelve months, then 40% off for life.</span>
+      </div>
+      <div class="pitem">
+        <span class="plabel">Teams</span>
+        <span class="pval">Admin console, per-vault device policy and audit log included from today.</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= 8 · CLOSING ================= -->
+  <section class="slide s-final">
+    <div class="bg-grid"></div>
+    <div class="glow glow-a"></div>
+    <div class="glow glow-b"></div>
+
+    <div style="position:relative;z-index:2">
+      <div class="shead" style="margin-bottom:0;border-bottom:none;padding-bottom:0">
+        <span class="kicker">Available today</span>
+        <span class="num">08 / 08</span>
+      </div>
+
+      <div class="fin-hero">
+        <h2>Tessel 2 is <span>live.</span></h2>
+        <div class="fin-note">
+          iOS · macOS · Windows<br>
+          Android · Linux
+        </div>
+      </div>
+
+      <div class="cols3">
+        <div class="col">
+          <span class="kicker">For existing users</span>
+          <h4>Update and keep writing.</h4>
+          <p><b>Settings → Check for updates.</b> Your vault upgrades in place, locally, with no upload and no downtime.</p>
+          <p>Turn on peer-to-peer sync on a second device and watch a note travel between them without a server in sight.</p>
+        </div>
+        <div class="col violet">
+          <span class="kicker">For press</span>
+          <h4>The offline story, in full.</h4>
+          <p>Press kit, screenshots, architecture diagrams and a four-minute demo video: <b>tessel.app/press</b></p>
+          <p>Founders available for interviews today and tomorrow. Airplane-mode demos on request.</p>
+        </div>
+        <div class="col teal">
+          <span class="kicker">Pricing &amp; contact</span>
+          <h4>Free tier · 3 devices.</h4>
+          <p>Pro <b>$6/month.</b> Team <b>$12/user/month.</b> Existing plans unaffected.</p>
+          <p>press@tessel.app · hello@tessel.app</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="fin-foot" style="position:relative;z-index:2">
+      <span>Tessel — notes that work without permission</span>
+      <span class="accent">tessel.app/2</span>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

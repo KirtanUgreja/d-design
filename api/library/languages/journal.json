@@ -1,0 +1,61 @@
+{
+  "active": false,
+  "id": "journal",
+  "name": "Data journal",
+  "idea": "A newspaper data desk: a claim as the headline, the chart dominant, sources under it.",
+  "brief": "A data-journalism page. A thin tag bar or kicker in the label face at the top (section and source), then the headline as a claim in a full sentence. The chart or the figure dominates the slide; annotations sit beside the data in small text with thin leader rules. Every number carries its source line in the label face at the bottom. Hairline and medium rules organise sections like a newspaper. One accent only, used to highlight the one thing the reader must see.",
+  "never": [
+    "decoration",
+    "more than one accent",
+    "images bigger than the data",
+    "centred layouts"
+  ],
+  "kinds": [
+    "serif",
+    "slab",
+    "grotesk",
+    "mono"
+  ],
+  "pairings": [],
+  "grids": [
+    "swiss",
+    "editorial",
+    "modular"
+  ],
+  "edges": [
+    "sharp",
+    "ruled"
+  ],
+  "dark": 0.15,
+  "split": 0.0,
+  "density": [
+    "balanced",
+    "dense"
+  ],
+  "ratio": [
+    1.25,
+    1.38
+  ],
+  "texture": "never",
+  "shapes": false,
+  "image": {
+    "appetite": 0.15,
+    "styles": [
+      "muted documentary photography, overcast light"
+    ]
+  },
+  "tones": [
+    "plain",
+    "confident"
+  ],
+  "deck_types": [
+    "investor_update",
+    "sales",
+    "project"
+  ],
+  "finishes": [
+    "fine",
+    "none"
+  ],
+  "glow": false
+}

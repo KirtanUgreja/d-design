@@ -1,0 +1,94 @@
+{
+  "family": "Fraunces",
+  "role": "serif-display",
+  "weights": [
+    400,
+    700
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "axes": {
+    "opsz": [
+      9,
+      144
+    ],
+    "wght": [
+      100,
+      900
+    ],
+    "SOFT": [
+      0,
+      100
+    ],
+    "WONK": [
+      0,
+      1
+    ]
+  },
+  "metrics": {
+    "100": {
+      "x_height": 0.425,
+      "cap": 0.717,
+      "descender": 0.247,
+      "width": 0.351,
+      "leading": 0.97
+    },
+    "200": {
+      "x_height": 0.427,
+      "cap": 0.716,
+      "descender": 0.247,
+      "width": 0.358,
+      "leading": 0.97
+    },
+    "300": {
+      "x_height": 0.43,
+      "cap": 0.716,
+      "descender": 0.247,
+      "width": 0.366,
+      "leading": 0.97
+    },
+    "400": {
+      "x_height": 0.434,
+      "cap": 0.715,
+      "descender": 0.246,
+      "width": 0.381,
+      "leading": 0.97
+    },
+    "500": {
+      "x_height": 0.437,
+      "cap": 0.714,
+      "descender": 0.246,
+      "width": 0.389,
+      "leading": 0.96
+    },
+    "600": {
+      "x_height": 0.439,
+      "cap": 0.713,
+      "descender": 0.246,
+      "width": 0.397,
+      "leading": 0.96
+    },
+    "700": {
+      "x_height": 0.443,
+      "cap": 0.712,
+      "descender": 0.245,
+      "width": 0.412,
+      "leading": 0.96
+    },
+    "800": {
+      "x_height": 0.446,
+      "cap": 0.712,
+      "descender": 0.245,
+      "width": 0.42,
+      "leading": 0.96
+    },
+    "900": {
+      "x_height": 0.448,
+      "cap": 0.711,
+      "descender": 0.245,
+      "width": 0.427,
+      "leading": 0.96
+    }
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "active": false,
+  "id": "cinematic",
+  "name": "Cinematic",
+  "idea": "Full-bleed images and very few words on a dark ground, like a film title.",
+  "brief": "A film title sequence. The image is the slide: full-bleed or most of the slide, with type on a solid band or in the dark ground beside it, never over a busy area. Very few words per slide; headlines short and set with restraint, often in the lower third. Labels small, spaced, in the label face. The ground is dark; the accent is used sparingly, like a single light in the frame. Numbers appear large and alone.",
+  "never": [
+    "light grounds",
+    "lists of more than three",
+    "boxes and cards",
+    "busy layouts"
+  ],
+  "kinds": [
+    "serif",
+    "didone",
+    "grotesk"
+  ],
+  "pairings": [],
+  "grids": [
+    "poster",
+    "asymmetric"
+  ],
+  "edges": [
+    "sharp"
+  ],
+  "dark": 1.0,
+  "split": 0.15,
+  "density": [
+    "airy",
+    "balanced"
+  ],
+  "ratio": [
+    1.3,
+    1.45
+  ],
+  "texture": "never",
+  "shapes": false,
+  "image": {
+    "appetite": 0.7,
+    "styles": [
+      "cinematic photography, natural light, film grain, wide aspect"
+    ]
+  },
+  "tones": [
+    "bold",
+    "confident"
+  ],
+  "deck_types": [
+    "pitch",
+    "launch"
+  ],
+  "finishes": [
+    "film",
+    "fine"
+  ],
+  "glow": true
+}

@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kiln — Paid Pilot Proposal</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{
+    --ink:#14100D;
+    --ink2:#221B15;
+    --cream:#F7F2EA;
+    --paper:#FFFDFA;
+    --ember:#E2542A;
+    --amber:#F0A83C;
+    --muted:#7A7166;
+    --line:rgba(20,16,13,.13);
+    --mutedD:rgba(247,242,234,.62);
+    --lineD:rgba(247,242,234,.16);
+    --sans:"Helvetica Neue",Helvetica,Arial,"Segoe UI",Roboto,system-ui,sans-serif;
+    --mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+  }
+  html,body{background:#0B0908;}
+  body{font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+
+  .slide{
+    position:relative;
+    width:1920px;
+    height:1080px;
+    overflow:hidden;
+    background:var(--cream);
+    color:var(--ink);
+  }
+  .slide.dark{background:var(--ink);color:var(--cream);}
+
+  .pad{
+    position:absolute;
+    inset:0;
+    padding:96px 120px 150px;
+    display:flex;
+    flex-direction:column;
+  }
+
+  .foot{
+    position:absolute;
+    left:120px;right:120px;bottom:46px;
+    display:flex;justify-content:space-between;
+    font-size:13px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);
+  }
+  .dark .foot{color:rgba(247,242,234,.42);}
+
+  /* ---------- type ---------- */
+  .eyebrow{
+    font-size:15px;letter-spacing:.24em;text-transform:uppercase;
+    font-weight:700;color:var(--ember);
+  }
+  .dark .eyebrow{color:var(--amber);}
+
+  h1{
+    font-size:132px;line-height:.96;letter-spacing:-.035em;font-weight:700;
+  }
+  h2{
+    font-size:68px;line-height:1.04;letter-spacing:-.025em;font-weight:700;
+    margin-top:26px;
+  }
+  h3{font-size:30px;line-height:1.15;letter-spacing:-.015em;font-weight:700;}
+  h4{font-size:24px;line-height:1.2;letter-spacing:-.01em;font-weight:700;}
+
+  .lead{
+    font-size:26px;line-height:1.5;color:var(--muted);
+    max-width:1180px;margin-top:26px;font-weight:400;
+  }
+  .dark .lead{color:var(--mutedD);}
+
+  .num{font-variant-numeric:tabular-nums;letter-spacing:-.04em;}
+
+  /* ---------- slide 1 : hero ---------- */
+  .glow-a{
+    position:absolute;width:1500px;height:1500px;right:-460px;top:-560px;
+    background:radial-gradient(circle,rgba(226,84,42,.34) 0%,rgba(226,84,42,.09) 44%,rgba(226,84,42,0) 70%);
+  }
+  .glow-b{
+    position:absolute;width:1200px;height:1200px;left:-420px;bottom:-620px;
+    background:radial-gradient(circle,rgba(240,168,60,.20) 0%,rgba(240,168,60,.05) 45%,rgba(240,168,60,0) 70%);
+  }
+  .grid-lines{
+    position:absolute;inset:0;
+    background-image:linear-gradient(90deg,rgba(247,242,234,.055) 1px,transparent 1px);
+    background-size:240px 100%;
+  }
+  .topbar{
+    position:absolute;top:56px;left:120px;right:120px;
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:13px;letter-spacing:.22em;text-transform:uppercase;
+    color:rgba(247,242,234,.5);
+  }
+  .logo{font-size:20px;font-weight:800;letter-spacing:.36em;color:#F7F2EA;}
+  .hero-pad{padding:230px 120px 150px;}
+  .hero-stats{
+    display:flex;gap:0;margin-top:auto;
+    border-top:1px solid var(--lineD);
+    padding-top:44px;
+  }
+  .hs{
+    flex:1;padding-right:56px;
+    border-left:1px solid var(--lineD);
+    padding-left:36px;
+  }
+  .hs:first-child{border-left:none;padding-left:0;}
+  .hs-num{
+    display:block;font-size:56px;font-weight:700;letter-spacing:-.035em;
+    color:var(--amber);line-height:1;
+  }
+  .hs-lab{
+    display:block;margin-top:16px;font-size:17px;line-height:1.4;
+    color:rgba(247,242,234,.58);max-width:300px;
+  }
+
+  /* ---------- generic body blocks ---------- */
+  .head{margin-bottom:52px;}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:36px;}
+  .card{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-top:4px solid var(--ember);
+    padding:38px 38px 42px;
+  }
+  .card .k{
+    font-family:var(--mono);font-size:13px;letter-spacing:.18em;
+    color:var(--ember);font-weight:700;
+  }
+  .card h3{margin-top:18px;}
+  .card p{margin-top:16px;font-size:18px;line-height:1.58;color:var(--muted);}
+
+  .band{
+    margin-top:auto;
+    display:flex;align-items:center;gap:26px;
+    background:var(--ink);color:var(--cream);
+    border-left:6px solid var(--ember);
+    padding:34px 44px;
+    font-size:24px;line-height:1.35;letter-spacing:-.01em;
+  }
+  .band .tag{
+    font-family:var(--mono);font-size:12px;letter-spacing:.2em;
+    color:var(--amber);white-space:nowrap;
+  }
+
+  /* ---------- slide 3 : how it works ---------- */
+  .cols2{display:grid;grid-template-columns:1fr 470px;gap:80px;flex:1;}
+  .layers{display:flex;flex-direction:column;}
+  .layer{
+    display:grid;grid-template-columns:210px 1fr;gap:36px;
+    padding:28px 0 30px;
+    border-top:1px solid var(--line);
+  }
+  .layer:last-child{border-bottom:1px solid var(--line);}
+  .layer-k{
+    font-family:var(--mono);font-size:13px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--ember);font-weight:700;padding-top:8px;
+  }
+  .layer p{margin-top:12px;font-size:18px;line-height:1.55;color:var(--muted);max-width:760px;}
+  .spec{
+    background:var(--paper);border:1px solid var(--line);padding:42px 40px;
+    align-self:start;
+  }
+  .spec-title{
+    font-size:13px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--muted);font-weight:700;
+  }
+  .spec ul{list-style:none;margin-top:28px;}
+  .spec li{
+    display:flex;gap:16px;align-items:flex-start;
+    padding:16px 0;border-bottom:1px solid var(--line);
+    font-size:18px;line-height:1.45;
+  }
+  .spec li:last-child{border-bottom:none;}
+  .spec li i{
+    flex:none;width:10px;height:10px;background:var(--ember);
+    margin-top:7px;display:block;
+  }
+
+  /* ---------- slide 4 : method ---------- */
+  .method{display:grid;grid-template-columns:repeat(4,1fr);gap:52px;margin-top:64px;}
+  .m-item{padding-top:26px;border-top:2px solid rgba(247,242,234,.22);}
+  .m-k{
+    font-family:var(--mono);font-size:13px;letter-spacing:.18em;
+    color:var(--amber);font-weight:700;
+  }
+  .m-item h4{margin-top:18px;color:#F7F2EA;}
+  .m-item p{margin-top:16px;font-size:18px;line-height:1.55;color:rgba(247,242,234,.58);}
+  .band.dark-band{
+    background:rgba(247,242,234,.06);
+    border-left:6px solid var(--amber);
+    color:#F7F2EA;
+    font-size:28px;
+    justify-content:center;
+    text-align:center;
+  }
+
+  /* ---------- stat + chart slides ---------- */
+  .statrow{display:grid;grid-template-columns:620px 1fr;gap:90px;flex:1;align-items:center;}
+  .bignum{font-size:196px;font-weight:700;line-height:.86;letter-spacing:-.05em;color:var(--ember);}
+  .bignum.sm{font-size:150px;}
+  .bignum-cap{margin-top:26px;font-size:21px;line-height:1.45;color:var(--muted);max-width:520px;}
+
+  .cols{display:flex;gap:90px;align-items:flex-end;}
+  .col{flex:1;}
+  .bararea{height:340px;display:flex;align-items:flex-end;}
+  .bar{width:100%;position:relative;border-radius:2px;}
+  .bar.grey{background:rgba(20,16,13,.16);}
+  .bar.ember{background:linear-gradient(180deg,#F0763F 0%,#D14A22 100%);}
+  .bar .v{
+    position:absolute;top:20px;left:0;right:0;text-align:center;
+    font-size:34px;font-weight:700;letter-spacing:-.03em;
+  }
+  .bar.grey .v{color:#14100D;}
+  .bar.ember .v{color:#FFF7F2;}
+  .blab{margin-top:22px;font-size:19px;font-weight:700;}
+  .blab span{display:block;margin-top:6px;font-size:16px;font-weight:400;color:var(--muted);}
+
+  .strip{
+    margin-top:auto;
+    display:grid;grid-template-columns:repeat(4,1fr);gap:40px;
+    border-top:1px solid var(--line);padding-top:32px;
+  }
+  .strip div{display:flex;gap:14px;align-items:flex-start;font-size:18px;line-height:1.45;color:var(--muted);}
+  .strip i{flex:none;width:9px;height:9px;background:var(--ember);margin-top:8px;display:block;}
+
+  /* ---------- dot plot ---------- */
+  .dots{display:flex;flex-direction:column;gap:14px;margin-top:8px;}
+  .drow{display:grid;grid-template-columns:280px 1fr;gap:40px;align-items:center;}
+  .dlab{font-size:20px;font-weight:700;line-height:1.3;}
+  .dlab span{display:block;margin-top:6px;font-size:16px;font-weight:400;color:var(--muted);}
+  .dtrack{
+    position:relative;height:132px;
+    background:rgba(20,16,13,.045);
+    border-radius:2px;
+  }
+  .dband{position:absolute;top:0;bottom:0;left:0;background:rgba(226,84,42,.10);border-radius:2px;}
+  .dot{
+    position:absolute;top:50%;width:18px;height:18px;border-radius:50%;
+    transform:translate(-50%,-50%);
+  }
+  .dot.b{background:#14100D;opacity:.72;}
+  .dot.k{background:var(--ember);}
+  .daxis{display:grid;grid-template-columns:280px 1fr;gap:40px;margin-top:16px;}
+  .daxis-in{display:flex;justify-content:space-between;grid-column:2;
+    font-family:var(--mono);font-size:14px;color:var(--muted);letter-spacing:.06em;}
+
+  /* ---------- horizontal bars ---------- */
+  .hrows{display:flex;flex-direction:column;gap:34px;}
+  .hrow{display:grid;grid-template-columns:220px 1fr 130px;gap:34px;align-items:center;}
+  .hlab{font-size:20px;font-weight:700;}
+  .htrack{height:74px;background:rgba(20,16,13,.06);border-radius:2px;overflow:hidden;}
+  .hfill{height:100%;border-radius:2px;}
+  .hfill.grey{background:rgba(20,16,13,.20);}
+  .hfill.ember{background:linear-gradient(90deg,#F0763F 0%,#D14A22 100%);}
+  .hval{font-family:var(--mono);font-size:26px;font-weight:700;text-align:right;}
+
+  /* ---------- split bar (dark) ---------- */
+  .splitbar{display:flex;height:150px;border-radius:3px;overflow:hidden;margin-top:8px;}
+  .seg{display:flex;flex-direction:column;justify-content:center;padding:0 40px;}
+  .seg .sv{font-size:56px;font-weight:700;letter-spacing:-.04em;line-height:1;}
+  .seg .sl{margin-top:12px;font-size:17px;letter-spacing:.02em;}
+  .seg.remote{background:linear-gradient(90deg,#E2542A 0%,#C9441D 100%);color:#FFF7F2;}
+  .seg.remote .sl{color:rgba(255,247,242,.82);}
+  .seg.visit{background:rgba(247,242,234,.10);color:rgba(247,242,234,.85);}
+  .seg.visit .sl{color:rgba(247,242,234,.55);}
+
+  .dpoints{display:grid;grid-template-columns:repeat(3,1fr);gap:56px;margin-top:auto;padding-top:56px;border-top:1px solid var(--lineD);}
+  .dpoints h4{color:#F7F2EA;}
+  .dpoints p{margin-top:16px;font-size:18px;line-height:1.55;color:rgba(247,242,234,.58);}
+
+  /* ---------- economics ---------- */
+  .econ{display:grid;grid-template-columns:1fr 1fr;gap:96px;align-items:start;}
+  .price{font-size:132px;font-weight:700;letter-spacing:-.045em;line-height:.9;}
+  .price-cap{margin-top:22px;font-size:21px;color:var(--muted);max-width:420px;line-height:1.45;}
+  .ecomlist{list-style:none;}
+  .ecomlist li{
+    display:flex;justify-content:space-between;align-items:baseline;gap:40px;
+    padding:22px 0;border-bottom:1px solid var(--line);
+  }
+  .ecomlist li span:first-child{font-size:19px;color:var(--muted);}
+  .ecomlist li span:last-child{font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+  .ecomlist li:last-child{border-bottom:none;}
+
+  .payback-wrap{margin-top:auto;border-top:1px solid var(--line);padding-top:46px;}
+  .pb-head{display:flex;justify-content:space-between;font-size:14px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:700;}
+  .pb-holder{position:relative;margin-top:56px;}
+  .pb-tag{
+    position:absolute;top:-46px;transform:translateX(-50%);
+    font-family:var(--mono);font-size:14px;letter-spacing:.1em;color:var(--ember);
+    white-space:nowrap;font-weight:700;
+  }
+  .pb-track{height:22px;background:rgba(20,16,13,.09);border-radius:2px;position:relative;}
+  .pb-fill{position:absolute;left:0;top:0;bottom:0;background:linear-gradient(90deg,#F0763F,#C9441D);border-radius:2px;}
+  .pb-marker{position:absolute;top:-16px;bottom:-16px;width:3px;background:var(--ember);}
+  .pb-axis{display:flex;justify-content:space-between;margin-top:20px;font-family:var(--mono);font-size:14px;color:var(--muted);letter-spacing:.06em;}
+
+  /* ---------- slide 10 ---------- */
+  .ask{display:grid;grid-template-columns:1fr 1fr;gap:80px;flex:1;}
+  .panel{
+    background:rgba(247,242,234,.055);
+    border:1px solid var(--lineD);
+    border-top:4px solid var(--amber);
+    padding:44px 44px 48px;
+  }
+  .panel h4{color:#F7F2EA;}
+  .panel ul{list-style:none;margin-top:28px;}
+  .panel li{
+    display:flex;gap:18px;align-items:flex-start;
+    padding:15px 0;border-bottom:1px solid rgba(247,242,234,.10);
+    font-size:19px;line-height:1.45;color:rgba(247,242,234,.78);
+  }
+  .panel li:last-child{border-bottom:none;}
+  .panel li i{flex:none;width:9px;height:9px;background:var(--ember);margin-top:8px;display:block;}
+  .panel .bigline{
+    margin-top:30px;font-size:40px;font-weight:700;letter-spacing:-.03em;
+    color:#F7F2EA;font-variant-numeric:tabular-nums;
+  }
+  .panel .bigline small{display:block;margin-top:10px;font-size:17px;font-weight:400;letter-spacing:0;color:rgba(247,242,234,.55);}
+
+  .crit{width:100%;border-collapse:collapse;margin-top:28px;}
+  .crit td{
+    padding:19px 0;border-bottom:1px solid var(--lineD);
+    font-size:19px;color:rgba(247,242,234,.78);
+  }
+  .crit td:last-child{
+    text-align:right;font-weight:700;color:var(--amber);
+    font-variant-numeric:tabular-nums;white-space:nowrap;padding-left:32px;
+  }
+  .crit tr:last-child td{border-bottom:none;}
+
+  .steps{list-style:none;margin-top:34px;counter-reset:step;}
+  .steps li{
+    display:grid;grid-template-columns:52px 1fr;gap:22px;
+    padding:18px 0;border-bottom:1px solid var(--lineD);
+    font-size:19px;line-height:1.45;color:rgba(247,242,234,.78);
+  }
+  .steps li:last-child{border-bottom:none;}
+  .steps li::before{
+    counter-increment:step;content:counter(step,decimal-leading-zero);
+    font-family:var(--mono);font-size:14px;letter-spacing:.14em;
+    color:var(--amber);font-weight:700;padding-top:5px;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 01 · HERO ============ -->
+<section class="slide dark">
+  <div class="glow-a"></div>
+  <div class="glow-b"></div>
+  <div class="grid-lines"></div>
+  <div class="topbar">
+    <div class="logo">KILN</div>
+    <div>Paid pilot proposal &nbsp;·&nbsp; Prepared for the COO &amp; Head of Operations</div>
+  </div>
+  <div class="pad hero-pad">
+    <div class="eyebrow">Smart commercial oven &nbsp;·&nbsp; 60-location bakery chain</div>
+    <h1 style="margin-top:34px;">Every bake,<br>the same bake.</h1>
+    <p class="lead" style="max-width:1150px;margin-top:36px;">
+      Kiln is the commercial oven that measures every tray — cutting energy 23% per bake,
+      holding bake-time variance to 2%, and clearing most faults before a technician reaches the door.
+    </p>
+    <div class="hero-stats">
+      <div class="hs">
+        <span class="hs-num num">−23%</span>
+        <span class="hs-lab">Energy used per bake, measured at the oven</span>
+      </div>
+      <div class="hs">
+        <span class="hs-num num">9%&nbsp;→&nbsp;2%</span>
+        <span class="hs-lab">Bake-time variance across stores and shifts</span>
+      </div>
+      <div class="hs">
+        <span class="hs-num num">−61%</span>
+        <span class="hs-lab">Waste from burnt batches</span>
+      </div>
+      <div class="hs">
+        <span class="hs-num num">78%</span>
+        <span class="hs-lab">Faults resolved with no site visit at all</span>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Confidential</span><span>01 / 10</span></div>
+</section>
+
+<!-- ============ 02 · PROBLEM ============ -->
+<section class="slide">
+  <div class="pad">
+    <div class="head">
+      <div class="eyebrow">01 &nbsp;—&nbsp; Where the margin goes</div>
+      <h2>Sixty ovens. Sixty different bakes.</h2>
+      <p class="lead">
+        The oven is the last unmeasured machine in your building. It consumes the most energy,
+        decides the most quality, and reports nothing back.
+      </p>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="k">01</div>
+        <h3>Energy runs to the schedule, not the load</h3>
+        <p>Preheat and soak cycles burn gas whether the deck is full or half empty. No one on site can see cost per tray, so no one can act on it.</p>
+      </div>
+      <div class="card">
+        <div class="k">02</div>
+        <h3>Variance compounds across the fleet</h3>
+        <p>A 9% swing in bake time between stores, shifts and ovens. The recipe is identical; the result is not. Consistency becomes a training problem you can never fully solve.</p>
+      </div>
+      <div class="card">
+        <div class="k">03</div>
+        <h3>Waste is discovered, not prevented</h3>
+        <p>Burnt batches come out of the oven and go straight into the bin. The correction always arrives one tray too late — and it is paid for twice.</p>
+      </div>
+    </div>
+
+    <div class="band">
+      <span class="tag">The pattern</span>
+      <span>Every point of variance shows up twice: once in the bin, once in the labour spent re-baking. At 60 locations, that is a fleet-level number, not a store-level one.</span>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Confidential</span><span>02 / 10</span></div>
+</section>
+
+<!-- ============ 03 · WHAT KILN IS ============ -->
+<section class="slide">
+  <div class="pad">
+    <div class="head" style="margin-bottom:40px;">
+      <div class="eyebrow">02 &nbsp;—&nbsp; The product</div>
+      <h2>An oven that hits the profile instead of approximating it.</h2>
+    </div>
+
+    <div class="cols2">
+      <div class="layers">
+        <div class="layer">
+          <div class="layer-k">Sense</div>
+          <div>
+            <h3>Chamber sensors, sampled every second</h3>
+            <p>Temperature, humidity, airflow and door state are read continuously at multiple points in the deck — not inferred from a single thermostat.</p>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-k">Control</div>
+          <div>
+            <h3>Closed-loop gas and fan modulation</h3>
+            <p>Kiln adjusts heat input and airflow in real time to follow the bake profile, load after load, instead of cycling on a fixed burner rhythm.</p>
+          </div>
+        </div>
+        <div class="layer">
+          <div class="layer-k">Learn</div>
+          <div>
+            <h3>Every bake uploads a signature</h3>
+            <p>Drift is caught in days rather than quarters. Faults are diagnosed remotely, and the fleet gets better as more stores come online.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="spec">
+        <div class="spec-title">What install looks like</div>
+        <ul>
+          <li><i></i><span>Standard deck footprint — same service clearances you already plan for</span></li>
+          <li><i></i><span>Retrofits to existing gas supply and ventilation</span></li>
+          <li><i></i><span>Installed and baking product on day one</span></li>
+          <li><i></i><span>Your recipes port across unchanged — no reformulation required</span></li>
+          <li><i></i><span>Fleet dashboard: per-store energy, variance and fault status</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Confidential</span><span>03 / 10</span></div>
+</section>
+
+<!-- ============ 04 · METHOD ============ -->
+<section class="slide dark">
+  <div class="pad">
+    <div class="head" style="margin-bottom:0;">
+      <div class="eyebrow">03 &nbsp;—&nbsp; Evidence</div>
+      <h2>Why you can trust these numbers.</h2>
+      <p class="lead">
+        A four-store pilot with another regional bakery chain, run for twelve weeks on live production.
+        Not a lab, not a model, not a vendor demo.
+      </p>
+    </div>
+
+    <div class="method">
+      <div class="m-item">
+        <div class="m-k">01</div>
+        <h4>Matched control stores</h4>
+        <p>Every Kiln store was paired with a control store of comparable volume, menu and equipment age. All results are like-for-like.</p>
+      </div>
+      <div class="m-item">
+        <div class="m-k">02</div>
+        <h4>Meter-level energy</h4>
+        <p>Gas and electricity were metered at the oven, per bake — not estimated from a monthly utility bill after the fact.</p>
+      </div>
+      <div class="m-item">
+        <div class="m-k">03</div>
+        <h4>Every bake logged</h4>
+        <p>Bake time, chamber profile and outcome were recorded for each batch. Variance is measured, never recalled.</p>
+      </div>
+      <div class="m-item">
+        <div class="m-k">04</div>
+        <h4>Twelve weeks, live menu</h4>
+        <p>The window covered two seasonal menu changes and a holiday peak — the conditions your stores actually trade in.</p>
+      </div>
+    </div>
+
+    <div class="band dark-band">
+      Same recipes. Same menu. Same volume. Only the oven changed.
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Confidential</span><span>04 / 10</span></div>
+</section>
+
+<!-- ============ 05 · ENERGY ============ -->
+<section class="slide">
+  <div class="pad">
+    <div class="head" style="margin-bottom:36px;">
+      <div class="eyebrow">04 &nbsp;—&nbsp; Result one</div>
+      <h2>Energy per bake: down 23%.</h2>
+      <p class="lead">Metered at the oven, per bake, across twelve weeks and four stores.</p>
+    </div>
+
+    <div class="statrow">
+      <div>
+        <div class="bignum num">−23%</div>
+        <div class="bignum-cap">Energy used to produce the same tray of product, versus matched control stores.</div>
+      </div>
+      <div class="cols">
+        <div class="col">
+          <div class="bararea">
+            <div class="bar grey" style="height:100%"><span class="v num">100</span></div>
+          </div>
+          <div class="blab">Baseline ovens<span>Indexed to 100</span></div>
+        </div>
+        <div class="col">
+          <div class="bararea">
+            <div class="bar ember" style="height:77%"><span class="v num">77</span></div>
+          </div>
+          <div class="blab">Kiln<span>Indexed to 100</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="strip">
+      <div><i></i><span>Preheat sized to the actual load, not the daily maximum</span></div>
+      <div><i></i><span>Closed-loop gas modulation instead of fixed burner cycling</span></div>
+      <div><i></i><span>Fan and damper control tuned to the bake profile</span></div>
+      <div><i></i><span>Idle setback automatically enforced between batches</span></div>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Confidential</span><span>05 / 10</span></div>
+</section>
+
+<!-- ============ 06 · VARIANCE ============ -->
+<section class="slide">
+  <div class="pad">
+    <div class="head" style="margin-bottom:44px;">
+      <div class="eyebrow">05 &nbsp;—&nbsp; Result two</div>
+      <h2>Bake-time variance: 9% down to 2%.</h2>
+      <p class="lead">
+        Each dot is a batch. Same recipes, same operators, same menu — the spread between stores collapses
+        when the oven stops guessing.
+      </p>
+    </div>
+
+    <div class="dots">
+      <div class="drow">
+        <div class="dlab">Baseline stores<span>9% spread across the fleet</span></div>
+        <div class="dtrack">
+          <div class="dband" style="width:90%"></div>
+          <i class="dot b" style="left:3.2%"></i>
+          <i class="dot b" style="left:4.4%"></i>
+          <i class="dot b" style="left:5.5%"></i>
+          <i class="dot b" style="left:6.1%"></i>
+          <i class="dot b" style="left:6.9%"></i>
+          <i class="dot b" style="left:7.4%"></i>
+          <i class="dot b" style="left:7.9%"></i>
+          <i class="dot b" style="left:8.3%"></i>
+          <i class="dot b" style="left:9.0%"></i>
+          <i class="dot b" style="left:4.9%"></i>
+          <i class="dot b" style="left:8.6%"></i>
+          <i class="dot b" style="left:3.8%"></i>
+        </div>
+      </div>
+      <div class="drow">
+        <div class="dlab">Kiln stores<span>2% spread across the fleet</span></div>
+        <div class="dtrack">
+          <div class="dband" style="width:20%"></div>
+          <i class="dot k" style="left:0.4%"></i>
+          <i class="dot k" style="left:0.6%"></i>
+          <i class="dot k" style="left:0.9%"></i>
+          <i class="dot k" style="left:1.1%"></i>
+          <i class="dot k" style="left:1.3%"></i>
+          <i class="dot k" style="left:1.4%"></i>
+          <i class="dot k" style="left:1.6%"></i>
+          <i class="dot k" style="left:1.8%"></i>
+          <i class="dot k" style="left:2.0%"></i>
+          <i class="dot k" style="left:0.8%"></i>
+          <i class="dot k" style="left:1.2%"></i>
+          <i class="dot k" style="left:1.9%"></i>
+        </div>
+      </div>
+    </div>
+
+    <div class="daxis">
+      <div class="daxis-in">
+        <span>0%</span><span>2%</span><span>4%</span><span>6%</span><span>8%</span><span>10%</span>
+      </div>
+    </div>
+
+    <div class="strip" style="margin-top:auto;">
+      <div><i></i><span>Consistency stops depending on which store, shift or operator is on deck</span></div>
+      <div><i></i><span>Product quality becomes one standard instead of sixty approximations</span></div>
+      <div><i></i><span>New site openings inherit the profile from day one</span></div>
+      <div><i></i><span>Drift is flagged in days, long before a customer notices</span></div>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Confidential</span><span>06 / 10</span></div>
+</section>
+
+<!-- ============ 07 · WASTE ============ -->
+<section class="slide">
+  <div class="pad">
+    <div class="head" style="margin-bottom:48px;">
+      <div class="eyebrow">06 &nbsp;—&nbsp; Result three</div>
+      <h2>Burnt-batch waste: down 61%.</h2>
+      <p class="lead">Batches binned because they were over-baked or burnt, indexed per store per week.</p>
+    </div>
+
+    <div class="statrow" style="align-items:start;">
+      <div>
+        <div class="bignum sm num">−61%</div>
+        <div class="bignum-cap">
+          Fewer burnt batches per store, per week. Nothing about the recipe changed —
+          the oven simply stops the bake at the right moment.
+        </div>
+      </div>
+
+      <div class="hrows" style="padding-top:24px;">
+        <div class="hrow">
+          <div class="hlab">Baseline ovens</div>
+          <div class="htrack"><div class="hfill grey" style="width:100%"></div></div>
+          <div class="hval num">100</div>
+        </div>
+        <div class="hrow">
+          <div class="hlab">Kiln</div>
+          <div class="htrack"><div class="hfill ember" style="width:39%"></div></div>
+          <div class="hval num" style="color:#E2542A;">39</div>
+        </div>
+        <div class="hrow" style="margin-top:14px;">
+          <div class="hlab" style="font-weight:400;color:#7A7166;font-size:17px;">Indexed weekly,<br>per store</div>
+          <div style="font-size:17px;line-height:1.5;color:#7A7166;">
+            Every discarded batch also costs the labour of the re-bake and the margin on a sale you
+            never made. Both fall with the waste.
+          </div>
+          <div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="band">
+      <span class="tag">Why it matters at 60 stores</span>
+      <span>Waste is the most visible symptom of variance — and the one your store teams feel every single shift.</span>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Confidential</span><span>07 / 10</span></div>
+</section>
+
+<!-- ============ 08 · SERVICE ============ -->
+<section class="slide dark">
+  <div class="pad">
+    <div class="head" style="margin-bottom:52px;">
+      <div class="eyebrow">07 &nbsp;—&nbsp; Service model</div>
+      <h2>78% of faults never become a site visit.</h2>
+      <p class="lead">
+        The oven reports its own condition. Most problems are diagnosed and resolved remotely,
+        before an unplanned callout is ever raised.
+      </p>
+    </div>
+
+    <div class="splitbar">
+      <div class="seg remote" style="width:78%;">
+        <span class="sv num">78%</span>
+        <span class="sl">Resolved remotely — diagnosed from the fleet dashboard, fixed without a van</span>
+      </div>
+      <div class="seg visit" style="width:22%;">
+        <span class="sv num">22%</span>
+        <span class="sl">Site visit required</span>
+      </div>
+    </div>
+
+    <div class="dpoints">
+      <div>
+        <h4>Faults surface before the bake does</h4>
+        <p>Degradation is visible in the bake signature, so you hear about it from a dashboard rather than a burnt tray at 6am.</p>
+      </div>
+      <div>
+        <h4>Fewer emergency callouts</h4>
+        <p>At 60 locations, an 78% remote resolution rate removes most unplanned van dispatches and the overtime that comes with them.</p>
+      </div>
+      <div>
+        <h4>One operations view</h4>
+        <p>Every store's energy, variance and oven health in a single view — so maintenance is planned, not reactive.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Confidential</span><span>08 / 10</span></div>
+</section>
+
+<!-- ============ 09 · ECONOMICS ============ -->
+<section class="slide">
+  <div class="pad">
+    <div class="head" style="margin-bottom:52px;">
+      <div class="eyebrow">08 &nbsp;—&nbsp; The economics</div>
+      <h2>$18,400 an oven. Paid back in 14 months.</h2>
+    </div>
+
+    <div class="econ">
+      <div>
+        <div class="price num">$18,400</div>
+        <div class="price-cap">Per oven, installed. Payback of 14 months at average pilot volume — before any value from reduced waste or fewer callouts.</div>
+      </div>
+
+      <ul class="ecomlist">
+        <li><span>Savings per oven, per month</span><span class="num">≈ $1,314</span></li>
+        <li><span>10-store pilot hardware</span><span class="num">$184,000</span></li>
+        <li><span>Payback at average volume</span><span class="num">14 months</span></li>
+        <li><span>60 stores, annualised savings</span><span class="num">≈ $947,000</span></li>
+      </ul>
+    </div>
+
+    <div class="payback-wrap">
+      <div class="pb-head">
+        <span>Cumulative energy and waste savings vs. oven cost</span>
+        <span>Average volume · illustrative</span>
+      </div>
+      <div class="pb-holder">
+        <div class="pb-tag">Month 14 — oven paid back</div>
+        <div class="pb-track">
+          <div class="pb-fill" style="width:58.33%"></div>
+          <div class="pb-marker" style="left:58.33%"></div>
+        </div>
+        <div class="pb-axis">
+          <span>Month 0</span><span>6</span><span>12</span><span>18</span><span>24</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Confidential</span><span>09 / 10</span></div>
+</section>
+
+<!-- ============ 10 · THE ASK ============ -->
+<section class="slide dark">
+  <div class="glow-a" style="opacity:.7;"></div>
+  <div class="pad">
+    <div class="head" style="margin-bottom:52px;">
+      <div class="eyebrow">09 &nbsp;—&nbsp; The proposal</div>
+      <h2>Ten stores. Ninety days. Three numbers to beat.</h2>
+      <p class="lead">
+        Run Kiln against your own control stores, in your own production, and decide on evidence
+        rather than on a pitch.
+      </p>
+    </div>
+
+    <div class="ask">
+      <div class="panel">
+        <h4>The paid pilot</h4>
+        <ul>
+          <li><i></i><span>10 Kiln ovens installed in 10 stores you choose</span></li>
+          <li><i></i><span>10 matched control stores, running unchanged</span></li>
+          <li><i></i><span>90-day measurement window with monthly readouts</span></li>
+          <li><i></i><span>Fleet dashboard access for your operations team</span></li>
+          <li><i></i><span>Quarterly business reviews with our engineering lead</span></li>
+        </ul>
+        <div class="bigline num">$184,000
+          <small>Hardware, installation and the full 90-day measurement programme</small>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);font-weight:700;">Success criteria</div>
+        <table class="crit">
+          <tr><td>Energy per bake vs. control stores</td><td>≥ 15% lower</td></tr>
+          <tr><td>Bake-time variance across pilot stores</td><td>≤ 3%</td></tr>
+          <tr><td>Waste from burnt batches</td><td>≥ 50% lower</td></tr>
+        </table>
+        <p style="margin-top:26px;font-size:18px;line-height:1.55;color:rgba(247,242,234,.62);">
+          Hit all three and we scale to 60 stores together. Miss them, and you owe nothing beyond the pilot.
+        </p>
+
+        <div style="font-size:13px;letter-spacing:.2em;text-transform:uppercase;color:var(--amber);font-weight:700;margin-top:44px;">Next steps</div>
+        <ol class="steps">
+          <li><span>60-minute operations walkthrough with your team</span></li>
+          <li><span>Select 10 pilot stores and 10 matched controls</span></li>
+          <li><span>Install, train, first bake — inside three weeks</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Kiln · Confidential</span><span>10 / 10</span></div>
+</section>
+
+</body>
+</html>

@@ -1,102 +1,211 @@
-<div align="center">
+<p align="center">
+  <img src=".github/hero.jpg" alt="d-design: every deck, its own designer" width="100%">
+</p>
 
-# ✦ d-design
+<h1 align="center">d-design</h1>
 
-### AI presentation engine
+<p align="center">
+  <b>The open-source AI deck maker that designs, not templates.</b><br>
+  Type a brief. Get a deck that looks made by a designer, as one offline <code>.html</code> file.
+</p>
 
-*The AI emits content and intent. It never writes styling.*
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-111?style=flat-square" alt="MIT license"></a>
+  <a href="https://github.com/KirtanUgreja/d-design/actions/workflows/gate.yml"><img src="https://img.shields.io/github/actions/workflow/status/KirtanUgreja/d-design/gate.yml?branch=main&style=flat-square&label=gate" alt="gate"></a>
+  <img src="https://img.shields.io/badge/python-3.13-111?style=flat-square" alt="Python 3.13">
+  <img src="https://img.shields.io/badge/next.js-16-111?style=flat-square" alt="Next.js 16">
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-welcome-111?style=flat-square" alt="PRs welcome"></a>
+</p>
 
-<br/>
+<p align="center">
+  <a href="#-deploy-in-one-command">Deploy</a> ·
+  <a href="#-how-it-works">How it works</a> ·
+  <a href="#-pick-your-model">Models</a> ·
+  <a href="#-architecture">Architecture</a> ·
+  <a href="CONTRIBUTING.md">Contribute</a>
+</p>
 
-<img src="https://img.shields.io/badge/status-rebuilding%20from%20zero-F4B740?style=for-the-badge&labelColor=08090B" alt="Status: rebuilding from zero">
-<img src="https://img.shields.io/badge/code-none%20yet-64748B?style=for-the-badge&labelColor=08090B" alt="Code: none yet">
-<img src="https://img.shields.io/badge/docs-cross--cutting%20only-4C9AFF?style=for-the-badge&labelColor=08090B" alt="Docs: cross-cutting only">
-<img src="https://img.shields.io/badge/builder-solo%20%2B%20AI-A78BFA?style=for-the-badge&labelColor=08090B" alt="Builder: solo + AI">
-
-</div>
-
-<br/>
-
-> [!WARNING]
-> **This repository was reset to zero on 2026-08-10.** The product code and the `v1`/`v2`/`v3` documentation were deleted — not abandoned, deleted deliberately — because the product is being re-decided from the vision up.
->
-> **Everything is in git history.** The two commits before the reset hold the complete working system and the full specification.
-
----
-
-## What was deleted, and why
-
-A working system: a FastAPI backend, a Next.js frontend, a Pydantic-owned scene schema with TypeScript types and a Zod validator generated from it, a four-phase AI pipeline with a human approval gate, three art directions rendering the same scene tree with no branch in the renderer, and a passing end-to-end acceptance run. Roughly 316 files, plus 84 specification documents.
-
-None of it was broken. The problem was upstream of the code: three releases of decisions had each corrected the one before, until finding a live decision meant reading the history of a dead one — and the framing underneath all of them was being changed rather than patched.
-
-**A product whose *"who is this for, and what is the artefact"* has changed is not a document that needs correcting.** Improving it incrementally converges on a better version of the wrong thing.
-
----
-
-## What survives
-
-Everything true regardless of what the product turns out to be.
+<br>
 
 <table>
-<tr><th align="left">Path</th><th align="left">What it covers</th></tr>
-<tr><td>📐 <a href="docs/coderules/README.md"><b>docs/coderules</b></a></td><td>How the code stays consistent when an AI writes most of it</td></tr>
-<tr><td>🛡️ <a href="docs/security/README.md"><b>docs/security</b></a></td><td>Threat model and every control, routed by threat</td></tr>
-<tr><td>🧰 <a href="docs/techstack/README.md"><b>docs/techstack</b></a></td><td>What runs where, which model, and why each was chosen</td></tr>
-<tr><td>🎨 <a href="docs/design/README.md"><b>docs/design</b></a></td><td>How <b>our own</b> app and site look — never what the engine produces</td></tr>
-<tr><td>🧭 <a href="docs/versions.md"><b>docs/versions.md</b></a></td><td>How a version is documented — required files, phase anatomy, when to start fresh</td></tr>
-<tr><td>🔬 <a href="docs/findings.md"><b>docs/findings.md</b></a></td><td>Evidence, not direction — measurements, model behaviour, the category, dated platform facts</td></tr>
+  <tr>
+    <td width="33%" valign="top">
+      <h3>🎨 Designed, not filled</h3>
+      No templates. The model writes every slide in real HTML and CSS, inside a design system made for that deck.
+    </td>
+    <td width="33%" valign="top">
+      <h3>🔍 Checked before you see it</h3>
+      Every slide is rendered in Chromium and measured for overflow, collisions and contrast. Broken slides get fixed or flagged.
+    </td>
+    <td width="33%" valign="top">
+      <h3>📎 Every number has a source</h3>
+      Figures trace to your brief or a cited page. Anything else is held for you to approve.
+    </td>
+  </tr>
 </table>
 
-**[`docs/README.md`](docs/README.md) is the index.** [`AGENTS.md`](AGENTS.md) is the contract any agent working here reads first.
+<p align="center">
+  <img src=".github/gallery.jpg" alt="Slides d-design made, unedited" width="100%">
+</p>
 
----
+## 🚀 Deploy in one command
 
-## The one thing carried over
+You need a [Railway](https://railway.com) account and an [OpenRouter](https://openrouter.ai/keys) key.
 
-The constraint the project exists to test, kept because it is the reason there is a project:
-
-> **The AI never writes styling.** It emits content and intent — `motion: "reveal"`, `emphasis: "hero"` — and a separate token layer resolves that into type scale, spacing, colour, easing and duration.
-
-```jsonc
-// ✅ what the AI emits — meaning only
-{ "type": "Headline", "props": { "text": "Ship in minutes", "emphasis": "hero" }, "motion": "reveal" }
-
-// ❌ the schema has no field for any of this
-{ "fontSize": "4rem", "color": "#F4F4F5", "duration": "900ms", "ease": "expo-out" }
+```bash
+git clone https://github.com/KirtanUgreja/d-design.git && cd d-design
+railway login
+./scripts/deploy-railway.sh
 ```
 
-It is checkable, and in the deleted codebase it was checked — a test walked every block in a generated tree and failed on anything matching `/#[0-9a-f]{3,8}|[\d.]+(px|rem|em|ms|s)\b/i`.
+It asks for your key and who may sign up, then builds the databases, the three services and a public URL. Run it again to ship new code.
 
-**Whether it survives the new vision is a decision that has not been made yet.**
+> [!TIP]
+> **On Railway's free plan** (3 services), bring two free [Neon](https://neon.tech) databases:
+> `APP_DATABASE_URL=... AUTH_DATABASE_URL=... ./scripts/deploy-railway.sh`
 
----
+## ✨ How it works
 
-## Working here today
+```mermaid
+flowchart LR
+    A([✍️ Brief]) --> B[Research<br><sub>cited facts</sub>]
+    B --> C[Outline<br><sub>one argument</sub>]
+    C --> D[Look<br><sub>palette · type</sub>]
+    D --> E[Design<br><sub>HTML + CSS</sub>]
+    E --> F[Improve<br><sub>sees a screenshot</sub>]
+    F --> G{QA in<br>Chromium}
+    G -- defect --> E
+    G -- pass --> H([📦 One .html file])
 
+    classDef io fill:#111,stroke:#111,color:#fff
+    classDef step fill:#f5f1ea,stroke:#d6cfc4,color:#111
+    classDef check fill:#ffe9d6,stroke:#f08a4b,color:#111
+    class A,H io
+    class B,C,D,E,F step
+    class G check
 ```
-./scripts/setup.sh               installs the git hooks — run once per clone
-./scripts/check-docs.sh          every link resolves, every file is indexed
-./scripts/hooks/pre-commit       the gate, on demand
+
+<details>
+<summary><b>Each step, and where it lives in the code</b></summary>
+
+<br>
+
+| Step | What happens | Code |
+|---|---|---|
+| Interview | A few targeted questions; skippable | `api/engine/content/interview.py` |
+| Research | A product file and the market evidence; only quoted facts are kept | `api/engine/studio/research.py` |
+| Outline | A claim per slide; every number traces to you or a source | `api/engine/studio/outline.py` |
+| Look | One of 8 visual languages, a palette around your brand colour, a type pairing | `api/engine/design/` |
+| Design | An art director plans the deck; a designer writes each slide | `api/engine/studio/direct.py`, `design.py` |
+| Improve | A creative director critiques a screenshot and redesigns; kept only if QA agrees | `api/engine/studio/improve.py` |
+| Review | The whole deck judged as one piece; the two weakest slides go back | `api/engine/studio/review.py` |
+| QA | Overflow, collisions, contrast (WCAG + APCA), type size; two repairs, then a flag | `api/engine/qa/` |
+| Export | Present, one offline file with zero network requests, or PDF | `api/engine/export/` |
+
+</details>
+
+## 🧠 Pick your model
+
+Any [OpenRouter model](https://openrouter.ai/models) works. One variable switches them all:
+
+```bash
+MODEL=deepseek/deepseek-v4.1-flash                                         # .env, local
+railway variable set --service worker MODEL=deepseek/deepseek-v4.1-flash   # Railway
 ```
 
-No local infrastructure, no CI. Both were specific to the deleted stack and get rewritten for whatever comes next.
+| Variable | Sets | Default |
+|---|---|---|
+| `MODEL` | every text role at once | the pins below |
+| `MODEL_WRITING` | research and the storyline | `anthropic/claude-sonnet-5.5` |
+| `MODEL_DESIGN` | the designer and improver | `anthropic/claude-sonnet-5.5` |
+| `MODEL_CHEAP` | the interview and speaker notes | `anthropic/claude-haiku-5.5` |
+| `MODEL_IMAGE` | slide images (empty = off) | `google/gemini-3.1-flash-lite-image` |
+| `DAILY_CAP_USD` | spend cap per user per day | `3` |
 
+## 🏗 Architecture
+
+```mermaid
+flowchart LR
+    U((👤 Browser)) --> W
+
+    subgraph R[Railway]
+        W[<b>web</b><br><sub>Next.js · Better Auth</sub>]
+        A[<b>api</b><br><sub>FastAPI · no model key</sub>]
+        K[<b>worker</b><br><sub>model key · Chromium</sub>]
+    end
+
+    subgraph P[Postgres]
+        AD[(auth)]
+        PD[(app)]
+    end
+
+    W -- "JWT per request" --> A
+    W --> AD
+    A --> PD
+    K -- "claims jobs" --> PD
+    K -- "model calls" --> OR([OpenRouter])
+
+    classDef pub fill:#111,stroke:#111,color:#fff
+    classDef svc fill:#f5f1ea,stroke:#d6cfc4,color:#111
+    classDef db fill:#e8f0ff,stroke:#7a9cff,color:#111
+    classDef ext fill:#fff,stroke:#bbb,color:#111,stroke-dasharray:4 3
+    class W pub
+    class A,K svc
+    class AD,PD db
+    class U,OR ext
+    style R fill:transparent,stroke:#999,stroke-dasharray:5 4
+    style P fill:transparent,stroke:#7a9cff,stroke-dasharray:5 4
 ```
-d-design/
-├── README.md            you are here
-├── AGENTS.md            the contract — rules + a task→doc routing table
-├── CLAUDE.md            one line: @AGENTS.md
-├── docs/                what survives a vision change
-└── scripts/             setup · check-docs · the gate · invariants · hooks
+
+- **web** is the only public service. Its `/api` proxy mints a short EdDSA JWT per request, which the browser never sees.
+- **api** checks that JWT and fails closed. Another user's deck is a 404.
+- **worker** has no inbound port. It alone holds the model key and the browser.
+
+<details>
+<summary><b>Run it locally</b></summary>
+
+<br>
+
+```bash
+./scripts/setup.sh          # git hooks, Python and web deps, Chromium
+cp .env.example .env        # add OPENROUTER_API_KEY and a Postgres URL
+./scripts/dev.sh            # api + worker + web → http://localhost:3000
 ```
 
----
+`web/.env.local` needs `AUTH_DATABASE_URL` and `BETTER_AUTH_SECRET`. To skip accounts: `cd api && AUTH_DISABLED=1 uv run uvicorn app:serve --factory`.
 
-<div align="center">
+</details>
 
-*Gamma reached ~$100M ARR by making presentations **faster**.*<br/>
-*This bets that people will pay for presentations that are **better**.*<br/>
-*Tome bet the same thing and lost — see [`docs/findings.md`](docs/findings.md) → "The category" before building.*
+<details>
+<summary><b>Tests</b></summary>
 
-</div>
+<br>
+
+```bash
+cd api && uv run pytest -q      # ~210 tests, offline: fake models, real Chromium
+cd web && pnpm e2e              # sign-up, sign-in, the token proxy
+./scripts/hooks/pre-commit      # the whole gate
+```
+
+The security tests call every route with no session, a forged token and another user's session.
+
+</details>
+
+<details>
+<summary><b>Known limits</b></summary>
+
+<br>
+
+- One worker, so builds queue.
+- Four of the eight visual languages are on, so looks repeat across many decks.
+- Email and password for an allowlist; no OAuth, no reset by email.
+
+</details>
+
+## 🤝 Contributing
+
+Issues and PRs are welcome. Start with [`CONTRIBUTING.md`](CONTRIBUTING.md) and the [code guide](docs/code-guide.md). Security reports go to [`SECURITY.md`](SECURITY.md).
+
+## 📄 License
+
+[MIT](LICENSE). The bundled fonts keep their own SIL Open Font License.

@@ -1,0 +1,230 @@
+"""Phase 28: editing without a model. Every change runs QA again, re-exports,
+and is a labelled version that undo restores exactly."""
+
+from __future__ import annotations
+
+import asyncio
+from pathlib import Path
+
+import pytest
+from fastapi.testclient import TestClient
+
+import worker
+from app import create_app
+from engine import Seam
+from store.files import UNDO_STEPS
+from store.tenant import AnyStore
+from tests.fakes import Studio, _no_sleep
+from tests.stores import STORES, make_store
+from tests.test_api import _approved_deck
+
+each_store = pytest.mark.parametrize("kind", STORES)
+
+
+def _work(store: AnyStore) -> None:
+    """Run the worker until the queue is empty."""
+    while asyncio.run(
+        worker.once(
+            store,
+            make_seam=lambda d: Seam(api_key="k", transport=Studio(), sleep=_no_sleep, deck_id=d),
+            writing="w",
+            design="d",
+            budget_usd=1.0,
+        )
+    ):
+        pass
+
+
+def _built(tmp_path: Path, kind: str, slides: int = 4) -> tuple[TestClient, AnyStore, str]:
+    store = make_store(kind, tmp_path)
+    client = TestClient(create_app(store))
+    deck_id = _approved_deck(store, slides=slides)
+    client.post(f"/api/decks/{deck_id}/build")
+    _work(store)
+    assert store.read(deck_id).status == "ready"
+    return client, store, deck_id
+
+
+def _send(store: AnyStore, deck_id: str) -> str:
+    data = store.export(deck_id, "export-send.html")
+    assert data is not None
+    return data.decode()
+
+
+def _text(store: AnyStore, deck_id: str, slide: str, field: str) -> str:
+    story = store.read(deck_id).storyline
+    assert story is not None
+    plan = next(p for p in story.slides if p.id == slide)
+    return next(f.text for f in plan.fields if f.name == field)
+
+
+@each_store
+def test_a_text_edit_changes_the_plan_and_the_html_together_and_undo_restores_it(
+    tmp_path: Path, kind: str
+) -> None:
+    client, store, deck_id = _built(tmp_path, kind)
+    before = _text(store, deck_id, "s02", "headline")
+    r = client.patch(
+        f"/api/decks/{deck_id}/slides/s02/fields",
+        json={"field": "headline", "text": "Flaky tests cost every team a day a week"},
+    )
+    assert r.status_code == 200
+    _work(store)
+    assert _text(store, deck_id, "s02", "headline") == "Flaky tests cost every team a day a week"
+    slide = next(s for s in store.read(deck_id).slides if s.id == "s02")
+    assert "Flaky tests cost every team a day a week" in slide.html
+    assert "a day a week" in _send(store, deck_id)
+    assert store.history(deck_id).labels == ["Generated", "Edited text"]
+
+    assert client.post(f"/api/decks/{deck_id}/undo").status_code == 200
+    assert _text(store, deck_id, "s02", "headline") == before
+    assert "a day a week" not in _send(store, deck_id)
+    assert client.post(f"/api/decks/{deck_id}/undo").status_code == 409  # nothing more
+    assert client.post(f"/api/decks/{deck_id}/redo").status_code == 200
+    assert _text(store, deck_id, "s02", "headline") == "Flaky tests cost every team a day a week"
+
+
+@each_store
+def test_recolour_keeps_every_layout_and_runs_qa_on_all_slides(tmp_path: Path, kind: str) -> None:
+    client, store, deck_id = _built(tmp_path, kind)
+    old_send = _send(store, deck_id)
+    old_html = [s.html for s in store.read(deck_id).slides]
+    client.post(f"/api/decks/{deck_id}/recolour")
+    _work(store)
+    deck = store.read(deck_id)
+    assert deck.palette_nonce == 1
+    assert [s.html for s in deck.slides] == old_html  # the layouts are untouched
+    assert _send(store, deck_id) != old_send  # the colours are not
+    assert all(s.qa.status == "passed" for s in deck.slides)
+
+
+@each_store
+def test_the_cover_and_the_ask_stay_where_they_are(tmp_path: Path, kind: str) -> None:
+    client, store, deck_id = _built(tmp_path, kind, slides=5)
+    client.delete(f"/api/decks/{deck_id}/slides/s01")
+    _work(store)
+    assert next(s.id for s in store.read(deck_id).slides) == "s01"
+    client.post(
+        f"/api/decks/{deck_id}/reorder", json={"slides": ["s01", "s03", "s02", "s04", "s05"]}
+    )
+    client.delete(f"/api/decks/{deck_id}/slides/s04")
+    _work(store)
+    assert [s.id for s in store.read(deck_id).slides] == ["s01", "s03", "s02", "s05"]
+    refused = [e for e in store.events(deck_id) if e["type"] == "edit_refused"]
+    assert len(refused) == 1
+
+
+@each_store
+def test_an_edit_that_breaks_the_slide_is_flagged_and_fit_repairs_it(
+    tmp_path: Path, kind: str
+) -> None:
+    client, store, deck_id = _built(tmp_path, kind)
+    # Too long for this composition, not for a slide: 40 words, 229 characters.
+    long = " ".join((["flaky", "tests", "cost", "teams"] * 10)[:40])
+    client.patch(
+        f"/api/decks/{deck_id}/slides/s02/fields", json={"field": "headline", "text": long}
+    )
+    _work(store)
+    done = [e for e in store.events(deck_id) if e["type"] == "edit_done"][-1]
+    assert done["flagged"] == ["s02"]
+    client.post(f"/api/decks/{deck_id}/slides/s02/fit")
+    _work(store)
+    slide = next(s for s in store.read(deck_id).slides if s.id == "s02")
+    assert slide.qa.status == "passed" and slide.origin == "fallback", [
+        (d.code, d.field, d.measured) for d in slide.qa.errors
+    ]
+    assert store.history(deck_id).labels[-1] == "Fitted a slide"
+
+
+@each_store
+def test_undo_keeps_the_last_twenty_operations(tmp_path: Path, kind: str) -> None:
+    _, store, deck_id = _built(tmp_path, kind, slides=3)
+    for n in range(UNDO_STEPS + 5):
+        store.snapshot(deck_id, f"op {n}")
+    h = store.history(deck_id)
+    assert len(h.labels) == UNDO_STEPS + 1 and h.labels[-1] == f"op {UNDO_STEPS + 4}"
+    assert h.at == UNDO_STEPS
+
+
+@each_store
+def test_a_change_in_words_is_a_proposal_until_accepted(tmp_path: Path, kind: str) -> None:
+    client, store, deck_id = _built(tmp_path, kind)
+    before = next(s for s in store.read(deck_id).slides if s.id == "s02").html
+    asked = client.post(
+        f"/api/decks/{deck_id}/slides/s02/ask", json={"instruction": "make the claim the hero"}
+    )
+    assert asked.status_code == 200
+    _work(store)
+    ready = [e for e in store.events(deck_id) if e["type"] == "proposal_ready"]
+    assert ready and ready[-1]["slide_id"] == "s02"
+    # nothing changed yet; the proposal has its own picture
+    assert next(s for s in store.read(deck_id).slides if s.id == "s02").html == before
+    shot = client.get(f"/api/decks/{deck_id}/slides/s02/proposal.png")
+    assert shot.status_code == 200 and shot.content.startswith(b"\x89PNG")
+    client.post(f"/api/decks/{deck_id}/slides/s02/accept")
+    _work(store)
+    after = next(s for s in store.read(deck_id).slides if s.id == "s02")
+    assert after.origin == "edited"  # the fake model answers the same layout
+    assert store.history(deck_id).labels[-1] == "Changed a slide by request"
+
+
+@each_store
+def test_an_accepted_change_keeps_a_full_size_picture(tmp_path: Path, kind: str) -> None:
+    # Live, 2026-10-10: a picture alone is over the sanitizer's size cap, so
+    # every proposal on a slide with a photo or screenshot was refused.
+    import json
+
+    from engine.components import images
+
+    client, store, deck_id = _built(tmp_path, kind)
+    client.post(f"/api/decks/{deck_id}/slides/s02/ask", json={"instruction": "bigger"})
+    _work(store)
+    raw = store.export(deck_id, "proposal-s02.json")
+    assert raw is not None
+    proposal = json.loads(raw)
+    url = images.data_url(b"w" * 40_000)
+    framed = f'<dd-image aspect="16:9"><img src="{url}" alt=""></dd-image></section>'
+    proposal["html"] = proposal["html"].replace("</section>", framed)
+    store.save_export(deck_id, "proposal-s02.json", json.dumps(proposal))
+    client.post(f"/api/decks/{deck_id}/slides/s02/accept")
+    _work(store)
+    assert not [e for e in store.events(deck_id) if e["type"] == "edit_refused"]
+    assert url in next(s for s in store.read(deck_id).slides if s.id == "s02").html
+
+
+@each_store
+def test_asking_one_slide_for_a_colour_is_refused_without_a_model(
+    tmp_path: Path, kind: str
+) -> None:
+    client, store, deck_id = _built(tmp_path, kind)
+    spent = len(store.ledger(deck_id))
+    client.post(
+        f"/api/decks/{deck_id}/slides/s02/ask", json={"instruction": "make the headline red"}
+    )
+    _work(store)
+    refused = [e for e in store.events(deck_id) if e["type"] == "edit_refused"]
+    assert refused and "Colour and type come from the look" in str(refused[-1]["message"])
+    assert len(store.ledger(deck_id)) == spent  # no model call was made
+    assert client.post(f"/api/decks/{deck_id}/slides/s02/accept").status_code == 200
+    _work(store)  # nothing waiting: refused in words
+    assert "no change waiting" in str(
+        [e for e in store.events(deck_id) if e["type"] == "edit_refused"][-1]["message"]
+    )
+
+
+@each_store
+def test_one_ask_for_the_whole_deck_is_one_version(tmp_path: Path, kind: str) -> None:
+    client, store, deck_id = _built(tmp_path, kind)
+    before = len(store.history(deck_id).labels)
+    got = client.post(f"/api/decks/{deck_id}/ask", json={"instruction": "more breathing room"})
+    assert got.status_code == 200
+    _work(store)
+    done = [e for e in store.events(deck_id) if e["type"] == "edit_done"][-1]
+    assert str(done["label"]).startswith("Changed the whole deck by request")
+    assert {s.origin for s in store.read(deck_id).slides} == {"edited"}
+    assert len(store.history(deck_id).labels) == before + 1  # one undo returns the deck
+    refused = client.post(f"/api/decks/{deck_id}/ask", json={"instruction": "make it blue"})
+    assert refused.status_code == 200
+    _work(store)
+    last = store.events(deck_id)[-1]
+    assert last["type"] == "edit_refused"  # colour comes from the look, not an ask

@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Strata — Enterprise Data Platform · Sales Deck</title>
+<style>
+  :root{
+    --ink:#0B1220;
+    --ink-2:#1B2537;
+    --slate:#54627A;
+    --mute:#8B97AB;
+    --line:#E4E9F1;
+    --bg:#FFFFFF;
+    --bg-2:#F5F7FB;
+    --accent:#1F5BFF;
+    --accent-2:#3D7BFF;
+    --accent-soft:#EAF0FF;
+    --teal:#00A98F;
+    --dark:#080E1B;
+    --dark-slate:#93A2BC;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html,body{background:#05080F;}
+  body{
+    font-family:var(--font);
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+  }
+  .slide{
+    width:1920px;
+    height:1080px;
+    flex:0 0 auto;
+    position:relative;
+    overflow:hidden;
+    background:var(--bg);
+    padding:88px 104px;
+    display:flex;
+    flex-direction:column;
+    color:var(--ink);
+  }
+  .slide.dark{
+    background:
+      radial-gradient(1300px 760px at 88% -12%, rgba(31,91,255,.24), transparent 62%),
+      radial-gradient(900px 600px at -10% 110%, rgba(0,169,143,.10), transparent 60%),
+      var(--dark);
+    color:#fff;
+  }
+
+  /* ---------- Typography ---------- */
+  .eyebrow{
+    font-size:17px;
+    font-weight:700;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:26px;
+  }
+  .dark .eyebrow{color:#6E9BFF;}
+
+  h1{
+    font-size:104px;
+    line-height:1.0;
+    letter-spacing:-.035em;
+    font-weight:800;
+    color:#fff;
+  }
+  h1 em{font-style:normal;color:#6E9BFF;}
+
+  h2{
+    font-size:56px;
+    line-height:1.1;
+    letter-spacing:-.026em;
+    font-weight:800;
+    color:var(--ink);
+    max-width:1260px;
+  }
+  .dark h2{color:#fff;}
+
+  .lead{
+    font-size:24px;
+    line-height:1.52;
+    color:var(--slate);
+    max-width:1180px;
+    margin-top:26px;
+  }
+  .dark .lead{color:#A6B3C8;}
+
+  .head{margin-bottom:58px;}
+  .head .lead{margin-top:24px;}
+
+  /* ---------- Footers ---------- */
+  .foot{
+    position:absolute;
+    left:104px;right:104px;bottom:44px;
+    display:flex;justify-content:space-between;align-items:center;
+    font-size:15px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:#9AA6BA;
+    font-weight:600;
+  }
+  .dark .foot{color:#5F6E88;}
+
+  /* ---------- Grids ---------- */
+  .grid{display:grid;gap:26px;}
+  .g4{grid-template-columns:repeat(4,1fr);}
+  .g3{grid-template-columns:repeat(3,1fr);}
+  .g2{grid-template-columns:repeat(2,1fr);}
+
+  /* ---------- Cards ---------- */
+  .card{
+    background:var(--bg-2);
+    border:1px solid var(--line);
+    border-radius:20px;
+    padding:40px 36px;
+  }
+  .card .bar{
+    width:44px;height:5px;border-radius:3px;
+    background:var(--accent);
+    margin-bottom:28px;
+  }
+  .card h3{
+    font-size:25px;
+    font-weight:750;
+    letter-spacing:-.012em;
+    line-height:1.25;
+    margin-bottom:14px;
+    color:var(--ink);
+  }
+  .card p{
+    font-size:18px;
+    line-height:1.58;
+    color:var(--slate);
+  }
+  .dark .card{
+    background:rgba(255,255,255,.045);
+    border-color:rgba(255,255,255,.12);
+  }
+  .dark .card h3{color:#fff;}
+  .dark .card p{color:var(--dark-slate);}
+  .dark .card .bar{background:#6E9BFF;}
+
+  /* ---------- Cover ---------- */
+  .cover{padding:96px 104px 88px;}
+  .cover-inner{
+    position:relative;
+    z-index:2;
+    display:flex;
+    flex-direction:column;
+    height:100%;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    font-size:22px;
+    font-weight:800;
+    letter-spacing:.28em;
+    color:#fff;
+    margin-bottom:auto;
+  }
+  .cover h1{margin-top:0;}
+  .cover-lead{
+    font-size:26px;
+    line-height:1.55;
+    color:#A6B3C8;
+    max-width:860px;
+    margin-top:38px;
+  }
+  .cover-meta{
+    margin-top:auto;
+    padding-top:44px;
+    border-top:1px solid rgba(255,255,255,.14);
+    display:flex;
+    gap:110px;
+  }
+  .cover-meta .k{
+    display:block;
+    font-size:14px;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:#66768F;
+    font-weight:700;
+    margin-bottom:12px;
+  }
+  .cover-meta .v{
+    font-size:19px;
+    color:#D3DBE9;
+    line-height:1.45;
+  }
+  .strata-art{
+    position:absolute;
+    right:-70px;
+    top:50%;
+    transform:translateY(-50%);
+    width:780px;
+    height:auto;
+    opacity:.95;
+    z-index:1;
+    pointer-events:none;
+  }
+
+  /* ---------- Stats ---------- */
+  .stat .big{
+    font-size:84px;
+    font-weight:800;
+    letter-spacing:-.045em;
+    line-height:1;
+    color:#fff;
+    white-space:nowrap;
+  }
+  .stat .big .arrow{color:#6E9BFF;}
+  .stat .label{
+    font-size:18px;
+    line-height:1.5;
+    color:var(--dark-slate);
+    margin-top:22px;
+  }
+
+  /* ---------- Quote ---------- */
+  .quote{
+    margin-top:52px;
+    padding:38px 44px;
+    border-left:4px solid #6E9BFF;
+    background:rgba(255,255,255,.04);
+    border-radius:0 18px 18px 0;
+  }
+  .quote p{
+    font-size:28px;
+    line-height:1.42;
+    font-weight:600;
+    letter-spacing:-.015em;
+    color:#E6ECF7;
+  }
+  .quote span{
+    display:block;
+    margin-top:18px;
+    font-size:17px;
+    letter-spacing:.06em;
+    color:#7C8CA6;
+    font-weight:600;
+  }
+
+  /* ---------- Checks list ---------- */
+  .checks{list-style:none;}
+  .checks li{
+    position:relative;
+    padding-left:48px;
+    font-size:20px;
+    line-height:1.5;
+    color:var(--slate);
+    margin-bottom:26px;
+  }
+  .checks li::before{
+    content:"";
+    position:absolute;
+    left:2px;top:8px;
+    width:20px;height:11px;
+    border-left:3px solid var(--accent);
+    border-bottom:3px solid var(--accent);
+    transform:rotate(-45deg);
+  }
+  .checks li strong{color:var(--ink);font-weight:700;}
+
+  /* ---------- Timeline bars ---------- */
+  .bars{margin-top:20px;}
+  .bar-row{
+    display:flex;
+    align-items:center;
+    gap:40px;
+    margin-bottom:40px;
+  }
+  .bar-label{
+    width:400px;
+    flex:0 0 400px;
+    font-size:22px;
+    font-weight:700;
+    color:var(--ink);
+    letter-spacing:-.01em;
+  }
+  .bar-track{flex:1;position:relative;}
+  .bar{
+    height:76px;
+    border-radius:16px;
+  }
+  .bar-typical{
+    width:100%;
+    background:repeating-linear-gradient(135deg,#E7EBF3,#E7EBF3 14px,#DDE3EE 14px,#DDE3EE 28px);
+    border:1px solid #DCE2EC;
+  }
+  .bar-strata{
+    width:12.5%;
+    background:linear-gradient(100deg,#1F5BFF,#3D7BFF);
+    box-shadow:0 14px 30px -12px rgba(31,91,255,.6);
+  }
+  .bar-value{
+    flex:0 0 180px;
+    width:180px;
+    text-align:right;
+    font-size:30px;
+    font-weight:800;
+    letter-spacing:-.03em;
+    color:var(--ink);
+  }
+  .bar-value.accent{color:var(--accent);}
+  .axis{
+    margin-left:440px;
+    margin-right:220px;
+    display:flex;
+    justify-content:space-between;
+    font-size:15px;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:var(--mute);
+    font-weight:700;
+    margin-top:-24px;
+    margin-bottom:44px;
+  }
+
+  /* ---------- Cloud diagram ---------- */
+  .cloud{
+    border:2px dashed #C6D2E8;
+    background:linear-gradient(180deg,#F7F9FD,#EFF3FA);
+    border-radius:24px;
+    padding:38px 40px 34px;
+  }
+  .cloud-head{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    font-size:16px;
+    font-weight:800;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:30px;
+  }
+  .cloud-head .dot{
+    width:12px;height:12px;border-radius:50%;
+    background:var(--accent);
+    box-shadow:0 0 0 6px rgba(31,91,255,.14);
+  }
+  .cloud-body{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .cloud-item{
+    background:#fff;
+    border:1px solid #DEE5F0;
+    border-radius:14px;
+    padding:26px 22px;
+    font-size:18px;
+    font-weight:650;
+    line-height:1.35;
+    color:var(--ink-2);
+    text-align:center;
+    min-height:118px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .cloud-item.accent{
+    background:linear-gradient(150deg,#1F5BFF,#1140B8);
+    border-color:transparent;
+    color:#fff;
+    box-shadow:0 18px 34px -16px rgba(31,91,255,.75);
+  }
+  .cloud-foot{
+    margin-top:28px;
+    font-size:17px;
+    line-height:1.5;
+    color:var(--slate);
+    display:flex;
+    align-items:center;
+    gap:14px;
+  }
+  .cloud-foot::before{
+    content:"";
+    width:26px;height:2px;background:#B9C6DC;flex:0 0 auto;
+  }
+
+  /* ---------- Flow diagram (slide 7) ---------- */
+  .flow{
+    display:grid;
+    grid-template-columns:1fr 70px 1.15fr 70px 1fr;
+    align-items:stretch;
+  }
+  .flow-col{
+    border:1px solid var(--line);
+    background:var(--bg-2);
+    border-radius:20px;
+    padding:34px 32px;
+  }
+  .flow-col h4{
+    font-size:15px;
+    font-weight:800;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--mute);
+    margin-bottom:26px;
+  }
+  .flow-list{list-style:none;}
+  .flow-list li{
+    font-size:18px;
+    line-height:1.35;
+    color:var(--ink-2);
+    padding:13px 0 13px 22px;
+    position:relative;
+    border-bottom:1px solid #E8EDF5;
+    font-weight:600;
+  }
+  .flow-list li:last-child{border-bottom:none;}
+  .flow-list li::before{
+    content:"";
+    position:absolute;
+    left:0;top:21px;
+    width:8px;height:8px;
+    border-radius:2px;
+    background:#B8C6DD;
+  }
+  .flow-list li small{
+    display:block;
+    font-size:15px;
+    font-weight:500;
+    color:var(--mute);
+    margin-top:4px;
+    letter-spacing:0;
+  }
+  .flow-core{
+    background:linear-gradient(160deg,#1F5BFF 0%,#0E3AA8 100%);
+    border-radius:20px;
+    padding:34px 32px;
+    color:#fff;
+    box-shadow:0 26px 50px -22px rgba(31,91,255,.7);
+  }
+  .flow-core h4{
+    font-size:15px;
+    font-weight:800;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.7);
+    margin-bottom:26px;
+  }
+  .flow-core ul{list-style:none;}
+  .flow-core li{
+    font-size:19px;
+    font-weight:650;
+    line-height:1.35;
+    padding:16px 0;
+    border-bottom:1px solid rgba(255,255,255,.18);
+  }
+  .flow-core li:last-child{border-bottom:none;}
+  .flow-core li small{
+    display:block;
+    font-size:15px;
+    font-weight:400;
+    color:rgba(255,255,255,.72);
+    margin-top:5px;
+  }
+  .arrow-cell{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:38px;
+    color:#B9C6DC;
+    font-weight:300;
+  }
+
+  /* ---------- Week cards (slide 8) ---------- */
+  .weeks{display:grid;grid-template-columns:repeat(6,1fr);gap:20px;}
+  .week{
+    border:1px solid var(--line);
+    border-top:4px solid var(--accent);
+    border-radius:16px;
+    background:#fff;
+    padding:28px 24px 30px;
+    min-height:330px;
+  }
+  .week .wk{
+    font-size:14px;
+    font-weight:800;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:14px;
+  }
+  .week h3{
+    font-size:20px;
+    font-weight:750;
+    letter-spacing:-.01em;
+    line-height:1.25;
+    margin-bottom:14px;
+    color:var(--ink);
+  }
+  .week p{
+    font-size:16px;
+    line-height:1.5;
+    color:var(--slate);
+  }
+
+  .exit{
+    margin-top:44px;
+    border:1px solid var(--line);
+    background:var(--bg-2);
+    border-radius:18px;
+    padding:34px 40px;
+    display:flex;
+    align-items:center;
+    gap:56px;
+  }
+  .exit .exit-title{
+    flex:0 0 260px;
+    font-size:16px;
+    font-weight:800;
+    letter-spacing:.16em;
+    text-transform:uppercase;
+    color:var(--ink);
+    line-height:1.5;
+  }
+  .exit .exit-items{
+    display:flex;
+    gap:48px;
+    flex:1;
+  }
+  .exit .exit-items div{
+    font-size:17px;
+    line-height:1.5;
+    color:var(--slate);
+    position:relative;
+    padding-left:30px;
+    flex:1;
+  }
+  .exit .exit-items div::before{
+    content:"";
+    position:absolute;
+    left:0;top:8px;
+    width:14px;height:14px;
+    border-radius:50%;
+    border:3px solid var(--accent);
+  }
+
+  /* ---------- List cards (slide 9) ---------- */
+  .list-card{
+    border:1px solid var(--line);
+    border-radius:22px;
+    padding:46px 48px;
+    background:#fff;
+  }
+  .list-card.alt{background:var(--bg-2);}
+  .list-card h3{
+    font-size:15px;
+    font-weight:800;
+    letter-spacing:.18em;
+    text-transform:uppercase;
+    color:var(--accent);
+    margin-bottom:32px;
+  }
+  .list-card.alt h3{color:var(--slate);}
+  .li{
+    display:flex;
+    gap:22px;
+    margin-bottom:28px;
+  }
+  .li:last-child{margin-bottom:0;}
+  .li .dot{
+    flex:0 0 auto;
+    width:11px;height:11px;
+    border-radius:50%;
+    background:var(--accent);
+    margin-top:10px;
+  }
+  .list-card.alt .li .dot{background:#B9C6DC;}
+  .li p{
+    font-size:20px;
+    line-height:1.5;
+    color:var(--slate);
+  }
+  .li p strong{color:var(--ink);font-weight:700;}
+
+  .nextbar{
+    margin-top:46px;
+    border-radius:18px;
+    background:linear-gradient(100deg,#1F5BFF,#0E3AA8);
+    color:#fff;
+    padding:34px 46px;
+    font-size:22px;
+    font-weight:650;
+    letter-spacing:-.01em;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    box-shadow:0 24px 46px -22px rgba(31,91,255,.7);
+  }
+  .nextbar span:last-child{
+    font-size:17px;
+    font-weight:600;
+    letter-spacing:.1em;
+    text-transform:uppercase;
+    color:rgba(255,255,255,.75);
+  }
+
+  /* ---------- Closing ---------- */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:26px;margin-top:72px;}
+  .step{
+    border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.04);
+    border-radius:20px;
+    padding:40px 38px;
+    min-height:260px;
+  }
+  .step .n{
+    font-size:15px;
+    font-weight:800;
+    letter-spacing:.2em;
+    text-transform:uppercase;
+    color:#6E9BFF;
+    margin-bottom:26px;
+  }
+  .step h3{
+    font-size:26px;
+    font-weight:750;
+    letter-spacing:-.015em;
+    line-height:1.25;
+    color:#fff;
+    margin-bottom:16px;
+  }
+  .step p{
+    font-size:18px;
+    line-height:1.55;
+    color:var(--dark-slate);
+  }
+  .closing-meta{
+    margin-top:auto;
+    padding-top:44px;
+    border-top:1px solid rgba(255,255,255,.14);
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+  }
+  .closing-meta .contact{
+    font-size:20px;
+    color:#D3DBE9;
+    line-height:1.6;
+  }
+  .closing-meta .contact strong{color:#fff;font-weight:700;}
+  .closing-meta .badges{
+    display:flex;
+    gap:14px;
+  }
+  .badge{
+    border:1px solid rgba(255,255,255,.18);
+    border-radius:999px;
+    padding:12px 24px;
+    font-size:15px;
+    font-weight:650;
+    letter-spacing:.08em;
+    text-transform:uppercase;
+    color:#9FB0C9;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ 01 · COVER ============ -->
+<section class="slide dark cover">
+  <svg class="strata-art" viewBox="0 0 700 560" aria-hidden="true">
+    <rect x="0" y="0"   width="700" height="42" rx="21" fill="#1F5BFF" opacity="0.95"/>
+    <rect x="70" y="62"  width="630" height="42" rx="21" fill="#2C6BFF" opacity="0.80"/>
+    <rect x="30" y="124" width="580" height="42" rx="21" fill="#3D7BFF" opacity="0.66"/>
+    <rect x="150" y="186" width="550" height="42" rx="21" fill="#4F8AFF" opacity="0.55"/>
+    <rect x="100" y="248" width="470" height="42" rx="21" fill="#5F96FF" opacity="0.46"/>
+    <rect x="210" y="310" width="430" height="42" rx="21" fill="#6E9BFF" opacity="0.38"/>
+    <rect x="160" y="372" width="340" height="42" rx="21" fill="#7AA3FF" opacity="0.30"/>
+    <rect x="270" y="434" width="280" height="42" rx="21" fill="#88AEFF" opacity="0.23"/>
+    <rect x="230" y="496" width="200" height="42" rx="21" fill="#96B8FF" opacity="0.17"/>
+  </svg>
+
+  <div class="cover-inner">
+    <div class="brand">
+      <svg width="36" height="32" viewBox="0 0 34 30" aria-hidden="true">
+        <rect x="0" y="0" width="34" height="8" rx="4" fill="#1F5BFF"/>
+        <rect x="5" y="11" width="29" height="8" rx="4" fill="#3D7BFF"/>
+        <rect x="11" y="22" width="23" height="8" rx="4" fill="#7AA3FF"/>
+      </svg>
+      <span>STRATA</span>
+    </div>
+
+    <h1>Loyalty data,<br>production-ready in<br><em>three weeks.</em></h1>
+
+    <p class="cover-lead">
+      Strata replaces the six-month integration project with a governed enterprise data platform
+      that deploys inside your own cloud account — no data movement, no new ETL sprawl.
+    </p>
+
+    <div class="cover-meta">
+      <div>
+        <span class="k">Prepared for</span>
+        <span class="v">Office of the Chief Data Officer<br>Data &amp; Platform Engineering</span>
+      </div>
+      <div>
+        <span class="k">Proposal</span>
+        <span class="v">Six-week proof of concept<br>Scoped to the loyalty dataset</span>
+      </div>
+      <div>
+        <span class="k">Confidential</span>
+        <span class="v">Sales discussion draft<br>Not for distribution</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 02 · SITUATION ============ -->
+<section class="slide">
+  <div class="head">
+    <div class="eyebrow">The Situation</div>
+    <h2>Every new source makes the loyalty dataset harder to trust.</h2>
+    <p class="lead">
+      Member data lives across a dozen systems that were never designed to agree with each other.
+      The cost shows up three ways: integration time, pipeline incidents, and analysts who have to
+      reconcile before they can analyze.
+    </p>
+  </div>
+
+  <div class="grid g4">
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Fragmented sources</h3>
+      <p>POS, e-commerce, mobile app, CRM, returns, fuel, pharmacy — each with its own schema, cadence, and its own definition of "member."</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Change costs a quarter</h3>
+      <p>Adding a single attribute means pipeline work, backfill, reconciliation, and a release window before anyone sees it.</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Incidents erode trust</h3>
+      <p>Every new source adds failure modes. When the numbers disagree, the business stops using them — and the team goes back to spreadsheets.</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Governance bolted on</h3>
+      <p>PII handling, consent, retention, and lineage are added after the fact — retrofitted into pipelines that were never designed for them.</p>
+    </div>
+  </div>
+
+  <div class="foot"><span>Strata · Enterprise Data Platform</span><span>02 / 10</span></div>
+</section>
+
+<!-- ============ 03 · PLATFORM ============ -->
+<section class="slide">
+  <div class="head">
+    <div class="eyebrow">The Platform</div>
+    <h2>One platform, from raw source to governed member profile.</h2>
+    <p class="lead">
+      Strata is a single system of record for the pipeline lifecycle. Connect, resolve, govern, serve —
+      configured rather than built, and versioned like the rest of your infrastructure.
+    </p>
+  </div>
+
+  <div class="grid g4">
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Connect</h3>
+      <p>200+ managed connectors with change data capture. New sources are added by configuration, not by writing and maintaining pipelines.</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Resolve</h3>
+      <p>Deterministic and probabilistic identity resolution produces one member ID across every source, with match confidence recorded at the row level.</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Govern</h3>
+      <p>Column-level lineage, PII masking, retention, and consent enforced as policy-as-code — reviewed and versioned alongside your pipelines.</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Serve</h3>
+      <p>Governed datasets, feature views, BI endpoints, and reverse ETL to your activation tools. One definition, every consumer.</p>
+    </div>
+  </div>
+
+  <div class="exit" style="margin-top:52px;">
+    <div class="exit-title">Delivery model</div>
+    <div class="exit-items">
+      <div>Runs entirely inside your cloud account</div>
+      <div>99.95% uptime SLA, measured quarterly</div>
+      <div>Provisioned with your existing IaC</div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Strata · Enterprise Data Platform</span><span>03 / 10</span></div>
+</section>
+
+<!-- ============ 04 · PROOF ============ -->
+<section class="slide dark">
+  <div class="head">
+    <div class="eyebrow">Reference Customer</div>
+    <h2>A 900-store grocer runs loyalty on Strata.</h2>
+    <p class="lead">
+      Fourteen months in production. The numbers below are from their quarterly platform review —
+      the same metrics we would instrument for your proof of concept.
+    </p>
+  </div>
+
+  <div class="grid g4">
+    <div class="card stat">
+      <div class="big">41 <span class="arrow">→</span> 6</div>
+      <div class="label">Data-pipeline incidents per quarter, down 85% from the pre-Strata baseline.</div>
+    </div>
+    <div class="card stat">
+      <div class="big">3</div>
+      <div class="label">Legacy ETL tools retired and decommissioned from the data platform stack.</div>
+    </div>
+    <div class="card stat">
+      <div class="big">$1.8M</div>
+      <div class="label">Annual run-cost savings across licences, infrastructure, and engineering time.</div>
+    </div>
+    <div class="card stat">
+      <div class="big">99.95%</div>
+      <div class="label">Contracted uptime SLA, independently measured and reported every quarter.</div>
+    </div>
+  </div>
+
+  <div class="quote">
+    <p>“We stopped maintaining pipelines and started shipping member experiences.”</p>
+    <span>VP Data Engineering · National grocery chain, 900 stores</span>
+  </div>
+
+  <div class="foot"><span>Strata · Enterprise Data Platform</span><span>04 / 10</span></div>
+</section>
+
+<!-- ============ 05 · TIME TO VALUE ============ -->
+<section class="slide">
+  <div class="head">
+    <div class="eyebrow">Time to Value</div>
+    <h2>Six months of integration becomes three weeks.</h2>
+    <p class="lead">
+      A conventional loyalty integration runs through discovery, connector build, identity work, modelling,
+      and release. Strata compresses the first four into a configured deployment.
+    </p>
+  </div>
+
+  <div class="bars">
+    <div class="bar-row">
+      <div class="bar-label">Typical platform integration</div>
+      <div class="bar-track"><div class="bar bar-typical"></div></div>
+      <div class="bar-value">24 weeks</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-label">Strata proof of concept</div>
+      <div class="bar-track"><div class="bar bar-strata"></div></div>
+      <div class="bar-value accent">3 weeks</div>
+    </div>
+    <div class="axis">
+      <span>0</span><span>6</span><span>12</span><span>18</span><span>24 weeks</span>
+    </div>
+  </div>
+
+  <div class="grid g3">
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Sources connected by day 5</h3>
+      <p>POS, e-commerce, and CRM streaming into your own storage with managed connectors and no bespoke code.</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Identity resolved by week 3</h3>
+      <p>One governed member ID, with match rates and confidence published to the business, not buried in a notebook.</p>
+    </div>
+    <div class="card">
+      <div class="bar"></div>
+      <h3>Live serving by week 5</h3>
+      <p>A governed loyalty model feeding BI and at least one activation channel, owned and operated by your team.</p>
+    </div>
+  </div>
+
+  <div class="foot"><span>Strata · Enterprise Data Platform</span><span>05 / 10</span></div>
+</section>
+
+<!-- ============ 06 · DEPLOYMENT ============ -->
+<section class="slide">
+  <div class="head">
+    <div class="eyebrow">Deployment &amp; Trust</div>
+    <h2>It deploys where your data already lives.</h2>
+  </div>
+
+  <div class="grid g2" style="gap:64px;align-items:start;">
+    <ul class="checks" style="margin-top:8px;">
+      <li><strong>Your cloud account.</strong> Strata runs in your AWS, Azure, or GCP subscription — your VPC, your storage, your keys, your egress rules.</li>
+      <li><strong>No customer data leaves.</strong> Strata receives metadata, health signals, and telemetry only. Member records never cross the boundary.</li>
+      <li><strong>Provisioned as code.</strong> Terraform modules drop into your existing IaC pipeline and your change-management process.</li>
+      <li><strong>Contractual SLA.</strong> 99.95% uptime, measured and reported quarterly, with service credits defined up front.</li>
+      <li><strong>Controls you already audit.</strong> SOC 2 Type II, encryption in transit and at rest, policy-as-code for PII, consent, and retention.</li>
+    </ul>
+
+    <div class="cloud">
+      <div class="cloud-head"><span class="dot"></span>Your cloud account — AWS / Azure / GCP</div>
+      <div class="cloud-body">
+        <div class="cloud-item">Your storage<br>&amp; warehouse</div>
+        <div class="cloud-item accent">Strata<br>runtime</div>
+        <div class="cloud-item">Your compute<br>&amp; keys</div>
+      </div>
+      <div class="cloud-foot">
+        No customer data leaves this boundary. Strata receives metadata and telemetry only.
+      </div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Strata · Enterprise Data Platform</span><span>06 / 10</span></div>
+</section>
+
+<!-- ============ 07 · LOYALTY OUTCOMES ============ -->
+<section class="slide">
+  <div class="head">
+    <div class="eyebrow">The Loyalty Dataset</div>
+    <h2>From scattered events to one governed member profile.</h2>
+  </div>
+
+  <div class="flow">
+    <div class="flow-col">
+      <h4>Your sources</h4>
+      <ul class="flow-list">
+        <li>POS &amp; fuel transactions</li>
+        <li>E-commerce orders</li>
+        <li>Mobile app &amp; web events</li>
+        <li>CRM &amp; service tickets</li>
+        <li>Loyalty enrolment &amp; tiers</li>
+        <li>Returns &amp; refunds</li>
+      </ul>
+    </div>
+
+    <div class="arrow-cell">→</div>
+
+    <div class="flow-core">
+      <h4>Strata</h4>
+      <ul>
+        <li>Identity resolution
+          <small>One member ID, match confidence recorded</small>
+        </li>
+        <li>Loyalty semantic model
+          <small>Versioned, tested, documented</small>
+        </li>
+        <li>Governance &amp; lineage
+          <small>PII masking, consent, retention</small>
+        </li>
+        <li>Activation layer
+          <small>APIs, feature views, reverse ETL</small>
+        </li>
+      </ul>
+    </div>
+
+    <div class="arrow-cell">→</div>
+
+    <div class="flow-col">
+      <h4>What you get</h4>
+      <ul class="flow-list">
+        <li>Unified member profile<small>One ID, deduplicated, reconciled</small></li>
+        <li>Value modelling<small>CLV, RFM, churn risk, propensity</small></li>
+        <li>Next-best-offer segments<small>Refreshed daily, governed</small></li>
+        <li>Attribution &amp; lift<small>Tied back to redemption events</small></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="exit" style="margin-top:52px;">
+    <div class="exit-title">Built once,<br>consumed everywhere</div>
+    <div class="exit-items">
+      <div>Analysts query governed tables, not raw landed files.</div>
+      <div>Marketing reads the same member ID the finance report uses.</div>
+      <div>Every metric traces back to the source column and the last change.</div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Strata · Enterprise Data Platform</span><span>07 / 10</span></div>
+</section>
+
+<!-- ============ 08 · POC PLAN ============ -->
+<section class="slide">
+  <div class="head" style="margin-bottom:48px;">
+    <div class="eyebrow">Proof of Concept</div>
+    <h2>Six weeks, scoped to your loyalty dataset.</h2>
+  </div>
+
+  <div class="weeks">
+    <div class="week">
+      <div class="wk">Week 1</div>
+      <h3>Access &amp; discovery</h3>
+      <p>Read-only access to three sources. Source audit, agreed success metrics, environment design.</p>
+    </div>
+    <div class="week">
+      <div class="wk">Week 2</div>
+      <h3>Ingest</h3>
+      <p>Connectors live with change data capture. Raw landing into your own storage account.</p>
+    </div>
+    <div class="week">
+      <div class="wk">Week 3</div>
+      <h3>Identity resolution</h3>
+      <p>Member IDs unified across POS, e-commerce, and CRM. Match rates reviewed with your analysts.</p>
+    </div>
+    <div class="week">
+      <div class="wk">Week 4</div>
+      <h3>Governed model</h3>
+      <p>CLV, RFM, and churn features built with lineage, tests, and PII masking in place.</p>
+    </div>
+    <div class="week">
+      <div class="wk">Week 5</div>
+      <h3>Serve</h3>
+      <p>One production dashboard and one activation channel, wired to your existing tools.</p>
+    </div>
+    <div class="week">
+      <div class="wk">Week 6</div>
+      <h3>Prove &amp; hand over</h3>
+      <p>Incident-free soak, runbooks, cost model, and a written decision memo.</p>
+    </div>
+  </div>
+
+  <div class="exit">
+    <div class="exit-title">Exit criteria<br>agreed in week 1</div>
+    <div class="exit-items">
+      <div>Zero unplanned pipeline incidents during the two-week soak</div>
+      <div>Member match rate above the threshold your team sets</div>
+      <div>One dashboard and one activation shipped and owned by your engineers</div>
+    </div>
+  </div>
+
+  <div class="foot"><span>Strata · Enterprise Data Platform</span><span>08 / 10</span></div>
+</section>
+
+<!-- ============ 09 · WHAT IT TAKES ============ -->
+<section class="slide">
+  <div class="head">
+    <div class="eyebrow">Getting Started</div>
+    <h2>What a six-week proof of concept needs.</h2>
+    <p class="lead">
+      Deliberately small. The proof of concept is designed to run alongside your current roadmap,
+      not instead of it.
+    </p>
+  </div>
+
+  <div class="grid g2" style="gap:32px;">
+    <div class="list-card alt">
+      <h3>From your team</h3>
+      <div class="li"><span class="dot"></span><p><strong>Read-only access</strong> to three loyalty sources — typically POS, e-commerce, and CRM.</p></div>
+      <div class="li"><span class="dot"></span><p><strong>One cloud project</strong> with a sandbox subscription, network rules, and a service principal we deploy through.</p></div>
+      <div class="li"><span class="dot"></span><p><strong>Two engineers</strong> at roughly four hours a week, plus one analyst for the week-3 review.</p></div>
+      <div class="li"><span class="dot"></span><p><strong>One agreed success metric</strong> — we will write it into the exit criteria in week one.</p></div>
+    </div>
+
+    <div class="list-card">
+      <h3>From Strata</h3>
+      <div class="li"><span class="dot"></span><p><strong>A named solutions architect and data engineer</strong> dedicated to you for the full six weeks.</p></div>
+      <div class="li"><span class="dot"></span><p><strong>Fixed fee, fixed scope.</strong> No platform licence charge during the proof of concept.</p></div>
+      <div class="li"><span class="dot"></span><p><strong>Fees credited against year one</strong> if you proceed to a production agreement.</p></div>
+      <div class="li"><span class="dot"></span><p><strong>A weekly demo and a written decision memo</strong> at week six, including a run-cost model on your volumes.</p></div>
+    </div>
+  </div>
+
+  <div class="nextbar">
+    <span>One 60-minute scoping call with your platform lead is enough to produce the written plan.</span>
+    <span>No commitment</span>
+  </div>
+
+  <div class="foot"><span>Strata · Enterprise Data Platform</span><span>09 / 10</span></div>
+</section>
+
+<!-- ============ 10 · CLOSING ============ -->
+<section class="slide dark">
+  <div class="head">
+    <div class="eyebrow">Next Step</div>
+    <h2>Let's pick a start date.</h2>
+    <p class="lead">
+      Three weeks from kickoff, your loyalty dataset is connected, resolved, and governed —
+      running in your own cloud account, owned by your team.
+    </p>
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="n">Step 01 · This week</div>
+      <h3>Technical scoping</h3>
+      <p>Sixty minutes with your head of platform. We confirm sources, cloud account, and the success metric.</p>
+    </div>
+    <div class="step">
+      <div class="n">Step 02 · Next week</div>
+      <h3>Written plan</h3>
+      <p>A fixed-scope PoC plan with week-by-week deliverables, exit criteria, and the fee, for sign-off.</p>
+    </div>
+    <div class="step">
+      <div class="n">Step 03 · Following week</div>
+      <h3>Kickoff Monday</h3>
+      <p>First source connected by Friday. First governed member profile visible to your analysts in week three.</p>
+    </div>
+  </div>
+
+  <div class="closing-meta">
+    <div class="contact">
+      <strong>Strata — Enterprise Data Platform</strong><br>
+      solutions@strata.example · 99.95% uptime SLA · deploys in your cloud account
+    </div>
+    <div class="badges">
+      <span class="badge">SOC 2 Type II</span>
+      <span class="badge">Your cloud account</span>
+      <span class="badge">Fixed scope</span>
+    </div>
+  </div>
+
+  <div class="foot"><span>Strata · Enterprise Data Platform</span><span>10 / 10</span></div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,27 @@
+{
+  "family": "Source Serif 4",
+  "role": "serif",
+  "weights": [
+    400,
+    600
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.492,
+      "cap": 0.67,
+      "descender": 0.243,
+      "width": 0.489,
+      "leading": 0.92
+    },
+    "600": {
+      "x_height": 0.495,
+      "cap": 0.664,
+      "descender": 0.24,
+      "width": 0.495,
+      "leading": 0.91
+    }
+  }
+}

@@ -1,69 +1,55 @@
-"""Image seam tests.
-
-The image seam is a seam action (pipeline-tools.md): the model never reaches
-the network, the seam does. Tests cover the per-deck cap, the data-URI
-result, and the fail-closed paths (no key, transport error, bad response).
-"""
+"""Slide imagery, offline: a fake image model's bytes become our own webp in
+the slide (tests/test_studio.py); a failure leaves no empty slot; bytes
+never reach a prompt."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+import asyncio
+import io
+from pathlib import Path
 
-import httpx
+from PIL import Image
 
-from ai.images import MAX_IMAGES_PER_DECK, ImageSeam
-from lib.result import Err, Ok
-
-
-@dataclass
-class StubTransport:
-    responses: list[httpx.Response] = field(default_factory=list)
-
-    def post(self, url: str, *, json: object, headers: dict[str, str]) -> httpx.Response:
-        del url, json, headers
-        return self.responses.pop(0)
+from engine import Seam
+from engine.components import images
+from engine.design.sampler import look_for
+from engine.design.theme import build
+from engine.studio import build as studio
+from tests.fakes import Studio, _no_sleep
+from tests.test_studio import _story
 
 
-def _ok_image() -> httpx.Response:
-    return httpx.Response(200, json={"data": [{"b64_json": "QUJD"}]})
+def test_a_failed_image_leaves_no_empty_slot(tmp_path: Path) -> None:
+    theme = build(look_for("img-test", words="a pitch", language="editorial"))
+    transport = Studio(no_picture=True)
+    built = asyncio.run(
+        studio.build(
+            Seam(api_key="k", transport=transport, sleep=_no_sleep),
+            _story(3),
+            theme,
+            model="m",
+            title="A pitch",
+            work_file=str(tmp_path / "qa.html"),
+            shots_dir=str(tmp_path),
+            budget_usd=1.0,
+            image_model="img",
+        )
+    )
+    assert transport.calls.count("image") == 1
+    assert all("<img" not in s.html for s in built.slides)
+    assert all(s.qa.status == "passed" for s in built.slides)
 
 
-def test_generate_returns_data_uri() -> None:
-    seam = ImageSeam(transport=StubTransport([_ok_image()]), api_key="k")
-    result = seam.generate("A forest at dawn", "serif, paper")
-    assert isinstance(result, Ok)
-    assert result.value == "data:image/png;base64,QUJD"
-    assert seam.images_generated == 1
+def test_treat_refuses_what_is_not_an_image() -> None:
+    assert images.treat(b"not an image", "3:2").__class__.__name__ == "Err"
+    gif = io.BytesIO()
+    Image.new("RGB", (10, 10)).save(gif, "GIF")
+    assert images.treat(gif.getvalue(), "3:2").__class__.__name__ == "Err"
 
 
-def test_missing_key_fails_closed() -> None:
-    seam = ImageSeam(transport=StubTransport([]), api_key="")
-    result = seam.generate("A forest", "serif")
-    assert isinstance(result, Err)
-    assert result.error.kind == "transport"
-    assert seam.images_generated == 0
-
-
-def test_transport_error_returns_err() -> None:
-    seam = ImageSeam(transport=StubTransport([httpx.Response(500, json={})]), api_key="k")
-    result = seam.generate("A forest", "serif")
-    assert isinstance(result, Err)
-    assert result.error.kind == "transport"
-
-
-def test_malformed_response_returns_err() -> None:
-    seam = ImageSeam(transport=StubTransport([httpx.Response(200, json={"data": []})]), api_key="k")
-    result = seam.generate("A forest", "serif")
-    assert isinstance(result, Err)
-    assert result.error.kind == "invalid"
-
-
-def test_per_deck_cap_is_enforced() -> None:
-    seam = ImageSeam(transport=StubTransport([_ok_image()] * MAX_IMAGES_PER_DECK), api_key="k")
-    for _ in range(MAX_IMAGES_PER_DECK):
-        assert isinstance(seam.generate("x", "y"), Ok)
-    # The next call refuses: hard cap, the same shape as unbounded-repair
-    # quota (pipeline-tools.md -> denial-of-wallet discipline).
-    result = seam.generate("x", "y")
-    assert isinstance(result, Err)
-    assert result.error.kind == "cap"
+def test_strip_keeps_bytes_out_of_prompts() -> None:
+    html = '<dd-image aspect="1:1"></dd-image>'
+    filled = images.fill(html, images.data_url(b"abc"))
+    assert "<img" in filled
+    assert images.strip(filled) == html
+    assert images.fill(html, "https://evil.example/x.png") == html

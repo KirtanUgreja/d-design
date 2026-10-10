@@ -1,0 +1,186 @@
+"""Layer 3a, the art director: one call that sees the whole outline and the
+deck's design system, and plans a different composition for every slide, so
+the deck has a rhythm instead of one template ten times (live decks,
+2026-10-09: the same circle on 8 of 10 slides; three alike in a row).
+
+The plan is advice the designer reads, not a contract: what comes back is
+checked only for shape, and a failed call falls back to a plain plan."""
+
+from __future__ import annotations
+
+from typing import Literal
+
+from pydantic import BaseModel, Field
+
+from engine.components import charts
+from engine.design.theme import Theme
+from engine.llm.openrouter import ModelError, Seam
+from engine.models import SlidePlan, Storyline
+from lib.result import Err, Result, ok
+
+PROMPT_VERSION = "direct.v3"  # v3: alternation; v2: rhythm, one idea, the AI tells
+IMAGE_CAP = 4  # pictures in one deck, at most: where a picture says something, not filler
+
+Hero = Literal["headline", "number", "chart", "visual", "image", "diagram", "quote", "list"]
+Ground = Literal["ground", "accent", "ink", "surface"]
+
+SYSTEM = f"""You are the art director of a studio known for presentations that look designed
+by people with taste: editorial, bold, every slide different, never a template (think the best
+of Pentagram, Collins and Apple keynotes; never a Gamma or Canva theme). A designer will build
+each slide from your plan in HTML, CSS and flat SVG at 1920x1080.
+
+Plan the whole deck at once. For EVERY slide give:
+- hero: the one thing the eye lands on first — headline, number, chart (when the slide has one),
+  visual (when the slide has one), image, diagram (a flat SVG drawing the designer makes: a
+  loop, layers, a funnel, a timeline, a network, a device outline, abstract product art), quote
+  or list.
+- ground: the slide's main field — ground (the light page), surface, accent (the loud colour)
+  or ink (dark).
+- image: true only where a picture says something words cannot (a person, a place, a mood),
+  never on a number, chart or visual slide; at most {IMAGE_CAP} in the deck.
+- idea: two or three sentences a designer can build without asking: where the hero sits and
+  how big (in px or columns of 12), what crops or bleeds off an edge, where the headline and
+  the rest go, and what makes THIS slide unlike its neighbours.
+
+Rules of the rhythm:
+- The deck has a shape: a bold opener (the cover and the problem land hard), a denser middle
+  where the evidence and the product live, and an open, confident close.
+- One idea per slide, and at most one number as the hero: several figures are a chart or
+  several slides, never a row of tiles.
+- Big-number slides and dense slides (a flow, a chart, a list) alternate, so the eye rests.
+- No two slides in a row share a layout idea, a hero or a ground. At least two slides sit on
+  an accent or ink field. The cover and the ask are the two strongest slides.
+- Scale contrast is the tool: a hero 4 to 8 times the size of the body text.
+- Use the whole canvas: asymmetric grids, bleeds, crops, a giant numeral or word as
+  decoration, colour fields that run off the edge. Centre a slide only when it is one bold line.
+- Never: cards around points, rows of icons, pills or badges, gradients, shadows, glows,
+  everything centred, small text floating in empty space.
+
+concept: one sentence for the deck's visual idea, specific to this product and audience.
+
+Answer as JSON."""
+
+
+class SlideDirection(BaseModel):
+    id: str
+    hero: Hero
+    ground: Ground
+    image: bool
+    idea: str
+
+
+class Direction(BaseModel):
+    concept: str
+    slides: list[SlideDirection] = Field(default_factory=list)
+
+    def of(self, slide_id: str) -> SlideDirection | None:
+        return next((s for s in self.slides if s.id == slide_id), None)
+
+
+def _outline(story: Storyline) -> str:
+    lines = [f"The deck argues: {story.governing_thought}", f"Audience: {story.audience}", ""]
+    for n, p in enumerate(story.slides, start=1):
+        has = (
+            ["chart: two big figures" if charts.form(p.chart) == "pair" else "chart"]
+            if p.chart
+            else []
+        )
+        has += [f"visual:{p.visual.kind}"] if p.visual else []
+        extra = " — has " + ", ".join(has) if has else ""
+        lines.append(f"[{p.id}] slide {n}, {p.intent} ({p.beat}){extra}")
+        lines += [f"    {f.name}: {f.text}" for f in p.fields if f.name != "source"]
+    return "\n".join(lines)
+
+
+def plain(plans: list[SlidePlan]) -> Direction:
+    """The fallback plan: still varied by position, so a failed call never
+    gives ten identical slides."""
+    grounds: list[Ground] = ["accent", "ground", "surface", "ground", "ink"]
+    slides = []
+    for n, p in enumerate(plans):
+        hero: Hero = (
+            "chart"
+            if p.chart
+            else "visual"
+            if p.visual
+            else "number"
+            if any(f.name == "stat" for f in p.fields)
+            else "headline"
+        )
+        side = "left" if n % 2 == 0 else "right"
+        slides.append(
+            SlideDirection(
+                id=p.id,
+                hero=hero,
+                ground=grounds[n % len(grounds)] if n else "accent",
+                image=False,
+                idea=f"The {hero} large on the {side}, the rest in the other columns.",
+            )
+        )
+    return Direction(concept="", slides=rhythm(slides))
+
+
+def rhythm(slides: list[SlideDirection]) -> list[SlideDirection]:
+    """The hard rules of a deck's rhythm, enforced by code whatever the plan
+    said (open-design's deck checklist, 2026-10-09): never three slides in a
+    row on the same field, and at least one dark (ink) slide and one light
+    (ground or surface) slide once a deck has five."""
+    out = list(slides)
+    for i in range(2, len(out)):
+        if out[i].ground == out[i - 1].ground == out[i - 2].ground:
+            options: list[Ground] = ["ink", "accent", "surface", "ground"]
+            pick = next(g for g in options if g != out[i].ground)
+            out[i] = out[i].model_copy(update={"ground": pick})
+    if len(out) >= 5:
+        middle = range(1, len(out) - 1)
+        if not any(s.ground == "ink" for s in out):
+            i = next((j for j in middle if out[j].hero in ("number", "quote", "headline")), 1)
+            out[i] = out[i].model_copy(update={"ground": "ink"})
+        if not any(s.ground in ("ground", "surface") for s in out):
+            i = next((j for j in middle if out[j].hero in ("chart", "list", "visual")), 2)
+            out[i] = out[i].model_copy(update={"ground": "ground"})
+    return out
+
+
+async def direct(
+    seam: Seam,
+    story: Storyline,
+    theme: Theme,
+    *,
+    model: str,
+    prefix: str,
+    pictures: int = IMAGE_CAP,
+) -> Result[Direction, ModelError]:
+    """``pictures`` is how many slides this look wants a picture on (its
+    language's appetite); 0 when the deck has no image model."""
+    want = (
+        f"\n\nThis look wants a picture on {pictures} slides: the cover first, then where a "
+        "picture says what words cannot. Mark exactly those with image true."
+        if pictures
+        else "\n\nThis deck has no pictures: image is false everywhere."
+    )
+    got = await seam.complete_json(
+        "direction",
+        Direction,
+        system=SYSTEM,
+        user=f"{_outline(story)}\n\nPlan every slide, by id, in order.{want}",
+        model=model,
+        prefix=prefix,
+        prompt_version=PROMPT_VERSION,
+        max_tokens=12000,
+        reasoning="medium",  # one call for the whole deck: worth the thought
+    )
+    if isinstance(got, Err):
+        return got
+    plan = got.value
+    # At most IMAGE_CAP pictures, never on a slide that has its own picture.
+    by = {p.id: p for p in story.slides}
+    pictured = 0
+    slides = []
+    for s in plan.slides:
+        p = by.get(s.id)
+        wants = s.image and p is not None and p.chart is None and p.visual is None
+        wants = wants and pictured < min(pictures, IMAGE_CAP)
+        pictured += wants
+        slides.append(s.model_copy(update={"image": wants}))
+    return ok(plan.model_copy(update={"slides": rhythm(slides)}))

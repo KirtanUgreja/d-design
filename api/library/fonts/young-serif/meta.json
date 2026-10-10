@@ -1,0 +1,19 @@
+{
+  "family": "Young Serif",
+  "role": "serif-display",
+  "weights": [
+    400
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.5,
+      "cap": 0.764,
+      "descender": 0.219,
+      "width": 0.506,
+      "leading": 0.99
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "family": "Barlow Condensed",
+  "role": "condensed",
+  "weights": [
+    700,
+    800
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "700": {
+      "x_height": 0.514,
+      "cap": 0.7,
+      "descender": 0.207,
+      "width": 0.371,
+      "leading": 0.91
+    },
+    "800": {
+      "x_height": 0.517,
+      "cap": 0.7,
+      "descender": 0.209,
+      "width": 0.379,
+      "leading": 0.91
+    }
+  }
+}

@@ -1,0 +1,39 @@
+# Bench results
+
+One row per run (docs/v4/bench.md -> "What a run records"). Runs themselves live in `bench/runs/`, which is ignored.
+
+| Date | Run | What | Decks | Cost | Latency | Owner's ratings |
+|---|---|---|---|---|---|---|
+| 2026-09-30 | `2026-09-30-baselines` | One-shot baseline, `anthropic/claude-opus-5.5`, prompt `bench-oneshot.v1` | 10 of 12 — `launch-product` and `pitch-health` failed with HTTP 402 (OpenRouter credit ran out) | median $0.21 per deck, $3.11 total | median 93 s, max 213 s | pending |
+| 2026-09-30 | — | Frozen outlines, `anthropic/claude-sonnet-5.5`, prompt `bench-outline.v1` | 12 of 12, all parsed first time | $0.01–0.025 each, $0.19 total | — | — |
+| 2026-09-30 | — | v3 samples, screenshotted before deletion | 3 | — | — | pending |
+| 2026-09-30 | `2026-09-30-models` | Engine, phase 22, prompt `compose.v1`, 3 smoke briefs × 3 themes. `deepseek/deepseek-v4.1-flash` | 3 | median $0.057 per deck | median 58 s | pending. 26 of 30 slides clean first pass, 3 fell back to the code layout, 0 flagged |
+| 2026-09-30 | `2026-09-30-models` | Same, `google/gemini-3.8-flash` | 3 | median $0.049 | median 52 s | pending. 22 of 30 clean first pass, 3 fallback, 0 flagged |
+| 2026-09-30 | `2026-09-30-models` | Same, `z-ai/glm-5.3-flash` | 3 | median $0.018 | median 69 s | pending. 15 of 30 clean first pass, 6 fallback, 0 flagged |
+| 2026-09-30 | — | `qwen/qwen3.8-flash` | 0 | — | stalled for over 10 minutes on the first deck; dropped | — |
+| 2026-09-30 | `2026-09-30-full` | Engine, all 12 briefs, `deepseek/deepseek-v4.1-flash`, `compose.v1`, three-layout fallback | 12 of 12 | median $0.055, total $0.67 | about 1 minute per deck | **Rated blind 2026-10-01.** Engine mean D 4.25 · S 4.17 · V 3.75 · X 3.92 · U 4.00, 0 defects. One-shot D 3.83 · S 4.50 · V 3.75 · X 3.67 · U 3.67. v3 D 3.00 · U 2.67. 0 slides flagged |
+| 2026-09-30 | `2026-09-30-ab` | Exemplar A/B: the 3 smoke briefs **without** exemplars, DeepSeek | 3 | median $0.061 | 45–89 s | owner to compare. 21 of 30 slides clean first pass (26 of 30 with exemplars in `2026-09-30-models`), 2 fallback, 0 flagged |
+| 2026-10-01 | `2026-09-30-full` (wall) | One-shot baseline rebuilt on the engine's model, `deepseek/deepseek-v4.1-flash`, prompt `bench-oneshot.v1`, so each blind pair compares the engine with one prompt to the same model (docs/v4/plan/22-engine-spike.md). The Opus set is in git at `4247825` | 12 of 12. `sales-agency` truncated once at 32k tokens and passed on retry | median $0.026 per deck, $0.38 total with the failed calls | median 98 s | pending |
+| 2026-10-01 | `2026-10-01-attempt2` | Gate 1, attempt 2. Engine, all 12 briefs, DeepSeek, `compose.v2`: E11 (no empty blocks), `--lh-display`, the exemplar strip as halftone | 12 of 12 | median $0.053, total $0.64 | median 41 s | **Rated blind 2026-10-01.** Engine D 4.42 · S 3.83 · V 3.42 · X 3.50 · U 3.58; one-shot D 3.75 · S 4.67 · V 3.92 · X 3.67 · U 4.00; 0 defects. 93 of 109 slides clean first pass, 6 fallback (3 truncations, 2 E2, 1 lint false positive on `.body`, since fixed), 0 flagged |
+
+**The bar phase 22 has to beat:** a single prompt to the best model costs about $0.21 and 93 seconds per deck, and already looks far better than v3. It also shows the look v4 is built to avoid: rounded cards, numbered badges, one centred system font.
+
+**First engine result (2026-09-30):** on cheap models a deck costs $0.02–0.06, about a quarter of the one-shot baseline's $0.21 on the top model, and finishes in about a minute with no defect left. The weak point is the code-built fallback layout, which about 1 slide in 10 ends up with: it is never broken, and it is plain.
+
+**Exemplar A/B (2026-09-30):** without the library the model still designs well, but more slides need a repair (9 of 30 against 4 of 30). The library costs almost nothing, because it sits in the cached prefix. Decision: keep it. Two caveats: 3 decks is a small sample, and the with/without decks were not on the same themes, so the look cannot be compared slide for slide.
+
+**Gate 1, first attempt (2026-10-01): failed on one line.** 10 of 12 engine decks rated Designed ≥4 and Usable ≥4 (needs 8). 0 visible defects. Preferred over the same-model one-shot in **8 of 12** pairs (needs 9), reading a pair by Designed + Usable, then the total. The wall records no direct preference, so this reading is ours; on Designed alone it is 6 wins, 4 ties, 2 losses.
+
+Where the engine lost (partnership, pitch-devtools, pitch-consumer, sales-hardware), the one-shot slides are denser: charts, tables, pricing cards, a product mock-up, a customer quote. Much of that is content the one-shot **invented** (a TAM, pricing tiers, courier counts, a quote) on dark gradients with glow, which the product forbids. The engine, bound to the frozen outline, has no charts yet (phase 25) and often fills space with an empty accent rectangle. By theme: ledger D 4.75, broadsheet 4.25, **nightshift 3.75** — the weakest; two of the four losses are nightshift decks. Both decks the owner rated below 4 (partnership, launch-product) also scored lowest on Varied.
+
+**Gate 1, attempt 2 (2026-10-01): failed.** Preferred in **6 of 12** pairs (needs 9); 7 of 12 decks rated Designed ≥4 and Usable ≥4 (needs 8); 0 defects; median $0.053. Under the plan, two failures mean the exemplar-fill pivot.
+
+Three things the two ratings show together:
+
+- **The engine wins on design and loses on content.** Designed: engine 4.25 then 4.42, one-shot 3.83 then 3.75; on Designed alone the engine won 6, tied 4, lost 2 in attempt 2. Says something: engine 4.17 then 3.83, one-shot 4.50 then 4.67. The engine is bound to the frozen outline; the one-shot writes its own, denser copy and invents numbers to fill tables and charts. Usable follows Says something more than Designed.
+- **Rater noise is as large as the gap.** The 12 one-shot decks were the same files on both walls. 38 of their 60 scores changed between the two ratings, mean 0.68, up to 2. A 9-of-12 pair threshold on one rating cannot separate the two systems reliably.
+- **E11 did what it was for and moved the tell.** The empty solid blocks are gone; the model now puts pattern textures in corners instead. Designed rose a little; Varied fell (3.75 to 3.42).
+
+**Phase 24 content bench (2026-10-01, `2026-10-01-content`).** 12 outlines from the briefs, written by `anthropic/claude-sonnet-5.5` (`storyline.v1`, `research.v1`, `notes.v1`), no human gate: 0 numbers without an approved fact, 0 banned phrases, 0 topic-label headlines before regeneration, notes on 109 of 109 slides. Research ran on the 5 briefs that ask for it: 4–10 cited facts each, at most $0.098. A whole outline costs $0.03–0.17. Inverse spec 0.83 (`inverse.v2`, `claude-haiku-4.5`); the first judge (`inverse.v1`) scored 0.75 against the brief's one-line description, and was changed after the score was seen. Audience is the weakest part (0.30–1.00): the decks seldom say who the room is. One number in the notes is not stated by a fact: "$500 thousand short", the difference of two stated numbers. The injection corpus: 7 of 8 held, 1 was refused by the provider's content filter.
+
+**Phase 23, sampled themes (2026-10-01, `2026-10-01-phase23`).** The 12 bench decks built on each brief's first sampled look, DeepSeek, `compose.v3`: 0 slides flagged, 99 of 109 clean on the first pass (93 in attempt 2 on the hand themes), 4 fallbacks, median $0.058 and 50 s per deck, $0.66 in total. Across the 12 decks: **9 pairings** (the gate asks 10; 12 draws from 24 pairings average 9.7 distinct) and 5 palette strategies. Brand: Kiln's #1f4e9c kept exactly; Potluck's #e4572e kept its hue at #d2461a for contrast. Style tiles: 72 (12 briefs × 3 looks × 2), all QA-clean, `tiles.html`. One build stalled for 25 minutes on a model connection that stopped answering; the seam's timeout is now 120 s, not 300 s.

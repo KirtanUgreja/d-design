@@ -1,0 +1,27 @@
+{
+  "family": "Public Sans",
+  "role": "sans",
+  "weights": [
+    400,
+    600
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.517,
+      "cap": 0.723,
+      "descender": 0.171,
+      "width": 0.474,
+      "leading": 0.9
+    },
+    "600": {
+      "x_height": 0.517,
+      "cap": 0.723,
+      "descender": 0.171,
+      "width": 0.479,
+      "leading": 0.9
+    }
+  }
+}

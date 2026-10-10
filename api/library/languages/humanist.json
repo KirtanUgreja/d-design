@@ -1,0 +1,62 @@
+{
+  "active": false,
+  "id": "humanist",
+  "name": "Warm humanist",
+  "idea": "Soft serifs, warm surfaces and friendly illustration: approachable and human.",
+  "brief": "Warm and human. Content sits on soft --c-surface panels with var(--radius) corners; the ground is light and warm. The display face is a soft serif or a friendly slab, at a friendly (not shouting) scale; text is generous and readable. Illustrations sit inside or beside panels. Lists may use soft numbered markers. Spacing is generous and even.",
+  "never": [
+    "hard heavy rules",
+    "dark grounds",
+    "condensed shouting type",
+    "sharp boxes"
+  ],
+  "kinds": [
+    "slab"
+  ],
+  "pairings": [
+    "fraunces-schibsted",
+    "young-karla",
+    "bricolage-literata",
+    "bricolage-figtree",
+    "instrument-figtree"
+  ],
+  "grids": [
+    "editorial",
+    "asymmetric",
+    "modular"
+  ],
+  "edges": [
+    "soft"
+  ],
+  "dark": 0.0,
+  "split": 0.3,
+  "density": [
+    "balanced",
+    "airy"
+  ],
+  "ratio": [
+    1.25,
+    1.38
+  ],
+  "texture": "rare",
+  "shapes": false,
+  "image": {
+    "appetite": 0.4,
+    "styles": [
+      "warm flat illustration, soft shapes, no outlines"
+    ]
+  },
+  "tones": [
+    "warm",
+    "plain"
+  ],
+  "deck_types": [
+    "sales",
+    "partnership"
+  ],
+  "finishes": [
+    "fine",
+    "none"
+  ],
+  "glow": false
+}

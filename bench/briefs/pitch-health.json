@@ -1,0 +1,306 @@
+{
+  "brief": {
+    "id": "pitch-health",
+    "prompt": "Series A pitch for Lumen Clinics, an AI scribe built for physiotherapy practices.",
+    "pasted": [
+      {
+        "title": "Numbers",
+        "text": "212 clinics live across 3 countries. $1.4M ARR. Therapists save 52 minutes of notes per day (measured across 1,900 therapists). Logo churn 4% annually. CAC payback 7 months. SOC 2 Type II and HIPAA compliant since March 2026."
+      }
+    ],
+    "deck_type": "pitch",
+    "audience": "Healthcare-focused venture investors",
+    "ask": "Raise $9M Series A",
+    "research": false
+  },
+  "outline": {
+    "governing_thought": "Lumen Clinics gives physiotherapists back 52 minutes a day, and $9M lets us scale a retained, fast-payback business.",
+    "deck_type": "pitch",
+    "audience": "Healthcare-focused venture investors",
+    "ask": "Raise $9M Series A",
+    "key_points": [
+      "Physiotherapy documentation drains therapist time",
+      "Purpose-built AI scribe fits physio workflows",
+      "212 clinics live with $1.4M ARR",
+      "Low churn and fast CAC payback",
+      "$9M Series A funds growth"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "Cover",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Lumen Clinics gives physiotherapists their day back",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Series A",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "Problem",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Notes consume the time therapists want to spend on patients",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The problem",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "Why generic tools fail",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "General AI scribes miss how physiotherapy actually gets documented",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Gap",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Built for physician visits, not treatment sessions",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Poor fit with physio note formats",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Clinics want one tool made for them",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "Solution",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Lumen writes the physiotherapy note while the therapist treats",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Our product",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "Outcome",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Therapists save 52 minutes of notes every day",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Impact",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "52 min",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "saved per therapist per day, measured across 1,900 therapists",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Lumen Clinics usage data",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "Traction",
+        "intent": "number-set",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "212 clinics across three countries already run on Lumen",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Traction",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "212 clinics live",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "3 countries",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "$1.4M ARR",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "$1.4M",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "ARR",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Lumen Clinics",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "Retention",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Clinics stay, with only 4% logo churn annually",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Retention",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "4%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "annual logo churn",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Lumen Clinics",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s08",
+        "beat": "Unit economics",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Customer acquisition costs pay back in just 7 months",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Efficiency",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "7 months",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "CAC payback",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Lumen Clinics",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s09",
+        "beat": "Trust",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "SOC 2 Type II and HIPAA compliance protect every patient record",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Compliance",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Compliant since March 2026",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s10",
+        "beat": "Ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "We are raising $9M Series A to scale Lumen",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The ask",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "$9M",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "Series A",
+            "budget_words": 15
+          }
+        ]
+      }
+    ]
+  }
+}

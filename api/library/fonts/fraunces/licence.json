@@ -1,0 +1,29 @@
+{
+  "family": "Fraunces",
+  "role": "serif-display",
+  "weights": [
+    400,
+    700
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "axes": {
+    "opsz": [
+      9,
+      144
+    ],
+    "wght": [
+      100,
+      900
+    ],
+    "SOFT": [
+      0,
+      100
+    ],
+    "WONK": [
+      0,
+      1
+    ]
+  }
+}

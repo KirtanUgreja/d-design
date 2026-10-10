@@ -1,0 +1,50 @@
+# The gate, on push and pull request: format, lint, strict types, the api
+# tests in Chromium, and the docs. The browser end-to-end tests (web/e2e)
+# run locally with `pnpm e2e`, not here: they need a real auth database.
+# scripts/hooks/pre-commit is the local half; this catches a bypassed hook.
+# No live model call runs here: the bench spends credits and is run by hand.
+name: gate
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: install
+        run: uv sync --project api
+      - name: browsers
+        run: cd api && uv run playwright install --with-deps chromium
+      - name: api — format, lint, types, tests
+        env:
+          DD_ENGINES: chromium
+        run: |
+          uv run --project api ruff format --check api
+          uv run --project api ruff check api
+          cd api && uv run mypy && uv run pytest -q
+      - name: docs
+        run: ./scripts/check-docs.sh
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - name: install
+        run: cd web && pnpm install --frozen-lockfile
+      - name: lint and types
+        run: cd web && pnpm exec eslint . && pnpm exec tsc --noEmit

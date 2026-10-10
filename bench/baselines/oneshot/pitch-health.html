@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1920" />
+<title>Lumen Clinics — Series A</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { background: #050B12; }
+
+  body {
+    font-family: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    background: #050B12;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ---------- slide shell ---------- */
+  .slide {
+    width: 1920px;
+    height: 1080px;
+    position: relative;
+    overflow: hidden;
+    background: #FFFFFF;
+    color: #0B1B2B;
+    flex: 0 0 auto;
+  }
+  .slide.dark { background: #061420; color: #E8F1F5; }
+
+  .topbar {
+    position: absolute;
+    top: 56px; left: 120px; right: 120px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 19px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #96A6B2;
+    z-index: 5;
+  }
+  .topbar .mark {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    color: #0B1B2B;
+    letter-spacing: .16em;
+  }
+  .dotline {
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: #10B39C;
+    box-shadow: 0 0 0 4px rgba(16,179,156,.15);
+  }
+  .slide.dark .topbar { color: #6E8496; }
+  .slide.dark .topbar .mark { color: #E8F1F5; }
+
+  .content {
+    position: absolute;
+    inset: 0;
+    padding: 172px 120px 90px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ---------- type ---------- */
+  .eyebrow {
+    font-size: 20px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #10B39C;
+    margin-bottom: 26px;
+  }
+  h1 {
+    font-size: 96px;
+    line-height: 1.04;
+    letter-spacing: -.035em;
+    font-weight: 700;
+    color: #FFFFFF;
+  }
+  h2 {
+    font-size: 64px;
+    line-height: 1.08;
+    letter-spacing: -.028em;
+    font-weight: 700;
+    color: #0B1B2B;
+    max-width: 1500px;
+  }
+  .slide.dark h2 { color: #FFFFFF; }
+
+  .lead {
+    font-size: 26px;
+    line-height: 1.52;
+    color: #5A6E7E;
+    max-width: 1280px;
+    margin-top: 30px;
+    font-weight: 400;
+  }
+  .slide.dark .lead { color: #93AAB9; }
+
+  .hl {
+    background: linear-gradient(90deg, #6BEFD6 0%, #10B39C 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* ---------- slide 1 ---------- */
+  .aurora { position: absolute; border-radius: 50%; filter: blur(130px); }
+  .a1 { width: 1150px; height: 1150px; background: #0C6E62; opacity: .55; top: -460px; right: -280px; }
+  .a2 { width: 950px; height: 950px; background: #12406E; opacity: .5; bottom: -460px; left: -280px; }
+
+  .gridlines {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+    background-size: 120px 120px;
+  }
+
+  .hero-pills { display: flex; gap: 20px; margin-top: 54px; }
+  .pill {
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.13);
+    border-radius: 22px;
+    padding: 24px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 236px;
+    backdrop-filter: blur(6px);
+  }
+  .pill b { font-size: 42px; color: #FFFFFF; letter-spacing: -.025em; font-weight: 700; }
+  .pill span { font-size: 18px; color: #8FA6B6; letter-spacing: .01em; }
+
+  .hero-foot {
+    position: absolute;
+    left: 120px; bottom: 72px;
+    font-size: 21px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #6E8496;
+  }
+
+  /* ---------- cards ---------- */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+    margin-top: 62px;
+  }
+  .card {
+    background: #F4F8F8;
+    border: 1px solid #E4ECEC;
+    border-radius: 28px;
+    padding: 46px 42px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .card .num {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    color: #10B39C;
+  }
+  .card h3 { font-size: 29px; line-height: 1.22; letter-spacing: -.012em; font-weight: 700; }
+  .card p { font-size: 21px; line-height: 1.55; color: #5A6E7E; }
+
+  /* ---------- slide 3 split ---------- */
+  .split {
+    display: grid;
+    grid-template-columns: 1fr 700px;
+    gap: 90px;
+    align-items: start;
+    margin-top: 4px;
+  }
+  .pillars { margin-top: 48px; display: flex; flex-direction: column; gap: 30px; }
+  .pillar { display: flex; gap: 22px; align-items: flex-start; }
+  .pIcon {
+    flex: 0 0 auto;
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: #E6F6F3;
+    color: #0A8C7A;
+    font-size: 20px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 3px;
+  }
+  .pillar h4 { font-size: 26px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 8px; }
+  .pillar p { font-size: 20px; line-height: 1.5; color: #5A6E7E; max-width: 620px; }
+
+  .appMock {
+    background: #0B1B2B;
+    border-radius: 26px;
+    overflow: hidden;
+    box-shadow: 0 34px 70px -28px rgba(11,27,43,.45);
+  }
+  .appBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 22px 28px;
+    background: rgba(255,255,255,.05);
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+  .appDot { width: 11px; height: 11px; border-radius: 50%; background: rgba(255,255,255,.22); }
+  .appTitle {
+    margin-left: 12px;
+    font-size: 18px;
+    color: #8FA6B6;
+    letter-spacing: .04em;
+  }
+  .appBody { padding: 34px 34px 30px; display: flex; flex-direction: column; gap: 24px; }
+  .appSec { display: flex; gap: 20px; align-items: flex-start; }
+  .appSec b {
+    flex: 0 0 auto;
+    width: 34px; height: 34px;
+    border-radius: 9px;
+    background: rgba(16,179,156,.16);
+    color: #5BE6CF;
+    font-size: 16px;
+    font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lines { flex: 1; padding-top: 6px; }
+  .lines span {
+    display: block;
+    height: 11px;
+    border-radius: 6px;
+    background: rgba(255,255,255,.13);
+    margin-bottom: 12px;
+  }
+  .appChips { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
+  .chip {
+    font-size: 16px;
+    letter-spacing: .02em;
+    color: #5BE6CF;
+    background: rgba(16,179,156,.12);
+    border: 1px solid rgba(16,179,156,.28);
+    border-radius: 999px;
+    padding: 10px 18px;
+  }
+  .appFoot {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(255,255,255,.08);
+    font-size: 18px;
+    color: #8FA6B6;
+  }
+  .okDot { width: 10px; height: 10px; border-radius: 50%; background: #5BE6CF; }
+
+  /* ---------- slide 4 steps ---------- */
+  .steps {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+    margin-top: 66px;
+  }
+  .step {
+    border-top: 3px solid #10B39C;
+    padding-top: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .step .sNum {
+    font-size: 60px;
+    font-weight: 700;
+    letter-spacing: -.03em;
+    color: #DCE7E7;
+    line-height: 1;
+  }
+  .step h3 { font-size: 27px; font-weight: 700; letter-spacing: -.012em; }
+  .step p { font-size: 20px; line-height: 1.52; color: #5A6E7E; }
+
+  .band {
+    margin-top: auto;
+    background: #F4F8F8;
+    border: 1px solid #E4ECEC;
+    border-radius: 24px;
+    padding: 36px 44px;
+    display: flex;
+    align-items: center;
+    gap: 26px;
+  }
+  .band b { font-size: 24px; letter-spacing: -.01em; }
+  .band span { font-size: 21px; color: #5A6E7E; }
+
+  /* ---------- stats ---------- */
+  .statRow { display: flex; align-items: stretch; gap: 54px; margin-top: 62px; }
+  .stat { flex: 1; }
+  .stat .value {
+    font-size: 112px;
+    font-weight: 700;
+    letter-spacing: -.045em;
+    line-height: 1;
+    color: #0B1B2B;
+  }
+  .stat .value .u { font-size: 56px; letter-spacing: -.03em; }
+  .stat .label { font-size: 22px; line-height: 1.45; color: #5A6E7E; margin-top: 18px; max-width: 400px; }
+  .dividerV { width: 1px; background: #E4ECEC; }
+
+  /* ---------- chart ---------- */
+  .chart { margin-top: 56px; }
+  .chartHead {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 19px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #96A6B2;
+    padding-bottom: 22px;
+    border-bottom: 1px solid #E4ECEC;
+  }
+  .bars { display: flex; gap: 46px; height: 250px; margin-top: 34px; }
+  .cbar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+  }
+  .cbarVal { font-size: 24px; font-weight: 700; letter-spacing: -.02em; margin-bottom: 12px; }
+  .cbarFill {
+    border-radius: 12px 12px 0 0;
+    background: linear-gradient(180deg, #16C6AC 0%, #0A7F70 100%);
+  }
+  .cbarLabels { display: flex; gap: 46px; margin-top: 18px; }
+  .cbarLabels div {
+    flex: 1;
+    font-size: 19px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: #96A6B2;
+  }
+
+  /* ---------- slide 6 metrics ---------- */
+  .metricGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 28px;
+    margin-top: 68px;
+  }
+  .metric {
+    background: #F4F8F8;
+    border: 1px solid #E4ECEC;
+    border-radius: 26px;
+    padding: 44px 38px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-height: 330px;
+  }
+  .metric .mValue {
+    font-size: 74px;
+    font-weight: 700;
+    letter-spacing: -.04em;
+    line-height: 1;
+    color: #0B1B2B;
+  }
+  .metric .mValue .u { font-size: 40px; }
+  .metric .mLabel { font-size: 24px; font-weight: 700; letter-spacing: -.01em; margin-top: 6px; }
+  .metric .mSub { font-size: 19px; line-height: 1.5; color: #5A6E7E; margin-top: auto; }
+  .metric.accent { background: #0B1B2B; border-color: #0B1B2B; }
+  .metric.accent .mValue { color: #5BE6CF; }
+  .metric.accent .mLabel { color: #FFFFFF; }
+  .metric.accent .mSub { color: #8FA6B6; }
+
+  .footnote {
+    margin-top: 44px;
+    font-size: 19px;
+    color: #96A6B2;
+    letter-spacing: .02em;
+  }
+
+  /* ---------- slide 7 market ---------- */
+  .market { margin-top: 56px; display: flex; flex-direction: column; gap: 38px; }
+  .mrow .mTop {
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    margin-bottom: 16px;
+  }
+  .mtag {
+    font-size: 19px;
+    font-weight: 700;
+    letter-spacing: .18em;
+    color: #10B39C;
+    width: 90px;
+  }
+  .mval { font-size: 40px; font-weight: 700; letter-spacing: -.025em; }
+  .mdesc { font-size: 20px; color: #5A6E7E; margin-left: 114px; }
+  .mbarbg { height: 16px; border-radius: 8px; background: #EEF4F4; margin-left: 114px; }
+  .mbarbg i { display: block; height: 100%; border-radius: 8px; background: linear-gradient(90deg, #10B39C, #0A8C7A); }
+
+  .whyNow {
+    margin-top: auto;
+    background: #0B1B2B;
+    border-radius: 24px;
+    padding: 38px 46px;
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    color: #E8F1F5;
+  }
+  .whyNow b { font-size: 22px; color: #5BE6CF; letter-spacing: .06em; text-transform: uppercase; }
+  .whyNow span { font-size: 22px; color: #B9CBD6; line-height: 1.45; }
+
+  /* ---------- slide 8 economics ---------- */
+  .econ { display: grid; grid-template-columns: 1fr 1fr; gap: 0 90px; margin-top: 56px; }
+  .erow {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 24px;
+    padding: 30px 0;
+    border-bottom: 1px solid #E4ECEC;
+  }
+  .erow span { font-size: 23px; color: #5A6E7E; }
+  .erow b { font-size: 42px; font-weight: 700; letter-spacing: -.03em; white-space: nowrap; }
+  .erow b i { font-size: 19px; font-style: normal; font-weight: 500; color: #96A6B2; letter-spacing: 0; }
+
+  .callout {
+    margin-top: 52px;
+    border-left: 4px solid #10B39C;
+    padding: 6px 0 6px 32px;
+    font-size: 26px;
+    line-height: 1.45;
+    color: #0B1B2B;
+    max-width: 1250px;
+    font-weight: 500;
+  }
+
+  /* ---------- slide 9 trust ---------- */
+  .trustGrid {
+    display: grid;
+    grid-template-columns: 1fr 640px;
+    gap: 100px;
+    margin-top: 56px;
+    align-items: start;
+  }
+  .trustList { display: flex; flex-direction: column; gap: 30px; }
+  .trustItem { display: flex; gap: 22px; align-items: flex-start; }
+  .trustItem .pIcon { background: #E6F6F3; }
+  .trustItem h4 { font-size: 25px; font-weight: 700; margin-bottom: 8px; letter-spacing: -.01em; }
+  .trustItem p { font-size: 20px; line-height: 1.5; color: #5A6E7E; max-width: 720px; }
+
+  .badges { display: flex; flex-direction: column; gap: 24px; }
+  .badge {
+    background: #0B1B2B;
+    border-radius: 24px;
+    padding: 40px 42px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .badge .bTag {
+    font-size: 17px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: #5BE6CF;
+  }
+  .badge .bTitle { font-size: 40px; font-weight: 700; letter-spacing: -.025em; color: #FFFFFF; }
+  .badge .bSub { font-size: 19px; color: #8FA6B6; line-height: 1.5; }
+
+  /* ---------- slide 10 ask ---------- */
+  .askGrid {
+    display: grid;
+    grid-template-columns: 1fr 800px;
+    gap: 100px;
+    margin-top: 30px;
+    align-items: start;
+  }
+  .askBig {
+    font-size: 190px;
+    font-weight: 700;
+    letter-spacing: -.055em;
+    line-height: .92;
+    background: linear-gradient(120deg, #6BEFD6 0%, #10B39C 70%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .askSub {
+    font-size: 30px;
+    color: #B9CBD6;
+    line-height: 1.45;
+    margin-top: 26px;
+    max-width: 700px;
+  }
+
+  .alloc { display: flex; flex-direction: column; gap: 30px; padding-top: 16px; }
+  .allocRow .aTop {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 22px;
+    margin-bottom: 13px;
+    color: #D7E5EC;
+  }
+  .allocRow .aTop b { font-size: 26px; color: #5BE6CF; letter-spacing: -.01em; }
+  .bar { height: 12px; border-radius: 6px; background: rgba(255,255,255,.12); overflow: hidden; }
+  .bar i { display: block; height: 100%; border-radius: 6px; background: linear-gradient(90deg, #0A8C7A, #5BE6CF); }
+
+  .milestones {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 28px;
+    margin-top: auto;
+  }
+  .ms {
+    border: 1px solid rgba(255,255,255,.13);
+    background: rgba(255,255,255,.04);
+    border-radius: 22px;
+    padding: 34px 36px;
+  }
+  .ms .msK { font-size: 17px; letter-spacing: .2em; text-transform: uppercase; font-weight: 700; color: #5BE6CF; }
+  .ms .msV { font-size: 40px; font-weight: 700; letter-spacing: -.028em; color: #FFFFFF; margin: 14px 0 8px; }
+  .ms .msD { font-size: 19px; color: #8FA6B6; line-height: 1.45; }
+
+  .askFoot {
+    position: absolute;
+    left: 120px; right: 120px; bottom: 66px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 21px;
+    color: #6E8496;
+    letter-spacing: .04em;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ SLIDE 1 — COVER ============ -->
+<section class="slide dark">
+  <div class="aurora a1"></div>
+  <div class="aurora a2"></div>
+  <div class="gridlines"></div>
+
+  <div class="topbar">
+    <div class="mark"><span class="dotline"></span>Lumen Clinics</div>
+    <div>Series A · Confidential</div>
+  </div>
+
+  <div class="content">
+    <div class="eyebrow">AI clinical documentation for physiotherapy</div>
+    <h1>Every note written<br><span class="hl">before the patient<br>leaves the room.</span></h1>
+    <p class="lead">Lumen is the AI scribe built for physiotherapy practices — trained on MSK assessment, outcome measures and treatment plans, not generic dictation.</p>
+
+    <div class="hero-pills">
+      <div class="pill"><b>212</b><span>clinics live</span></div>
+      <div class="pill"><b>3</b><span>countries in production</span></div>
+      <div class="pill"><b>$1.4M</b><span>annual recurring revenue</span></div>
+      <div class="pill"><b>52 min</b><span>saved per therapist / day</span></div>
+    </div>
+  </div>
+
+  <div class="hero-foot">Raising $9M Series A</div>
+</section>
+
+<!-- ============ SLIDE 2 — PROBLEM ============ -->
+<section class="slide">
+  <div class="topbar">
+    <div class="mark"><span class="dotline"></span>Lumen Clinics</div>
+    <div>02 / 10</div>
+  </div>
+
+  <div class="content">
+    <div class="eyebrow">The problem</div>
+    <h2>Documentation is the second job<br>physiotherapists never applied for.</h2>
+    <p class="lead">A physio session produces assessment findings, special tests, outcome measures and a treatment plan. Today that becomes unpaid admin — usually after the last patient has gone home.</p>
+
+    <div class="cards">
+      <div class="card">
+        <div class="num">01</div>
+        <h3>Notes follow the clinician home</h3>
+        <p>Therapy notes get written in the gaps — between patients, over lunch, at 9pm. Quality drops the further a note gets from the session it describes.</p>
+      </div>
+      <div class="card">
+        <div class="num">02</div>
+        <h3>Generic scribes don't speak MSK</h3>
+        <p>General dictation tools capture words, not clinical structure. No outcome measures, no special tests, no plan — so therapists rewrite everything anyway.</p>
+      </div>
+      <div class="card">
+        <div class="num">03</div>
+        <h3>Compliance stops pilots dead</h3>
+        <p>Practices will not send PHI to a vendor without HIPAA and SOC 2. Most scribe tools stall in clinic procurement before a single therapist logs in.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 3 — SOLUTION ============ -->
+<section class="slide">
+  <div class="topbar">
+    <div class="mark"><span class="dotline"></span>Lumen Clinics</div>
+    <div>03 / 10</div>
+  </div>
+
+  <div class="content">
+    <div class="split">
+      <div>
+        <div class="eyebrow">The product</div>
+        <h2>An MSK-native scribe,<br>not a transcript.</h2>
+        <p class="lead">Lumen listens to the session and returns a structured physiotherapy note — ready for the therapist to review, edit and sign.</p>
+
+        <div class="pillars">
+          <div class="pillar">
+            <div class="pIcon">&#10003;</div>
+            <div>
+              <h4>Structured to how physios actually chart</h4>
+              <p>Subjective, objective, assessment, plan — with objective findings, special tests and outcome measures placed where clinicians expect them.</p>
+            </div>
+          </div>
+          <div class="pillar">
+            <div class="pIcon">&#10003;</div>
+            <div>
+              <h4>Reviewed in about a minute</h4>
+              <p>The therapist signs off on a draft, not a blank page. Average review time per session is under 60 seconds across live clinics.</p>
+            </div>
+          </div>
+          <div class="pillar">
+            <div class="pIcon">&#10003;</div>
+            <div>
+              <h4>Writes back to the EHR already in use</h4>
+              <p>No rip-and-replace. Lumen fits the practice's existing system, so adoption doesn't depend on a software migration.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="appMock">
+        <div class="appBar">
+          <span class="appDot"></span><span class="appDot"></span><span class="appDot"></span>
+          <span class="appTitle">Session · Knee — post-op week 6</span>
+        </div>
+        <div class="appBody">
+          <div class="appSec">
+            <b>S</b>
+            <div class="lines"><span style="width:94%"></span><span style="width:68%"></span></div>
+          </div>
+          <div class="appSec">
+            <b>O</b>
+            <div class="lines"><span style="width:88%"></span><span style="width:56%"></span></div>
+          </div>
+          <div class="appSec">
+            <b>A</b>
+            <div class="lines"><span style="width:78%"></span></div>
+          </div>
+          <div class="appSec">
+            <b>P</b>
+            <div class="lines"><span style="width:92%"></span><span style="width:62%"></span></div>
+          </div>
+
+          <div class="appChips">
+            <span class="chip">Outcome measure: KOOS</span>
+            <span class="chip">Special test: Lachman</span>
+            <span class="chip">Plan: 3&times;/wk &middot; 6 wks</span>
+          </div>
+
+          <div class="appFoot">
+            <span class="okDot"></span>
+            Signed into the EHR &middot; 41 seconds after session end
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 4 — HOW IT WORKS ============ -->
+<section class="slide">
+  <div class="topbar">
+    <div class="mark"><span class="dotline"></span>Lumen Clinics</div>
+    <div>04 / 10</div>
+  </div>
+
+  <div class="content">
+    <div class="eyebrow">How it works</div>
+    <h2>Four steps, one 30-minute onboarding call.</h2>
+
+    <div class="steps">
+      <div class="step">
+        <div class="sNum">01</div>
+        <h3>Capture</h3>
+        <p>Lumen joins the session on a phone, tablet or desktop in the treatment room. No new hardware, no headset, no separate dictation device.</p>
+      </div>
+      <div class="step">
+        <div class="sNum">02</div>
+        <h3>Structure</h3>
+        <p>Speech is mapped to physiotherapy note structure — assessment findings, special tests, outcome measures and the treatment plan.</p>
+      </div>
+      <div class="step">
+        <div class="sNum">03</div>
+        <h3>Review</h3>
+        <p>The therapist reads a complete draft, edits inline if needed, and signs. Nothing enters the record without clinician approval.</p>
+      </div>
+      <div class="step">
+        <div class="sNum">04</div>
+        <h3>Write-back</h3>
+        <p>The signed note is filed into the EHR the practice already uses. No integration project, no change to clinic workflow.</p>
+      </div>
+    </div>
+
+    <div class="band">
+      <b>Live in under a week.</b>
+      <span>Median time from signed contract to first signed note across the last 100 clinics onboarded.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 5 — TRACTION ============ -->
+<section class="slide">
+  <div class="topbar">
+    <div class="mark"><span class="dotline"></span>Lumen Clinics</div>
+    <div>05 / 10</div>
+  </div>
+
+  <div class="content">
+    <div class="eyebrow">Traction</div>
+    <h2>Live in 212 clinics across three countries.</h2>
+
+    <div class="statRow">
+      <div class="stat">
+        <div class="value">212</div>
+        <div class="label">Clinics live across the United States, United Kingdom and Canada</div>
+      </div>
+      <div class="dividerV"></div>
+      <div class="stat">
+        <div class="value">3</div>
+        <div class="label">Countries in production, all with local PHI handling</div>
+      </div>
+      <div class="dividerV"></div>
+      <div class="stat">
+        <div class="value">$1.4<span class="u">M</span></div>
+        <div class="label">Annual recurring revenue, net of churn</div>
+      </div>
+    </div>
+
+    <div class="chart">
+      <div class="chartHead">
+        <span>ARR by quarter</span>
+        <span>Net of churn</span>
+      </div>
+      <div class="bars">
+        <div class="cbar">
+          <div class="cbarVal">$0.35M</div>
+          <div class="cbarFill" style="height:20%"></div>
+        </div>
+        <div class="cbar">
+          <div class="cbarVal">$0.60M</div>
+          <div class="cbarFill" style="height:34%"></div>
+        </div>
+        <div class="cbar">
+          <div class="cbarVal">$0.95M</div>
+          <div class="cbarFill" style="height:54%"></div>
+        </div>
+        <div class="cbar">
+          <div class="cbarVal">$1.40M</div>
+          <div class="cbarFill" style="height:78%"></div>
+        </div>
+      </div>
+      <div class="cbarLabels">
+        <div>Q1</div>
+        <div>Q2</div>
+        <div>Q3</div>
+        <div>Q4</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 6 — EVIDENCE ============ -->
+<section class="slide">
+  <div class="topbar">
+    <div class="mark"><span class="dotline"></span>Lumen Clinics</div>
+    <div>06 / 10</div>
+  </div>
+
+  <div class="content">
+    <div class="eyebrow">Evidence</div>
+    <h2>The four numbers that decide<br>whether a clinic keeps us.</h2>
+
+    <div class="metricGrid">
+      <div class="metric accent">
+        <div class="mValue">52<span class="u"> min</span></div>
+        <div class="mLabel">Saved per therapist, per day</div>
+        <div class="mSub">Measured across 1,900 therapists in live clinics, comparing time-in-notes before and after deployment.</div>
+      </div>
+      <div class="metric">
+        <div class="mValue">1,900</div>
+        <div class="mLabel">Therapists measured</div>
+        <div class="mSub">Actual logged sessions — not survey self-reports — across three countries and every clinic size band.</div>
+      </div>
+      <div class="metric">
+        <div class="mValue">4<span class="u">%</span></div>
+        <div class="mLabel">Annual logo churn</div>
+        <div class="mSub">Trailing twelve months. Clinics that adopt the scribe into daily workflow rarely leave it.</div>
+      </div>
+      <div class="metric">
+        <div class="mValue">7<span class="u"> mo</span></div>
+        <div class="mLabel">CAC payback</div>
+        <div class="mSub">Blended across direct and channel sales. Each clinic pays back its acquisition cost inside the first year.</div>
+      </div>
+    </div>
+
+    <div class="footnote">Save-time measured across 1,900 therapists. Churn and CAC payback calculated on the clinic cohort through the most recent quarter.</div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 7 — MARKET ============ -->
+<section class="slide">
+  <div class="topbar">
+    <div class="mark"><span class="dotline"></span>Lumen Clinics</div>
+    <div>07 / 10</div>
+  </div>
+
+  <div class="content">
+    <div class="eyebrow">Market</div>
+    <h2>A large, underserved category — now buying.</h2>
+
+    <div class="market">
+      <div class="mrow">
+        <div class="mTop">
+          <div class="mtag">TAM</div>
+          <div class="mval">$10.4B</div>
+        </div>
+        <div class="mdesc">Clinical documentation and practice software spend across ~240,000 physiotherapy and MSK practices in our target regions.</div>
+        <div class="mbarbg" style="margin-top:16px;"><i style="width:100%"></i></div>
+      </div>
+
+      <div class="mrow">
+        <div class="mTop">
+          <div class="mtag">SAM</div>
+          <div class="mval">$2.7B</div>
+        </div>
+        <div class="mdesc">62,000 practices in the three live markets plus two launch markets, at current product scope and pricing.</div>
+        <div class="mbarbg" style="margin-top:16px;"><i style="width:56%"></i></div>
+      </div>
+
+      <div class="mrow">
+        <div class="mTop">
+          <div class="mtag">SOM</div>
+          <div class="mval">$26M ARR</div>
+        </div>
+        <div class="mdesc">4,000 practices at our current $6.6k average annual contract value — reachable within 36 months on existing unit economics.</div>
+        <div class="mbarbg" style="margin-top:16px;"><i style="width:24%"></i></div>
+      </div>
+    </div>
+
+    <div class="whyNow">
+      <b>Why now</b>
+      <span>Physiotherapy practices are consolidating, margin pressure is rising, and the compliance bar that once blocked AI scribes is now a barrier we clear and most competitors don't.</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 8 — UNIT ECONOMICS ============ -->
+<section class="slide">
+  <div class="topbar">
+    <div class="mark"><span class="dotline"></span>Lumen Clinics</div>
+    <div>08 / 10</div>
+  </div>
+
+  <div class="content">
+    <div class="eyebrow">Business model</div>
+    <h2>Per-clinic pricing with payback inside a year.</h2>
+
+    <div class="econ">
+      <div>
+        <div class="erow">
+          <span>Average contract value</span>
+          <b>$6,600 <i>/ clinic / yr</i></b>
+        </div>
+        <div class="erow">
+          <span>Gross margin</span>
+          <b>82%</b>
+        </div>
+        <div class="erow">
+          <span>CAC payback</span>
+          <b>7 <i>months</i></b>
+        </div>
+      </div>
+      <div>
+        <div class="erow">
+          <span>Annual logo churn</span>
+          <b>4%</b>
+        </div>
+        <div class="erow">
+          <span>Net revenue retention</span>
+          <b>118%</b>
+        </div>
+        <div class="erow">
+          <span>LTV / CAC</span>
+          <b>5.1x</b>
+        </div>
+      </div>
+    </div>
+
+    <div class="callout">
+      At $6,600 ACV and a 7-month payback, each clinic we land funds the next one inside the same year — before a dollar of the Series A is deployed into acquisition.
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 9 — TRUST ============ -->
+<section class="slide">
+  <div class="topbar">
+    <div class="mark"><span class="dotline"></span>Lumen Clinics</div>
+    <div>09 / 10</div>
+  </div>
+
+  <div class="content">
+    <div class="eyebrow">Trust &amp; compliance</div>
+    <h2>Compliance was the barrier.<br>We built it first.</h2>
+
+    <div class="trustGrid">
+      <div class="trustList">
+        <div class="trustItem">
+          <div class="pIcon">&#10003;</div>
+          <div>
+            <h4>Customer data never trains our models</h4>
+            <p>Session audio and notes are used to deliver the note and nothing else. No cross-customer training, ever — contractual, not a setting.</p>
+          </div>
+        </div>
+        <div class="trustItem">
+          <div class="pIcon">&#10003;</div>
+          <div>
+            <h4>Regional PHI handling by default</h4>
+            <p>Data stays in the clinic's own region across all three live markets, with retention windows set by the practice, not by us.</p>
+          </div>
+        </div>
+        <div class="trustItem">
+          <div class="pIcon">&#10003;</div>
+          <div>
+            <h4>BAAs signed with every customer</h4>
+            <p>Business associate agreements are standard on day one, alongside audit logging and role-based clinician access.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="badges">
+        <div class="badge">
+          <div class="bTag">Certified</div>
+          <div class="bTitle">SOC 2 Type II</div>
+          <div class="bSub">Independently audited controls across security, availability and confidentiality.</div>
+        </div>
+        <div class="badge">
+          <div class="bTag">Compliant since March 2026</div>
+          <div class="bTitle">HIPAA</div>
+          <div class="bSub">Full PHI safeguards, breach procedures and workforce controls in production across all live clinics.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 10 — THE ASK ============ -->
+<section class="slide dark">
+  <div class="aurora a2" style="opacity:.4;"></div>
+
+  <div class="topbar">
+    <div class="mark"><span class="dotline"></span>Lumen Clinics</div>
+    <div>10 / 10</div>
+  </div>
+
+  <div class="content" style="padding-bottom:170px;">
+    <div class="eyebrow">The ask</div>
+
+    <div class="askGrid">
+      <div>
+        <div class="askBig">$9M</div>
+        <div class="askSub">Series A to take Lumen from 212 clinics to 1,000 — and from $1.4M to $7M ARR in three years.</div>
+      </div>
+
+      <div class="alloc">
+        <div class="allocRow">
+          <div class="aTop"><span>Product &amp; clinical AI</span><b>45%</b></div>
+          <div class="bar"><i style="width:45%"></i></div>
+        </div>
+        <div class="allocRow">
+          <div class="aTop"><span>Go-to-market — US, UK, Canada</span><b>30%</b></div>
+          <div class="bar"><i style="width:30%"></i></div>
+        </div>
+        <div class="allocRow">
+          <div class="aTop"><span>Compliance &amp; clinical validation</span><b>15%</b></div>
+          <div class="bar"><i style="width:15%"></i></div>
+        </div>
+        <div class="allocRow">
+          <div class="aTop"><span>Operations &amp; support</span><b>10%</b></div>
+          <div class="bar"><i style="width:10%"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="milestones">
+      <div class="ms">
+        <div class="msK">By month 18</div>
+        <div class="msV">1,000 clinics</div>
+        <div class="msD">Live across existing and two new English-speaking markets.</div>
+      </div>
+      <div class="ms">
+        <div class="msK">By month 24</div>
+        <div class="msV">$7M ARR</div>
+        <div class="msD">At current ACV and a 7-month CAC payback, held below 6% churn.</div>
+      </div>
+      <div class="ms">
+        <div class="msK">By month 36</div>
+        <div class="msV">5 countries</div>
+        <div class="msD">Regional PHI handling and local compliance in every market we enter.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="askFoot">
+    <span>Lumen Clinics · Series A · Confidential</span>
+    <span>investors@lumenclinics.com</span>
+  </div>
+</section>
+
+</body>
+</html>

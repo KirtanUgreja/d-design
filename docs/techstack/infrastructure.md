@@ -1,163 +1,86 @@
 # Infrastructure
 
-Where everything runs, and how the security requirements stop being promises and become configuration.
+Where everything runs. **Rewritten 2026-09-26 for v4** ([../v4/spec.md](../v4/spec.md)): local-first, and nothing is stood up before phase 29.
 
-## The repos
+The short version of the lesson: v1–v3 built six containers, a VPC design, RLS, quotas and publishing around decks that did not look designed. v4 builds no infrastructure until a wall of 12 decks does.
 
-Two, split on the trust boundary rather than on the job boundary.
+## The repo
 
-```
-d-design-api       PYTHON — the four phases · the model seam · data · jobs · THE SCHEMA
-d-design-web       TS — editor · renderer · Better Auth
-d-design-render    TS — deck tree → HTML · Playwright · the visual loop
-d-design-fetch     TS — the network-isolated fetch worker
-```
-
-**One repo per runtime, and the separations are not all the same kind.** Only the fetch worker's is a *security* property. `render`'s is a *language* boundary — Python cannot server-side-render React ([backend.md](backend.md)) — and `web`'s is a deployment one. Labelling them honestly matters: three isolated services is not three security controls.
-
-**`api` and `jobs` share a repo and a codebase**, two entry points, same models and same seam. Separating them would buy nothing while duplicating everything — the same reasoning the app and job worker used to have, moved to the other language.
-
-The `Deck` schema lives in `d-design-api` as Pydantic and is published as **`@d-design/schema`** — a private npm package of *generated* TypeScript types and a Zod validator — for the three TypeScript repos ([../coderules/python.md](../coderules/python.md)). It is never hand-edited, and the gate fails if regenerating produces a diff. The version pin makes drift explicit rather than silent — the failure mode of a git submodule is a worker quietly sitting on an old commit, which is precisely the drift the one-source-of-truth rule exists to prevent ([../coderules/typescript.md](../coderules/typescript.md)).
-
-The renderer is **not** shared with the fetch worker, and never should be — that container handles hostile input, and page-making capability does not belong inside the quarantine. It lives in `render`, which has no database access and no model key, and that is what lets publishing and the visual verification loop run without a function-timeout ceiling ([backend.md](backend.md), [pipeline-tools.md](pipeline-tools.md)). `render` and the fetch worker are both Node and both run Playwright, which makes merging them look like a saving; it is the one merge the trust split forbids.
-
-## AWS topology
-
-The reason to be on AWS is that [../security/infrastructure.md](../security/infrastructure.md)'s central claim — *"the process doing the fetching cannot reach anything worth reaching"* — becomes a subnet and a security group rather than a sentence in a document.
+One repository, two packages.
 
 ```
-VPC
-├── private subnet (app tier)
-│   ├── ECS: api + jobs      → RDS, Secrets Manager, model API
-│   ├── ECS: render          → no RDS, no model key
-│   └── RDS Proxy → Aurora Postgres
-│
-└── isolated subnet (quarantine)
-    └── ECS: fetch worker
-        · security group: NO ingress, egress 0.0.0.0/0 only
-        · NO route to the app subnet
-        · NO route to 169.254.169.254 (metadata) — IMDSv2 disabled on the task
-        · task role: one KMS key for integration credentials, nothing else
+d-design/
+  api/      Python — engine · store · routes · worker · CLI · bench
+  web/      TypeScript — the app (from phase 27)
+  docs/  scripts/
 ```
 
-**ECS Fargate**, one task definition per service — `api`, `jobs`, `render`, and the fetch worker. Fargate over App Runner because App Runner hides exactly the networking that is the point; over Lambda because PGQueuer wants a persistent process and 15 minutes does not fit a long generation run.
-
-The socket-level unreachability test in [../security/testing.md](../security/testing.md) — *from inside the worker, the metadata IP and a VPC host are unreachable* — is now a test of this configuration rather than of application code. That is the whole point: it asserts the network, and the network cannot be bypassed by a parsing bug.
-
-### The fetch worker's contents
-
-Headless Chromium via **Playwright** for URL screenshots, plus `pdf.js`/`unpdf` for document text extraction and `sharp` for image re-encoding. In other words, **every CVE-rich dependency in the project lives in the one container that has nothing to steal.** That placement is deliberate and it is the mitigation for the parser risk flagged in [../security/platform-and-packages.md](../security/platform-and-packages.md).
-
-One documented fallback: if a PDF parser advisory lands and there is no patch, Opus 5 reads PDFs natively — text, layout, and charts in one pass, no parser dependency at all. Slower and it costs tokens; available immediately.
-
-## Delivery
-
-```
-app.<domain>      → Vercel                  editor, API, sessions
-pages.<domain>    → CloudFront ← S3         published experiences (static)
-assets.<domain>   → CloudFront ← S3         uploads and generated files
-```
-
-**Published experiences are static objects, not routes.** Publishing renders HTML in the app and writes it to S3; CloudFront serves it. There is no origin server behind `pages.<domain>`.
-
-That has three consequences worth stating:
-
-- **Origin separation becomes physical.** An XSS in published content cannot reach an app session because there is no shared infrastructure at all, not merely a different cookie scope.
-- **Web cache deception nearly vanishes.** The attack needs the origin to be *more lenient* than the cache about what a URL means. `/r/<token>/x.css` against S3 is a 404 from a key that does not exist — there is no router to be lenient. The controls in [../security/platform-and-packages.md](../security/platform-and-packages.md) still apply to the `/r/` fields endpoint, which is a Vercel route.
-- **A viral launch page costs pennies** and cannot exhaust a connection pool, which is what [../coderules/performance.md](../coderules/performance.md) meant by "static after render."
-
-**Cache-Control is explicit per object type**: long-lived and immutable for content-hashed assets, short with revalidation for published HTML so a republish propagates. Invalidate on publish rather than relying on TTL expiry.
-
-`assets.<domain>` serves with `Content-Type` set by the server and `X-Content-Type-Options: nosniff`. Uploads are presigned direct-to-S3, but **the object is not servable until the fetch worker has verified magic bytes and re-encoded it** — an upload lands in a quarantine prefix and moves to the public prefix only after processing. Presigned uploads without that step is uploading arbitrary bytes to your own CDN.
-
-### Custom domains
-
-**ACM certificates with CloudFront SNI.** DNS validation pairs with the TXT ownership challenge already specified in [../security/content-and-web.md](../security/content-and-web.md) — one verification step serving two purposes.
-
-Watch the per-distribution SAN limit. Many customer domains means either multiple distributions or a different strategy, and that is a scaling decision to make deliberately at maybe fifty domains, not to be surprised by. **Cloudflare for SaaS is the documented escape hatch** if custom domains become a real business — it is purpose-built for this and has no such limit.
-
-The dangling-DNS rules from [../security/content-and-web.md](../security/content-and-web.md) apply in both directions, including to your own records.
-
-## Secrets
-
-**AWS Secrets Manager + KMS.** KMS is what the envelope encryption in [../security/tenancy-and-data.md](../security/tenancy-and-data.md) already assumed; being on AWS makes it the obvious implementation rather than a new dependency.
-
-Access is by task role, which is the part that matters: **the fetch worker's role can decrypt integration credentials and nothing else.** Not the database password, not the model key, not the signing key. A compromise of the most exposed container yields the one secret it was actively using.
-
-Vercel environment variables hold the app's own configuration. GitHub Actions authenticates to AWS via **OIDC** — no long-lived AWS keys in GitHub, which is one of the more common ways a pipeline becomes an entry point.
-
-## Infrastructure as code
-
-**Terraform / OpenTofu.** The reason is not tooling preference: the fetch worker's isolation *is* the security control, and in the console it is undocumented state that nobody can review and that drifts silently. In Terraform it is a diff — and "no route from the quarantine subnet to the app subnet" becomes a line someone can read in a pull request.
-
-Everything in it: VPC, subnets, route tables, security groups, ECS services and task roles, RDS, S3 buckets and policies, CloudFront distributions and cache policies, ACM, KMS keys and grants, Secrets Manager.
-
-The cache-key policy belongs in Terraform specifically. It is a security control now ([../security/platform-and-packages.md](../security/platform-and-packages.md)), and a security control configured by hand in a console is one you cannot prove is still correct.
-
-## CI/CD
-
-**GitHub Actions**, every repo.
-
-| | |
-|---|---|
-| **`web`** | Gate → Vercel deploys on push natively |
-| **`api`** | Gate → `api` and `jobs` images build to ECR and update their Fargate services. **On merge: generate, bump, and publish `@d-design/schema`** |
-| **`render`** | Gate → image to ECR → Fargate service update |
-| **Fetch worker repo** | Gate → image to ECR → Fargate service update |
-| **Every repo** | typecheck, lint, format, tests (pytest / Vitest), dependency advisory check, duplication report ([../coderules/ai-authorship.md](../coderules/ai-authorship.md)). `api` adds the schema-regeneration no-diff check |
-| **`web`, additionally** | Playwright suite including the security assertions, and the build-output grep for key-shaped strings |
-
-Terraform runs `plan` on PR and `apply` on merge to main, gated on review. An infrastructure change that alters a security group should be as visible as a code change that alters an auth check — more so, since nothing type-checks it.
+`render/` and v3's `worker/` are deleted in phase 21. The earlier plan of one repo per runtime never happened, and with OpenAPI codegen in-repo there is no schema package to publish.
 
 ## Local development
 
-```yaml
-# docker-compose.yml
-postgres     # the real database
-minio        # S3-compatible object storage
-localstack   # KMS and Secrets Manager
-render       # v2 — renderer + Playwright, no credential
-jobs         # v3 — PGQueuer
-fetch        # v3 — the quarantined worker, on its own network
-```
-
-Everything runs offline. The point is not convenience — it is that **`storage.ts` talks to the S3 API locally and in production**, so the one abstraction with a planned second implementation (`v1/spec.md`) has one implementation after all. MinIO is not a mock; it speaks the same protocol.
-
-Same for KMS via LocalStack: the envelope-encryption code path is exercised in development rather than first tried in production, which is where a crypto path should never be first tried.
-
-**v1 needs none of this except Postgres.** Local disk through `storage.ts` is fine until there is something to publish to strangers. Add MinIO when S3 arrives, LocalStack when integration credentials do. The Compose file grows with the versions.
-
-### The topology is local before it is deployed
-
-**Everything in this document above "Local development" lands at v3 step 11 — the last step, after every feature works** (`v3/spec.md` → "Why topology is first and deployment is last"). What lands at v3 **step 0** is the *topology*: the same four processes, the same trust boundaries, in Compose.
-
-That distinction is the whole reordering. The dependencies that force infrastructure early are dependencies on processes and APIs — a fetch worker that exists, a job worker that runs, an S3-shaped storage call — and Compose satisfies all of them. Nothing in the feature build depends on Amazon specifically.
-
-**The fetch worker's local isolation is a separate Compose network, not `internal: true`.** Its own bridge network, not shared with `api`, `jobs`, `postgres` or `minio`, so it cannot resolve or reach any of them — while it keeps internet egress through the default gateway, which is the one capability it exists to have. `internal: true` would cut that egress and produce a worker that models the wrong thing. This is a faithful local model of *"egress 0.0.0.0/0, no route to the app subnet"*, and it is testable on a laptop.
-
-### What only the deployed environment proves
-
-Six controls have no local analogue, and one of them fails in a way worth naming twice:
-
-| Control | Why local cannot |
+| Phases | What runs |
 |---|---|
-| **Socket-level unreachability of the metadata IP** | `169.254.169.254` does not exist on a laptop, so the test **passes vacuously**. [../security/testing.md](../security/testing.md) calls this the most important assertion in the suite; a vacuous green is worse than a skip. Mark it not-covered locally, and make it step 11's *first* check |
-| Task-role scoping — the worker decrypts integration credentials and nothing else | LocalStack defaults to permit-all IAM. Its policy tooling makes this rehearsable, never enforced |
-| The CloudFront cache-key policy | A security control ([../security/platform-and-packages.md](../security/platform-and-packages.md)), and there is no local CDN to configure wrongly |
-| ACM, SNI, custom domains, dangling DNS | No analogue at all |
-| RDS Proxy and pool behaviour under real latency | Appears only when the database is a network hop away |
-| Published pages as static S3 objects | Served by a dev server locally, so the *"no router to be lenient"* argument against cache deception is untested |
+| **22–26** | Nothing long-running. `uv run python -m cli …` calls the engine directly and writes a deck to disk |
+| **27–28** | Three processes: `uv run uvicorn app:serve --factory`, `uv run python -m worker`, `pnpm dev`. `scripts/setup.sh` prints the three commands |
+| **29** | Adds Postgres |
 
-**The mitigation that costs nothing is to honour the trust split in code from the first day of step 0.** A fetch worker that quietly acquired a `DATABASE_URL` while no subnet was enforcing anything is a worker that will not survive being put behind one. Assert the absence of every credential in the Compose file and in a test that reads the environment — the same control v2's `render` service already carries, for the same reason.
+**No Docker Compose, no MinIO, no LocalStack.** Compose returns at phase 29 only if Postgres locally is easier that way. v3's compose file brought up six services for a product with no users.
 
-The temptation to build the infrastructure first should be resisted specifically because it feels productive. Putting it last removes the temptation structurally rather than relying on discipline.
+**Requirements on a developer machine:** uv, pnpm, and Playwright's Chromium (`uv run playwright install chromium`; Firefox and WebKit too for the hostile-slide suite).
 
-## What v1 actually stands up
+**Secrets:** one, `OPENROUTER_API_KEY`, in a gitignored `.env`. From phase 27 only the worker reads it. Set a spend limit on the key itself; it is the outer ceiling under every per-deck budget.
 
-**Docker Compose and a dev server. No AWS account.**
+**Decks on disk** live under a gitignored data directory, one folder per deck ([backend.md](backend.md) → "Data").
 
-v1 is single-user with local Postgres, no accounts, no hosted URLs, no integrations. Its verification list asks you to open the exported deck from `file://` in an incognito window and confirm it works offline with motion, which a dev server satisfies completely.
+## CI
 
-Everything in this document lands with **v3** — the release that has real users, which is the same boundary every other v3 control sits on ([../security/README.md](../security/README.md)) — and within v3 it lands **last**, at step 11, after every feature has been verified against the local topology.
+GitHub Actions, mirroring the pre-commit gate exactly.
 
-The long pole in this project is the renderer and whether it produces something genuinely beautiful (`v1/spec.md`, Risk 1). A perfect VPC does not move that risk at all.
+| | |
+|---|---|
+| **api** | ruff · `mypy --strict` · pytest, including the offline-export, lint, sanitizer and QA-fixture tests. Chromium installed in the job |
+| **web** (from phase 27) | tsc · eslint · prettier · Vitest · OpenAPI types regenerate with no diff |
+| **Both** | Dependency advisory check · `./scripts/check-docs.sh` |
+| **Never in CI** | Anything that calls a model. The bench costs money and its judge is a human |
+
+v3's workflow was written and never ran on GitHub. Phase 21's exit includes one green run.
+
+Workflow hygiene does not wait for a cloud: actions pinned to a commit SHA, `permissions:` declared, no `pull_request_target` with a PR-head checkout ([../security/build-pipeline.md](../security/build-pipeline.md)).
+
+## What phase 29 decides
+
+> **Decided 2026-10-08 for the submission (the owner needs a live link):**
+> - **Railway** runs three services from this repo: `web` (public), `api` (private network only, no model key), `worker` (private, no inbound port, the OpenRouter key and Chromium).
+> - **Neon** holds two databases, `app` and `auth`, and the blobs, stored by content hash.
+> - **Secrets** are Railway's per-service variables; the model key is set on the worker alone.
+> - The answers below were the open questions; the property under the table still decides every one.
+
+Deliberately open until then, each with its constraint:
+
+| Question | Constraint |
+|---|---|
+| **Where `api` and `worker` run** | The worker carries Chromium and runs builds of several minutes. That rules out short-lived function platforms for it. The worker needs no inbound port |
+| **Where `web` runs** | Anywhere Next.js runs. It holds no secret beyond the auth provider's public config |
+| **Postgres** | Any managed Postgres. One region, chosen as a compliance input |
+| **Object storage** | For generated assets, behind the same data module |
+| **The auth provider** | Better Auth, self-hosted in the web app (owner, 2026-10-08; [backend.md](backend.md) → "Auth (phase 29)") |
+| **Secrets** | The host's secret store. The OpenRouter key goes to the worker only |
+| **IaC** | Only if the target has network rules worth reviewing as a diff |
+| **Hosted share links** | Not built. Trigger: "send a link" requests outnumber "send the file" |
+
+**The one property to carry into any deployment:** the worker is not reachable from the internet, and the API cannot read the model key. On a laptop that is a convention; deployed it must be a network rule and a secret scope, and phase 29's first check is that both hold.
+
+## What the v3 design had, and when it returns
+
+Recorded so nobody rebuilds it by reflex. The reasoning in each was sound for the product it served.
+
+| v3 piece | Returns when |
+|---|---|
+| A quarantined fetch worker on its own subnet | URL import or file upload is built. It needs an SSRF-safe fetcher and an isolated parser ([../security/infrastructure.md](../security/infrastructure.md)) |
+| S3 + CloudFront for published decks, custom domains, ACM | Hosted share links are built |
+| Secrets Manager + KMS envelope encryption | Integration credentials exist |
+| Terraform, OIDC to AWS | The deploy target is AWS |
+| PGQueuer / a queue | File claims and then `SKIP LOCKED` stop being enough |
+
+The full v3 topology is in git history at commit `8169fd9`.

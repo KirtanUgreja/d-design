@@ -1,0 +1,21 @@
+{
+  "family": "Archivo",
+  "role": "grotesk",
+  "weights": [
+    800,
+    900
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "axes": {
+    "wdth": [
+      62,
+      125
+    ],
+    "wght": [
+      100,
+      900
+    ]
+  }
+}

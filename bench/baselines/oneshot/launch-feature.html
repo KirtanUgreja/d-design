@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ledgerly — Automated Month-End Close · Launch Deck</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:#04070D;}
+  body{
+    font-family:"Inter","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+  }
+
+  :root{
+    --ink:#070C16;
+    --paper:#F6F7F9;
+    --mint:#25D9A4;
+    --mint-deep:#0E9E78;
+    --blue:#5B8CFF;
+    --d-text:#F1F5FB;
+    --d-mut:#8E9CB3;
+    --l-text:#0B1220;
+    --l-mut:#5C6675;
+    --line-d:rgba(255,255,255,.10);
+    --line-l:rgba(11,18,32,.10);
+  }
+
+  /* ---- slide frame: exactly 1920 x 1080 ---- */
+  .slide{
+    position:relative;
+    width:1920px;
+    height:1080px;
+    overflow:hidden;
+    display:flex;
+    flex-direction:column;
+    background:#04070D;
+  }
+  .slide::before{
+    content:"";
+    position:absolute;
+    top:0;left:0;
+    width:180px;height:6px;
+    background:linear-gradient(90deg,var(--mint),var(--blue));
+    z-index:5;
+  }
+
+  /* ---- theme surface fills the slide ---- */
+  .theme{
+    position:relative;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+  .theme.dark{
+    background:
+      radial-gradient(1200px 800px at 85% -12%, rgba(37,217,164,.13), transparent 62%),
+      radial-gradient(1000px 800px at 0% 115%, rgba(91,140,255,.14), transparent 62%),
+      var(--ink);
+    color:var(--d-text);
+  }
+  .theme.light{
+    background:
+      radial-gradient(1100px 700px at 102% -8%, rgba(37,217,164,.10), transparent 62%),
+      radial-gradient(900px 700px at -5% 108%, rgba(91,140,255,.08), transparent 62%),
+      var(--paper);
+    color:var(--l-text);
+  }
+
+  .gridlines{
+    position:absolute;inset:0;z-index:0;pointer-events:none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+    background-size:80px 80px;
+    -webkit-mask-image:radial-gradient(1100px 800px at 75% 25%, #000 0%, transparent 75%);
+    mask-image:radial-gradient(1100px 800px at 75% 25%, #000 0%, transparent 75%);
+  }
+
+  .wrap{
+    position:relative;
+    z-index:2;
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    padding:80px 120px 72px;
+  }
+
+  /* ---------- shared type ---------- */
+  h1{font-size:118px;line-height:1.0;font-weight:800;letter-spacing:-.035em;}
+  h2{font-size:84px;line-height:1.05;font-weight:800;letter-spacing:-.032em;}
+  h2.h2d{color:var(--d-text);}
+  h3{font-size:36px;line-height:1.2;font-weight:700;letter-spacing:-.02em;}
+
+  .eyebrow{
+    font-size:20px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--mint-deep);margin-bottom:26px;
+  }
+  .eyebrow-d{
+    font-size:20px;font-weight:700;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--mint);margin-bottom:26px;
+  }
+  .lead{font-size:32px;line-height:1.5;color:var(--d-mut);max-width:1040px;}
+  .lead-d{font-size:28px;line-height:1.55;color:var(--d-mut);max-width:700px;margin-top:34px;}
+  .lead-l{font-size:28px;line-height:1.55;color:var(--l-mut);max-width:680px;margin-top:30px;}
+  .headnote{font-size:25px;line-height:1.55;color:var(--l-mut);max-width:620px;}
+
+  /* ---------- slide 1 ---------- */
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-bottom:28px;border-bottom:1px solid var(--line-d);
+  }
+  .brand{display:flex;align-items:center;gap:16px;}
+  .mark{
+    width:48px;height:48px;border-radius:14px;
+    background:linear-gradient(135deg,var(--mint),#3FA9FF);
+    color:#06131A;font-weight:800;font-size:26px;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brandtxt{font-size:26px;font-weight:700;letter-spacing:-.01em;}
+  .topbar-note{font-size:20px;color:var(--d-mut);letter-spacing:.03em;}
+
+  .hero{
+    flex:1;display:flex;flex-direction:column;justify-content:center;gap:34px;
+  }
+  .pill{
+    display:inline-flex;align-items:center;gap:14px;align-self:flex-start;
+    padding:13px 26px;border-radius:999px;
+    background:rgba(37,217,164,.10);
+    border:1px solid rgba(37,217,164,.32);
+    color:var(--mint);font-size:19px;font-weight:700;
+    letter-spacing:.14em;text-transform:uppercase;
+  }
+  .pill-dot{width:10px;height:10px;border-radius:50%;background:var(--mint);}
+  .accent{
+    background:linear-gradient(100deg,#25D9A4 10%,#5B8CFF 90%);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .hero-stats{display:flex;align-items:center;gap:52px;margin-top:10px;}
+  .hstat-n{
+    font-size:50px;font-weight:800;letter-spacing:-.025em;
+    font-variant-numeric:tabular-nums;line-height:1.1;
+  }
+  .hstat-l{font-size:20px;color:var(--d-mut);margin-top:8px;max-width:270px;line-height:1.4;}
+  .hstat-div{width:1px;height:74px;background:var(--line-d);}
+
+  .footrow{
+    display:flex;align-items:center;justify-content:space-between;
+    padding-top:30px;border-top:1px solid var(--line-d);
+  }
+  .chip-mint{
+    display:inline-flex;align-items:center;
+    padding:16px 34px;border-radius:999px;
+    background:var(--mint);color:#04140E;
+    font-weight:700;font-size:24px;letter-spacing:-.01em;
+  }
+  .footnote{font-size:20px;color:var(--d-mut);letter-spacing:.04em;}
+
+  /* ---------- slide 2 ---------- */
+  .head2{
+    display:flex;justify-content:space-between;align-items:flex-end;gap:90px;
+    padding-bottom:56px;border-bottom:1px solid var(--line-l);
+  }
+  .cards3{
+    flex:1;display:flex;align-items:center;gap:36px;padding-top:56px;
+  }
+  .card{
+    flex:1;
+    background:#fff;
+    border:1px solid var(--line-l);
+    border-radius:26px;
+    padding:52px 46px;
+    display:flex;flex-direction:column;gap:22px;
+    box-shadow:0 30px 70px -48px rgba(11,18,32,.45);
+  }
+  .ico-box{
+    width:70px;height:70px;border-radius:20px;
+    background:rgba(37,217,164,.16);
+    color:var(--l-text);
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:8px;
+  }
+  .ico{width:36px;height:36px;}
+  .card p{font-size:24px;line-height:1.55;color:var(--l-mut);}
+
+  /* ---------- slide 3 ---------- */
+  .split{flex:1;display:flex;gap:96px;align-items:center;}
+  .split-left{flex:1.05;}
+  .split-right{flex:0 0 720px;}
+
+  .flist{list-style:none;margin-top:44px;display:flex;flex-direction:column;gap:26px;}
+  .flist li{display:flex;gap:20px;align-items:flex-start;}
+  .ftick{
+    flex:0 0 auto;width:30px;height:30px;border-radius:50%;
+    background:rgba(37,217,164,.16);
+    color:var(--mint);font-size:17px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+    margin-top:4px;
+  }
+  .flist b{display:block;font-size:26px;font-weight:700;letter-spacing:-.015em;}
+  .flist em{display:block;font-style:normal;font-size:21px;line-height:1.5;color:var(--d-mut);margin-top:6px;}
+
+  .mock{
+    background:linear-gradient(180deg,#0F1A2B 0%,#0B1424 100%);
+    border:1px solid var(--line-d);
+    border-radius:30px;
+    padding:42px 44px;
+    box-shadow:0 70px 130px -70px rgba(0,0,0,.95);
+  }
+  .mock-head{display:flex;justify-content:space-between;align-items:flex-start;}
+  .mock-title{font-size:26px;font-weight:700;letter-spacing:-.015em;}
+  .mock-sub{font-size:19px;color:var(--d-mut);margin-top:8px;}
+  .mock-pill{
+    padding:9px 20px;border-radius:999px;font-size:18px;font-weight:700;
+    background:rgba(91,140,255,.16);color:#9BB5FF;
+    border:1px solid rgba(91,140,255,.30);
+  }
+  .mock-bar{
+    height:8px;border-radius:999px;background:rgba(255,255,255,.08);
+    overflow:hidden;margin:32px 0 12px;
+  }
+  .mock-bar-fill{
+    width:92%;height:100%;border-radius:999px;
+    background:linear-gradient(90deg,var(--mint),var(--blue));
+  }
+  .mock-row{
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    padding:17px 0;border-bottom:1px solid rgba(255,255,255,.06);
+    font-size:20px;
+  }
+  .mock-l{flex:1;color:#C9D4E4;}
+  .mock-r{color:var(--d-mut);font-variant-numeric:tabular-nums;}
+  .mock-s{
+    flex:0 0 auto;padding:6px 15px;border-radius:999px;
+    font-size:16px;font-weight:700;
+  }
+  .s-ok{background:rgba(37,217,164,.14);color:var(--mint);}
+  .s-rev{background:rgba(255,194,75,.14);color:#FFC24B;}
+  .mock-foot{margin-top:26px;font-size:19px;color:var(--d-mut);}
+
+  /* ---------- slide 4 ---------- */
+  .results{flex:1;display:flex;gap:36px;padding-top:56px;}
+  .hero-stat{
+    flex:1;position:relative;overflow:hidden;
+    background:
+      radial-gradient(700px 500px at 100% 0%, rgba(37,217,164,.16), transparent 65%),
+      linear-gradient(160deg,#0D1726 0%,#080E1A 100%);
+    border-radius:30px;
+    padding:64px 70px;
+    display:flex;flex-direction:column;justify-content:center;gap:24px;
+    color:var(--d-text);
+  }
+  .hs-label{
+    font-size:21px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--d-mut);
+  }
+  .hs-value{display:flex;align-items:center;gap:34px;line-height:1;}
+  .hs-from{
+    font-size:118px;font-weight:800;letter-spacing:-.04em;
+    color:#5A687E;
+    text-decoration:line-through;
+    text-decoration-thickness:7px;
+    text-decoration-color:rgba(255,255,255,.28);
+    font-variant-numeric:tabular-nums;
+  }
+  .hs-arrow{font-size:70px;color:#4E5B70;font-weight:400;}
+  .hs-to{
+    font-size:210px;font-weight:800;letter-spacing:-.055em;
+    color:var(--mint);font-variant-numeric:tabular-nums;
+  }
+  .hs-foot{font-size:22px;color:var(--d-mut);}
+
+  .stat-col{flex:0 0 700px;display:flex;flex-direction:column;gap:24px;}
+  .stat{
+    flex:1;
+    background:#fff;border:1px solid var(--line-l);border-radius:26px;
+    padding:30px 44px;
+    display:flex;flex-direction:column;justify-content:center;gap:8px;
+    box-shadow:0 26px 60px -46px rgba(11,18,32,.45);
+  }
+  .stat-n{
+    font-size:62px;font-weight:800;letter-spacing:-.035em;
+    font-variant-numeric:tabular-nums;line-height:1.05;
+  }
+  .stat-l{font-size:22px;line-height:1.45;color:var(--l-mut);}
+
+  /* ---------- slide 5 ---------- */
+  .center-head{padding-bottom:52px;}
+  .steps{flex:1;display:flex;gap:44px;align-items:center;}
+  .step{
+    flex:1;
+    border-top:2px solid rgba(255,255,255,.10);
+    padding-top:38px;
+    display:flex;flex-direction:column;gap:20px;
+    position:relative;
+  }
+  .step::before{
+    content:"";position:absolute;top:-2px;left:0;width:70px;height:2px;background:var(--mint);
+  }
+  .step-n{
+    width:70px;height:70px;border-radius:50%;
+    background:rgba(37,217,164,.12);
+    border:1px solid rgba(37,217,164,.34);
+    color:var(--mint);font-size:28px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+    margin-bottom:6px;
+  }
+  .step h3{color:var(--d-text);}
+  .step p{font-size:22px;line-height:1.55;color:var(--d-mut);}
+  .step-foot{
+    font-size:22px;color:var(--d-mut);
+    border-top:1px solid var(--line-d);
+    padding-top:32px;margin-top:24px;
+  }
+
+  /* ---------- slide 6 ---------- */
+  .avail{flex:1;display:flex;gap:100px;align-items:center;}
+  .avail-left{flex:1.1;}
+  .checks{list-style:none;margin-top:44px;}
+  .checks li{
+    display:flex;gap:18px;align-items:flex-start;
+    padding:19px 0;border-bottom:1px solid var(--line-l);
+    font-size:24px;line-height:1.45;color:#243044;
+  }
+  .checks li:last-child{border-bottom:none;}
+  .checks span{
+    flex:0 0 auto;width:32px;height:32px;border-radius:50%;
+    background:rgba(37,217,164,.18);color:var(--mint-deep);
+    font-size:16px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+    margin-top:5px;
+  }
+  .avail-right{flex:0 0 560px;}
+  .datecard{
+    background:
+      radial-gradient(500px 400px at 100% 0%, rgba(37,217,164,.18), transparent 65%),
+      linear-gradient(160deg,#0D1726 0%,#080E1A 100%);
+    border-radius:34px;
+    padding:64px 56px;
+    text-align:center;
+    color:var(--d-text);
+    box-shadow:0 70px 140px -70px rgba(11,18,32,.7);
+  }
+  .dc-label{
+    font-size:19px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--d-mut);
+  }
+  .dc-day{
+    font-size:220px;font-weight:800;letter-spacing:-.06em;line-height:.95;
+    color:var(--mint);margin:18px 0 4px;
+    font-variant-numeric:tabular-nums;
+  }
+  .dc-month{font-size:34px;font-weight:700;letter-spacing:-.02em;}
+  .dc-line{height:1px;background:var(--line-d);margin:36px 0 28px;}
+  .dc-foot{font-size:21px;color:var(--d-mut);}
+
+  /* ---------- slide 7 ---------- */
+  .cta{
+    flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:26px;
+  }
+  .cta-h{font-size:96px;line-height:1.04;}
+  .cta .lead{max-width:940px;font-size:29px;}
+  .cta-steps{display:flex;gap:22px;margin-top:14px;flex-wrap:nowrap;}
+  .cta-step{
+    display:flex;align-items:center;gap:16px;
+    padding:20px 30px;border-radius:18px;
+    background:rgba(255,255,255,.045);
+    border:1px solid var(--line-d);
+    font-size:23px;color:#DCE4F0;white-space:nowrap;
+  }
+  .cs-n{
+    width:36px;height:36px;border-radius:50%;
+    background:var(--mint);color:#04140E;
+    font-size:19px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .meter{width:100%;max-width:960px;margin-top:34px;}
+  .meter-bar{height:10px;border-radius:999px;background:rgba(255,255,255,.08);overflow:hidden;}
+  .meter-fill{width:6%;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--mint),var(--blue));}
+  .meter-labels{
+    display:flex;justify-content:space-between;
+    font-size:18px;color:var(--d-mut);margin-top:14px;letter-spacing:.05em;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ SLIDE 1 ============ -->
+<section class="slide">
+  <div class="theme dark">
+    <div class="gridlines"></div>
+    <div class="wrap">
+      <div class="topbar">
+        <div class="brand">
+          <div class="mark">L</div>
+          <div class="brandtxt">Ledgerly</div>
+        </div>
+        <div class="topbar-note">Finance leaders briefing · October 2026</div>
+      </div>
+
+      <div class="hero">
+        <div class="pill"><span class="pill-dot"></span>New · Automated month-end close</div>
+        <h1>Close in days,<br><span class="accent">not weeks.</span></h1>
+        <p class="lead">Ledgerly now matches, reconciles and signs off your month-end close for you — built into every paid plan at no extra cost.</p>
+
+        <div class="hero-stats">
+          <div class="hstat">
+            <div class="hstat-n">9.5 &rarr; 4</div>
+            <div class="hstat-l">median days to close across beta teams</div>
+          </div>
+          <div class="hstat-div"></div>
+          <div class="hstat">
+            <div class="hstat-n">92%</div>
+            <div class="hstat-l">of reconciliations matched automatically</div>
+          </div>
+          <div class="hstat-div"></div>
+          <div class="hstat">
+            <div class="hstat-n">38</div>
+            <div class="hstat-l">beta teams already running it</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="footrow">
+        <div class="chip-mint">Available 14 October 2026</div>
+        <div class="footnote">All paid plans · No add-on · No migration</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 2 ============ -->
+<section class="slide">
+  <div class="theme light">
+    <div class="wrap">
+      <div class="head2">
+        <div>
+          <div class="eyebrow">The problem</div>
+          <h2>The close still runs<br>on brute force.</h2>
+        </div>
+        <p class="headnote">Finance teams didn&rsquo;t get slower. The volume of transactions, entities and bank feeds grew — and the close stayed manual.</p>
+      </div>
+
+      <div class="cards3">
+        <div class="card">
+          <div class="ico-box">
+            <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="15" cy="14" r="6"/>
+              <circle cx="33" cy="34" r="6"/>
+              <path d="M19.5 18.5l9 11"/>
+            </svg>
+          </div>
+          <h3>Matching by hand</h3>
+          <p>Thousands of bank, GL and sub-ledger lines checked one against another, every single month.</p>
+        </div>
+
+        <div class="card">
+          <div class="ico-box">
+            <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="21" cy="21" r="12"/>
+              <path d="M30 30l10 10"/>
+            </svg>
+          </div>
+          <h3>Chasing exceptions</h3>
+          <p>The first week disappears into items that never cleared, with no owner and no context attached.</p>
+        </div>
+
+        <div class="card">
+          <div class="ico-box">
+            <svg class="ico" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="24" cy="24" r="16"/>
+              <path d="M24 13v12l8 5"/>
+            </svg>
+          </div>
+          <h3>Reporting too late</h3>
+          <p>Leadership waits on numbers that land after the decisions they were meant to inform.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 3 ============ -->
+<section class="slide">
+  <div class="theme dark">
+    <div class="wrap">
+      <div class="split">
+        <div class="split-left">
+          <div class="eyebrow-d">The feature</div>
+          <h2 class="h2d">Automated close,<br>end to end.</h2>
+          <p class="lead-d">Turn it on and Ledgerly takes the close from raw feeds to signed-off ledgers — your team reviews only what genuinely needs judgement.</p>
+
+          <ul class="flist">
+            <li>
+              <span class="ftick">&#10003;</span>
+              <div>
+                <b>Continuous matching</b>
+                <em>Bank, GL and sub-ledger lines matched as data lands, not in a scramble at month end.</em>
+              </div>
+            </li>
+            <li>
+              <span class="ftick">&#10003;</span>
+              <div>
+                <b>Exceptions, routed</b>
+                <em>Unmatched items go straight to the right owner with the context to resolve them.</em>
+              </div>
+            </li>
+            <li>
+              <span class="ftick">&#10003;</span>
+              <div>
+                <b>Close calendar</b>
+                <em>Tasks, dependencies and approvals sequenced automatically across every entity.</em>
+              </div>
+            </li>
+            <li>
+              <span class="ftick">&#10003;</span>
+              <div>
+                <b>Audit-ready trail</b>
+                <em>Every match, adjustment and sign-off recorded and exportable on demand.</em>
+              </div>
+            </li>
+          </ul>
+        </div>
+
+        <div class="split-right">
+          <div class="mock">
+            <div class="mock-head">
+              <div>
+                <div class="mock-title">Close automation</div>
+                <div class="mock-sub">October 2026 · All entities</div>
+              </div>
+              <div class="mock-pill">Day 4 of 4</div>
+            </div>
+
+            <div class="mock-bar"><div class="mock-bar-fill"></div></div>
+
+            <div class="mock-row">
+              <span class="mock-l">Stripe payout · 28 Oct</span>
+              <span class="mock-r">$482,910.00</span>
+              <span class="mock-s s-ok">Matched</span>
+            </div>
+            <div class="mock-row">
+              <span class="mock-l">Bank feed · Operating EUR</span>
+              <span class="mock-r">&euro;1,204,556.12</span>
+              <span class="mock-s s-ok">Matched</span>
+            </div>
+            <div class="mock-row">
+              <span class="mock-l">AP sub-ledger · Vendor batch</span>
+              <span class="mock-r">$96,340.75</span>
+              <span class="mock-s s-ok">Matched</span>
+            </div>
+            <div class="mock-row">
+              <span class="mock-l">Intercompany · UK entity</span>
+              <span class="mock-r">&pound;58,900.00</span>
+              <span class="mock-s s-rev">Review</span>
+            </div>
+            <div class="mock-row">
+              <span class="mock-l">Payroll clearing</span>
+              <span class="mock-r">$312,004.40</span>
+              <span class="mock-s s-ok">Matched</span>
+            </div>
+
+            <div class="mock-foot">4,812 of 5,230 lines matched automatically · 92%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 4 ============ -->
+<section class="slide">
+  <div class="theme light">
+    <div class="wrap">
+      <div class="head2">
+        <div>
+          <div class="eyebrow">Beta results · 38 teams</div>
+          <h2>Four days,<br>measured.</h2>
+        </div>
+        <p class="headnote">Across three consecutive month-end closes, beta teams moved from a median 9.5-day close to a median of 4 days.</p>
+      </div>
+
+      <div class="results">
+        <div class="hero-stat">
+          <div class="hs-label">Median days to close</div>
+          <div class="hs-value">
+            <span class="hs-from">9.5</span>
+            <span class="hs-arrow">&rarr;</span>
+            <span class="hs-to">4</span>
+          </div>
+          <div class="hs-foot">Beta program · three consecutive closes</div>
+        </div>
+
+        <div class="stat-col">
+          <div class="stat">
+            <div class="stat-n">92%</div>
+            <div class="stat-l">of reconciliations matched automatically, with no human touch</div>
+          </div>
+          <div class="stat">
+            <div class="stat-n">2</div>
+            <div class="stat-l">teams closed their books in under 48 hours</div>
+          </div>
+          <div class="stat">
+            <div class="stat-n">38</div>
+            <div class="stat-l">beta teams live on the feature before general availability</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 5 ============ -->
+<section class="slide">
+  <div class="theme dark">
+    <div class="wrap">
+      <div class="center-head">
+        <div class="eyebrow-d">How it works</div>
+        <h2 class="h2d">Four steps. Then it&rsquo;s over.</h2>
+      </div>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-n">1</div>
+          <h3>Connect</h3>
+          <p>Banks, sub-ledgers and your ERP keep flowing in exactly as they do today. No new data work.</p>
+        </div>
+        <div class="step">
+          <div class="step-n">2</div>
+          <h3>Match</h3>
+          <p>The engine matches continuously and learns from every exception your team approves.</p>
+        </div>
+        <div class="step">
+          <div class="step-n">3</div>
+          <h3>Review</h3>
+          <p>Only genuine exceptions reach a human — routed to the right owner, with the context attached.</p>
+        </div>
+        <div class="step">
+          <div class="step-n">4</div>
+          <h3>Sign off</h3>
+          <p>Reconciliations, approvals and the audit trail close together, ready for reporting on day four.</p>
+        </div>
+      </div>
+
+      <div class="step-foot">Your existing rules, mappings and approval chains carry over — nothing to rebuild before October.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 6 ============ -->
+<section class="slide">
+  <div class="theme light">
+    <div class="wrap">
+      <div class="avail">
+        <div class="avail-left">
+          <div class="eyebrow">Availability</div>
+          <h2>Live on 14 October 2026.</h2>
+          <p class="lead-l">Automated month-end close ships to every paid plan. Nothing to buy, nothing to migrate, nothing to rebuild.</p>
+
+          <ul class="checks">
+            <li><span>&#10003;</span>Included on all paid plans — no add-on, no usage fee</li>
+            <li><span>&#10003;</span>Turn it on in Settings &rarr; Close automation</li>
+            <li><span>&#10003;</span>Existing rules, mappings and approvers carry over</li>
+            <li><span>&#10003;</span>Runs alongside your current close for the first cycle</li>
+          </ul>
+        </div>
+
+        <div class="avail-right">
+          <div class="datecard">
+            <div class="dc-label">General availability</div>
+            <div class="dc-day">14</div>
+            <div class="dc-month">October 2026</div>
+            <div class="dc-line"></div>
+            <div class="dc-foot">All paid plans · No extra cost</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SLIDE 7 ============ -->
+<section class="slide">
+  <div class="theme dark">
+    <div class="gridlines"></div>
+    <div class="wrap">
+      <div class="cta">
+        <div class="eyebrow-d">Your move</div>
+        <h2 class="h2d cta-h">200 teams switch it on<br>in October.</h2>
+        <p class="lead">That&rsquo;s the number we&rsquo;re chasing in month one. It takes about four minutes to be one of them.</p>
+
+        <div class="cta-steps">
+          <div class="cta-step"><span class="cs-n">1</span>Open Settings &rarr; Close automation</div>
+          <div class="cta-step"><span class="cs-n">2</span>Switch it on for your entity group</div>
+          <div class="cta-step"><span class="cs-n">3</span>Let it run the October close</div>
+        </div>
+
+        <div class="meter">
+          <div class="meter-bar"><div class="meter-fill"></div></div>
+          <div class="meter-labels">
+            <span>0 teams switched on</span>
+            <span>Target: 200 teams in month one</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="footrow">
+        <div class="chip-mint">14 October 2026 · all paid plans</div>
+        <div class="footnote">Your Ledgerly CSM has the rollout playbook.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,234 @@
+{
+  "brief": {
+    "id": "update-monthly",
+    "prompt": "September 2026 monthly investor update for Quill, an AI contract-review startup.",
+    "pasted": [
+      {
+        "title": "September",
+        "text": "MRR $86k, up 11% month over month. 3 new firms signed, 1 churned. Pipeline $420k. Average contract reviewed in 4 minutes vs 47 minutes manually. Burn $120k. Cash $1.9M. Shipped clause library v2. Missed: SOC 2 audit slipped to November."
+      }
+    ],
+    "deck_type": "investor_update",
+    "audience": "Seed investors",
+    "ask": "Ask for two design-partner introductions at mid-size law firms",
+    "slide_count": 6,
+    "research": false
+  },
+  "outline": {
+    "governing_thought": "Quill grew MRR 11% to $86k in September; two design-partner introductions at mid-size law firms will turn a $420k pipeline into signed revenue.",
+    "deck_type": "investor_update",
+    "audience": "Seed investors",
+    "ask": "Ask for two design-partner introductions at mid-size law firms",
+    "key_points": [
+      "MRR reached $86k, up 11% month over month",
+      "Net firm growth: 3 signed, 1 churned",
+      "Contracts reviewed in 4 minutes versus 47 manually",
+      "Cash of $1.9M against $120k monthly burn",
+      "SOC 2 audit slipped to November"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "cover",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Quill grew 11% in September and needs two introductions",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Investor update",
+            "budget_words": 4
+          },
+          {
+            "name": "source",
+            "text": "September 2026 monthly investor update",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "growth",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Monthly recurring revenue climbed 11% to $86k",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Revenue",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "3 new firms signed",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "1 firm churned",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "$86k",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "MRR, up 11% month over month",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "September update",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "product",
+        "intent": "comparison",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Quill reviews a contract in 4 minutes, not 47",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Product",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Clause library v2 shipped this month",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "4 min",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "average review time versus 47 minutes manually",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "September update",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "pipeline",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "A $420k pipeline is waiting on stronger law firm proof",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Pipeline",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "$420k",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "current pipeline",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "September update",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "risks",
+        "intent": "number-set",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Cash covers the plan, but SOC 2 slipped to November",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Runway and risks",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Burn was $120k this month",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "SOC 2 audit moved to November",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "$1.9M",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "cash on hand",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "September update",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Introduce us to two mid-size law firms as design partners",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The ask",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Mid-size firms fit our fastest-growing segment",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Partners shape the roadmap and validate the pipeline",
+            "budget_words": 10
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "family": "Big Shoulders Display",
+  "role": "condensed",
+  "weights": [
+    800,
+    900
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "axes": {
+    "wght": [
+      100,
+      900
+    ]
+  },
+  "metrics": {
+    "100": {
+      "x_height": 0.6,
+      "cap": 0.8,
+      "descender": 0.2,
+      "width": 0.245,
+      "leading": 1.0
+    },
+    "200": {
+      "x_height": 0.6,
+      "cap": 0.8,
+      "descender": 0.201,
+      "width": 0.259,
+      "leading": 1.01
+    },
+    "300": {
+      "x_height": 0.6,
+      "cap": 0.8,
+      "descender": 0.203,
+      "width": 0.278,
+      "leading": 1.01
+    },
+    "400": {
+      "x_height": 0.6,
+      "cap": 0.8,
+      "descender": 0.205,
+      "width": 0.304,
+      "leading": 1.01
+    },
+    "500": {
+      "x_height": 0.6,
+      "cap": 0.8,
+      "descender": 0.206,
+      "width": 0.317,
+      "leading": 1.01
+    },
+    "600": {
+      "x_height": 0.6,
+      "cap": 0.8,
+      "descender": 0.207,
+      "width": 0.33,
+      "leading": 1.01
+    },
+    "700": {
+      "x_height": 0.6,
+      "cap": 0.8,
+      "descender": 0.209,
+      "width": 0.355,
+      "leading": 1.01
+    },
+    "800": {
+      "x_height": 0.6,
+      "cap": 0.8,
+      "descender": 0.211,
+      "width": 0.381,
+      "leading": 1.02
+    },
+    "900": {
+      "x_height": 0.6,
+      "cap": 0.8,
+      "descender": 0.213,
+      "width": 0.406,
+      "leading": 1.02
+    }
+  }
+}

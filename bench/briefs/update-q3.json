@@ -1,0 +1,283 @@
+{
+  "brief": {
+    "id": "update-q3",
+    "prompt": "Q3 2026 investor update for Harbor, a freight-booking marketplace.",
+    "pasted": [
+      {
+        "title": "Q3",
+        "text": "Revenue $3.9M vs plan $4.4M. GMV $41M, up 18% QoQ. Take rate 9.5%. Gross margin 34% vs plan 37%. Shipper retention 88%. Missed plan because two enterprise deals slipped to Q4. Burn $640k/month, cash $5.1M, 8 months runway. Hired a VP Sales in August. Asking for a $3M bridge."
+      }
+    ],
+    "deck_type": "investor_update",
+    "audience": "Existing investors and the board",
+    "ask": "Get approval for the bridge round and two intros to enterprise shippers",
+    "slide_count": 8,
+    "research": false
+  },
+  "outline": {
+    "governing_thought": "Harbor grew volume 18% but missed Q3 revenue plan on slipped enterprise deals, and a $3M bridge plus two shipper intros will close the gap.",
+    "deck_type": "investor_update",
+    "audience": "Existing investors and the board",
+    "ask": "Get approval for the bridge round and two intros to enterprise shippers",
+    "key_points": [
+      "Revenue $3.9M against a $4.4M plan",
+      "GMV grew 18% quarter over quarter to $41M",
+      "Two enterprise deals slipped to Q4",
+      "Runway is 8 months at $640k monthly burn",
+      "Ask: approve $3M bridge and two enterprise shipper intros"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "Open",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Harbor grew volume 18% but missed its Q3 revenue plan",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Q3 2026 investor update",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "The miss",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Revenue landed at $3.9M against a $4.4M plan",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Revenue",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "$3.9M",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "Q3 revenue vs $4.4M plan",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Q3 2026 results",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "The cause",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Two enterprise deals slipped to Q4 and caused the miss",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Why we missed",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "Demand",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Shipper demand grew 18% quarter over quarter to $41M GMV",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Volume",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Take rate held at 9.5%",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "18%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "GMV growth QoQ, to $41M",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Q3 2026 results",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "Quality",
+        "intent": "number-set",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Shippers stay at 88% while margin trails plan",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Retention and margin",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Retention 88%",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Gross margin 34% vs 37% plan",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "34%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "Gross margin vs 37% plan",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Q3 2026 results",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "Response",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "A new VP Sales now owns the enterprise pipeline",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Sales",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "VP Sales hired in August",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Two slipped deals now sit in Q4",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "Runway",
+        "intent": "number-set",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Eight months of runway leaves little room for another slip",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Cash",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Cash $5.1M",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Burn $640k per month",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "8 months",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "Runway at current burn",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Q3 2026 financials",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s08",
+        "beat": "Ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Approve the $3M bridge and open two enterprise shipper doors",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The ask",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Board approval of the bridge round",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Two intros to enterprise shippers",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "$3M",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "Bridge round",
+            "budget_words": 15
+          }
+        ]
+      }
+    ]
+  }
+}

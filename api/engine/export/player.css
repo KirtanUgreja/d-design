@@ -1,0 +1,42 @@
+/* The player's chrome. Slides live in their own shadow roots; this styles
+   only the stage around them. The ground colour letterboxes the stage. */
+html, body { margin: 0; height: 100%; overflow: hidden; background: var(--c-ground); }
+#dd-stage { position: fixed; inset: 0; }
+.dd-slide {
+  width: 1920px; height: 1080px; position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%) scale(var(--dd-k, 1)); display: none;
+}
+.dd-slide.on { display: block; }
+
+/* O: every slide at a fifth of its size; click one to go there. */
+body.dd-overview #dd-stage {
+  overflow: auto; display: grid; grid-template-columns: repeat(auto-fill, 384px);
+  gap: 24px; padding: 32px; justify-content: center; align-content: start;
+}
+body.dd-overview .dd-slide {
+  display: block; position: relative; left: auto; top: auto; transform: none;
+  zoom: 0.2; cursor: pointer; outline: 5px solid var(--c-ink-2);
+}
+body.dd-overview .dd-slide.on { outline: 15px solid var(--c-accent); }
+
+/* B: black screen. */
+body.dd-black { background: #000; }
+body.dd-black #dd-stage { visibility: hidden; }
+
+/* The chrome: the counter and the AI disclosure, shown when the mouse moves
+   and always in the overview. Never on a slide, never in print. */
+#dd-chrome {
+  position: fixed; left: 0; right: 0; bottom: 0; display: flex; justify-content: space-between;
+  padding: 10px 16px; font: 13px/1.2 system-ui, sans-serif; color: var(--c-ink-2);
+  background: var(--c-ground); opacity: 0; transition: opacity 0.3s ease; pointer-events: none;
+}
+body.dd-awake #dd-chrome, body.dd-overview #dd-chrome { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { #dd-chrome { transition: none; } }
+
+@media print {
+  @page { size: 1920px 1080px; margin: 0; }
+  html, body { height: auto; overflow: visible; }
+  #dd-stage { position: static; }
+  .dd-slide { display: block; position: relative; left: auto; top: auto; transform: none; break-after: page; }
+  #dd-chrome { display: none; }
+}

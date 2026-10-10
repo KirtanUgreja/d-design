@@ -1,25 +1,23 @@
 [project]
 name = "d-design-api"
-version = "0.1.0"
-description = "The v1 pipeline: interview, mapping, slide builder, and the model seam"
+version = "0.2.0"
+description = "The v4 engine: a brief in, one offline HTML deck out"
 requires-python = ">=3.13"
 dependencies = [
     "pydantic>=2.9,<3",
     "httpx>=0.27,<1",
-    # sqlalchemy + asyncpg are the database layer (docs/coderules/dependencies.md
-    # baseline). They were dev-only in v1 (no database); the DB lands in v3
-    # (phase 16) with accounts, so they become runtime deps here.
-    "sqlalchemy[asyncio]>=2.0",
-    "asyncpg>=0.29",
-    # alembic owns the app tables' migrations (backend.md: Alembic for
-    # everything except the auth tables, which drizzle-kit owns).
-    "alembic>=1.13",
-    # fastapi + uvicorn: the brand-kit API (phase 17). api owns brand_kits;
-    # web reads them through this HTTP layer (the documented split: Python
-    # decides, TypeScript renders). The ORM-invariant keeps the auth tables
-    # out; this serves app tables only, behind resolve_session.
-    "fastapi>=0.115",
-    "uvicorn[standard]>=0.30",
+    # Chromium for the bench wall now, and for QA, thumbnails and PDF from
+    # phase 22 (docs/coderules/dependencies.md -> the ledger).
+    "playwright>=1.47",
+    "nh3>=0.3.6",
+    "tinycss2>=1.5.1",
+    "pillow>=12.3.0",
+    "fastapi>=0.141.1",
+    "uvicorn>=0.52.1",
+    "pyjwt[crypto]>=2.13.0",
+    "sqlalchemy>=2.0.52",
+    "alembic>=1.19.1",
+    "psycopg[binary]>=3.3.4",
 ]
 
 [dependency-groups]
@@ -30,7 +28,7 @@ dev = [
 ]
 
 [tool.uv]
-exclude-newer = "2026-08-12"
+exclude-newer = "2026-08-12T00:00:00Z"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -42,7 +40,8 @@ warn_unreachable = true
 disallow_any_explicit = true
 explicit_package_bases = true
 mypy_path = "."
-files = ["schema", "ai", "pipeline", "lib", "db", "migrations", "tests"]
+plugins = ["pydantic.mypy"]
+files = ["engine", "benchtools", "lib", "store", "tests", "cli.py", "settings.py", "worker.py", "app.py", "ops.py", "migrations"]
 
 [tool.ruff]
 line-length = 100
@@ -54,3 +53,11 @@ select = ["E", "F", "W", "I", "N", "UP", "B", "SIM", "ANN", "ASYNC", "S", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["ANN", "S", "D"]
+
+[tool.pydantic-mypy]
+init_typed = true
+init_forbid_extra = true
+
+[[tool.mypy.overrides]]
+module = ["tinycss2", "tinycss2.*"]
+ignore_missing_imports = true

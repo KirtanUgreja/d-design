@@ -1,0 +1,54 @@
+{
+  "family": "Syne",
+  "role": "grotesk",
+  "weights": [
+    700,
+    800
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "axes": {
+    "wght": [
+      400,
+      800
+    ]
+  },
+  "metrics": {
+    "400": {
+      "x_height": 0.5,
+      "cap": 0.65,
+      "descender": 0.2,
+      "width": 0.448,
+      "leading": 0.86
+    },
+    "500": {
+      "x_height": 0.499,
+      "cap": 0.649,
+      "descender": 0.202,
+      "width": 0.482,
+      "leading": 0.86
+    },
+    "600": {
+      "x_height": 0.498,
+      "cap": 0.648,
+      "descender": 0.203,
+      "width": 0.517,
+      "leading": 0.86
+    },
+    "700": {
+      "x_height": 0.497,
+      "cap": 0.647,
+      "descender": 0.205,
+      "width": 0.558,
+      "leading": 0.86
+    },
+    "800": {
+      "x_height": 0.49,
+      "cap": 0.64,
+      "descender": 0.215,
+      "width": 0.803,
+      "leading": 0.86
+    }
+  }
+}

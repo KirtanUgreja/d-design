@@ -1,0 +1,75 @@
+{
+  "family": "Unbounded",
+  "role": "wide",
+  "weights": [
+    500,
+    800
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": null,
+  "source": "fonts.googleapis.com (latin subset)",
+  "axes": {
+    "wght": [
+      200,
+      900
+    ]
+  },
+  "metrics": {
+    "200": {
+      "x_height": 0.56,
+      "cap": 0.75,
+      "descender": 0.177,
+      "width": 0.574,
+      "leading": 0.93
+    },
+    "300": {
+      "x_height": 0.563,
+      "cap": 0.75,
+      "descender": 0.178,
+      "width": 0.59,
+      "leading": 0.93
+    },
+    "400": {
+      "x_height": 0.566,
+      "cap": 0.75,
+      "descender": 0.179,
+      "width": 0.606,
+      "leading": 0.93
+    },
+    "500": {
+      "x_height": 0.569,
+      "cap": 0.75,
+      "descender": 0.18,
+      "width": 0.622,
+      "leading": 0.93
+    },
+    "600": {
+      "x_height": 0.57,
+      "cap": 0.75,
+      "descender": 0.181,
+      "width": 0.629,
+      "leading": 0.94
+    },
+    "700": {
+      "x_height": 0.571,
+      "cap": 0.75,
+      "descender": 0.181,
+      "width": 0.637,
+      "leading": 0.94
+    },
+    "800": {
+      "x_height": 0.573,
+      "cap": 0.75,
+      "descender": 0.182,
+      "width": 0.647,
+      "leading": 0.94
+    },
+    "900": {
+      "x_height": 0.575,
+      "cap": 0.75,
+      "descender": 0.183,
+      "width": 0.658,
+      "leading": 0.94
+    }
+  }
+}

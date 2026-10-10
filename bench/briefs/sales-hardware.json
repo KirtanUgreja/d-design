@@ -1,0 +1,347 @@
+{
+  "brief": {
+    "id": "sales-hardware",
+    "prompt": "Sales deck for Kiln, a smart commercial oven, to a 60-location bakery chain.",
+    "pasted": [
+      {
+        "title": "Pilot results",
+        "text": "In a 4-store pilot with another chain: energy use per bake down 23%, bake-time variance down from 9% to 2%, waste from burnt batches down 61%. Each oven costs $18,400; payback in 14 months at average volume. Remote diagnostics resolved 78% of faults without a site visit."
+      }
+    ],
+    "deck_type": "sales",
+    "audience": "The chain's COO and head of operations",
+    "ask": "Sign a 10-store paid pilot",
+    "research": false,
+    "brand": {
+      "name": "Kiln",
+      "colors": [
+        "#1f4e9c"
+      ]
+    }
+  },
+  "outline": {
+    "governing_thought": "Kiln ovens cut energy, waste and bake variance across a bakery chain, and a 10-store paid pilot will prove it in your own stores.",
+    "deck_type": "sales",
+    "audience": "The chain's COO and head of operations",
+    "ask": "Sign a 10-store paid pilot",
+    "key_points": [
+      "Inconsistent bakes and burnt batches drain margin across 60 locations",
+      "Kiln pilot cut energy per bake 23% and burnt-batch waste 61%",
+      "Bake-time variance fell from 9% to 2%",
+      "Payback in 14 months at average volume",
+      "Remote diagnostics resolved 78% of faults without a site visit"
+    ],
+    "slides": [
+      {
+        "id": "s01",
+        "beat": "Cover",
+        "intent": "cover",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Kiln makes every bake consistent across all 60 stores",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Kiln for bakery operations",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s02",
+        "beat": "Problem",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Uneven bakes quietly drain margin in every location",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The problem",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s03",
+        "beat": "Cost of the problem",
+        "intent": "points",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Energy, burnt batches and service calls each eat into profit",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Where the loss hides",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Energy spent on every bake",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Batches burnt and thrown away",
+            "budget_words": 10
+          },
+          {
+            "name": "point-3",
+            "text": "Site visits for oven faults",
+            "budget_words": 10
+          }
+        ]
+      },
+      {
+        "id": "s04",
+        "beat": "Solution",
+        "intent": "statement",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Kiln is a smart commercial oven that controls every bake",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "The solution",
+            "budget_words": 4
+          }
+        ]
+      },
+      {
+        "id": "s05",
+        "beat": "Proof: consistency",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Kiln cut bake-time variance from 9% to 2%",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Consistency",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Measured in a 4-store pilot",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Same product, same result, every store",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "9% to 2%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "bake-time variance",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "4-store pilot with another chain",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s06",
+        "beat": "Proof: waste",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Kiln cut waste from burnt batches by 61%",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Waste",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Fewer batches thrown away",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Less rework for store teams",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "61%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "less burnt-batch waste",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "4-store pilot with another chain",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s07",
+        "beat": "Proof: energy",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Kiln used 23% less energy on every bake",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Energy",
+            "budget_words": 4
+          },
+          {
+            "name": "stat",
+            "text": "23%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "lower energy use per bake",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "4-store pilot with another chain",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s08",
+        "beat": "Service",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Remote diagnostics fixed most faults without a site visit",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Operations",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Fewer technician trips",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Less downtime during service hours",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "78%",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "faults resolved remotely",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "4-store pilot with another chain",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s09",
+        "beat": "Economics",
+        "intent": "number",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Each $18,400 oven pays for itself in 14 months",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Payback",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Payback at average volume",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Savings come from energy, waste and service",
+            "budget_words": 10
+          },
+          {
+            "name": "stat",
+            "text": "14 months",
+            "budget_words": 3
+          },
+          {
+            "name": "stat-label",
+            "text": "payback at average volume",
+            "budget_words": 15
+          },
+          {
+            "name": "source",
+            "text": "Kiln pricing and pilot results",
+            "budget_words": 8
+          }
+        ]
+      },
+      {
+        "id": "s10",
+        "beat": "Ask",
+        "intent": "ask",
+        "fields": [
+          {
+            "name": "headline",
+            "text": "Sign a 10-store paid pilot to prove it in your stores",
+            "budget_words": 12
+          },
+          {
+            "name": "kicker",
+            "text": "Next step",
+            "budget_words": 4
+          },
+          {
+            "name": "point-1",
+            "text": "Ten stores, measured against your baseline",
+            "budget_words": 10
+          },
+          {
+            "name": "point-2",
+            "text": "Same metrics as the 4-store pilot",
+            "budget_words": 10
+          }
+        ]
+      }
+    ]
+  }
+}

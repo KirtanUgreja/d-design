@@ -1,0 +1,19 @@
+{
+  "family": "DM Serif Display",
+  "role": "serif-display",
+  "weights": [
+    400
+  ],
+  "licence": "OFL-1.1",
+  "reserved_font_name": "Source",
+  "source": "fonts.googleapis.com (latin subset)",
+  "metrics": {
+    "400": {
+      "x_height": 0.481,
+      "cap": 0.66,
+      "descender": 0.24,
+      "width": 0.456,
+      "leading": 0.9
+    }
+  }
+}

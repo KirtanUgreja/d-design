@@ -22,8 +22,8 @@ A one-page runbook, written before it is needed. GDPR gives 72 hours to notify a
 
 **Contain → Assess → Notify → Remediate.**
 
-1. **Contain.** The kill switches: halt generation, revoke the affected credential or signing key, unbind a domain, disable a compromised account, **revoke the CI role's trust policy**. Know which lever fits which incident before the incident — and note that the last one is the only lever that stops an attacker who is deploying code, which is the incident where every other lever is being reverted as fast as you pull it.
-2. **Assess.** What data, whose, how much, still ongoing? The `generations` metadata and access logs answer scope without themselves containing PII.
+1. **Contain.** The levers: **rotate the OpenRouter key** (the one secret, and it stops all spend), halt generation with the kill switch (phase 29), disable a compromised account at the identity provider, **revoke the deploy credential**. Know which lever fits which incident before the incident — and note that the last one is the only lever that stops an attacker who is deploying code, which is the incident where every other lever is being reverted as fast as you pull it.
+2. **Assess.** What data, whose, how much, still ongoing? The cost ledger and access logs answer scope without themselves containing PII.
 3. **Notify.** Personal data breach → affected publishers, within 72 hours, factually. They are the data controllers for their recipients and have their own obligations downstream — tell them in time to meet them. **A subprocessor's breach is your breach to report** ([third-parties.md](third-parties.md)): under Article 28 you remain liable for their compliance, so subscribe to the status and security notifications of every name on that list before you need them.
 4. **Remediate.** Fix, add the regression test, write the retro.
 
@@ -38,7 +38,7 @@ The product is already dependency-light by design — that decision is most of t
 - A new dependency is a decision: is it maintained, how much does it pull in, does a few lines of our own beat it? The ponytail instinct and the security instinct agree here
 - CI fails on a known-critical advisory
 
-The most dangerous dependencies are those touching untrusted input: PDF parsing, image decoding, the 3D loader, HTML/SVG sanitization. Pin these deliberately, watch their advisories specifically, and run them in the isolated worker where their blast radius is smallest. [platform-and-packages.md](platform-and-packages.md) lists them by name with current version floors — DOMPurify alone had four disclosed bypasses in eighteen months.
+The most dangerous dependencies are those touching untrusted input. In v4 that is the slide sanitizer (`nh3`), the CSS parser (`tinycss2`), Chromium, and Pillow. Pin these deliberately and watch their advisories by name. [platform-and-packages.md](platform-and-packages.md) lists them — the JavaScript sanitizer in the same role had four disclosed bypasses in eighteen months.
 
 **Watch the framework's advisories as attentively as the dependencies'.** Next.js published 13 advisories in May 2026 and 9 in July 2026, several of them auth bypasses and cache-confusion bugs that land on this product's specific features. A framework is a dependency; it is simply one nobody thinks to review.
 
@@ -52,18 +52,20 @@ That collides with [../coderules/dependencies.md](../coderules/dependencies.md)'
 
 Written down because the alternative under pressure is to disable the gate globally at 2am and never re-enable it.
 
-Automated update PRs are reviewed rather than auto-merged — the update itself is the delivery mechanism for a supply-chain compromise (OWASP **A03:2025**, the highest-incidence category on the list). **Review the lockfile diff, not only `package.json`.** A transitive change is where this arrives, and it is the line nobody reads.
+Automated update PRs are reviewed rather than auto-merged — the update itself is the delivery mechanism for a supply-chain compromise (OWASP **A03:2025**, the highest-incidence category on the list). **Review the lockfile diff, in both `uv.lock` and `pnpm-lock.yaml`, not only the manifest.** A transitive change is where this arrives, and it is the line nobody reads.
 
 ## Release gate
 
 Each version ships only after the security tests for what it introduced pass, and the manual checklist ([testing.md](testing.md)) is walked.
 
-| Version | Gate |
+| Phase | Gate |
 |---|---|
-| **every release** | Framework and parsers at or above their version floors · fail-closed suite green · no key-shaped string in the build · **ZDR on and prompt logging off** ([third-parties.md](third-parties.md)) · **OIDC trust policies scoped, no wildcard `sub`** ([build-pipeline.md](build-pipeline.md)) · fetch-worker image rebuilt within the patch window |
-| **v1** | Injection corpus green · the zero-request `connect-src` assertion green from `file://` · the data-URI embedding assertion green · navigation assertions green · upload tests green (v3) |
-| **v2** | CSS-token-injection tests green (v3, with brand-kit upload) · the family registry rejects malformed token grammar |
-| **v3** | Auth suite green (no-session and wrong-tenant on every route) · RLS isolation green · SSRF suite green (including socket-level unreachability and Chromium sandboxing) · **cache-isolation suite green against the real CDN** · privacy/retention green · entitlement + webhook tests green · subprocessor list published and current |
+| **every phase exit** | Hostile-slide suite green on three engines · zero-request export test green from `file://` · fail-closed suite green · framework and the packages in [platform-and-packages.md](platform-and-packages.md) current · no key-shaped string in the build · **ZDR on, prompt logging off, model ids pinned** ([third-parties.md](third-parties.md)) |
+| **22 engine spike** | Sanitizer, lint and request-aborting render in place before the first model-written slide is opened in a browser · per-deck budget cap |
+| **24 content engine** | Injection corpus run, including hostile search results · search caps |
+| **26 player + export** | The send flavour and the PDF contain no speaker notes · one script hash in the CSP · AI-disclosure markers present |
+| **27 app** | The API holds no model key and imports no browser · slide frame has no `allow-scripts` · no exception text reaches a client |
+| **29 accounts + deploy** | No-token and wrong-user on every route · isolation suite green, and failing when the owner filter is removed · JWT failures all 401 · kill switch reachable · worker not reachable from the internet · subprocessor list published · `security.txt` live |
 
 The gate is not "we wrote the tests." It is "the tests are green and the checklist is walked." A skipped gate under deadline pressure is exactly how the control that existed stops existing.
 

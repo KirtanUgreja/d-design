@@ -1,23 +1,723 @@
-"""The api HTTP entry — FastAPI (v3, phase 17).
+"""The API (docs/v4/engine.md -> API surface): thin routes that enqueue and
+read. It never calls a model or a browser — the worker does (worker.py). Each
+route parses its input once, at entry; every error the UI can show is human
+copy, never an exception string.
 
-api owns the app tables (experiences, briefs, generations, teams, brand_kits)
-and serves them behind the session resolution (auth/session_data.py) plus the
-as_user tenant wrapper. The auth tables are web's; api never writes them.
+    cd api && uv run uvicorn app:serve --factory --port 8000
 
-The model seam and the pipeline stay CLI-driven (cli.py); this app is the
-product surface api exposes to web.
+Who is calling comes from Better Auth's JWT, which the web proxy adds to
+every request (auth.py); every deck route goes through the caller's tenant
+(store/tenant.py), so another user's deck is a 404. Without a verifier (tests
+and local runs only) every request is the one local user.
 """
 
 from __future__ import annotations
 
-from fastapi import FastAPI
+import asyncio
+import base64
+import json
+from collections.abc import AsyncIterator
+from typing import Annotated, Literal
 
-from features.brand_kits.routes import router as brand_kits_router
-from features.experiences.routes import router as experiences_router
-from features.quotas.routes import router as quotas_router
+from fastapi import Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse, JSONResponse, Response, StreamingResponse
+from pydantic import BaseModel, Field
 
-app = FastAPI(title="d-design api", version="0.1.0")
+import ops
+import settings
+from auth import Verifier
+from engine import Brief, Deck, Question, interview
+from engine.models import Brand, Screen
+from engine.studio import preview
+from lib.result import Ok
+from looks import theme_of, with_language
+from store.files import Avatar, History, User
+from store.tenant import AnyStore, Tenant, open_store
 
-app.include_router(brand_kits_router)
-app.include_router(experiences_router)
-app.include_router(quotas_router)
+FINAL = {"ready", "error", "aborted"}
+MAX_SCREENS = 6
+MIN_SLIDES = 5  # what the composer offers; an outline keeps at least this many
+POLL_S = 0.4
+
+
+class CreateDeck(BaseModel):
+    prompt: str = Field(min_length=3, max_length=4000)
+    deck_type: Literal[
+        "pitch", "sales", "launch", "investor_update", "partnership", "project", "auto"
+    ] = "auto"
+    tone: Literal["plain", "confident", "warm", "bold"] = "confident"
+    audience: str = Field(default="", max_length=300)
+    ask: str = Field(default="", max_length=300)
+    slide_count: int = Field(default=10, ge=3, le=25)
+
+
+class Answers(BaseModel):
+    answers: list[str] = Field(default_factory=list, max_length=10)  # by question order; "" skips
+    skip: bool = False
+
+
+class OutlineEdit(BaseModel):
+    version: int
+    order: list[str] | None = None  # slide ids, the cover and the ask stay at the ends
+    decisions: dict[str, Literal["approved", "rejected"]] = Field(default_factory=dict)
+    # The person's own words for a slide's fields: slide id -> field -> text.
+    words: dict[str, dict[str, Annotated[str, Field(min_length=1, max_length=600)]]] = Field(
+        default_factory=dict, max_length=25
+    )
+    remove: list[str] = Field(default_factory=list, max_length=20)  # slide ids to drop
+
+
+class Title(BaseModel):
+    title: str = Field(min_length=1, max_length=60)
+
+
+class FieldText(BaseModel):
+    field: str = Field(pattern=r"^[\w-]+$")
+    text: str = Field(min_length=1, max_length=600)
+
+
+class AskBody(BaseModel):
+    instruction: str = Field(min_length=3, max_length=300)
+
+
+class LogoUpload(BaseModel):
+    """A logo, as base64 in JSON: one parse at entry. The bytes are kept as
+    received and only the worker decodes them (phase 38: hostile by default)."""
+
+    data: str = Field(min_length=8, max_length=2_800_000)  # ~2 MB of file
+    placement: Literal["cover", "ends", "all"] = "ends"
+
+
+class ScreenUpload(BaseModel):
+    """A screenshot or demo image, as base64 in JSON: kept as received; only
+    the worker decodes it (hostile by default, like the logo)."""
+
+    data: str = Field(min_length=8, max_length=2_800_000)  # ~2 MB of file
+    caption: str = Field(default="", max_length=120)
+
+
+class BrandColours(BaseModel):
+    """The user's brand colours, as hex: one parse at entry. Empty clears them."""
+
+    colors: list[Annotated[str, Field(pattern=r"^#[0-9a-fA-F]{6}$")]] = Field(max_length=2)
+
+
+class Order(BaseModel):
+    slides: list[str] = Field(min_length=3, max_length=40)
+
+
+class DeckOut(BaseModel):
+    deck: Deck
+    questions: list[Question]
+    pending: list[str]  # proposed numbers that need a keep-or-cut before the build
+
+
+class Problem(BaseModel):
+    error: str
+
+
+class MeOut(BaseModel):
+    id: str
+    email: str
+    name: str
+    avatar: Avatar
+
+
+class MeEdit(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=80)
+    avatar: Avatar | None = None
+
+
+class StyleCard(BaseModel):
+    """The deck's one generated style, shown at the outline gate (phase 39 -> 6)."""
+
+    language: str
+    name: str
+    idea: str
+    display: str
+    text: str
+    colors: dict[str, str]
+    image_style: str
+
+
+def _problem(status: int, message: str) -> JSONResponse:
+    return JSONResponse(Problem(error=message).model_dump(), status_code=status)
+
+
+def _pending(deck: Deck) -> list[str]:
+    used = {
+        i
+        for s in (deck.storyline.slides if deck.storyline else [])
+        for f in s.fields
+        for i in f.fact_ids
+    }
+    return [f.id for f in deck.facts if f.status == "proposed" and f.id in used]
+
+
+LOCAL_USER = "local"  # the one user of a run without accounts (tests, a laptop)
+
+
+def _caller(request: Request, authorization: str | None = Header(default=None)) -> Tenant:
+    """The signed-in user's tenant. Fails closed: no verifier only in a local
+    run; any failed check is 401 and no route body runs."""
+    store: AnyStore = request.app.state.store
+    verifier: Verifier | None = request.app.state.verifier
+    if verifier is None:
+        if store.get_user(LOCAL_USER) is None:
+            store.upsert_user(LOCAL_USER, "", "You")
+        return store.tenant(LOCAL_USER)
+    got = verifier.verify(authorization)
+    if not isinstance(got, Ok):
+        raise HTTPException(401, "Sign in to continue.")
+    who = got.value
+    store.upsert_user(who.id, who.email, who.name)
+    return store.tenant(who.id)
+
+
+Me = Annotated[Tenant, Depends(_caller)]
+
+
+def create_app(
+    store: AnyStore, verifier: Verifier | None = None, *, daily_cap_usd: float = 3.0
+) -> FastAPI:
+    api = FastAPI(title="d-design", version="0.4.0")
+    missing = "There's no deck here. It may have been deleted."
+
+    api.state.store = store
+    api.state.verifier = verifier
+
+    def capped(t: Tenant) -> JSONResponse | None:
+        """The per-user daily cap. A check that fails refuses (rule 10)."""
+        try:
+            spent = t.daily_spend()
+        except Exception:
+            return _problem(503, "We couldn't check today's usage. Try again in a minute.")
+        if spent >= daily_cap_usd:
+            return _problem(429, "You've reached today's limit. It resets at midnight UTC.")
+        return None
+
+    def me_out(user: User) -> MeOut:
+        return MeOut(id=user.id, email=user.email, name=user.name, avatar=user.avatar)
+
+    @api.get("/api/me", response_model=None)
+    def me(t: Me) -> MeOut | JSONResponse:
+        user = store.get_user(t.user_id)
+        return me_out(user) if user else _problem(404, "No account here.")
+
+    @api.patch("/api/me", response_model=None)
+    def edit_me(t: Me, body: MeEdit) -> MeOut | JSONResponse:
+        user = store.update_user(t.user_id, name=body.name, avatar=body.avatar)
+        return me_out(user) if user else _problem(404, "No account here.")
+
+    @api.delete("/api/me", status_code=204, response_model=None)
+    def delete_me(t: Me) -> Response:
+        """Deletes the user's decks, files and history; the web then deletes
+        the account itself."""
+        store.delete_user(t.user_id)
+        return Response(status_code=204)
+
+    def out(t: Tenant, deck: Deck) -> DeckOut:
+        return DeckOut(deck=deck, questions=t.questions(deck.id), pending=_pending(deck))
+
+    @api.post("/api/decks", status_code=201, response_model=DeckOut)
+    def create(t: Me, body: CreateDeck) -> DeckOut | JSONResponse:
+        if no := capped(t):
+            return no
+        brief = Brief(
+            id="new",
+            prompt=body.prompt.strip(),
+            deck_type=body.deck_type,
+            tone=body.tone,
+            audience=body.audience,
+            ask=body.ask,
+            slide_count=body.slide_count,
+        )
+        deck = t.create(brief)
+        t.enqueue("interview", deck.id)
+        return out(t, deck)
+
+    @api.get("/api/decks")
+    def listing(t: Me) -> list[Deck]:
+        return [d.model_copy(update={"slides": []}) for d in t.all()]  # thumbnails, not payloads
+
+    @api.get("/api/decks/{deck_id}", response_model=None)
+    def read(t: Me, deck_id: str) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        return out(t, t.read(deck_id))
+
+    @api.post("/api/decks/{deck_id}/interview", response_model=None)
+    def answer(t: Me, deck_id: str, body: Answers) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        if no := capped(t):
+            return no
+        deck = t.read(deck_id)
+        if deck.status not in ("brief", "interview"):
+            return _problem(409, "The interview is already done for this deck.")
+        qs = t.questions(deck_id)
+        given = [] if body.skip else list(zip(qs, body.answers, strict=False))
+        brief = interview.apply(deck.brief, given)
+        t.update(deck_id, brief=brief, status="outline")
+        t.enqueue("outline", deck_id)
+        return out(t, t.read(deck_id))
+
+    @api.patch("/api/decks/{deck_id}/outline", response_model=None)
+    def edit(t: Me, deck_id: str, body: OutlineEdit) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if deck.status != "approve" or deck.storyline is None:
+            return _problem(409, "The outline can't be edited right now.")
+        story = deck.storyline
+        if body.remove:
+            ends = {story.slides[0].id, story.slides[-1].id}
+            if ends & set(body.remove):
+                return _problem(422, "The cover and the last slide stay.")
+            kept = [s for s in story.slides if s.id not in body.remove]
+            if len(kept) < MIN_SLIDES:
+                return _problem(422, f"A deck keeps at least {MIN_SLIDES} slides.")
+            story = story.model_copy(update={"slides": kept})
+        if body.words:
+            by_id = {s.id: s for s in story.slides}
+            if any(i not in by_id for i in body.words):
+                return _problem(422, "That slide isn't in this outline.")
+            slides = []
+            for plan in story.slides:
+                given = {k: v.strip() for k, v in body.words.get(plan.id, {}).items() if v.strip()}
+                if not given:
+                    slides.append(plan)
+                    continue
+                names = {f.name for f in plan.fields}
+                if not set(given) <= names:
+                    return _problem(422, "That field isn't on this slide.")
+                slides.append(
+                    plan.model_copy(
+                        update={
+                            "fields": [
+                                # their words, so no fact of ours stands behind them any more
+                                f.model_copy(update={"text": given[f.name], "fact_ids": []})
+                                if f.name in given
+                                else f
+                                for f in plan.fields
+                            ],
+                            # Words the person wrote are theirs (shown as YOU).
+                            "provenance": {**plan.provenance, **{n: "YOU" for n in given}},
+                        }
+                    )
+                )
+            story = story.model_copy(update={"slides": slides})
+        if body.order is not None:
+            ids = [s.id for s in story.slides]
+            if (
+                sorted(body.order) != sorted(ids)
+                or body.order[0] != ids[0]
+                or body.order[-1] != ids[-1]
+            ):
+                return _problem(422, "Keep every slide, with the cover first and the ask last.")
+            by = {s.id: s for s in story.slides}
+            story = story.model_copy(update={"slides": [by[i] for i in body.order]})
+        facts = [
+            f.model_copy(update={"status": body.decisions[f.id]}) if f.id in body.decisions else f
+            for f in deck.facts
+        ]
+        saved = t.write(
+            deck.model_copy(update={"storyline": story, "facts": facts}), read_version=body.version
+        )
+        if not isinstance(saved, Ok):
+            return _problem(409, "Someone else changed this outline. Reload to see it.")
+        return out(t, t.read(deck_id))
+
+    @api.post("/api/decks/{deck_id}/outline/ask", response_model=None)
+    def ask_outline(t: Me, deck_id: str, body: AskBody) -> DeckOut | JSONResponse:
+        """The outline rewritten from the person's words: research runs again
+        for what they asked, and the outline they have is kept where the
+        change doesn't touch it (owner, 2026-10-10)."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        if no := capped(t):
+            return no
+        deck = t.read(deck_id)
+        if deck.status != "approve" or deck.storyline is None:
+            return _problem(409, "The outline can't be changed right now.")
+        t.update(deck_id, status="outline", error="")
+        t.enqueue("outline", deck_id, json.dumps({"change": body.instruction.strip()}))
+        return out(t, t.read(deck_id))
+
+    @api.delete("/api/decks/{deck_id}", status_code=204, response_model=None)
+    def delete_deck(t: Me, deck_id: str) -> Response | JSONResponse:
+        """A deck and everything under it, at any stage (owner, 2026-10-10).
+        Not while the worker is on it: a build is stopped first."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        if t.busy(deck_id):
+            return _problem(409, "This deck is still being worked on. Stop it, or wait a moment.")
+        t.delete_deck(deck_id)
+        return Response(status_code=204)
+
+    @api.put("/api/decks/{deck_id}/title", response_model=None)
+    def rename(t: Me, deck_id: str, body: Title) -> DeckOut | JSONResponse:
+        """The deck's name, the person's to change at any point; before the
+        build it is also the name the slides carry."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        name = " ".join(body.title.split())
+        if not name:
+            return _problem(422, "Give the deck a name.")
+        deck = t.read(deck_id)
+        story = deck.storyline
+        if story is not None and deck.status == "approve":
+            t.update(deck_id, title=name, storyline=story.model_copy(update={"title": name}))
+        else:
+            t.update(deck_id, title=name)
+        return out(t, t.read(deck_id))
+
+    @api.post("/api/decks/{deck_id}/build", response_model=None)
+    def build(t: Me, deck_id: str) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        if no := capped(t):
+            return no
+        deck = t.read(deck_id)
+        if deck.storyline is None or deck.status not in ("approve", "building", "aborted"):
+            return _problem(409, "Approve an outline first.")
+        if _pending(deck):
+            return _problem(409, "Some numbers have no source. Keep or cut them first.")
+        t.enqueue("build", deck_id)  # a double click enqueues one job
+        return out(t, deck)
+
+    @api.post("/api/decks/{deck_id}/retry", response_model=None)
+    def retry(t: Me, deck_id: str) -> DeckOut | JSONResponse:
+        """A stopped deck, tried again from the step that failed: nothing the
+        person gave (the brief, the answers, the outline) is asked for twice."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if deck.status != "error":
+            return _problem(409, "This deck hasn't stopped.")
+        if t.busy(deck_id):
+            return _problem(409, "This deck is already being worked on.")
+        if no := capped(t):
+            return no
+        if deck.storyline is not None:
+            t.update(deck_id, status="building", error="")
+            t.enqueue("build", deck_id)
+        elif t.questions(deck_id):
+            t.update(deck_id, status="outline", error="")
+            t.enqueue("outline", deck_id)
+        else:
+            t.update(deck_id, status="brief", error="")
+            t.enqueue("interview", deck_id)
+        return out(t, t.read(deck_id))
+
+    @api.post("/api/decks/{deck_id}/build/abort", response_model=None)
+    def abort(t: Me, deck_id: str) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        t.abort(deck_id)
+        return out(t, t.read(deck_id))
+
+    @api.get("/api/decks/{deck_id}/events", response_model=None)
+    async def events(
+        t: Me,
+        deck_id: str,
+        last_event_id: int = Header(default=0, alias="Last-Event-ID"),
+        after: int = Query(default=0, ge=0),
+    ) -> StreamingResponse | JSONResponse:
+        """SSE that tails events.jsonl. A reconnect sends Last-Event-ID (or
+        ?after=) and gets every event since, so there is no gap."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        since = max(last_event_id, after)
+
+        async def stream() -> AsyncIterator[str]:
+            seen = since
+            while True:
+                for event in t.events(deck_id, seen):
+                    seen = int(str(event["seq"]))
+                    kind = event.get("type", "message")
+                    yield f"id: {seen}\nevent: {kind}\ndata: {json.dumps(event)}\n\n"
+                if t.read(deck_id).status in FINAL and not t.events(deck_id, seen):
+                    return
+                await asyncio.sleep(POLL_S)
+
+        return StreamingResponse(
+            stream(),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
+
+    @api.get("/api/decks/{deck_id}/slides/{slide_id}/thumb.png", response_model=None)
+    def thumb(t: Me, deck_id: str, slide_id: str) -> Response | JSONResponse:
+        if not t.exists(deck_id) or not slide_id.isalnum():
+            return _problem(404, missing)
+        data = t.slide_png(deck_id, slide_id)
+        if data is None:
+            return _problem(404, "That slide isn't ready yet.")
+        return Response(data, media_type="image/png")
+
+    @api.get("/api/decks/{deck_id}/export.html", response_model=None)
+    def export_html(
+        t: Me, deck_id: str, flavour: Literal["present", "send"] = "present"
+    ) -> HTMLResponse | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        data = t.export(deck_id, f"export-{flavour}.html")
+        if data is None:
+            return _problem(404, "The deck isn't built yet.")
+        # The export carries its own CSP; this header repeats the strictest part.
+        return HTMLResponse(
+            data.decode(),
+            headers={"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer"},
+        )
+
+    @api.get("/api/decks/{deck_id}/export.pdf", response_model=None)
+    def export_pdf(t: Me, deck_id: str) -> Response | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        data = t.export(deck_id, "export.pdf")
+        if data is None:
+            return _problem(404, "The deck isn't built yet.")
+        return Response(data, media_type="application/pdf")
+
+    # --- the style card (phase 39): one generated style, changeable, never a menu ---
+
+    @api.get("/api/decks/{deck_id}/style", response_model=None)
+    def style(t: Me, deck_id: str) -> StyleCard | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if not deck.language:
+            return _problem(404, "The style is drawn with the outline.")
+        return StyleCard(**preview.card(theme_of(deck)).__dict__)
+
+    @api.post("/api/decks/{deck_id}/style", response_model=None)
+    def another_style(t: Me, deck_id: str) -> DeckOut | JSONResponse:
+        """Another style: a new language and look, never the one just shown;
+        the thumbnails are redrawn by the worker for free."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if deck.status != "approve":
+            return _problem(409, "The style can change until the build starts.")
+        if t.busy(deck_id):
+            return _problem(409, "The last style is still being drawn.")
+        shown = frozenset({deck.language} if deck.language else set())
+        deck = t.update(deck_id, look_nonce=deck.look_nonce + 1, palette_nonce=0)
+        with_language(store, deck, exclude=shown)
+        t.enqueue("style", deck_id)
+        return out(t, t.read(deck_id))
+
+    @api.put("/api/decks/{deck_id}/brand", response_model=None)
+    def put_brand(t: Me, deck_id: str, body: BrandColours) -> DeckOut | JSONResponse:
+        """The user's colours: the palette is built around the first; the
+        thumbnails are redrawn by the worker for free."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if deck.status != "approve":
+            return _problem(409, "The colours can change until the build starts.")
+        if t.busy(deck_id):
+            return _problem(409, "The last style is still being drawn.")
+        colors = [c.lower() for c in body.colors]
+        brand = Brand(name=deck.title, colors=colors) if colors else None
+        t.update(deck_id, brief=deck.brief.model_copy(update={"brand": brand}), palette_nonce=0)
+        t.enqueue("style", deck_id)
+        return out(t, t.read(deck_id))
+
+    # --- the person's screenshots (2026-10-09): up to six, set before the build ---
+
+    @api.post("/api/decks/{deck_id}/screens", response_model=None)
+    def add_screen(t: Me, deck_id: str, body: ScreenUpload) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if deck.status not in ("brief", "interview", "outline", "approve"):
+            return _problem(409, "Add screenshots before the build starts.")
+        if len(deck.screens) >= MAX_SCREENS:
+            return _problem(409, f"A deck takes {MAX_SCREENS} screenshots at most.")
+        try:
+            raw = base64.b64decode(body.data, validate=True)
+        except ValueError:
+            return _problem(422, "That isn't a file we can read.")
+        if len(raw) > 2_000_000:
+            return _problem(413, "A screenshot is at most 2 MB.")
+        n = len(deck.screens) + 1
+        t.save_export(deck_id, f"screen-{n}.bin", raw)
+        t.update(deck_id, screens=[*deck.screens, Screen(caption=body.caption.strip())])
+        t.enqueue("screens", deck_id)
+        return out(t, t.read(deck_id))
+
+    @api.delete("/api/decks/{deck_id}/screens/{n}", response_model=None)
+    def remove_screen(t: Me, deck_id: str, n: int) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        deck = t.read(deck_id)
+        if not 1 <= n <= len(deck.screens):
+            return _problem(404, "There is no such screenshot.")
+        if deck.status not in ("brief", "interview", "outline", "approve"):
+            return _problem(409, "Screenshots can change until the build starts.")
+        for i in range(n, len(deck.screens)):  # the later ones move down a place
+            for ext in ("bin", "webp"):
+                data = t.export(deck_id, f"screen-{i + 1}.{ext}")
+                if data is not None:
+                    t.save_export(deck_id, f"screen-{i}.{ext}", data)
+        t.update(deck_id, screens=[s for i, s in enumerate(deck.screens, 1) if i != n])
+        return out(t, t.read(deck_id))
+
+    @api.get("/api/decks/{deck_id}/screens/{n}.webp", response_model=None)
+    def screen_image(t: Me, deck_id: str, n: int) -> Response | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        screens = t.read(deck_id).screens
+        data = t.export(deck_id, f"screen-{n}.webp") if 1 <= n <= len(screens) else None
+        if data is None or not screens[n - 1].ready:
+            return _problem(404, "That screenshot is still being checked.")
+        return Response(data, media_type="image/webp")
+
+    # --- the logo (phase 38): per deck, set before the build ---
+
+    @api.put("/api/decks/{deck_id}/logo", response_model=None)
+    def put_logo(t: Me, deck_id: str, body: LogoUpload) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        if t.read(deck_id).status not in ("brief", "interview", "outline", "approve"):
+            return _problem(409, "Add the logo before the build starts.")
+        try:
+            raw = base64.b64decode(body.data, validate=True)
+        except ValueError:
+            return _problem(422, "That isn't a file we can read.")
+        if len(raw) > 2_000_000:
+            return _problem(413, "A logo file is at most 2 MB.")
+        t.save_export(deck_id, "logo-upload.bin", raw)
+        t.update(deck_id, logo=body.placement, logo_note="")
+        t.enqueue("logo", deck_id)
+        return out(t, t.read(deck_id))
+
+    @api.delete("/api/decks/{deck_id}/logo", response_model=None)
+    def delete_logo(t: Me, deck_id: str) -> DeckOut | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        t.update(deck_id, logo="none", logo_note="")
+        return out(t, t.read(deck_id))
+
+    @api.get("/api/decks/{deck_id}/logo.png", response_model=None)
+    def logo_png(t: Me, deck_id: str) -> Response | JSONResponse:
+        if not t.exists(deck_id) or t.read(deck_id).logo == "none":
+            return _problem(404, missing)
+        data = t.export(deck_id, "logo.png")
+        if data is None:
+            return _problem(404, "The logo is still being checked.")
+        return Response(data, media_type="image/png")
+
+    # --- the editor (phase 28): each change is an edit job; undo is file-only ---
+
+    def editable(t: Tenant, deck_id: str) -> JSONResponse | None:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        if t.read(deck_id).status != "ready":
+            return _problem(409, "This deck can't be edited until it is built.")
+        return None
+
+    def queue(t: Tenant, deck_id: str, op: ops.Op) -> DeckOut:
+        t.enqueue("edit", deck_id, op.model_dump_json())
+        return out(t, t.read(deck_id))
+
+    @api.patch("/api/decks/{deck_id}/slides/{slide_id}/fields", response_model=None)
+    def edit_text(t: Me, deck_id: str, slide_id: str, body: FieldText) -> DeckOut | JSONResponse:
+        if (no := editable(t, deck_id)) or not slide_id.isalnum():
+            return no or _problem(404, missing)
+        return queue(t, deck_id, ops.TextEdit(slide=slide_id, field=body.field, text=body.text))
+
+    @api.post("/api/decks/{deck_id}/reorder", response_model=None)
+    def reorder(t: Me, deck_id: str, body: Order) -> DeckOut | JSONResponse:
+        return editable(t, deck_id) or queue(t, deck_id, ops.Reorder(slides=body.slides))
+
+    @api.delete("/api/decks/{deck_id}/slides/{slide_id}", response_model=None)
+    def delete(t: Me, deck_id: str, slide_id: str) -> DeckOut | JSONResponse:
+        if (no := editable(t, deck_id)) or not slide_id.isalnum():
+            return no or _problem(404, missing)
+        return queue(t, deck_id, ops.Delete(slide=slide_id))
+
+    @api.post("/api/decks/{deck_id}/slides/{slide_id}/ask", response_model=None)
+    def ask(t: Me, deck_id: str, slide_id: str, body: AskBody) -> DeckOut | JSONResponse:
+        """A change in words: the worker makes a proposal; nothing changes yet."""
+        if (no := editable(t, deck_id)) or not slide_id.isalnum():
+            return no or _problem(404, missing)
+        if no := capped(t):
+            return no
+        return queue(t, deck_id, ops.Ask(slide=slide_id, instruction=body.instruction))
+
+    @api.post("/api/decks/{deck_id}/ask", response_model=None)
+    def ask_deck(t: Me, deck_id: str, body: AskBody) -> DeckOut | JSONResponse:
+        """A change in words for every slide, applied where it passes QA."""
+        if no := editable(t, deck_id):
+            return no
+        if no := capped(t):
+            return no
+        return queue(t, deck_id, ops.AskDeck(instruction=body.instruction))
+
+    @api.get("/api/decks/{deck_id}/slides/{slide_id}/proposal.png", response_model=None)
+    def proposal(t: Me, deck_id: str, slide_id: str) -> Response | JSONResponse:
+        if not t.exists(deck_id) or not slide_id.isalnum():
+            return _problem(404, missing)
+        data = t.export(deck_id, f"proposal-{slide_id}.png")
+        if data is None:
+            return _problem(404, "There's no change waiting for this slide.")
+        return Response(data, media_type="image/png")
+
+    @api.post("/api/decks/{deck_id}/slides/{slide_id}/accept", response_model=None)
+    def accept(t: Me, deck_id: str, slide_id: str) -> DeckOut | JSONResponse:
+        if (no := editable(t, deck_id)) or not slide_id.isalnum():
+            return no or _problem(404, missing)
+        return queue(t, deck_id, ops.Accept(slide=slide_id))
+
+    @api.post("/api/decks/{deck_id}/recolour", response_model=None)
+    def recolour(t: Me, deck_id: str) -> DeckOut | JSONResponse:
+        return editable(t, deck_id) or queue(t, deck_id, ops.Recolour())
+
+    @api.post("/api/decks/{deck_id}/slides/{slide_id}/fit", response_model=None)
+    def fit(t: Me, deck_id: str, slide_id: str) -> DeckOut | JSONResponse:
+        if (no := editable(t, deck_id)) or not slide_id.isalnum():
+            return no or _problem(404, missing)
+        return queue(t, deck_id, ops.Fit(slide=slide_id))
+
+    @api.get("/api/decks/{deck_id}/history", response_model=None)
+    def history(t: Me, deck_id: str) -> History | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        return t.history(deck_id)
+
+    def step(t: Tenant, deck_id: str, by: int) -> History | JSONResponse:
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        if t.busy(deck_id):
+            return _problem(409, "A change is still being made. Undo once it lands.")
+        moved = t.restore(deck_id, t.history(deck_id).at + by)
+        return moved.value if isinstance(moved, Ok) else _problem(409, moved.error)
+
+    @api.post("/api/decks/{deck_id}/undo", response_model=None)
+    def undo(t: Me, deck_id: str) -> History | JSONResponse:
+        return step(t, deck_id, -1)
+
+    @api.post("/api/decks/{deck_id}/redo", response_model=None)
+    def redo(t: Me, deck_id: str) -> History | JSONResponse:
+        return step(t, deck_id, +1)
+
+    return api
+
+
+def serve() -> FastAPI:
+    """The served app. Accounts are on whenever BETTER_AUTH_URL is set; a run
+    without it is a laptop run, and must say so (AUTH_DISABLED=1): an API that
+    forgot its auth settings refuses to start rather than serve everyone."""
+    cfg = settings.load()
+    if cfg.auth_url:
+        return create_app(
+            open_store(cfg), Verifier.remote(cfg.auth_url), daily_cap_usd=cfg.daily_cap_usd
+        )
+    if not cfg.auth_disabled:
+        raise SystemExit(
+            "Set BETTER_AUTH_URL, or AUTH_DISABLED=1 for a local run without accounts."
+        )
+    return create_app(open_store(cfg), daily_cap_usd=cfg.daily_cap_usd)

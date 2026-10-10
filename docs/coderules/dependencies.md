@@ -6,6 +6,49 @@
 
 Not a ban — a speed bump. The cost of a dependency is not install time; it is the security surface, the breaking changes, the transitive tree, and the fact that you now maintain a relationship with code you did not write. A few lines you own beat a package you rent, until they clearly don't.
 
+## v4 — read this before the lists below
+
+> **2026-09-26.** v4 ([../v4/spec.md](../v4/spec.md)) deletes `render/`, the upload worker, `web/` as it stood, and most of `api/`'s features. Phase 21 (../v4/plan/21-reset.md) removed each ledger row in the same commit that removed the package. **The baseline tables below still list the v3 stack** and are trimmed as phases 27 and 29 re-decide each row.
+
+**Removed in phase 21 (2026-09-30):** `web/`, `render/` and `worker/` with every package they installed; and from `api`, SQLAlchemy, asyncpg, Alembic, FastAPI and uvicorn. FastAPI and uvicorn return in phase 27, the database packages in phase 29, each with a fresh row.
+
+**Expected additions. Each needs its own ledger row in the commit that adds it; none is approved by appearing here:**
+
+| Package | Where | For | Phase |
+|---|---|---|---|
+| `Pillow` | api | Re-encoding generated images to webp, and uploaded logos to a trimmed PNG with the pixel cap set before decode (phase 38) | 22–25, 38 |
+| `openapi-typescript` | web (dev) | Generating `web/lib/api/schema.d.ts` from `cli openapi` | **added in phase 27** (2026-10-07): types only, so the client still parses every response once at entry |
+| Tailwind + shadcn/ui (copy-in source on Radix primitives) | web | Our chrome only, never a deck | **added in phase 30** (2026-10-05), rows below |
+| `better-auth` + `pg` (owner's choice 2026-10-08, replacing a managed-auth SDK); `pyjwt[crypto]`; `sqlalchemy` + `alembic` + `psycopg[binary]` | web / api | Accounts (Better Auth, email and password, its JWT verified in FastAPI) and the hosted Postgres | 29, on 2026-10-09 |
+
+**Added in phase 27 (2026-10-07), for the API process** — `api/app.py` and nothing else imports them; the engine stays framework-free (rule 6):
+
+| Package | Where | For | Why not something smaller |
+|---|---|---|---|
+| `fastapi` (+ `starlette`, its own base) | api | Thin routes, one Pydantic parse per input, OpenAPI for the web's generated types | The spec's chosen backend framework (`../v4/spec.md` → Stack); its OpenAPI is what keeps the web's types honest |
+| `uvicorn` | api | The ASGI server that runs `app.py` | The reference ASGI server; nothing to configure |
+
+**Added in phase 30 (2026-10-05), for the UI prototype** — `web/`, which pnpm 11 installs with its release-age gate and install scripts blocked:
+
+| Package | Where | For |
+|---|---|---|
+| `next`, `react`, `react-dom`, `tailwindcss`, `@tailwindcss/postcss`, `typescript`, `eslint`, `eslint-config-next`, `@types/*` | web | The stack [../techstack/frontend.md](../techstack/frontend.md) names |
+| `server-only` | web | Makes a client import of a server module a build error ([structure.md](structure.md)) |
+| `radix-ui` | web | The primitives under shadcn/ui: focus traps, layers, keyboard navigation |
+| `class-variance-authority`, `cn` | web | shadcn/ui's variant and class-merge helpers; `cn` is published by shadcn-ui itself (`github.com/shadcn-ui/cn`) |
+| `tw-animate-css`, `shadcn` | web | shadcn's open/close keyframes and its base CSS, imported by `app/globals.css`; both off under reduced motion |
+| `@playwright/test` | web (dev) | The app's end-to-end tests, on Chromium and WebKit locally and all three engines in CI |
+
+shadcn's icon set (Phosphor) is **not** installed, in line with the line below: the one component that wanted an icon, the dialog's close button, uses a text glyph.
+
+**Deliberately not added:**
+- **`fonttools` + `brotli`.** Vendored Latin-subset woff2 are embedded as-is. Trigger: a non-Latin locale, or fonts exceeding 1 MB of an export.
+- **An icon set.** v4 slides have no icons.
+- **A chart library.** Charts are SVG built by our own code from a chart spec.
+- **An agent framework.** Unchanged; see the rule below.
+
+**Placement in v4.** Two processes matter. The **worker** (`api/worker.py`, phase 27) holds the model key and drives Chromium over model-written HTML, with all network aborted. The **API** process holds the data. Neither parses user-uploaded bytes in v4. When uploads return (the first brand-kit user), the parser goes in its own isolated process, and the old rule below applies again.
+
 ## The baseline
 
 Already decided, no justification needed — these are the stack. **Two languages means two baselines**, and a package on one list is not thereby approved on the other.
@@ -82,109 +125,49 @@ Every non-baseline dependency gets one line here: what it does, and why not a fe
 <package>   — <what it does> — <why not stdlib/baseline/ours>
 ```
 
-Anticipated, with the reasoning already clear:
+Installed, as of phase 22 (2026-09-30). The v3 rows left with the packages they described; their text is at the tag `v3-final`.
 
 ```
-draco/meshopt decoder — GLB mesh decompression (v3) — a compression codec is not
-  a few lines; hand-rolling it is absurd. Runs in the isolated worker.
-sharp (or platform image API) — server-side image re-encode/EXIF strip (v1) —
-  security-critical, must be a hardened, maintained decoder, not homemade.
-a DOM sanitizer for SVG (v1) — SVG sanitization is a moving target against a
-  motivated attacker; this is the one place NOT to write our own.
-stripe — billing (v3) — never hand-roll payments.
-@fontsource/* (v1, per design family) — self-hosted, open-license type for the
-  design-family registry. techstack/frontend.md commits to Fontsource for a
-  licensing reason that survives the vision change: these faces are embedded in
-  a deck the customer redistributes, so the licence must permit bundling in a
-  downloadable file. OFL-1.1 does; a webfont licence bought per-domain does not.
-  The v1 registry (~10-15 families) seeds a handful of open families; the set
-  grows as the family count does (v2). The constraint from docs/design/brand.md
-  — our chrome's face must differ from every family's — still applies.
-  **Families, not art directions.** The old registry had three fixed art
-  directions each with two faces. The new registry is a combinatorial space of
-  families; the type-pairing axis is where identity lives most (findings.md),
-  so the face budget follows the family count, not a fixed set.
-esbuild (v2, phase 00) — bundles the `render` service, JSX included — Node 26
-  strips TypeScript types natively, so a plain .ts service would need no build
-  at all, but it does not transform JSX and the renderer is entirely .tsx. A
-  JSX/TS compiler is on the don't-write-your-own side of this file's own line.
-  It also resolves `@/` against web/src, which is what lets `render` import the
-  renderer rather than copy it — and one source tree is a stronger guarantee
-  against drift than the version pin phase 00 originally specified.
-playwright (v2, phase 00) — headless Chromium for the screenshot service —
-  already a devDependency in web for the e2e suite; this makes it a runtime
-  dependency of the one service whose job is driving a browser. Writing our own
-  is not a sentence anyone would finish.
-@fontsource/* in render (v2, phase 00) — the same families web installs —
-  the screenshot document inlines the real woff2 as data URIs, because
-  `setContent` gives the page no base URL and a missing face falls back
-  silently to Times. A fallback face measures differently, which makes the
-  vision critic review the wrong image and the PDF print measure wrong.
-  `render/src/fonts.ts` throws rather than degrading, so the duplicate
-  declaration cannot rot quietly.
-server-only (v1, phase 05) — the marker structure.md already mandates for
-  every *.data.ts and anything holding a secret ("a client component
-  importing it is a build-time error"). web/src/lib/storage.ts is the first
-  file that needed it; installing it is that existing rule, not a new one.
-next (v2, phase 12) — the editor's app framework — the documented v2 host
-  (frontend.md: "Next + the editor arrive in v2"). Baseline in the TS list;
-  installed when the editor lands. The render package's esbuild bundling of
-  web/src is untouched by it.
-zustand (v2, phase 12) — the single mutable editor document + undo/redo —
-  baseline in the TS list (frontend.md: "one mutable document, undo/redo");
-  a stack of past/future deck trees with structural sharing is exactly what
-  it is for. First installed when the editor lands.
-tailwindcss (v2, phase 12) — app chrome only, never a design family —
-  baseline in the TS list. The lint ban scoped to renderer/ (no Tailwind in
-  the rendered slides) is what keeps it on the chrome side.
-@radix-ui/react-select (v2, phase 12) — the accessible dropdown primitive
-  the family switcher and property panel sit on — shadcn/ui is copy-in
-  source on Radix primitives (frontend.md), and Radix gives the focus trap,
-  dismissible layer and keyboard navigation that are genuinely easy to get
-  subtly wrong. Nothing ships as a runtime dependency to the browser.
-asyncpg (v3, phase 16) — the Postgres driver for api's async SQLAlchemy
-  engine — baseline in the Python list; v1 had no database so it waited for
-  the DB, which accounts (phase 16) brings. `pool_pre_ping`, and prepared
-  statements disabled behind a transaction-mode pooler (backend.md).
-better-auth (v3, phase 16) — the auth library in Node (web) — the security
-  doc's own conclusion: never write your own credential path, and the
-  maintained library ships OAuth, email verification, reset, MFA, passkeys,
-  orgs and rate limiting that Python's options leave to you (backend.md ->
-  "Auth: Better Auth"). Users live in our own Postgres, which is what makes
-  the session-variable RLS work (a real FK between user and data).
-drizzle-orm + drizzle-kit (v3, phase 16) — web's ORM over the auth tables
-  only — baseline in the TS list. Two ORMs against one database survive only
-  because the table sets are disjoint and enforced; drizzle owns auth.*,
-  Alembic owns everything else (backend.md -> "Two ORMs").
-pg (v3, phase 16) — the Postgres driver Drizzle's node adapter uses — the
-  Drizzle baseline implies it; without a driver the adapter is inert.
-fastapi + uvicorn (v3, phase 17) — api's HTTP layer, which brand kits need
-  because api owns the tables and web has the UI — baseline in the Python
-  list (backend.md "Python decides, TypeScript renders"). The routes are thin
-  (structure.md): parse, call the feature's public function inside as_user,
-  return. Uvicorn runs it in dev.
-sharp (v3, phase 17) — image re-encode + EXIF strip in the worker — the
-  security doc's prescribed tool (platform-and-packages.md): wraps libvips,
-  caps enforced BEFORE decode, keep at latest. Lives in the worker (the
-  isolated process that parses hostile bytes), never in web or api.
-dompurify >=3.4.5 (v3, phase 17) — SVG sanitizer in the worker — never 2.x
-  (four XSS bypasses disclosed 2025–2026, 2.x never patched for one). The
-  actual SVG control is serving only via <img>; the sanitizer is the
-  convenience layer. Lives in the worker, not in a privileged process.
-file-type (v3, phase 17) — magic-byte detection in the worker — "extension
-  and Content-Type are attacker-supplied" (content-and-web.md); the bytes
-  are the authority. Worker only.
-jsdom (v3, phase 17) — the DOM DOMPurify needs, worker only — the sanitizer
-  runs in the isolated process; no browser context in web or api.
-@aws-sdk/client-s3 (v3, phase 18) — the official S3 SDK in web — the
-  prod-swap lever: the same code points at MinIO locally (endpoint config)
-  and real S3 in prod. The emulator is never the SDK; the SDK is what makes
-  prod a config change, not a code change (decisions.md -> "storage.ts: local
-  disk → S3 (MinIO locally)").
-minio (v3, phase 18) — the local S3 in docker-compose — speaks the S3
-  protocol, free, no registration. LocalStack is NOT used for S3: its 2026
-  licensing put S3 behind the paid Pro tier (docs/techstack/infrastructure.md
-  "Local development").
+playwright (v4, phase 21) — headless Chromium, in api — screenshots for the
+  bench wall now; QA measurement, thumbnails and PDF from phase 22. Writing
+  our own browser is not a sentence anyone would finish. It renders
+  model-written HTML, so every request is aborted and page scripts are off.
+nh3 (v4, phase 22) — the HTML allowlist sanitizer for model-written slides,
+  in api — a sanitizer is the one place never to write our own.
+tinycss2 (v4, phase 22) — parses slide CSS so the lint walks real
+  declarations, in api — a CSS tokenizer is a parser, not a regex. Lint only:
+  scoping is Declarative Shadow DOM.
+pydantic.mypy (v4, phase 21) — the mypy plugin that ships inside pydantic —
+  not a new package. Without it `disallow_any_explicit` rejects every
+  BaseModel, because the synthesized __init__ takes **Any.
+better-auth (v4, phase 29) — email-and-password accounts, sessions and the
+  JWT plugin (EdDSA, JWKS at /api/auth/jwks), in web — the owner's choice of
+  2026-10-08 (v4/plan/master-plan.md, A2); a credential path is never ours
+  to write. Its tables live in their own `auth` database through its built-in
+  Kysely adapter, so no ORM is added. Its CLI runs pinned through
+  `pnpm dlx auth@1.7.7 migrate` and is not installed.
+pg + @types/pg (v4, phase 29) — the Postgres pool Better Auth's adapter
+  takes, in web — the adapter is inert without a driver.
+@dicebear/core + @dicebear/styles (v4, phase 29) — profile avatars drawn in
+  the browser from {style, seed, options} (A6), in web — generative SVG art is
+  not a few lines, and drawing locally keeps api.dicebear.com out of the
+  request path. Core is MIT. Styles carry their own licences: only
+  notionists, lorelei, open-peeps, thumbs, shapes and pixel-art are loaded,
+  all CC0 1.0 (the package's LICENSE.md, checked 2026-10-08), each imported
+  on demand.
+pyjwt[crypto] (v4, phase 29) — verifies Better Auth's EdDSA JWT against its
+  JWKS in api (A3), with `cryptography` for Ed25519 — token verification is a
+  crypto path; never ours to write.
+sqlalchemy (v4, phase 29) — the typed SQL layer under store/sql.py, in api —
+  Postgres in production and SQLite offline from one set of queries; row
+  locks, SKIP LOCKED and upserts per dialect. Hand-written SQL for two
+  dialects is the duplication the rules warn about.
+alembic (v4, phase 29) — schema migrations for the `app` database, in api —
+  the migration tool SQLAlchemy's authors maintain; a versioned schema is
+  not something to improvise at deploy time.
+psycopg[binary] (v4, phase 29) — the Postgres driver (psycopg 3), in api —
+  a wire protocol and TLS client is a codec: never ours. The binary wheel
+  ships libpq, so the container needs no system package.
 ```
 
 The pattern in that list is the actual rule: **write your own for convenience code; never write your own for a codec, a crypto primitive, a sanitizer, or a payment path.** The line is not "hard" versus "easy" — it is "who gets hurt if I get it subtly wrong."

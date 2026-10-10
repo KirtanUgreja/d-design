@@ -1,0 +1,660 @@
+"use client";
+
+// A live deck (phase 27): one screen that follows the deck through its real
+// states — questions, the outline gate, the watch, the finished deck — reading
+// the API and its event stream. Only real states are shown; nothing is
+// invented or delayed (docs/v4/ui-research.md -> the ethics line).
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState } from "react";
+
+import { LiveEditor } from "@/components/live-editor";
+import { Placard } from "@/components/placard";
+import { OutlineGate, type Decisions } from "@/components/outline-gate";
+import { SlideThumb } from "@/components/slide-thumb";
+import { BrandColours } from "@/components/brand-colours";
+import { LogoPicker } from "@/components/logo-picker";
+import { ScreensPicker } from "@/components/screens-picker";
+import { StyleCard } from "@/components/style-card";
+import { DeleteDeck } from "@/components/delete-deck";
+import { Feed, Working, clock, liveSteps, useElapsed } from "@/components/working";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { api, parseEvent, type LiveDeck as Deck, type LiveEvent, type Notice } from "@/lib/api/client";
+import { cn } from "@/lib/utils";
+
+// ~30 lines instead of EventSource, which cannot send the token phase 29 needs.
+async function follow(id: string, after: number, onEvent: (e: LiveEvent) => void, signal: AbortSignal) {
+  const res = await fetch(`/api/decks/${id}/events`, { headers: { "Last-Event-ID": String(after) }, signal });
+  if (!res.body) return;
+  const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+  let buffer = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) return;
+    buffer += value;
+    let cut = buffer.indexOf("\n\n");
+    while (cut >= 0) {
+      const block = buffer.slice(0, cut);
+      buffer = buffer.slice(cut + 2);
+      const data = block.split("\n").find((l) => l.startsWith("data: "));
+      const event = data ? parseEvent(data.slice(6)) : null;
+      if (event) onEvent(event);
+      cut = buffer.indexOf("\n\n");
+    }
+  }
+}
+
+export function LiveDeck({ id }: { id: string }) {
+  const [deck, setDeck] = useState<Deck | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [ready, setReady] = useState<Record<string, string>>({}); // slide id -> status
+  const [notice, setNotice] = useState<Notice | null>(null); // the editor's last outcome
+  const [outlineNote, setOutlineNote] = useState<string | null>(null); // a rewrite that could not be made
+  const [work, setWork] = useState<LiveEvent[]>([]); // the work made visible while waiting
+  const seen = useRef(0);
+
+  const refresh = useCallback(async () => {
+    const got = await api.read(id);
+    if (got.ok) setDeck(got.value);
+    else setProblem(got.error);
+  }, [id]);
+
+  useEffect(() => {
+    // Mount: read once, then follow events; reconnect from the last seen seq.
+    const stop = new AbortController();
+    const loop = async () => {
+      await refresh();
+      while (!stop.signal.aborted) {
+        try {
+          await follow(
+            id,
+            seen.current,
+            (e) => {
+              seen.current = e.seq;
+              if (["stage", "slide_step", "slide_ready", "research_done"].includes(e.type)) {
+                setWork((w) => [...w.slice(-80), e]);
+              }
+              if (e.type === "slide_ready" && e.slideId) {
+                const sid = e.slideId;
+                setReady((m) => ({ ...m, [sid]: e.status ?? "passed" }));
+              }
+              if (e.type === "proposal_ready" && e.slideId) {
+                setNotice({ text: "Your change is ready. Compare it, then keep it or not.", seq: e.seq, proposal: e.slideId });
+              }
+              if (e.type === "outline_refused") {
+                setOutlineNote(`${e.message ?? "That change could not be made."} Your outline is as it was.`);
+              }
+              if (e.type === "edit_done" || e.type === "edit_refused") {
+                const text = e.type === "edit_refused" ? (e.message ?? "That change was not made.") : "Saved and checked.";
+                setNotice({ text, seq: e.seq });
+              }
+              // Anything the worker saved bumps the deck's version: read it again, or the
+              // next save sends a stale one and is refused (a logo upload did, 2026-10-09).
+              const saves = ["questions_ready", "outline_ready", "outline_refused", "logo_ready", "style_ready", "done", "error", "stage"];
+              if ([...saves, "edit_done", "edit_refused"].includes(e.type)) {
+                void refresh();
+              }
+            },
+            stop.signal,
+          );
+        } catch {
+          if (stop.signal.aborted) return;
+        }
+        await new Promise((r) => setTimeout(r, 1500)); // the stream ended or dropped: resume
+        void refresh();
+      }
+    };
+    void loop();
+    return () => stop.abort();
+  }, [id, refresh]);
+
+  if (problem && !deck) return <Problem text={problem} />;
+  if (!deck) return <Waiting text="Opening your deck…" />;
+
+  if (deck.status === "brief" || deck.status === "outline") {
+    // Only what this run of the outline found: a rewrite starts its own.
+    const start = work.findLastIndex((e) => e.type === "stage" && e.name === "outline" && e.state === "started");
+    const research = work.slice(start + 1).findLast((e) => e.type === "research_done") ?? null;
+    return (
+      <>
+        <DeckHeader deck={deck} />
+        <Working key={`${deck.status}-${start}`} status={deck.status} research={research} />
+      </>
+    );
+  }
+  if (deck.status === "error") {
+    return (
+      <>
+        <DeckHeader deck={deck} />
+        <Problem
+          text={deck.error || "Something went wrong on our side."}
+          onRetry={async () => {
+            const again = await api.retry(deck.id);
+            if (again.ok) setDeck(again.value);
+            else setProblem(again.error);
+          }}
+        />
+      </>
+    );
+  }
+  if (deck.status === "interview") {
+    return (
+      <>
+        <DeckHeader deck={deck} />
+        <Questions deck={deck} onDone={refresh} />
+        <div className="mx-auto max-w-2xl px-4 pb-16 sm:px-8">
+          <ScreensPicker deck={deck} onChange={refresh} />
+        </div>
+      </>
+    );
+  }
+  if (deck.status === "approve") {
+    return (
+      <>
+        <DeckHeader deck={deck} onRename={setDeck} />
+        <OutlineGate
+          key={deck.version}
+          deck={{ ...deck, questions: [] }}
+          thesis={false}
+          notice={outlineNote}
+          onSave={async (edit, decided: Decisions, order: string[]) => {
+            const decisions = Object.fromEntries(
+              Object.entries(decided).map(([k, v]) => [k, v === "cut" ? ("rejected" as const) : ("approved" as const)]),
+            );
+            const kept = order.filter((o) => !(edit.remove ?? []).includes(o));
+            const saved = await api.editOutline(deck.id, deck.version, { ...edit, order: kept, decisions });
+            if (!saved.ok) return saved.error;
+            setDeck(saved.value);
+            return null;
+          }}
+          onRewrite={async (instruction: string) => {
+            setOutlineNote(null);
+            const sent = await api.rewriteOutline(deck.id, instruction);
+            if (!sent.ok) return sent.error;
+            setDeck(sent.value);
+            return null;
+          }}
+          style={
+            <>
+              <StyleCard deckId={deck.id} drawn={deck.brand.join(",")} />
+              <BrandColours deck={deck} onChange={refresh} />
+              <ScreensPicker deck={deck} onChange={refresh} />
+              <LogoPicker deck={deck} onChange={refresh} />
+            </>
+          }
+          onApprove={async (decided: Decisions, order: string[]) => {
+            const decisions = Object.fromEntries(
+              Object.entries(decided).map(([k, v]) => [k, v === "cut" ? ("rejected" as const) : ("approved" as const)]),
+            );
+            let saved = await api.decide(deck.id, deck.version, decisions, order);
+            if (!saved.ok) {
+              // The deck may have moved on since this page read it: read it, try once more.
+              const fresh = await api.read(deck.id);
+              if (fresh.ok) saved = await api.decide(deck.id, fresh.value.version, decisions, order);
+            }
+            if (!saved.ok) return saved.error;
+            const started = await api.build(deck.id);
+            if (!started.ok) return started.error;
+            setDeck(started.value.status === "approve" ? { ...started.value, status: "building" } : started.value);
+            return null;
+          }}
+        />
+      </>
+    );
+  }
+  return <Building deck={deck} ready={ready} notice={notice} onChange={refresh} work={work} />;
+}
+
+const STEP_LABEL: Record<string, string> = {
+  design: "Designing…",
+  improve: "Redesigning after a look…",
+  repair: "Repairing…",
+};
+
+// The path a deck takes, with where this one stands (docs/v4/ui-research.md ->
+// goal gradient). Real states only.
+const STEPS = ["Questions", "Outline", "Build", "Send"] as const;
+
+function stepOf(deck: Deck): number {
+  const { status } = deck;
+  if (status === "brief" || status === "interview") return 0;
+  if (status === "outline" || status === "approve") return 1;
+  if (status === "ready") return 3;
+  // A stopped deck shows the step it stopped in.
+  if (status === "error") return deck.outline.length > 0 ? 2 : deck.questions.length > 0 ? 1 : 0;
+  return 2;
+}
+
+function DeckHeader({
+  deck,
+  actions,
+  line,
+  compact = false,
+  onRename,
+}: {
+  deck: Deck;
+  actions?: React.ReactNode;
+  line?: React.ReactNode;
+  compact?: boolean; // the editor needs the room: one line of title, no status
+  onRename?: (renamed: Deck) => void; // the name is the person's to change
+}) {
+  const at = stepOf(deck);
+  const router = useRouter();
+  return (
+    <div className="border-b border-rule">
+      <div
+        className={cn(
+          "mx-auto flex max-w-[1440px] flex-col gap-5 px-4 sm:px-8 lg:flex-row lg:items-end lg:gap-10",
+          compact ? "py-4" : "py-6",
+        )}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link href="/decks" className="placard hover:text-ink">
+              ← Your decks
+            </Link>
+            <DeleteDeck id={deck.id} name={deck.title} onDeleted={() => router.push("/decks")} className="placard ml-auto hover:text-flag" />
+            <ol aria-label="Steps" className="flex items-center gap-2 placard">
+              {STEPS.map((s, i) => (
+                <li key={s} className="flex items-center gap-2">
+                  {i > 0 && <span aria-hidden="true" className="h-px w-3 bg-rule sm:w-5" />}
+                  <span
+                    aria-current={i === at ? "step" : undefined}
+                    className={cn(i === at ? "text-ink" : i < at ? "text-ink-2" : "text-ink-2/50")}
+                  >
+                    {s}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+          <DeckTitle deck={deck} compact={compact} onRename={onRename} />
+          {deck.title && deck.thesis && !compact && (
+            <p className="mt-1.5 max-w-3xl text-[15px] leading-snug text-ink-2">{deck.thesis}</p>
+          )}
+          {line && !compact && (
+            <div className="mt-2 text-sm text-ink-2" aria-live="polite">
+              {line}
+            </div>
+          )}
+        </div>
+        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+      </div>
+    </div>
+  );
+}
+
+function DeckTitle({ deck, compact, onRename }: { deck: Deck; compact: boolean; onRename?: (d: Deck) => void }) {
+  const shown = deck.title || deck.thesis || deck.prompt || "Your deck";
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(deck.title);
+  const [problem, setProblem] = useState<string | null>(null);
+  const size = compact ? "text-[20px]" : "text-[24px] sm:text-[30px]";
+  const save = async () => {
+    const next = name.trim();
+    if (!next || next === deck.title) return setEditing(false);
+    const done = await api.rename(deck.id, next);
+    if (!done.ok) return setProblem(done.error);
+    setProblem(null);
+    setEditing(false);
+    onRename?.(done.value);
+  };
+  if (editing && onRename) {
+    return (
+      <form
+        className="mt-3 flex max-w-2xl items-center gap-2"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void save();
+        }}
+      >
+        <label htmlFor="deck-name" className="sr-only">
+          Deck name
+        </label>
+        <input
+          id="deck-name"
+          autoFocus
+          value={name}
+          maxLength={60}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => e.key === "Escape" && setEditing(false)}
+          className={cn("min-w-0 flex-1 border-b border-ink bg-transparent font-display leading-tight outline-none", size)}
+        />
+        <Button type="submit" size="sm">
+          Save
+        </Button>
+        <Button type="button" size="sm" variant="ghost" onClick={() => setEditing(false)}>
+          Cancel
+        </Button>
+        {problem && <span className="text-[13px] text-flag">{problem}</span>}
+      </form>
+    );
+  }
+  return (
+    <div className="group mt-3 flex max-w-4xl items-baseline gap-3">
+      <h1
+        className={cn(
+          "min-w-0 font-display leading-[1.15] tracking-[-0.015em] text-balance",
+          compact ? "truncate" : "line-clamp-3",
+          size,
+        )}
+      >
+        {shown}
+      </h1>
+      {onRename && (
+        <button
+          type="button"
+          onClick={() => {
+            setName(deck.title || shown);
+            setEditing(true);
+          }}
+          className="shrink-0 text-[13px] text-ink-2 underline-offset-4 opacity-70 transition-opacity group-hover:opacity-100 hover:text-ink hover:underline"
+        >
+          Rename
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Waiting({ text }: { text: string }) {
+  return (
+    <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-24 sm:px-8">
+      <p className="font-display text-[28px] leading-tight" aria-live="polite">
+        {text}
+      </p>
+      <div aria-hidden="true" className="h-px w-full overflow-hidden bg-rule">
+        <div className="h-px w-1/3 animate-[sweep_1.8s_ease-in-out_infinite] bg-ink" />
+      </div>
+      <p className="text-sm text-ink-2">This takes about a minute. You can leave this page; nothing is lost.</p>
+    </main>
+  );
+}
+
+function Problem({ text, onRetry }: { text: string; onRetry?: () => Promise<void> }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <main className="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-16 sm:px-8">
+      <Alert variant="destructive">
+        <AlertTitle>This deck stopped</AlertTitle>
+        <AlertDescription>
+          {text} Your brief and answers are kept, so trying again picks up from the step that failed.
+        </AlertDescription>
+      </Alert>
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+        {onRetry && (
+          <Button
+            disabled={busy}
+            onClick={() => {
+              setBusy(true);
+              void onRetry().finally(() => setBusy(false));
+            }}
+          >
+            {busy ? "Trying again…" : "Try again"}
+          </Button>
+        )}
+        <Button asChild variant="link" className="px-0 text-ink-2">
+          <Link href="/">Start a new deck</Link>
+        </Button>
+      </div>
+    </main>
+  );
+}
+
+// The proof question's third suggestion names a kind of proof; picking it asks
+// for the proof itself, never sends the suggestion as if it were proof.
+const NO_PROOF = ["none yet", "search the web"];
+const asksPaste = (q: Deck["questions"][number], s: string) =>
+  q.fills === "proof" && !NO_PROOF.includes(s.toLowerCase());
+
+function Questions({ deck, onDone }: { deck: Deck; onDone: () => void }) {
+  const [answers, setAnswers] = useState<string[]>(deck.questions.map(() => ""));
+  const [picked, setPicked] = useState<(string | null)[]>(deck.questions.map(() => null));
+  const [busy, setBusy] = useState(false);
+  const send = async (skip: boolean) => {
+    setBusy(true);
+    await api.answer(deck.id, answers, skip);
+    onDone();
+  };
+  const set = (i: number, value: string) => setAnswers((a) => a.map((v, j) => (j === i ? value : v)));
+  const pick = (i: number, s: string | null) => setPicked((p) => p.map((v, j) => (j === i ? s : v)));
+  return (
+    <main className="mx-auto max-w-2xl px-4 py-10 sm:px-8">
+      <h2 className="font-display text-[28px] leading-tight">A few questions, so it says what you mean</h2>
+      <p className="mt-2 text-sm text-ink-2">Pick an answer or write your own. Any of them can be skipped.</p>
+      <ol className="mt-8 border-t border-rule">
+        {deck.questions.map((q, i) => {
+          const chip = picked[i] ?? null;
+          const paste = chip !== null && asksPaste(q, chip);
+          // The product question has no suggestions: only the speaker knows what it does.
+          const long = q.fills === "product" || paste;
+          return (
+            <li key={q.question} className="border-b border-rule py-7">
+              <fieldset className="flex flex-col gap-4">
+                <legend className="flex gap-4 font-display text-[22px] leading-snug">
+                  <span className="text-ink-2 tabular-nums">{i + 1}</span>
+                  <span>{q.question}</span>
+                </legend>
+                {q.suggestions.length > 0 && (
+                  <div className="flex flex-wrap gap-2 sm:pl-8">
+                    {q.suggestions.map((s) => (
+                      <Button
+                        key={s}
+                        type="button"
+                        variant="outline"
+                        aria-pressed={chip === s}
+                        className="h-auto py-2 text-left whitespace-normal aria-pressed:border-ink aria-pressed:bg-paper-2"
+                        onClick={() => {
+                          const off = chip === s;
+                          pick(i, off ? null : s);
+                          set(i, off || asksPaste(q, s) ? "" : s);
+                        }}
+                      >
+                        {chip === s && <span aria-hidden="true">✓</span>}
+                        {s}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+                {long ? (
+                  <textarea
+                    aria-label={paste ? "Paste your proof" : "In your own words"}
+                    placeholder={
+                      paste
+                        ? "Paste it here: numbers, quotes, customer names. Leave empty if you have none yet."
+                        : "What it does, who it is for, and its two or three main features"
+                    }
+                    rows={4}
+                    value={answers[i] ?? ""}
+                    onChange={(e) => set(i, e.target.value)}
+                    className="resize-y border border-rule bg-transparent px-3 py-2.5 outline-none placeholder:text-ink-2/70 focus:border-ink sm:ml-8"
+                  />
+                ) : (
+                  <input
+                    aria-label="Or in your own words"
+                    placeholder="Or in your own words"
+                    value={chip !== null ? "" : (answers[i] ?? "")}
+                    onChange={(e) => {
+                      pick(i, null);
+                      set(i, e.target.value);
+                    }}
+                    className="border-b border-rule bg-transparent py-2 outline-none placeholder:text-ink-2/70 focus:border-ink sm:ml-8"
+                  />
+                )}
+              </fieldset>
+            </li>
+          );
+        })}
+      </ol>
+      <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-3">
+        <Button size="lg" disabled={busy} onClick={() => void send(false)}>
+          Write my outline
+        </Button>
+        <Button variant="link" disabled={busy} className="px-0 text-ink-2" onClick={() => void send(true)}>
+          Skip — use what I gave you
+        </Button>
+      </div>
+    </main>
+  );
+}
+
+function Building({
+  deck,
+  ready,
+  notice,
+  onChange,
+  work,
+}: {
+  deck: Deck;
+  ready: Record<string, string>;
+  notice: Notice | null;
+  onChange: () => void;
+  work: LiveEvent[];
+}) {
+  const elapsed = useElapsed();
+  const steps = liveSteps(work);
+  const [editing, setEditing] = useState<string | null>(null); // the slide the editor opens on
+  // Finished slides come from the deck as well as the stream, so a reload or a
+  // resumed build shows what is already done.
+  const done = { ...Object.fromEntries(deck.slides.map((s) => [s.id, s.status])), ...ready };
+  const count = deck.outline.filter((p) => done[p.id]).length;
+  const total = deck.outline.length;
+  const finished = deck.status === "ready";
+  const stopped = deck.status === "aborted";
+  // Named before anything is downloaded, never hidden (phase 32).
+  const flagged = deck.outline.flatMap((p, i) => (done[p.id] && done[p.id] !== "passed" ? [i + 1] : []));
+  const first = deck.outline[0]?.id ?? "";
+
+  const actions = finished ? (
+    <>
+      <Button
+        variant="outline"
+        className="hidden lg:inline-flex"
+        onClick={() => setEditing((v) => (v === null ? first : null))}
+      >
+        {editing !== null ? "Done editing" : "Edit"}
+      </Button>
+      <Button asChild variant="outline">
+        <a href={api.exportUrl(deck.id, "present")} target="_blank" rel="noreferrer">
+          Present
+        </a>
+      </Button>
+      <Button asChild>
+        <a href={api.exportUrl(deck.id, "send")} download="deck.html">
+          Download to send
+        </a>
+      </Button>
+      <Button asChild variant="ghost">
+        <a href={api.exportUrl(deck.id, "pdf")} download="deck.pdf">
+          PDF
+        </a>
+      </Button>
+    </>
+  ) : stopped ? (
+    <Button size="lg" onClick={() => void api.build(deck.id).then(onChange)}>
+      Continue
+    </Button>
+  ) : (
+    <Button variant="outline" onClick={() => void api.abort(deck.id).then(onChange)}>
+      Stop
+    </Button>
+  );
+  const line = finished
+    ? `${total} slides, every one checked in a browser. Present opens it with your notes; the download is the slides only.`
+    : stopped
+      ? `Stopped with ${count} of ${total} slides done. Continue picks up where it stopped, without paying for them again.`
+      : `Designing your deck: ${count} of ${total} done · ${clock(elapsed)}. ${
+          count > 0 && count < total ? `About ${Math.max(1, Math.round(((elapsed / count) * (total - count)) / 60))} min left.` : "Usually 3 to 5 minutes."
+        } You can leave this page; nothing is lost.`;
+
+  return (
+    <>
+      <DeckHeader
+        deck={deck}
+        actions={actions}
+        line={line}
+        compact={editing !== null && finished}
+        onRename={() => void onChange()}
+      />
+      {!finished && (
+        <div aria-hidden="true" className="h-0.5 bg-rule">
+          <div className="h-0.5 bg-ink transition-[width] duration-500" style={{ width: `${(count / Math.max(total, 1)) * 100}%` }} />
+        </div>
+      )}
+      {!finished && !stopped && (
+        <div className="mx-auto max-w-[1440px] px-4 pt-6 sm:px-8">
+          <Feed events={work} outline={deck.outline} />
+        </div>
+      )}
+      {editing !== null && finished ? (
+        <LiveEditor deck={deck} notice={notice} onChange={onChange} start={editing} />
+      ) : (
+        <main className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
+          {finished && flagged.length > 0 && (
+            <Alert className="mb-8 border-flag/40">
+              <AlertTitle>
+                {flagged.length === 1 ? "One slide needs" : `${flagged.length} slides need`} your eye before you send it
+              </AlertTitle>
+              <AlertDescription>
+                {flagged.map((n) => `Slide ${n}`).join(", ")}: something on {flagged.length === 1 ? "it" : "them"} didn&apos;t pass
+                the check in the browser, usually words too long for their place. Open it, then Fit to slide or shorten the
+                words.
+              </AlertDescription>
+            </Alert>
+          )}
+          <ol className="grid gap-x-6 gap-y-9 sm:grid-cols-2 lg:grid-cols-3">
+            {deck.outline.map((plan, i) => {
+              const status = done[plan.id];
+              const headline = plan.fields.find((f) => f.name === "headline")?.text ?? "";
+              const note = status
+                ? status === "passed"
+                  ? undefined
+                  : "Needs attention"
+                : stopped
+                  ? "Not started"
+                  : (STEP_LABEL[steps[plan.id] ?? ""] ?? "Waiting its turn");
+              return (
+                <li key={plan.id}>
+                  {status ? (
+                    <button
+                      type="button"
+                      disabled={!finished}
+                      onClick={() => setEditing(plan.id)}
+                      className="block w-full animate-[settle_420ms_ease-out] text-left enabled:cursor-pointer lg:enabled:hover:opacity-90"
+                      aria-label={finished ? `Edit slide ${i + 1}` : undefined}
+                    >
+                      <SlideThumb src={api.thumb(deck.id, plan.id, deck.version)} alt={`Slide ${i + 1}: ${headline}`} />
+                    </button>
+                  ) : (
+                    <div
+                      className={cn(
+                        "relative flex aspect-video flex-col justify-end overflow-hidden border border-dashed border-rule bg-paper-2/60 p-4",
+                        steps[plan.id] && "border-solid border-ink/40",
+                      )}
+                    >
+                      {steps[plan.id] && !stopped && (
+                        // Left to right reads as faster than a pulse (uxdesign.cc, skeleton study).
+                        <span
+                          aria-hidden="true"
+                          className="absolute inset-y-0 left-0 w-1/3 animate-[sweep_1.8s_ease-in-out_infinite] bg-paper/45"
+                        />
+                      )}
+                      <p className="relative line-clamp-3 font-display text-base leading-snug text-ink-2">{headline}</p>
+                    </div>
+                  )}
+                  <Placard
+                    lead={String(i + 1).padStart(2, "0")}
+                    label={plan.beat || plan.intent}
+                    aside={note}
+                    flag={!!status && status !== "passed"}
+                  />
+                </li>
+              );
+            })}
+          </ol>
+        </main>
+      )}
+    </>
+  );
+}
