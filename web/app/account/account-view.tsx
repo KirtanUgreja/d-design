@@ -281,14 +281,9 @@ function ChangePassword() {
 
   return (
     <section aria-labelledby="password" className="flex flex-col gap-5">
-      <div className="flex items-baseline justify-between gap-4">
-        <h2 id="password" className="font-display text-2xl tracking-tight">
-          Password
-        </h2>
-        <Link href="/forgot-password" className="text-[13px] text-ink-2 underline-offset-4 hover:text-ink hover:underline">
-          Forgot it?
-        </Link>
-      </div>
+      <h2 id="password" className="font-display text-2xl tracking-tight">
+        Password
+      </h2>
       <form onSubmit={(e) => void submit(e)} className="flex flex-col gap-4">
         <FieldGroup>
           <Field data-invalid={error ? true : undefined}>

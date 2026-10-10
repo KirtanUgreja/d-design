@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 export function AppBar() {
   const { data, isPending } = authClient.useSession();
   const path = usePathname();
-  const authPage = ["/sign-", "/forgot-password", "/reset-password"].some((p) => path.startsWith(p));
+  const authPage = path.startsWith("/sign-");
   const here = (href: string) => (href === "/" ? path === "/" : path.startsWith(href));
   // The sign-in pages carry the wordmark in their own stage.
   if (authPage) return null;

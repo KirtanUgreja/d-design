@@ -71,13 +71,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next: string }) {
             required
             aria-invalid={error ? true : undefined}
           />
-          {signUp ? (
-            <FieldDescription>At least 10 characters.</FieldDescription>
-          ) : (
-            <Link href="/forgot-password" className="self-start text-[13px] text-muted-foreground underline-offset-4 hover:text-foreground hover:underline">
-              Forgot password?
-            </Link>
-          )}
+          {signUp && <FieldDescription>At least 10 characters.</FieldDescription>}
         </Field>
       </FieldGroup>
       {error && (

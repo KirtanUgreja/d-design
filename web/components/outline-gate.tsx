@@ -4,7 +4,6 @@
 // the cheapest place in the product to fix anything, and the trust surface.
 // Provenance on every field, sources one click away, unsourced numbers held
 // until a person decides (docs/v4/ui-research.md, rules 4 and 8).
-import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -12,8 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import type { Recording } from "@/lib/fixtures";
-import type { Fact, Plan, Provenance } from "@/lib/types";
+import type { Fact, Plan, Provenance, Question } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const CHIP: Record<Provenance, string> = {
@@ -22,8 +20,14 @@ const CHIP: Record<Provenance, string> = {
   AI: "Written by the AI",
 };
 
-// What the gate reads: a recording, or a live deck mapped to the same shapes.
-export type GateDeck = Pick<Recording, "id" | "thesis" | "questions" | "outline" | "facts">;
+// What the gate reads: a live deck mapped to these shapes.
+export interface GateDeck {
+  id: string;
+  thesis: string;
+  questions: Question[];
+  outline: Plan[];
+  facts: Fact[];
+}
 export type Decisions = Record<string, "approved" | "cut">;
 
 export function OutlineGate({
@@ -50,7 +54,6 @@ export function OutlineGate({
   // Off when the page's own header already carries the thesis.
   thesis?: boolean;
 }) {
-  const router = useRouter();
   const facts = useMemo(() => new Map(deck.facts.map((f) => [f.id, f])), [deck.facts]);
   const [slides, setSlides] = useState<Plan[]>(deck.outline);
   const [asked, setAsked] = useState(0);
@@ -77,7 +80,7 @@ export function OutlineGate({
   const [starting, setStarting] = useState(false);
   const [failed, setFailed] = useState<string | null>(null);
   const approve = async () => {
-    if (!onApprove) return router.push(`/deck/${deck.id}/watch`);
+    if (!onApprove) return;
     setStarting(true);
     setFailed(null);
     const problem = await onApprove(
