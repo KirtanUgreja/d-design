@@ -41,10 +41,9 @@ from engine.components import logo as logos
 from engine.models import Pasted, SlidePlan
 from engine.qa.sanitize import sanitize
 from engine.studio import design as designer
-from engine.studio import preview
 from engine.studio.slide import prefix
 from lib.result import Err
-from looks import preview_names, theme_of, with_language
+from looks import theme_of, with_language
 from store.files import Job
 from store.tenant import AnyStore, open_store
 
@@ -155,14 +154,13 @@ async def run(
                 title=story.title or deck.title,
                 brief=deck.brief.model_copy(update={"slide_count": len(story.slides)}),
             )
-            await _previews(store, with_language(store, deck))
+            with_language(store, deck)  # the deck's look, drawn once and kept
             store.append_event(deck.id, {"type": "outline_ready"})
         elif job.kind == "logo":
             await _logo(store, deck)
         elif job.kind == "screens":
             _screens(store, deck)
-        elif job.kind == "style":
-            await _previews(store, deck)
+        elif job.kind == "style":  # Another style or new colours: the card reads it again
             store.append_event(deck.id, {"type": "style_ready"})
         elif job.kind == "edit":
             op = ops.OP.validate_json(job.payload)
@@ -312,21 +310,6 @@ async def _clean_logo(store: AnyStore, deck: Deck) -> logos.Logo | None:
         return None
     made = await logos.ingest(clean)
     return None if isinstance(made, Err) else made.value
-
-
-async def _previews(store: AnyStore, deck: Deck) -> None:
-    """The style card's three thumbnails, filled from the deck's references
-    with its real words. No model call. A failure leaves the card without
-    thumbnails, never the outline without its gate."""
-    story = deck.storyline
-    if story is None:
-        return
-    shots = store.slides_dir(deck.id) / "style"
-    for old in shots.glob("preview-*.png"):
-        old.unlink()
-    drawn = await preview.render(theme_of(deck), story, shots)
-    for name, kept_as in zip(drawn, preview_names(deck), strict=False):
-        store.save_export(deck.id, kept_as, (shots / name).read_bytes())
 
 
 # Colour and type are the deck's look, not a slide's: asked of one slide they

@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR ?? ".next",
   // Gzip would buffer the deck's event stream into one blob.
   compress: false,
+  // `next dev` otherwise writes its own AGENTS.md and CLAUDE.md into web/;
+  // the repo's instructions live at the root.
+  agentRules: false,
 };
 
 export default nextConfig;

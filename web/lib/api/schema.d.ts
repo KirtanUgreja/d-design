@@ -549,23 +549,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/decks/{deck_id}/style/{name}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Style Thumb */
-        get: operations["style_thumb_api_decks__deck_id__style__name__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/decks/{deck_id}/title": {
         parameters: {
             query?: never;
@@ -2431,40 +2414,6 @@ export interface operations {
             };
             path: {
                 deck_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    style_thumb_api_decks__deck_id__style__name__get: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path: {
-                deck_id: string;
-                name: string;
             };
             cookie?: never;
         };

@@ -29,6 +29,7 @@ uv run python -m cli freeze --set all      freeze outlines for the bench briefs
 uv run python -m cli baseline --set all    one-shot baseline decks + screenshots
 uv run python -m cli wall --run NAME       the wall page the owner scores
 uv run python -m cli build --run NAME --model M   decks from frozen outlines through the studio
+uv run python -m cli schema                both databases written out as SQL in db/
 uv run uvicorn app:serve --factory --port 8000 the API (enqueues and reads; never calls a model)
 uv run python worker.py                    the worker (holds the key; builds decks)
 ```

@@ -155,7 +155,6 @@ export interface StyleCard {
   text: string;
   colors: Record<string, string>;
   imageStyle: string;
-  previews: string[];
 }
 
 async function styleCard(path: string): Promise<Result<StyleCard>> {
@@ -178,8 +177,6 @@ async function styleCard(path: string): Promise<Result<StyleCard>> {
     // Only plain hex reaches a style attribute.
     colors: Object.fromEntries(Object.entries(colors).filter((e): e is [string, string] => typeof e[1] === "string" && HEX.test(e[1]))),
     imageStyle: text(body.image_style),
-    // Named by the look (preview-<look>-<n>.png), so Another style never shows the last one.
-    previews: list(body.previews).map(text).filter((n) => /^preview-\d+-[1-3]\.png$/.test(n)),
   });
 }
 
@@ -212,7 +209,6 @@ export const api = {
   anotherStyle: (id: string) => call(`/api/decks/${id}/style`, { method: "POST" }),
   setBrand: (id: string, colors: string[]) =>
     call(`/api/decks/${id}/brand`, { method: "PUT", body: JSON.stringify({ colors }) }),
-  styleThumb: (id: string, name: string, version: number) => `/api/decks/${id}/style/${name}?v=${version}`,
   create: (prompt: string, options: NewDeckOptions = {}) =>
     call("/api/decks", {
       method: "POST",

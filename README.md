@@ -48,10 +48,10 @@ cp .env.example .env        # fill in the keys it lists
 ## Tests and the gate
 
 ```bash
-cd api && uv run pytest -q          # 180 tests, offline: fake models, real Chromium
-cd web && pnpm e2e                  # sign-up, sign-in, the flow, the token proxy
+cd api && uv run pytest -q          # about 210 tests, offline: fake models, real Chromium
+cd web && pnpm e2e                  # sign-up, sign-in and the token proxy
 ./scripts/hooks/pre-commit          # ruff, mypy --strict, pytest, eslint, tsc, OpenAPI drift, docs
-cd api && uv run python -m cli refs --check swiss --looks 30   # a language's references under 30 looks
+cd api && uv run python -m cli schema   # both databases written out as SQL in db/
 ```
 
 The security tests (`api/tests/test_security.py`) call every route with no session, with a forged token and with another user's session. They also cover the spend cap, including a cap check that itself fails.
@@ -62,6 +62,6 @@ The security tests (`api/tests/test_security.py`) call every route with no sessi
 |---|---|
 | Built and tested offline | Everything above |
 | Not yet measured | The owner's 12-deck wall for the new design system (design ≥ 4/5, variety ≥ 4/5, "would send it" ≥ 9/12) and the image and compose model bake-offs. These run on test day with fresh model credit. Until then, the design claims are untested |
-| Known limits | One worker, so builds queue. Variety across decks is bounded by the size of the reference library. No password reset or OAuth: email and password for an allowlist only |
+| Known limits | One worker, so builds queue. Four visual languages are on (Studio, Frame, Bright, Soft), so looks repeat across many decks. No password reset by email or OAuth: email and password for an allowlist; a signed-in person changes their password on the account page |
 
-Plans and decisions: [`docs/v4/plan/master-plan.md`](docs/v4/plan/master-plan.md). Why things are the way they are: [`docs/v4/spec.md`](docs/v4/spec.md). Rules for code: [`AGENTS.md`](AGENTS.md).
+**The code explained, file by file and term by term: [`docs/code-guide.md`](docs/code-guide.md).** The databases as SQL: [`db/`](db/README.md). Plans and decisions: [`docs/v4/plan/master-plan.md`](docs/v4/plan/master-plan.md). Why things are the way they are: [`docs/v4/spec.md`](docs/v4/spec.md). Rules for code: [`AGENTS.md`](AGENTS.md).

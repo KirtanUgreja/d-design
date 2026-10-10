@@ -4,7 +4,7 @@ import { LanguageReel } from "@/components/language-reel";
 import { Logo } from "@/components/logo";
 
 // Sign in and sign up: a quiet type stage on ink beside the form. The logo,
-// one line, and the eight visual languages lighting one at a time.
+// one line, and the visual languages lighting one at a time.
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <main className="grid min-h-dvh lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">

@@ -64,9 +64,3 @@ def theme_of(deck: Deck) -> Theme:
     if deck.palette_nonce:
         look = recolour(look, deck.palette_nonce, tone=deck.brief.tone, brand_hex=mine)
     return build_theme(look)
-
-
-def preview_names(deck: Deck) -> list[str]:
-    """The style card's thumbnails for the deck's current look. Named by the
-    look, so Another style never shows the last style's pictures."""
-    return [f"preview-{deck.look_nonce}-{n}.png" for n in (1, 2, 3)]

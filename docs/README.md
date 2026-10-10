@@ -35,6 +35,7 @@
 
 | | |
 |---|---|
+| [code-guide.md](code-guide.md) | **The code explained.** Every folder and file, how a deck is made step by step, every term, and the two databases |
 | [versions.md](versions.md) | **How a version is documented.** The required files, the phase anatomy, and when to start fresh |
 | [findings.md](findings.md) | **Evidence, not direction.** Measurements of this codebase, model behaviour, the category, platform facts with dates, and process lessons |
 

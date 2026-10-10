@@ -3493,68 +3493,6 @@
         "summary": "Another Style"
       }
     },
-    "/api/decks/{deck_id}/style/{name}": {
-      "get": {
-        "operationId": "style_thumb_api_decks__deck_id__style__name__get",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "deck_id",
-            "required": true,
-            "schema": {
-              "title": "Deck Id",
-              "type": "string"
-            }
-          },
-          {
-            "in": "path",
-            "name": "name",
-            "required": true,
-            "schema": {
-              "title": "Name",
-              "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "authorization",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "string"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "Authorization"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {}
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Style Thumb"
-      }
-    },
     "/api/decks/{deck_id}/title": {
       "put": {
         "description": "The deck's name, the person's to change at any point; before the\nbuild it is also the name the slides carry.",

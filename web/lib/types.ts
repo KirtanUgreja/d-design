@@ -1,5 +1,5 @@
-// The deck's content as every screen reads it, whether it came from a
-// the live API (lib/api/client.ts).
+// The deck's content as every screen reads it, as it comes from the live API
+// (lib/api/client.ts).
 export type Provenance = "YOU" | "AI" | "WEB";
 
 export interface Field {

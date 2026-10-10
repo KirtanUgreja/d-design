@@ -30,7 +30,7 @@ from engine import Brief, Deck, Question, interview
 from engine.models import Brand, Screen
 from engine.studio import preview
 from lib.result import Ok
-from looks import preview_names, theme_of, with_language
+from looks import theme_of, with_language
 from store.files import Avatar, History, User
 from store.tenant import AnyStore, Tenant, open_store
 
@@ -138,7 +138,6 @@ class StyleCard(BaseModel):
     text: str
     colors: dict[str, str]
     image_style: str
-    previews: list[str]  # thumbnail names, in order; empty while being drawn
 
 
 def _problem(status: int, message: str) -> JSONResponse:
@@ -490,18 +489,7 @@ def create_app(
         deck = t.read(deck_id)
         if not deck.language:
             return _problem(404, "The style is drawn with the outline.")
-        c = preview.card(theme_of(deck))
-        names = [n for n in preview_names(deck) if t.export(deck_id, n) is not None]
-        return StyleCard(**c.__dict__, previews=names)
-
-    @api.get("/api/decks/{deck_id}/style/{name}", response_model=None)
-    def style_thumb(t: Me, deck_id: str, name: str) -> Response | JSONResponse:
-        if not t.exists(deck_id) or name not in preview_names(t.read(deck_id)):
-            return _problem(404, missing)
-        data = t.export(deck_id, name)
-        if data is None:
-            return _problem(404, "That preview isn't drawn yet.")
-        return Response(data, media_type="image/png")
+        return StyleCard(**preview.card(theme_of(deck)).__dict__)
 
     @api.post("/api/decks/{deck_id}/style", response_model=None)
     def another_style(t: Me, deck_id: str) -> DeckOut | JSONResponse:
