@@ -270,10 +270,18 @@ test("sign-up is refused for an email not on the list", async ({ page }) => {
 test("the list is case-insensitive and trimmed", async ({ request }) => {
   const second = { email: "second@example.com", password: "another long password" };
   await removeIfPresent(request, second.email, second.password);
-  const res = await request.post("/api/auth/sign-up/email", {
-    data: { email: "SECOND@example.COM", password: second.password, name: "Second" },
-    headers: origin,
-  });
-  expect(res.ok()).toBe(true);
+  const signUp = () =>
+    request.post("/api/auth/sign-up/email", {
+      data: { email: "SECOND@example.COM", password: second.password, name: "Second" },
+      headers: origin,
+    });
+  let res = await signUp();
+  // A production build allows 3 sign-in/sign-up calls per 10 s, and on a fast
+  // CI runner the earlier tests use them up; wait the window out once.
+  if (res.status() === 429) {
+    await new Promise((resolve) => setTimeout(resolve, (Number(res.headers()["x-retry-after"]) || 10) * 1000));
+    res = await signUp();
+  }
+  expect(res.status(), await res.text()).toBe(200);
   await removeIfPresent(request, second.email, second.password);
 });
