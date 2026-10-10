@@ -106,9 +106,10 @@ Rules:
   with the product; "flow" for steps; "hub" for the product at the centre of its parts or
   partners (first line the product, then up to five parts); "pipeline" for input, core and
   output (exactly three lines); "stack" for a tech stack, one layer per line as "Layer:
-  tools" ("Frontend: Next.js, Tailwind"), top layer first. A flow may run to six steps (a user
-  flow). visual_lines: up to six short lines (at
-  most 6 words, no numbers) it shows — the screen's rows, the chat's messages (the user's
+  tools" ("Frontend: Next.js 16, React, Tailwind"), top layer first, up to eight layers, every
+  tool the person named, versions kept. A flow may run to six steps (a user flow).
+  visual_lines: up to six short lines (at most 8 words, no numbers; a stack excepted) it
+  shows — the screen's rows, the chat's messages (the user's
   first), or the flow's steps. They show what the product really does; never invent a
   feature. Never on a chart slide. Otherwise visual is "none" and visual_lines is empty.
 - intent is one of: cover, statement, number, number-set, points, comparison, steps, timeline,
@@ -338,10 +339,15 @@ def short_title(title: str) -> str:
     return " ".join(title.strip().rstrip(".").split()[:3])
 
 
-def visual_lines(lines: list[str]) -> list[str]:
-    """A visual's words: at most six lines of at most six words, and none
-    with a number, since a drawn picture carries no source line."""
-    kept = [" ".join(t.split()[:6]) for t in lines if t.strip() and not rules.numbers(t)]
+def visual_lines(lines: list[str], kind: str = "") -> list[str]:
+    """A visual's words: at most six lines of at most eight words, and none
+    with a number, since a drawn picture carries no source line. A tech stack
+    is the exception: up to eight layers of up to fourteen words, and its
+    version numbers stay ("Next.js 16" is a name, not a claim; 2026-10-10,
+    every versioned layer of a stack was dropped)."""
+    if kind == "stack":
+        return [" ".join(t.split()[:14]) for t in lines if t.strip()][:8]
+    kept = [" ".join(t.split()[:8]) for t in lines if t.strip() and not rules.numbers(t)]
     return kept[:6]
 
 
@@ -446,7 +452,7 @@ def assemble(
                     provenance[extra.name] = "WEB" if extra.fact_ids else "AI"
         visual = None
         if d.visual != "none" and chart is None and drawn < MAX_VISUALS:
-            visual = VisualSpec(kind=d.visual, lines=visual_lines(d.visual_lines))
+            visual = VisualSpec(kind=d.visual, lines=visual_lines(d.visual_lines, d.visual))
             drawn += 1
         if (chart or visual) and any(f.name == "body" for f in fields):
             # The picture carries the detail: a body line and points beside it

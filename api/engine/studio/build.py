@@ -90,7 +90,7 @@ async def build(
             'dd-texture kind "mark".\n'
         )
     own = dict(screens or {})  # n -> (data URL, aspect, caption): the person's own images
-    plans = _place_screens(list(storyline.slides), own)
+    plans = place_screens(list(storyline.slides), own)
     fields = {p.id: {f.name: f.text for f in p.fields} for p in plans}
     gate = asyncio.Semaphore(PARALLEL)
     browsers = asyncio.Semaphore(MEASURE_PARALLEL)
@@ -482,24 +482,33 @@ async def build(
     )
 
 
-# Beats where a screenshot the outline did not place belongs (one uploaded
-# after the outline was written).
-_SHOW = ("demo", "product", "how it works", "user flow", "solution", "what is new")
+# Beats where a screenshot the outline did not place belongs, best first (one
+# uploaded after the outline was written). Never a slide about others or the
+# problem: "Existing solutions" took a demo screenshot, 2026-10-10.
+_SHOW = ("demo", "user flow", "product", "what is new", "how it works", "solution")
+_NOT_HERE = ("existing", "gap", "competit", "alternative", "problem")
 
 
-def _place_screens(
+def place_screens(
     plans: list[SlidePlan], shots: Mapping[int, tuple[str, str, str]]
 ) -> list[SlidePlan]:
     """Every ready screenshot on a slide: the outline's choice first, then the
-    rest in order on the slides whose beat shows the product."""
+    rest, each on the free slide whose beat fits best."""
     placed = {p.screenshot for p in plans if p.screenshot}
     waiting = [n for n in sorted(shots) if n not in placed]
-    out = []
-    for p in plans:
-        free = p.screenshot is None and p.chart is None
-        if waiting and free and any(b in p.beat.lower() for b in _SHOW):
-            p = p.model_copy(update={"screenshot": waiting.pop(0), "visual": None})
-        out.append(p)
+    out = list(plans)
+
+    def rank(p: SlidePlan) -> int:
+        beat = p.beat.lower()
+        if p.screenshot is not None or p.chart is not None or any(b in beat for b in _NOT_HERE):
+            return len(_SHOW)
+        return next((i for i, b in enumerate(_SHOW) if b in beat), len(_SHOW))
+
+    for n in waiting:
+        best = min(range(len(out)), key=lambda i: (rank(out[i]), i), default=None)
+        if best is None or rank(out[best]) == len(_SHOW):
+            break
+        out[best] = out[best].model_copy(update={"screenshot": n, "visual": None})
     return out
 
 

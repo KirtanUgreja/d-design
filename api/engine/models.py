@@ -136,7 +136,9 @@ class VisualSpec(BaseModel):
     """A picture of the product's world, drawn by code (components/visuals.py)."""
 
     kind: VisualKind
-    lines: list[str] = Field(default_factory=list, max_length=6)  # short, no numbers
+    lines: list[str] = Field(
+        default_factory=list, max_length=8
+    )  # short; no numbers but a stack's versions
 
 
 class Screen(BaseModel):

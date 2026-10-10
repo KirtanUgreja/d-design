@@ -1461,7 +1461,7 @@
             "items": {
               "type": "string"
             },
-            "maxItems": 6,
+            "maxItems": 8,
             "title": "Lines",
             "type": "array"
           }

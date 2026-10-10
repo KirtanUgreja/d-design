@@ -52,6 +52,9 @@ class Language(BaseModel):
     image: Imagery
     tones: tuple[str, ...] = ()
     deck_types: tuple[str, ...] = ()
+    # Drawn for new decks only when on (owner, 2026-10-10: only the looks he
+    # rated well, Studio, Frame, Bright and Soft); old decks keep theirs.
+    active: bool = True
     # Its surface (owner, 2026-10-09: textured references, but "I don't want
     # every deck to look the same"): the finishes a deck in it may draw, and
     # whether it may carry one soft glow. Most languages stay crisp and flat.
@@ -97,7 +100,8 @@ def choose(
     """The deck's language: balanced by how often each has been used, with a
     light prior from the tone and the deck type. ``exclude`` skips languages
     (Another style draws a different one)."""
-    pool = [lang for lang in all_languages() if lang.id not in exclude] or list(all_languages())
+    live = [lang for lang in all_languages() if lang.active]
+    pool = [lang for lang in live if lang.id not in exclude] or live
     used = usage or {}
     weights = [
         (PRIOR_HIT if tone in lang.tones else 1.0)

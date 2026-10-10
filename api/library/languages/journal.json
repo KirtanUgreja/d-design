@@ -1,4 +1,5 @@
 {
+  "active": false,
   "id": "journal",
   "name": "Data journal",
   "idea": "A newspaper data desk: a claim as the headline, the chart dominant, sources under it.",

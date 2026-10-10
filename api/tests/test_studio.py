@@ -210,3 +210,35 @@ def test_a_screenshot_slide_must_show_it_not_draw_a_screen() -> None:
     assert isinstance(drawn, Err) and "screenshot" in drawn.error
     shown = f'<section class="s">{body}<dd-image aspect="16:9"></dd-image></section>'
     assert not isinstance(parser(plan)(Reply(f"```html\n{shown}\n```\n{css}")), Err)
+
+
+def test_a_screenshot_goes_to_the_demo_not_to_existing_solutions() -> None:
+    # Live, 2026-10-10: "Existing solutions and gaps" took the demo screenshot.
+    beats = ["Title", "Existing solutions and gaps", "Proposed solution", "User flow and demo"]
+    plans = [p.model_copy(update={"beat": b}) for p, b in zip(_story(4).slides, beats, strict=True)]
+    plans = [p.model_copy(update={"chart": None, "screenshot": None}) for p in plans]
+    placed = studio.place_screens(plans, {1: ("u", "16:9", ""), 2: ("v", "16:9", "")})
+    assert [p.screenshot for p in placed] == [None, None, 2, 1]
+
+
+def test_a_stack_keeps_its_versions_and_every_layer() -> None:
+    from engine.components.visuals import svg
+    from engine.models import VisualSpec
+    from engine.studio.outline import visual_lines
+
+    lines = [
+        "Frontend: Next.js 16, React 19, TypeScript, Tailwind CSS 4, shadcn/ui",
+        "Backend: Python 3.13, FastAPI, a job worker",
+        "AI: Claude Sonnet 5.5 and Haiku 5.5 via OpenRouter",
+        "Checks: Playwright Chromium",
+        "Database: Neon Postgres",
+        "Auth: Better Auth",
+        "Deployment: Railway, three services (web, API, worker)",
+    ]
+    kept = visual_lines(lines, "stack")
+    assert kept == lines  # nothing dropped for a version number, nothing cut
+    assert len(visual_lines(lines, "flow")) == 4  # elsewhere a numbered line is dropped
+    drawn = svg(VisualSpec(kind="stack", lines=kept))
+    assert "Railway" in drawn and "…" not in drawn
+    steps = ["Interview and research", "Art direction for the whole deck plan"]
+    assert "…" not in svg(VisualSpec(kind="flow", lines=steps))

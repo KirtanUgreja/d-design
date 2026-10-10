@@ -75,15 +75,17 @@ def test_a_thousand_seeds_stay_inside_their_language() -> None:
         if lang.name not in theme.guidance:
             failures.append((seed, "the brief is not in the guidance"))
     assert failures == []
-    assert set(drawn) == {lang.id for lang in all_languages()}
-    assert min(drawn.values()) >= 30  # roughly balanced over twelve languages, with priors
+    # Only the languages switched on are drawn (owner, 2026-10-10).
+    assert set(drawn) == {lang.id for lang in all_languages() if lang.active}
+    assert min(drawn.values()) >= 100  # roughly balanced over the four, with priors
 
 
 def test_usage_balances_the_draw() -> None:
     rng = random.Random(1)
-    heavy = {lang.id: 50 for lang in all_languages() if lang.id != "humanist"}
+    heavy = {lang.id: 50 for lang in all_languages() if lang.id != "soft"}
     picks = Counter(choose(rng, usage=heavy).id for _ in range(200))
-    assert picks.most_common(1)[0][0] == "humanist"
+    assert picks.most_common(1)[0][0] == "soft"
+    assert set(picks) <= {lang.id for lang in all_languages() if lang.active}
 
 
 def test_another_style_changes_the_language() -> None:

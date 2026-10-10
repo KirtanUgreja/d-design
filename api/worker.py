@@ -207,6 +207,13 @@ async def _build(
         if not isinstance(with_notes, Err):
             story = with_notes.value
             store.update(deck.id, storyline=story)
+    # Where the person's screenshots go, saved in the outline, so an edit
+    # later knows the slide shows one (an edit dropped one, 2026-10-10).
+    shots = ready_screens(store, deck)
+    placed = pipeline.place_screens(list(story.slides), shots)
+    if placed != story.slides:
+        story = story.model_copy(update={"slides": placed})
+        store.update(deck.id, storyline=story)
     slides_dir = store.slides_dir(deck.id)
     deck = with_language(store, deck)
     theme = theme_of(deck)
@@ -233,7 +240,7 @@ async def _build(
         image_model=image_model,
         logo=await _clean_logo(store, deck),
         logo_on=deck.logo if deck.logo != "none" else "ends",
-        screens=ready_screens(store, deck),
+        screens=shots,
     )
     for stray in slides_dir.glob("qa*.html"):
         stray.unlink()

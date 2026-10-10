@@ -199,7 +199,7 @@ def _flow(spec: VisualSpec) -> tuple[str, int, int]:
     lines = (spec.lines or ["", "", ""])[:6]
     row, gap = (150, 56) if len(lines) <= 4 else (118, 40)
     w = 1000
-    size = FONT * 1.4
+    size = FONT * 1.4 if len(lines) <= 4 else FONT * 1.15
     out = []
     for i, words in enumerate(lines):
         y = i * (row + gap)
@@ -216,16 +216,8 @@ def _flow(spec: VisualSpec) -> tuple[str, int, int]:
                 face="label",
             )
         )
-        out.append(
-            _text(
-                170,
-                y + row / 2 + size * 0.35,
-                _fit(words, w - 220, size),
-                fill=tone,
-                size=size,
-                weight="bold",
-            )
-        )
+        # Two lines before a cut ("Art direction for the whole de…", 2026-10-10).
+        out.append(_block(170, y + row / 2, words, w - 220, size, fill=tone, weight="bold"))
         if not last:
             ax, ay = 100, y + row + 8
             out.append(
@@ -244,9 +236,9 @@ def _stack(spec: VisualSpec) -> tuple[str, int, int]:
     """A tech stack as layers, top (what the user touches) to bottom (data):
     each line "Layer: tools", the layer in the label face, the tools large
     (a project deck's tech stack slide, owner, 2026-10-09)."""
-    lines = (spec.lines or ["", "", ""])[:6]
-    w, gap = 1300, 22
-    row = 150 if len(lines) <= 4 else 118
+    lines = (spec.lines or ["", "", ""])[:8]
+    w, gap = 1300, 18
+    row = 150 if len(lines) <= 4 else 118 if len(lines) <= 6 else 96
     out = []
     for i, line in enumerate(lines):
         layer, _, tools = line.partition(":")
@@ -267,7 +259,7 @@ def _stack(spec: VisualSpec) -> tuple[str, int, int]:
                     face="label",
                 )
             )
-        size = FONT * 1.35
+        size = FONT * (1.35 if len(lines) <= 6 else 1.1)
         out.append(
             _block(
                 380 if layer else 40,
@@ -310,14 +302,17 @@ def _hub(spec: VisualSpec) -> tuple[str, int, int]:
             out.append(_block(x, y, words, bw - 36, size, anchor="middle"))
     out.append(f'<circle cx="{cx:.0f}" cy="{cy:.0f}" r="{r + 26}" style="fill:{SURFACE}"/>')
     out.append(f'<circle cx="{cx:.0f}" cy="{cy:.0f}" r="{r}" style="fill:{ACCENT}"/>')
-    size = FONT * 1.25
+    size = FONT * 1.2
+    # Wrapped, never cut ("Python worker…" in a circle with room, 2026-10-10).
     out.append(
-        _text(
+        _block(
             cx,
-            cy + size * 0.35,
-            _fit(centre, r * 1.8, size),
+            cy,
+            centre,
+            r * 1.6,
+            size,
+            lines_max=3,
             fill=ON_ACCENT,
-            size=size,
             anchor="middle",
             weight="bold",
         )

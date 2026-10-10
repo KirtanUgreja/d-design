@@ -34,7 +34,7 @@ def test_a_visual_shows_short_lines_with_no_numbers() -> None:
     lines = visual_lines(
         ["Book a stylist in one tap today please now", "Save 40% on fees", " ", "Pay"]
     )
-    assert lines == ["Book a stylist in one tap", "Pay"]
+    assert lines == ["Book a stylist in one tap today please", "Pay"]  # eight words
 
 
 def _slide(**kw: object) -> DraftSlide:
