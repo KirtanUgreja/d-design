@@ -37,7 +37,7 @@ export function YourDecks() {
       <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
         {decks.slice(0, SHOWN).map((d) => (
           <li key={d.id}>
-            <DeckCard deck={d} />
+            <DeckCard deck={d} onDeleted={() => setDecks((all) => all.filter((x) => x.id !== d.id))} />
           </li>
         ))}
       </ul>

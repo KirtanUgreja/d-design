@@ -157,6 +157,10 @@ class Tenant:
 
     # jobs ------------------------------------------------------------------
 
+    def delete_deck(self, deck_id: str) -> None:
+        self._check(deck_id)
+        self.store.delete_deck(deck_id)
+
     def busy(self, deck_id: str) -> bool:
         self._check(deck_id)
         return self.store.busy(deck_id)

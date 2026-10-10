@@ -61,7 +61,10 @@ export function DecksList() {
     <ul className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
       {decks.value.map((d) => (
         <li key={d.id}>
-          <DeckCard deck={d} />
+          <DeckCard
+            deck={d}
+            onDeleted={() => setDecks((r) => (r?.ok ? { ok: true, value: r.value.filter((x) => x.id !== d.id) } : r))}
+          />
         </li>
       ))}
     </ul>

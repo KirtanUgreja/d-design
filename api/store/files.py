@@ -499,6 +499,16 @@ class Store:
         _write(self._user_path(sub), found.model_dump_json())
         return found
 
+    def delete_deck(self, deck_id: str) -> None:
+        """One deck, its jobs and its files."""
+        for state in ("queued", "running", "done"):
+            for job in self._jobs(state):
+                if job.deck_id == deck_id:
+                    folder = self.root / "jobs" / state
+                    (folder / f"{job.id}.json").unlink(missing_ok=True)
+                    (folder / f"{job.id}.beat").unlink(missing_ok=True)
+        shutil.rmtree(self.dir(deck_id), ignore_errors=True)
+
     def delete_user(self, sub: str) -> None:
         """The account, every deck it owns, and those decks' jobs and files."""
         path = self._user_path(sub)

@@ -721,6 +721,23 @@ class SqlStore:
                 row.avatar = avatar.model_dump()
             return self._user(row)
 
+    def delete_deck(self, deck_id: str) -> None:
+        """One deck and, by cascade, its jobs, events, files and versions; then
+        the blobs nothing links any more. Its spend stays on the ledger."""
+        with self._tx() as s:
+            hashes = set(
+                s.scalars(select(DeckFileRow.hash).where(DeckFileRow.deck_id == deck_id))
+            ) | set(
+                s.scalars(
+                    select(VersionFileRow.hash)
+                    .join(VersionRow, VersionRow.id == VersionFileRow.version_id)
+                    .where(VersionRow.deck_id == deck_id)
+                )
+            )
+            s.execute(delete(DeckRow).where(DeckRow.id == deck_id))
+            self._sweep(s, hashes)
+        shutil.rmtree(self.scratch / "decks" / deck_id, ignore_errors=True)
+
     def delete_user(self, sub: str) -> None:
         """The account and, by cascade, every deck it owns and everything under
         them; then the blobs nothing links any more, and the local scratch."""

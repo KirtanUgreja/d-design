@@ -345,6 +345,17 @@ def create_app(
         t.enqueue("outline", deck_id, json.dumps({"change": body.instruction.strip()}))
         return out(t, t.read(deck_id))
 
+    @api.delete("/api/decks/{deck_id}", status_code=204, response_model=None)
+    def delete_deck(t: Me, deck_id: str) -> Response | JSONResponse:
+        """A deck and everything under it, at any stage (owner, 2026-10-10).
+        Not while the worker is on it: a build is stopped first."""
+        if not t.exists(deck_id):
+            return _problem(404, missing)
+        if t.busy(deck_id):
+            return _problem(409, "This deck is still being worked on. Stop it, or wait a moment.")
+        t.delete_deck(deck_id)
+        return Response(status_code=204)
+
     @api.put("/api/decks/{deck_id}/title", response_model=None)
     def rename(t: Me, deck_id: str, body: Title) -> DeckOut | JSONResponse:
         """The deck's name, the person's to change at any point; before the

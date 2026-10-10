@@ -1,15 +1,18 @@
+"use client";
 // A deck on the wall: its cover once it is built, otherwise its one sentence
-// on paper, with a placard saying where it stands.
+// on paper, with a placard saying where it stands, and a way to delete it.
 import Link from "next/link";
 
+import { DeleteDeck } from "@/components/delete-deck";
 import { Placard } from "@/components/placard";
 import { SlideThumb } from "@/components/slide-thumb";
 import { api } from "@/lib/api/client";
 import { STATUS_LABEL, type DeckRow } from "@/lib/decks";
 
-export function DeckCard({ deck }: { deck: DeckRow }) {
+export function DeckCard({ deck, onDeleted }: { deck: DeckRow; onDeleted?: () => void }) {
   const label = STATUS_LABEL[deck.status] ?? deck.status;
   return (
+    <div>
     <Link href={`/d/${deck.id}`} className="group block">
       {deck.cover ? (
         <SlideThumb src={api.thumb(deck.id, deck.cover, deck.version)} alt={`The cover of: ${deck.title}`} />
@@ -22,5 +25,7 @@ export function DeckCard({ deck }: { deck: DeckRow }) {
       <p className="mt-1 truncate font-display text-[17px] leading-snug underline-offset-4 group-hover:underline">{deck.title}</p>
       {deck.thesis && <p className="mt-0.5 line-clamp-2 text-[13px] leading-snug text-ink-2">{deck.thesis}</p>}
     </Link>
+    {onDeleted && <DeleteDeck id={deck.id} name={deck.title} onDeleted={onDeleted} className="mt-1" />}
+    </div>
   );
 }

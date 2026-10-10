@@ -362,3 +362,17 @@ def test_the_deck_name_is_the_persons_to_change(tmp_path: Path, kind: str) -> No
     assert deck.title == "Demo Day" and deck.storyline is not None
     assert deck.storyline.title == "Demo Day"  # the name the slides will carry
     assert client.put(f"/api/decks/{deck_id}/title", json={"title": ""}).status_code == 422
+
+
+@each_store
+def test_a_deck_can_be_deleted_but_not_while_it_is_worked_on(tmp_path: Path, kind: str) -> None:
+    client, store = _client(tmp_path, kind)
+    busy = _approved_deck(store)
+    client.post(f"/api/decks/{busy}/build")
+    assert client.delete(f"/api/decks/{busy}").status_code == 409  # the build job waits
+    gone = _approved_deck(store)
+    store.save_export(gone, "screen-1.bin", b"x")
+    assert client.delete(f"/api/decks/{gone}").status_code == 204
+    assert client.get(f"/api/decks/{gone}").status_code == 404
+    assert client.delete(f"/api/decks/{gone}").status_code == 404
+    assert client.get(f"/api/decks/{busy}").status_code == 200  # the other deck is untouched

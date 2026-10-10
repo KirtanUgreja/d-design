@@ -5,6 +5,7 @@
 // the API and its event stream. Only real states are shown; nothing is
 // invented or delayed (docs/v4/ui-research.md -> the ethics line).
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { LiveEditor } from "@/components/live-editor";
@@ -15,6 +16,7 @@ import { BrandColours } from "@/components/brand-colours";
 import { LogoPicker } from "@/components/logo-picker";
 import { ScreensPicker } from "@/components/screens-picker";
 import { StyleCard } from "@/components/style-card";
+import { DeleteDeck } from "@/components/delete-deck";
 import { Feed, Working, clock, liveSteps, useElapsed } from "@/components/working";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -238,6 +240,7 @@ function DeckHeader({
   onRename?: (renamed: Deck) => void; // the name is the person's to change
 }) {
   const at = stepOf(deck);
+  const router = useRouter();
   return (
     <div className="border-b border-rule">
       <div
@@ -251,6 +254,7 @@ function DeckHeader({
             <Link href="/decks" className="placard hover:text-ink">
               ← Your decks
             </Link>
+            <DeleteDeck id={deck.id} name={deck.title} onDeleted={() => router.push("/decks")} className="placard ml-auto hover:text-flag" />
             <ol aria-label="Steps" className="flex items-center gap-2 placard">
               {STEPS.map((s, i) => (
                 <li key={s} className="flex items-center gap-2">

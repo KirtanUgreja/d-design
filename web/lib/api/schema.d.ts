@@ -33,7 +33,12 @@ export interface paths {
         get: operations["read_api_decks__deck_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * Delete Deck
+         * @description A deck and everything under it, at any stage (owner, 2026-10-10).
+         *     Not while the worker is on it: a build is stopped first.
+         */
+        delete: operations["delete_deck_api_decks__deck_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1364,6 +1369,37 @@ export interface operations {
                 content: {
                     "application/json": unknown;
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_deck_api_decks__deck_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                deck_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {

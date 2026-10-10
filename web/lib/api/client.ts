@@ -193,7 +193,21 @@ export interface NewDeckOptions {
   slides?: number;
 }
 
+// 204 on success; the API's own words on a refusal.
+async function deleteDeck(id: string): Promise<Result<null>> {
+  let res: Response;
+  try {
+    res = await fetch(`/api/decks/${id}`, { method: "DELETE" });
+  } catch {
+    return err(UNREACHABLE);
+  }
+  if (res.ok) return ok(null);
+  const body: unknown = await res.json().catch(() => null);
+  return err(isObj(body) && typeof body.error === "string" ? body.error : UNREACHABLE);
+}
+
 export const api = {
+  deleteDeck,
   style: (id: string) => styleCard(`/api/decks/${id}/style`),
   anotherStyle: (id: string) => call(`/api/decks/${id}/style`, { method: "POST" }),
   setBrand: (id: string, colors: string[]) =>
