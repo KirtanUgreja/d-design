@@ -31,7 +31,9 @@ railway login
 
 The script asks for your OpenRouter key and the emails allowed to sign up. Then it creates everything: two Postgres databases, the `api`, `worker` and `web` services, their variables, a secret and a public URL. It prints the URL when it is done. The first build takes about 5 minutes.
 
-To ship new code later, run the same command. It sees the project exists and only redeploys.
+To ship new code later, run the same command. It sees the project exists and only redeploys. If a first run stops halfway, run it again and it carries on.
+
+**On Railway's free plan,** only 3 services fit, and the two databases would make 5. Bring your own Postgres instead: create two databases (for example on [Neon](https://neon.tech)'s free tier), then run `APP_DATABASE_URL=... AUTH_DATABASE_URL=... ./scripts/deploy-railway.sh`. The script then adds no database of its own. On the Hobby plan, it creates both for you.
 
 ## Pick your model
 
